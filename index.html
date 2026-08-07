@@ -1254,7 +1254,7 @@
 
       const outs = ipToOuts(inningsInput.value) || 0;
       const runs = Number(runsInput.value) || 0;
-      const cgEligible = outs >= 24;
+      const cgEligible = outs >= 15;
       const shoEligible = cg.checked && outs >= 27 && runs === 0;
 
       if (!cgEligible) cg.checked = false;
