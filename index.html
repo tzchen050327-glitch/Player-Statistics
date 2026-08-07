@@ -1628,6 +1628,18 @@
             ctx.stroke();
           }
         });
+                const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
+
+        const cycle =
+          paCodes.includes('1B') &&
+          paCodes.includes('2B') &&
+          paCodes.includes('3B') &&
+          paCodes.includes('HR');
+
+        if (cycle) {
+          drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+        }
+
       } else {
         const g = currentRecord.pitcherGame;
         const pitches = Math.min(150, Number(g.pitchTens) * 10 + Number(g.pitchOnes));
