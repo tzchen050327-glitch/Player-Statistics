@@ -1,4 +1,4 @@
-<!doctype html> 
+<!doctype html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
@@ -588,7 +588,7 @@
           innings: '0.0', k: 0, bb: 0, h: 0, hbp: 0, r: 0, er: 0,
           pitchTens: 0, pitchOnes: 0,
           cg: false, sho: false, noWalkHbp: false,
-          hld: false, sv: false, bsv: false,
+          hld: false, sv: false, bsv: false, rainCalled: false,
           decision: 'ND', result: 'ND'
         },
         committedStats: null,
@@ -1211,11 +1211,12 @@
         <h3>其他結果</h3>
         <div class="inline-checks">
           ${checkHtml('pBSV','救援失敗',g.bsv)}
+          ${checkHtml('pRainCalled','因雨提前裁定',g.rainCalled)}
         </div>`;
 
       const ids = ['pInnings','pK','pBB','pH','pHBP','pR','pER','pPitchTens','pPitchOnes'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
-      ['pCG','pSHO','pNoWH','pBSV'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
+      ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
         syncPitcherDependencies(id);
         await updatePitcherGameFromUI();
       }));
@@ -1250,12 +1251,17 @@
       const inningsInput = document.getElementById('pInnings');
       const runsInput = document.getElementById('pR');
       const erInput = document.getElementById('pER');
+      const rainCalled = document.getElementById('pRainCalled');
       if (!cg || !sho || !noWH || !resultSV || !resultHLD || !resultND || !bsv || !inningsInput || !runsInput || !erInput) return;
 
       const outs = ipToOuts(inningsInput.value) || 0;
       const runs = Number(runsInput.value) || 0;
       const cgEligible = outs >= 15;
       const shoEligible = cg.checked && outs >= 27 && runs === 0;
+      const rainCalledEligible = cg.checked && outs >= 15;
+
+      if (!rainCalledEligible) rainCalled.checked = false;
+      rainCalled.disabled = !rainCalledEligible;
 
       if (!cgEligible) cg.checked = false;
       cg.disabled = !cgEligible;
@@ -1270,6 +1276,9 @@
       if (cg.checked && (resultSV.checked || resultHLD.checked)) resultND.checked = true;
       resultSV.disabled = cg.checked;
       resultHLD.disabled = cg.checked;
+
+      if (cg.checked) bsv.checked = false;
+      bsv.disabled = cg.checked;
 
       if (changedId === 'pBSV' && bsv.checked && (resultSV.checked || resultHLD.checked)) {
         resultND.checked = true;
@@ -1308,6 +1317,7 @@
       g.hld = g.result === 'HLD';
       g.sv = g.result === 'SV';
       g.bsv = document.getElementById('pBSV').checked && !g.hld && !g.sv;
+      g.rainCalled = document.getElementById('pRainCalled').checked;
       g.decision = ['W','L','ND'].includes(g.result) ? g.result : 'ND';
       await saveRecord();
       renderAll();
@@ -1651,6 +1661,7 @@
         if (result === 'HLD') tags.push('中繼成功');
         if (result === 'SV') tags.push('救援成功');
         if (g.bsv) tags.push('救援失敗');
+        if (g.rainCalled) tags.push('因雨提前裁定');
         if (result === 'W') tags.push('勝');
         if (result === 'L') tags.push('敗');
         if (result === 'ND') tags.push('無關勝敗');
