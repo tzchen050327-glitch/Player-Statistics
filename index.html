@@ -585,7 +585,7 @@
         opponent: '',
         hitterPAs: [],
         pitcherGame: {
-          innings: '0.0', k: 0, bb: 0, h: 0, hbp: 0, r: 0, er: 0,
+          innings: '0.0', k: 0, bb: 0, h: 0, hbp: 0, otherReach: 0, r: 0, er: 0,
           pitchTens: 0, pitchOnes: 0,
           cg: false, sho: false, noWalkHbp: false,
           hld: false, sv: false, bsv: false, rainCalled: false,
@@ -1183,9 +1183,10 @@
         <div class="grid four">
           <label class="field">投球局數<select id="pInnings">${inningsOptions(g.innings)}</select></label>
           <label class="field">三振<select id="pK">${numberOptions(36, g.k)}</select></label>
-          <label class="field">保送<select id="pBB">${numberOptions(36, g.bb)}</select></label>
+          <label class="field">保送(故意四壞球)<select id="pBB">${numberOptions(36, g.bb)}</select></label>
           <label class="field">被安打<select id="pH">${numberOptions(36, g.h)}</select></label>
           <label class="field">死球<select id="pHBP">${numberOptions(10, g.hbp)}</select></label>
+          <label class="field">其他上壘(判斷完全比賽用)<select id="pOtherReach">${numberOptions(10, g.otherReach || 0)}</select></label>
           <label class="field">失分<select id="pR">${numberOptions(15, g.r)}</select></label>
           <label class="field">自責分<select id="pER">${numberOptions(Math.min(15, Number(g.r) || 0), Math.min(Number(g.er) || 0, Number(g.r) || 0))}</select></label>
           <label class="field">用球數（前段）<select id="pPitchTens">${numberOptions(15, g.pitchTens)}</select></label>
@@ -1214,7 +1215,7 @@
           ${checkHtml('pRainCalled','因雨提前裁定',g.rainCalled)}
         </div>`;
 
-      const ids = ['pInnings','pK','pBB','pH','pHBP','pR','pER','pPitchTens','pPitchOnes'];
+      const ids = ['pInnings','pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
       ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
         syncPitcherDependencies(id);
@@ -1298,6 +1299,7 @@
       g.bb = Number(document.getElementById('pBB').value);
       g.h = Number(document.getElementById('pH').value);
       g.hbp = Number(document.getElementById('pHBP').value);
+      g.otherReach = Number(document.getElementById('pOtherReach').value);
       g.r = Number(document.getElementById('pR').value);
       g.er = Math.min(g.r, Number(document.getElementById('pER').value));
       g.pitchTens = Number(document.getElementById('pPitchTens').value);
@@ -1653,19 +1655,55 @@
           ctx.textAlign = 'left';
         });
 
-        const tags = [];
-        if (g.cg) tags.push('完投');
-        if (g.sho) tags.push('完封');
-        if (g.noWalkHbp) tags.push('無四死球');
         const result = pitcherResult(g);
-        if (result === 'HLD') tags.push('中繼成功');
-        if (result === 'SV') tags.push('救援成功');
-        if (g.bsv) tags.push('救援失敗');
-        if (g.rainCalled) tags.push('因雨提前裁定');
-        if (result === 'W') tags.push('勝');
-        if (result === 'L') tags.push('敗');
-        if (result === 'ND') tags.push('無關勝敗');
-        drawTags(ctx, tags, 72, 1008, 418);
+        const outs = ipToOuts(g.innings) || 0;
+
+        let specialRecord = '';
+
+        if (
+          g.cg &&
+          outs >= 27 &&
+          Number(g.h) === 0 &&
+          Number(g.bb) === 0 &&
+          Number(g.hbp) === 0 &&
+          Number(g.otherReach || 0) === 0
+        ) {
+          specialRecord = '完全比賽';
+
+        } else if (
+          g.cg &&
+          outs >= 27 &&
+          Number(g.h) === 0
+        ) {
+          specialRecord = '無安打比賽';
+
+        } else if (
+          g.cg &&
+          g.sho &&
+          result === 'W' &&
+          outs >= 27 &&
+          pitches < 100
+        ) {
+          specialRecord = 'Maddux 完封勝';
+        }
+
+        if (specialRecord) {
+          drawTags(ctx, [specialRecord], 72, 1008, 418, '#d4af37');
+        } else {
+          const tags = [];
+
+          if (g.cg) tags.push('完投');
+          if (g.sho) tags.push('完封');
+          if (g.noWalkHbp) tags.push('無四死球');
+          if (result === 'HLD') tags.push('中繼成功');
+          if (result === 'SV') tags.push('救援成功');
+          if (g.bsv) tags.push('救援失敗');
+          if (g.rainCalled) tags.push('因雨提前裁定');
+          if (result === 'W') tags.push('勝');
+          if (result === 'L') tags.push('敗');
+
+          drawTags(ctx, tags, 72, 1008, 418);
+          }
       }
 
       // 區塊 5：右下背號與名字
@@ -1794,7 +1832,7 @@
       return point.x >= x && point.x <= x + w && point.y >= y && point.y <= y + h;
     }
 
-    function drawTags(ctx, tags, boxX, boxBottom, maxWidth) {
+    function drawTags(ctx, tags, boxX, boxBottom, maxWidth, bgColor = '#20324f') {
       if (!tags.length) return;
 
       ctx.font = '900 30px "Microsoft JhengHei", sans-serif';
@@ -1825,7 +1863,7 @@
         const rowWidth = row.reduce((sum, item) => sum + item.width, 0) + gap * (row.length - 1);
         let x = boxX + maxWidth - rowWidth;
         for (const item of row) {
-          roundRect(ctx, x, y, item.width, tagHeight, 20, '#20324f');
+          roundRect(ctx, x, y, item.width, tagHeight, 20, bgColor);
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'left';
           ctx.font = '900 30px "Microsoft JhengHei", sans-serif';
