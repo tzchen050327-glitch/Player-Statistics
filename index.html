@@ -518,6 +518,21 @@
           typeX: 570,
           typeY: 1036
         },
+        fonts: {
+          headerVs: 46,
+          headerDate: 34,
+          metricLabel: 30,
+          metricValue: 58,
+          paNumber: 28,
+          paResult: 42,
+          paRbi: 24,
+          pitcherTitle: 42,
+          pitcherLabel: 25,
+          pitcherValue: 34,
+          playerName: 50,
+          playerType: 24,
+          tagText: 30
+        },
         decorHeads: { enabled: true }
       },
 
@@ -543,6 +558,21 @@
           lineW: 430,
           typeX: 570,
           typeY: 1036
+        },
+        fonts: {
+          headerVs: 46,
+          headerDate: 34,
+          metricLabel: 30,
+          metricValue: 58,
+          paNumber: 28,
+          paResult: 42,
+          paRbi: 24,
+          pitcherTitle: 42,
+          pitcherLabel: 25,
+          pitcherValue: 34,
+          playerName: 50,
+          playerType: 24,
+          tagText: 30
         },
         decorHeads: { enabled: false }
       }
@@ -1560,7 +1590,7 @@
     function renderTemplates() {
       els.content.innerHTML = `
         <h2>背景</h2>
-        <div class="subtle"></div>
+        <div class="subtle">點選縮圖切換背景。背景 2 已保留接口，之後設定完成即可直接啟用。</div>
         <div id="templateGrid" class="template-grid"></div>`;
 
       const grid = document.getElementById('templateGrid');
@@ -1722,7 +1752,7 @@
 );
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff';
-      ctx.font = '800 46px "Microsoft JhengHei", sans-serif';
+      ctx.font = `800 ${layout.fonts.headerVs}px "Microsoft JhengHei", sans-serif`;
       ctx.fillText('VS ', 86, 112);
       const vsWidth = ctx.measureText('VS ').width;
       ctx.fillStyle = currentRecord.opponent ? opponentColor(currentRecord.opponent) : '#ffffff';
@@ -1730,7 +1760,7 @@
       const opponentWidth = ctx.measureText(opponent).width;
       ctx.textAlign = 'right';
       ctx.fillStyle = '#d7ad52';
-      ctx.font = '700 34px sans-serif';
+      ctx.font = `700 ${layout.fonts.headerDate}px sans-serif`;
       ctx.fillText(dateText, 994, 112);
       const dateWidth = ctx.measureText(dateText).width;
 
@@ -1765,11 +1795,11 @@
   ctx.textAlign = 'center';
 
   ctx.fillStyle = card.label;
-  ctx.font = '700 30px "Microsoft JhengHei", sans-serif';
+  ctx.font = `700 ${layout.fonts.metricLabel}px "Microsoft JhengHei", sans-serif`;
   ctx.fillText(metric[0], card.x + 156, 235);
 
   ctx.fillStyle = card.value;
-  ctx.font = '900 58px Arial, sans-serif';
+  ctx.font = `900 ${layout.fonts.metricValue}px Arial, sans-serif`;
   ctx.fillText(metric[1], card.x + 156, 305);
 });
 
@@ -1815,18 +1845,18 @@
           ctx.fill();
           ctx.fillStyle = index % 2 ? '#ffffff' : '#172033';
           ctx.textAlign = 'center';
-          ctx.font = '900 28px Arial, sans-serif';
+          ctx.font = `900 ${layout.fonts.paNumber}px Arial, sans-serif`;
           ctx.fillText(String(index + 1), 106, y + 10);
           ctx.restore();
 
           ctx.textAlign = 'left';
           ctx.fillStyle = '#172033';
-          ctx.font = '900 42px "Microsoft JhengHei", sans-serif';
+          ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
           ctx.fillText(paLabel(pa), 158, y + 14);
           if (pa.rbi) {
             const width = ctx.measureText(paLabel(pa)).width;
             ctx.fillStyle = '#b5811b';
-            ctx.font = '900 24px Arial, sans-serif';
+            ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
             ctx.fillText(String(pa.rbi), 166 + width, y - 13);
           }
           if (index < pas.length - 1) {
@@ -1854,7 +1884,7 @@
         const g = currentRecord.pitcherGame;
         const pitches = Math.min(150, Number(g.pitchTens) * 10 + Number(g.pitchOnes));
         ctx.fillStyle = '#172033';
-        ctx.font = '900 42px "Microsoft JhengHei", sans-serif';
+        ctx.font = `900 ${layout.fonts.pitcherTitle}px "Microsoft JhengHei", sans-serif`;
         ctx.fillText('投球戰績', 88, 430);
         const lines = [
           ['投球局數', g.innings],
@@ -1868,11 +1898,11 @@
         lines.forEach((line, index) => {
           const y = 492 + index * 52;
           ctx.fillStyle = '#6d7688';
-          ctx.font = '700 25px "Microsoft JhengHei", sans-serif';
+          ctx.font = `700 ${layout.fonts.pitcherLabel}px "Microsoft JhengHei", sans-serif`;
           ctx.fillText(line[0], 90, y);
           ctx.textAlign = 'right';
           ctx.fillStyle = '#172033';
-          ctx.font = '900 34px Arial, sans-serif';
+          ctx.font = `900 ${layout.fonts.pitcherValue}px Arial, sans-serif`;
           ctx.fillText(String(line[1]), 470, y);
           ctx.textAlign = 'left';
         });
@@ -1932,9 +1962,9 @@
       const playerTitle = `#${player.number} ${player.name}`;
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 50px "Microsoft JhengHei", Arial, sans-serif';
+      ctx.font = `900 ${layout.fonts.playerName}px "Microsoft JhengHei", Arial, sans-serif`;
       while (ctx.measureText(playerTitle).width > 438) {
-        const currentSize = Number(ctx.font.match(/\d+/)?.[0] || 50);
+        const currentSize = Number(ctx.font.match(/\d+/)?.[0] || layout.fonts.playerName);
         if (currentSize <= 32) break;
         ctx.font = `900 ${currentSize - 2}px "Microsoft JhengHei", Arial, sans-serif`;
       }
@@ -1945,7 +1975,7 @@ ctx.fillStyle = frameColor;
 ctx.fillRect(layout.name.lineX, layout.name.lineY, layout.name.lineW, 5);
 
 ctx.fillStyle = '#94a3b8';
-ctx.font = '700 24px Arial, sans-serif';
+ctx.font = `700 ${layout.fonts.playerType}px Arial, sans-serif`;
 ctx.fillText(
   player.type === 'pitcher' ? 'PITCHER' : 'HITTER',
   layout.name.typeX,
@@ -2063,7 +2093,8 @@ ctx.fillText(
     function drawTags(ctx, tags, boxX, boxBottom, maxWidth, bgColor = '#20324f') {
       if (!tags.length) return;
 
-      ctx.font = '900 30px "Microsoft JhengHei", sans-serif';
+      const layout = getCurrentTemplate();
+      ctx.font = `900 ${layout.fonts.tagText}px "Microsoft JhengHei", sans-serif`;
       const gap = 10;
       const rowGap = 10;
       const tagHeight = 52;
