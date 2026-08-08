@@ -537,43 +537,104 @@
       },
 
       // 第二個背景接口：之後把 enabled 改成 true，再修改下面座標／顏色即可啟用。
-      bg2: {
+bg2: {
         label: '背景 2',
-        enabled: false,
-        innerBg: '#1f2937',
-        frameSize: 18,
-        header: { x: 54, y: 44, w: 972, h: 116, r: 24, bg: '#334155' },
+        enabled: true,
+        style: 'baseball-q',
+        frameSize: 0,
+        innerBg: '#f4f1ed',
+
+        // 左上深色三角：VS 對手 + 日期
+        header: {
+          drawBox: false,
+          vsX: 34,
+          vsY: 70,
+          dateX: 34,
+          dateY: 120,
+          textColor: '#ffffff',
+          dateColor: '#ffffff'
+        },
+
+        // Q版棒球用具下方的三圍
         metricCards: [
-          { x: 54,  y: 184, w: 312, h: 150, r: 22, bg: '#475569', label: '#cbd5e1', value: '#ffffff' },
-          { x: 384, y: 184, w: 312, h: 150, r: 22, bg: '#64748b', label: '#ffffff', value: '#ffffff' },
-          { x: 714, y: 184, w: 312, h: 150, r: 22, bg: '#475569', label: '#cbd5e1', value: '#ffffff' }
+          { x: 380, y: 292, w: 210, h: 112, r: 0, bg: 'rgba(255,255,255,.82)', label: '#10284a', value: '#10284a' },
+          { x: 606, y: 292, w: 210, h: 112, r: 0, bg: 'rgba(255,255,255,.82)', label: '#10284a', value: '#10284a' },
+          { x: 832, y: 292, w: 210, h: 112, r: 0, bg: 'rgba(255,255,255,.82)', label: '#10284a', value: '#10284a' }
         ],
-        detail: { x: 54, y: 370, w: 454, h: 656, r: 26, bg: '#f4f6f9' },
-        photo: { x: 548, y: 370, w: 478, h: 530, r: 26, bg: '#475569' },
+
+        // 左側直接疊在背景上，不畫白框
+        detail: {
+          drawBox: false,
+          x: 62,
+          y: 458,
+          w: 492,
+          h: 500,
+          headingX: 160,
+          headingY: 421,
+          underlineX: 160,
+          underlineY: 438,
+          underlineW: 410,
+          paStartY: 493,
+          paStep: 58,
+          paNumberX: 92,
+          paTextX: 142,
+          dividerX1: 70,
+          dividerX2: 548,
+          pitcherLabelX: 82,
+          pitcherValueX: 545,
+          pitcherStartY: 500,
+          pitcherStep: 52,
+          tagsX: 70,
+          tagsBottom: 955,
+          tagsW: 480
+        },
+
+        // 右側照片，上緣與逐打席下方線對齊，左右斜切
+        photo: {
+          x: 604,
+          y: 438,
+          w: 438,
+          h: 545,
+          r: 0,
+          bg: 'rgba(255,255,255,.58)',
+          border: '#ef4f43',
+          borderWidth: 3,
+          cutTopLeft: 74,
+          cutBottomRight: 150
+        },
+
+        // 右下斜角區球員名稱
         name: {
-          textX: 568,
-          textY: 995,
-          lineX: 568,
-          lineY: 1010,
-          lineW: 430,
-          typeX: 570,
-          typeY: 1036
+          textX: 715,
+          textY: 1034,
+          lineX: 715,
+          lineY: 1046,
+          lineW: 300,
+          typeX: 718,
+          typeY: 1070,
+          maxWidth: 310,
+          color: '#10284a',
+          typeColor: '#52657d',
+          lineColor: '#ef4f43'
         },
+
+        // 第二背景完全獨立的字體大小
         fonts: {
-          headerVs: 46,
-          headerDate: 34,
-          metricLabel: 30,
-          metricValue: 58,
-          paNumber: 28,
-          paResult: 42,
-          paRbi: 24,
-          pitcherTitle: 42,
-          pitcherLabel: 25,
-          pitcherValue: 34,
-          playerName: 50,
-          playerType: 24,
-          tagText: 30
+          headerVs: 34,
+          headerDate: 24,
+          metricLabel: 23,
+          metricValue: 43,
+          paNumber: 23,
+          paResult: 34,
+          paRbi: 20,
+          pitcherTitle: 34,
+          pitcherLabel: 22,
+          pitcherValue: 30,
+          playerName: 42,
+          playerType: 19,
+          tagText: 25
         },
+
         decorHeads: { enabled: false }
       }
     };
@@ -1590,7 +1651,7 @@
     function renderTemplates() {
       els.content.innerHTML = `
         <h2>背景</h2>
-        <div class="subtle">點選縮圖切換背景。背景 2 已保留接口，之後設定完成即可直接啟用。</div>
+        <div class="subtle">點選縮圖切換背景。每個背景的版面、照片裁切與字體大小皆獨立設定。</div>
         <div id="templateGrid" class="template-grid"></div>`;
 
       const grid = document.getElementById('templateGrid');
@@ -1623,31 +1684,46 @@
     function drawTemplatePreview(canvas, template, placeholder = false) {
       const ctx = canvas.getContext('2d');
       const scale = canvas.width / 1080;
-      const S = value => value * scale;
-      const frameSize = template.frameSize || 18;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#d7ad52';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = template.innerBg;
-      ctx.fillRect(S(frameSize), S(frameSize), canvas.width - S(frameSize * 2), canvas.height - S(frameSize * 2));
 
-      const drawBox = box => {
-        ctx.fillStyle = box.bg;
-        ctx.beginPath();
-        ctx.roundRect(S(box.x), S(box.y), S(box.w), S(box.h), S(box.r || 0));
-        ctx.fill();
-      };
+      if (template.style === 'baseball-q') {
+        ctx.save();
+        ctx.scale(scale, scale);
+        drawBg2Background(ctx, '#d7ad52');
+        drawBg2Header(ctx, template, '對手', '2026.08.09', '#d7ad52');
+        template.metricCards.forEach(card => drawBg2MetricFrame(ctx, card));
+        drawPhotoFrameBase(ctx, template.photo);
+        ctx.fillStyle = template.name.color;
+        ctx.font = '900 42px "Microsoft JhengHei", Arial, sans-serif';
+        ctx.fillText('#81 球員名字', template.name.textX, template.name.textY);
+        ctx.restore();
+      } else {
+        const S = value => value * scale;
+        const frameSize = template.frameSize || 18;
 
-      drawBox(template.header);
-      template.metricCards.forEach(drawBox);
-      drawBox(template.detail);
-      drawBox(template.photo);
+        ctx.fillStyle = '#d7ad52';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = template.innerBg;
+        ctx.fillRect(S(frameSize), S(frameSize), canvas.width - S(frameSize * 2), canvas.height - S(frameSize * 2));
 
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(S(template.name.textX), S(template.name.textY - 22), S(240), S(12));
-      ctx.fillStyle = '#d7ad52';
-      ctx.fillRect(S(template.name.lineX), S(template.name.lineY), S(template.name.lineW), Math.max(2, S(5)));
+        const drawBox = box => {
+          if (!box || box.drawBox === false) return;
+          ctx.fillStyle = box.bg;
+          ctx.beginPath();
+          ctx.roundRect(S(box.x), S(box.y), S(box.w), S(box.h), S(box.r || 0));
+          ctx.fill();
+        };
+
+        drawBox(template.header);
+        template.metricCards.forEach(drawBox);
+        drawBox(template.detail);
+        drawBox(template.photo);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(S(template.name.textX), S(template.name.textY - 22), S(240), S(12));
+        ctx.fillStyle = '#d7ad52';
+        ctx.fillRect(S(template.name.lineX), S(template.name.lineY), S(template.name.lineW), Math.max(2, S(5)));
+      }
 
       if (placeholder) {
         ctx.fillStyle = 'rgba(255,255,255,.72)';
@@ -1655,7 +1731,7 @@
         ctx.fillStyle = '#334155';
         ctx.textAlign = 'center';
         ctx.font = `700 ${Math.round(canvas.width * 0.055)}px "Microsoft JhengHei", sans-serif`;
-        ctx.fillText('第二背景預留', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('預留', canvas.width / 2, canvas.height / 2);
       }
     }
 
@@ -1724,88 +1800,86 @@
         ? opponentColor(currentRecord.opponent)
         : '#d7ad52';
       const layout = getCurrentTemplate();
-      const frameSize = layout.frameSize;
+      const isBg2 = layout.style === 'baseball-q';
 
-      // 依照對手隊色繪製四邊外框
-      ctx.fillStyle = frameColor;
-      ctx.fillRect(0, 0, W, H);
-     ctx.fillStyle = layout.innerBg;
-      ctx.fillRect(frameSize, frameSize, W - frameSize * 2, H - frameSize * 2); 
-      
-      if (!player || !currentRecord) {
-        return;
+      if (isBg2) {
+        drawBg2Background(ctx, frameColor);
+      } else {
+        const frameSize = layout.frameSize;
+        ctx.fillStyle = frameColor;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = layout.innerBg;
+        ctx.fillRect(frameSize, frameSize, W - frameSize * 2, H - frameSize * 2);
       }
+
+      if (!player || !currentRecord) return;
 
       const projected = projectedPlayerStats(player);
       const opponent = currentRecord.opponent || '今日對手';
       const dateText = currentRecord.date.replaceAll('-', '.');
 
       // 區塊 1：對手與日期
-      roundRect(
-  ctx,
-  layout.header.x,
-  layout.header.y,
-  layout.header.w,
-  layout.header.h,
-  layout.header.r,
-  layout.header.bg
-);
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `800 ${layout.fonts.headerVs}px "Microsoft JhengHei", sans-serif`;
-      ctx.fillText('VS ', 86, 112);
-      const vsWidth = ctx.measureText('VS ').width;
-      ctx.fillStyle = currentRecord.opponent ? opponentColor(currentRecord.opponent) : '#ffffff';
-      ctx.fillText(opponent, 86 + vsWidth, 112);
-      const opponentWidth = ctx.measureText(opponent).width;
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#d7ad52';
-      ctx.font = `700 ${layout.fonts.headerDate}px sans-serif`;
-      ctx.fillText(dateText, 994, 112);
-      const dateWidth = ctx.measureText(dateText).width;
+      if (isBg2) {
+        drawBg2Header(ctx, layout, opponent, dateText, frameColor);
+      } else {
+        roundRect(ctx, layout.header.x, layout.header.y, layout.header.w, layout.header.h, layout.header.r, layout.header.bg);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `800 ${layout.fonts.headerVs}px "Microsoft JhengHei", sans-serif`;
+        ctx.fillText('VS ', 86, 112);
+        const vsWidth = ctx.measureText('VS ').width;
+        ctx.fillStyle = currentRecord.opponent ? opponentColor(currentRecord.opponent) : '#ffffff';
+        ctx.fillText(opponent, 86 + vsWidth, 112);
+        const opponentWidth = ctx.measureText(opponent).width;
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#d7ad52';
+        ctx.font = `700 ${layout.fonts.headerDate}px sans-serif`;
+        ctx.fillText(dateText, 994, 112);
+        const dateWidth = ctx.measureText(dateText).width;
 
-      // 裝飾頭像：置於對手與日期之間
-      try {
-        const [decorHead1, decorHead2] = await Promise.all([
-          loadEmbeddedImage(DECOR_HEAD_1),
-          loadEmbeddedImage(DECOR_HEAD_2)
-        ]);
-        if (token !== renderToken) return;
-        const gapStart = 86 + vsWidth + opponentWidth + 18;
-        const gapEnd = 994 - dateWidth - 18;
-        const availableW = Math.max(150, gapEnd - gapStart);
-        const areaW = Math.min(330, availableW);
-        const areaX = gapStart + Math.max(0, (availableW - areaW) / 2);
-        const head1Box = { x: areaX + areaW * 0.48, y: 38, w: areaW * 0.50, h: 82 };
-        const head2Box = { x: areaX + areaW * 0.00, y: 60, w: areaW * 0.42, h: 62 };
-        drawContain(ctx, decorHead2, head2Box.x, head2Box.y, head2Box.w, head2Box.h);
-        drawContain(ctx, decorHead1, head1Box.x, head1Box.y, head1Box.w, head1Box.h);
-      } catch {}
+        if (layout.decorHeads?.enabled) {
+          try {
+            const [decorHead1, decorHead2] = await Promise.all([
+              loadEmbeddedImage(DECOR_HEAD_1),
+              loadEmbeddedImage(DECOR_HEAD_2)
+            ]);
+            if (token !== renderToken) return;
+            const gapStart = 86 + vsWidth + opponentWidth + 18;
+            const gapEnd = 994 - dateWidth - 18;
+            const availableW = Math.max(150, gapEnd - gapStart);
+            const areaW = Math.min(330, availableW);
+            const areaX = gapStart + Math.max(0, (availableW - areaW) / 2);
+            const head1Box = { x: areaX + areaW * 0.48, y: 38, w: areaW * 0.50, h: 82 };
+            const head2Box = { x: areaX + areaW * 0.00, y: 60, w: areaW * 0.42, h: 62 };
+            drawContain(ctx, decorHead2, head2Box.x, head2Box.y, head2Box.w, head2Box.h);
+            drawContain(ctx, decorHead1, head1Box.x, head1Box.y, head1Box.w, head1Box.h);
+          } catch {}
+        }
+      }
 
-      // 區塊 2：三格
+      // 區塊 2：三圍
       const metrics = player.type === 'hitter'
         ? (() => { const d = hitterDerived(projected); return [['打擊率', fmtBatRate(d.avg)], ['上壘率', fmtBatRate(d.obp)], ['長打率', fmtBatRate(d.slg)]]; })()
         : (() => { const d = pitcherDerived(projected); return [['WHIP', fmtTwo(d.whip)], ['防禦率', fmtTwo(d.era)], ['勝／敗', `${projected.w}／${projected.l}`]]; })();
 
       metrics.forEach((metric, index) => {
-  const card = layout.metricCards[index];
+        const card = layout.metricCards[index];
+        if (isBg2) drawBg2MetricFrame(ctx, card);
+        else roundRect(ctx, card.x, card.y, card.w, card.h, card.r, card.bg);
 
-  roundRect(ctx, card.x, card.y, card.w, card.h, card.r, card.bg);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = card.label;
+        ctx.font = `700 ${layout.fonts.metricLabel}px "Microsoft JhengHei", sans-serif`;
+        ctx.fillText(metric[0], card.x + card.w / 2, card.y + (isBg2 ? 39 : 51));
 
-  ctx.textAlign = 'center';
-
-  ctx.fillStyle = card.label;
-  ctx.font = `700 ${layout.fonts.metricLabel}px "Microsoft JhengHei", sans-serif`;
-  ctx.fillText(metric[0], card.x + 156, 235);
-
-  ctx.fillStyle = card.value;
-  ctx.font = `900 ${layout.fonts.metricValue}px Arial, sans-serif`;
-  ctx.fillText(metric[1], card.x + 156, 305);
-});
+        ctx.fillStyle = card.value;
+        ctx.font = `900 ${layout.fonts.metricValue}px Arial, sans-serif`;
+        ctx.fillText(metric[1], card.x + card.w / 2, card.y + (isBg2 ? 91 : 121));
+      });
 
       // 區塊 4：照片
-      const { x: photoX, y: photoY, w: photoW, h: photoH, r: photoR, bg: photoBg } = layout.photo;
-      roundRect(ctx, photoX, photoY, photoW, photoH, photoR, photoBg || '#314766');
+      const frame = layout.photo;
+      drawPhotoFrameBase(ctx, frame);
       const photo = photos.find(p => p.id === player.selectedPhotoId && p.playerId === player.id);
       if (photo) {
         try {
@@ -1813,79 +1887,80 @@
           if (token !== renderToken) return;
           const transform = clampPhotoTransform(image, getPhotoTransform(player, photo.id));
           player.photoTransforms[photo.id] = transform;
-          drawImageCover(ctx, image, photoX, photoY, photoW, photoH, photoR, transform);
+          drawPhotoImageInFrame(ctx, image, frame, transform);
         } catch {
-          drawPhotoPlaceholder(ctx, photoX, photoY, photoW, photoH);
+          drawPhotoPlaceholderFrame(ctx, frame);
         }
       } else {
-        drawPhotoPlaceholder(ctx, photoX, photoY, photoW, photoH);
+        drawPhotoPlaceholderFrame(ctx, frame);
       }
 
       // 區塊 3：逐打席或投球戰績
-      roundRect(
-  ctx,
-  layout.detail.x,
-  layout.detail.y,
-  layout.detail.w,
-  layout.detail.h,
-  layout.detail.r,
-  layout.detail.bg
-);
+      if (!isBg2 && layout.detail.drawBox !== false) {
+        roundRect(ctx, layout.detail.x, layout.detail.y, layout.detail.w, layout.detail.h, layout.detail.r, layout.detail.bg);
+      }
+
+      const detail = layout.detail;
+      if (isBg2) drawBg2DetailHeading(ctx, player.type === 'hitter' ? '逐打席' : '投球成績', detail);
+
       ctx.textAlign = 'left';
       ctx.fillStyle = '#172033';
 
       if (player.type === 'hitter') {
         const pas = currentRecord.hitterPAs.slice(0, 8);
         pas.forEach((pa, index) => {
-          const y = 425 + index * 78;
+          const y = isBg2 ? detail.paStartY + index * detail.paStep : 425 + index * 78;
+          const numberX = isBg2 ? detail.paNumberX : 106;
+          const textX = isBg2 ? detail.paTextX : 158;
+          const radius = isBg2 ? 22 : 28;
+
           ctx.save();
           ctx.fillStyle = index % 2 ? '#20324f' : '#d7ad52';
           ctx.beginPath();
-          ctx.arc(106, y, 28, 0, Math.PI * 2);
+          ctx.arc(numberX, y, radius, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = index % 2 ? '#ffffff' : '#172033';
           ctx.textAlign = 'center';
           ctx.font = `900 ${layout.fonts.paNumber}px Arial, sans-serif`;
-          ctx.fillText(String(index + 1), 106, y + 10);
+          ctx.fillText(String(index + 1), numberX, y + (isBg2 ? 8 : 10));
           ctx.restore();
 
           ctx.textAlign = 'left';
           ctx.fillStyle = '#172033';
           ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-          ctx.fillText(paLabel(pa), 158, y + 14);
+          ctx.fillText(paLabel(pa), textX, y + (isBg2 ? 11 : 14));
           if (pa.rbi) {
             const width = ctx.measureText(paLabel(pa)).width;
             ctx.fillStyle = '#b5811b';
             ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
-            ctx.fillText(String(pa.rbi), 166 + width, y - 13);
+            ctx.fillText(String(pa.rbi), textX + 8 + width, y - (isBg2 ? 11 : 13));
           }
           if (index < pas.length - 1) {
-            ctx.strokeStyle = '#d7dce5';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = isBg2 ? 'rgba(16,40,74,.20)' : '#d7dce5';
+            ctx.lineWidth = isBg2 ? 1.5 : 2;
             ctx.beginPath();
-            ctx.moveTo(76, y + 39);
-            ctx.lineTo(486, y + 39);
+            ctx.moveTo(isBg2 ? detail.dividerX1 : 76, y + (isBg2 ? 29 : 39));
+            ctx.lineTo(isBg2 ? detail.dividerX2 : 486, y + (isBg2 ? 29 : 39));
             ctx.stroke();
           }
         });
-                const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
 
-        const cycle =
-          paCodes.includes('1B') &&
-          paCodes.includes('2B') &&
-          paCodes.includes('3B') &&
-          paCodes.includes('HR');
-
+        const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
+        const cycle = paCodes.includes('1B') && paCodes.includes('2B') && paCodes.includes('3B') && paCodes.includes('HR');
         if (cycle) {
-          drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+          if (isBg2) drawTags(ctx, ['完全打擊'], detail.tagsX, detail.tagsBottom, detail.tagsW, '#d4af37');
+          else drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
         }
-
       } else {
         const g = currentRecord.pitcherGame;
         const pitches = Math.min(150, Number(g.pitchTens) * 10 + Number(g.pitchOnes));
-        ctx.fillStyle = '#172033';
-        ctx.font = `900 ${layout.fonts.pitcherTitle}px "Microsoft JhengHei", sans-serif`;
-        ctx.fillText('投球戰績', 88, 430);
+
+        if (!isBg2) {
+          ctx.fillStyle = '#172033';
+          ctx.font = `900 ${layout.fonts.pitcherTitle}px "Microsoft JhengHei", sans-serif`;
+          ctx.fillText('投球戰績', 88, 430);
+        }
+
         const lines = [
           ['投球局數', g.innings],
           ['三振', g.k],
@@ -1896,54 +1971,37 @@
           ['用球數', pitches]
         ];
         lines.forEach((line, index) => {
-          const y = 492 + index * 52;
-          ctx.fillStyle = '#6d7688';
+          const y = isBg2 ? detail.pitcherStartY + index * detail.pitcherStep : 492 + index * 52;
+          ctx.fillStyle = isBg2 ? '#52657d' : '#6d7688';
           ctx.font = `700 ${layout.fonts.pitcherLabel}px "Microsoft JhengHei", sans-serif`;
-          ctx.fillText(line[0], 90, y);
+          ctx.fillText(line[0], isBg2 ? detail.pitcherLabelX : 90, y);
           ctx.textAlign = 'right';
           ctx.fillStyle = '#172033';
           ctx.font = `900 ${layout.fonts.pitcherValue}px Arial, sans-serif`;
-          ctx.fillText(String(line[1]), 470, y);
+          ctx.fillText(String(line[1]), isBg2 ? detail.pitcherValueX : 470, y);
           ctx.textAlign = 'left';
         });
 
         const result = pitcherResult(g);
         const outs = ipToOuts(g.innings) || 0;
-
         let specialRecord = '';
 
-        if (
-          g.cg &&
-          outs >= 27 &&
-          Number(g.h) === 0 &&
-          Number(g.bb) === 0 &&
-          Number(g.hbp) === 0 &&
-          Number(g.otherReach || 0) === 0
-        ) {
+        if (g.cg && outs >= 27 && Number(g.h) === 0 && Number(g.bb) === 0 && Number(g.hbp) === 0 && Number(g.otherReach || 0) === 0) {
           specialRecord = '完全比賽';
-
-        } else if (
-          g.cg &&
-          outs >= 27 &&
-          Number(g.h) === 0
-        ) {
+        } else if (g.cg && outs >= 27 && Number(g.h) === 0) {
           specialRecord = '無安打比賽';
-
-        } else if (
-          g.cg &&
-          g.sho &&
-          result === 'W' &&
-          outs >= 27 &&
-          pitches < 100
-        ) {
+        } else if (g.cg && g.sho && result === 'W' && outs >= 27 && pitches < 100) {
           specialRecord = 'Maddux 完封勝';
         }
 
+        const tagX = isBg2 ? detail.tagsX : 72;
+        const tagBottom = isBg2 ? detail.tagsBottom : 1008;
+        const tagW = isBg2 ? detail.tagsW : 418;
+
         if (specialRecord) {
-          drawTags(ctx, [specialRecord], 72, 1008, 418, '#d4af37');
+          drawTags(ctx, [specialRecord], tagX, tagBottom, tagW, '#d4af37');
         } else {
           const tags = [];
-
           if (g.cg) tags.push('完投');
           if (g.sho) tags.push('完封');
           if (g.noWalkHbp) tags.push('無四死球');
@@ -1953,34 +2011,566 @@
           if (g.rainCalled) tags.push('因雨提前裁定');
           if (result === 'W') tags.push('勝');
           if (result === 'L') tags.push('敗');
-
-          drawTags(ctx, tags, 72, 1008, 418);
-          }
+          drawTags(ctx, tags, tagX, tagBottom, tagW);
+        }
       }
 
-      // 區塊 5：右下背號與名字
+      // 區塊 5：背號與名字
       const playerTitle = `#${player.number} ${player.name}`;
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = layout.name.color || '#ffffff';
       ctx.font = `900 ${layout.fonts.playerName}px "Microsoft JhengHei", Arial, sans-serif`;
-      while (ctx.measureText(playerTitle).width > 438) {
+      const nameMaxWidth = layout.name.maxWidth || 438;
+      const nameMinSize = isBg2 ? 28 : 32;
+      while (ctx.measureText(playerTitle).width > nameMaxWidth) {
         const currentSize = Number(ctx.font.match(/\d+/)?.[0] || layout.fonts.playerName);
-        if (currentSize <= 32) break;
+        if (currentSize <= nameMinSize) break;
         ctx.font = `900 ${currentSize - 2}px "Microsoft JhengHei", Arial, sans-serif`;
       }
-      const playerTitleY = layout.name.textY;
-ctx.fillText(playerTitle, layout.name.textX, playerTitleY);
+      ctx.fillText(playerTitle, layout.name.textX, layout.name.textY);
 
-ctx.fillStyle = frameColor;
-ctx.fillRect(layout.name.lineX, layout.name.lineY, layout.name.lineW, 5);
+      ctx.fillStyle = layout.name.lineColor || frameColor;
+      ctx.fillRect(layout.name.lineX, layout.name.lineY, layout.name.lineW, isBg2 ? 3 : 5);
 
-ctx.fillStyle = '#94a3b8';
-ctx.font = `700 ${layout.fonts.playerType}px Arial, sans-serif`;
-ctx.fillText(
-  player.type === 'pitcher' ? 'PITCHER' : 'HITTER',
-  layout.name.typeX,
-  layout.name.typeY
-);
+      ctx.fillStyle = layout.name.typeColor || '#94a3b8';
+      ctx.font = `700 ${layout.fonts.playerType}px Arial, sans-serif`;
+      ctx.fillText(player.type === 'pitcher' ? 'PITCHER' : 'HITTER', layout.name.typeX, layout.name.typeY);
+    }
+
+    function drawBg2Background(ctx, frameColor = '#d7ad52') {
+      const W = 1080;
+      const H = 1080;
+
+      // 暖白底
+      const paper = ctx.createLinearGradient(0, 0, W, H);
+      paper.addColorStop(0, '#f8f5f0');
+      paper.addColorStop(1, '#e9e5df');
+      ctx.fillStyle = paper;
+      ctx.fillRect(0, 0, W, H);
+
+      // 淡淡紙張顆粒（固定位置，不會閃）
+      ctx.save();
+      ctx.globalAlpha = .10;
+      ctx.fillStyle = '#64748b';
+      for (let y = 18; y < 1060; y += 34) {
+        for (let x = 16 + ((y / 34) % 2) * 11; x < 1060; x += 43) {
+          const r = 1 + ((x + y) % 3) * .35;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // 左上深藍三角區
+      ctx.fillStyle = '#061a2d';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(370, 0);
+      ctx.lineTo(0, 545);
+      ctx.closePath();
+      ctx.fill();
+
+      // 三角區內深淺層次
+      ctx.fillStyle = 'rgba(15,52,84,.65)';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(315, 0);
+      ctx.lineTo(0, 455);
+      ctx.closePath();
+      ctx.fill();
+
+      // 紅色動感斜線
+      ctx.strokeStyle = '#e1282d';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(330, 0);
+      ctx.lineTo(22, 478);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(300, 0);
+      ctx.lineTo(5, 435);
+      ctx.stroke();
+
+      ctx.fillStyle = '#e1282d';
+      ctx.beginPath();
+      ctx.moveTo(78, 318);
+      ctx.lineTo(156, 282);
+      ctx.lineTo(118, 346);
+      ctx.lineTo(48, 375);
+      ctx.closePath();
+      ctx.fill();
+
+      // 左側球場燈
+      ctx.save();
+      ctx.globalAlpha = .85;
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 4; col++) {
+          const x = 18 + col * 23;
+          const y = 170 + row * 22;
+          const g = ctx.createRadialGradient(x, y, 1, x, y, 15);
+          g.addColorStop(0, '#ffffff');
+          g.addColorStop(.25, '#f8fbff');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(x, y, 15, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // 左下球場看台（淡化）
+      ctx.save();
+      ctx.globalAlpha = .28;
+      ctx.strokeStyle = '#52657d';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 9; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 660 + i * 22);
+        ctx.quadraticCurveTo(280, 620 + i * 18, 610, 675 + i * 18);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = .14;
+      ctx.fillStyle = '#263b52';
+      for (let y = 680; y < 820; y += 18) {
+        for (let x = 10; x < 575; x += 21) {
+          ctx.beginPath();
+          ctx.arc(x + ((y / 18) % 2) * 7, y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // 草地
+      const grass = ctx.createLinearGradient(0, 790, 0, 900);
+      grass.addColorStop(0, 'rgba(81,112,50,.20)');
+      grass.addColorStop(1, 'rgba(54,83,35,.65)');
+      ctx.fillStyle = grass;
+      ctx.fillRect(0, 800, 615, 105);
+      ctx.save();
+      ctx.globalAlpha = .16;
+      for (let x = 0; x < 615; x += 34) {
+        ctx.fillStyle = (x / 34) % 2 ? '#90a85f' : '#49662f';
+        ctx.fillRect(x, 800, 17, 105);
+      }
+      ctx.restore();
+
+      // 內野泥土
+      const dirt = ctx.createLinearGradient(0, 900, 0, 1080);
+      dirt.addColorStop(0, '#a95e2d');
+      dirt.addColorStop(1, '#653416');
+      ctx.fillStyle = dirt;
+      ctx.fillRect(0, 900, 650, 180);
+      ctx.save();
+      ctx.globalAlpha = .22;
+      ctx.fillStyle = '#2d160b';
+      for (let y = 910; y < 1080; y += 13) {
+        for (let x = 4; x < 650; x += 17) {
+          ctx.fillRect(x + ((x + y) % 7), y, 2, 2);
+        }
+      }
+      ctx.restore();
+
+      // 白色界外線
+      ctx.strokeStyle = 'rgba(255,255,255,.88)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(0, 958);
+      ctx.lineTo(585, 1080);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, 915);
+      ctx.lineTo(560, 1000);
+      ctx.stroke();
+
+      // 淡棒球縫線浮水印
+      ctx.save();
+      ctx.globalAlpha = .065;
+      ctx.strokeStyle = '#9a765e';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(735, 600, 245, -1.1, 1.35);
+      ctx.stroke();
+      for (let a = -1.0; a < 1.25; a += .18) {
+        const x = 735 + Math.cos(a) * 245;
+        const y = 600 + Math.sin(a) * 245;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 7);
+        ctx.lineTo(x + 8, y + 7);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 右下姓名斜角帶
+      ctx.fillStyle = '#f6f4f1';
+      ctx.beginPath();
+      ctx.moveTo(575, 1080);
+      ctx.lineTo(1080, 805);
+      ctx.lineTo(1080, 1080);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#10284a';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(605, 1078);
+      ctx.lineTo(1080, 820);
+      ctx.stroke();
+      ctx.strokeStyle = '#e1282d';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(635, 1080);
+      ctx.lineTo(1080, 842);
+      ctx.stroke();
+
+      // 最底部深藍帶
+      ctx.fillStyle = '#071d32';
+      ctx.beginPath();
+      ctx.moveTo(705, 1080);
+      ctx.lineTo(1080, 880);
+      ctx.lineTo(1080, 1080);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#e1282d';
+      ctx.beginPath();
+      ctx.moveTo(930, 1080);
+      ctx.lineTo(1080, 975);
+      ctx.lineTo(1080, 1010);
+      ctx.lineTo(988, 1080);
+      ctx.closePath();
+      ctx.fill();
+
+      // 再蓋一層淺色姓名帶，讓文字清楚
+      ctx.fillStyle = 'rgba(248,246,243,.94)';
+      ctx.beginPath();
+      ctx.moveTo(620, 1080);
+      ctx.lineTo(1080, 835);
+      ctx.lineTo(1080, 1050);
+      ctx.lineTo(1025, 1080);
+      ctx.closePath();
+      ctx.fill();
+
+      // 小隊色裝飾線
+      ctx.strokeStyle = frameColor || '#d7ad52';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(635, 1065);
+      ctx.lineTo(1035, 1065);
+      ctx.stroke();
+
+      drawBg2QEquipment(ctx);
+
+      // 外圍對手色框線
+      ctx.save();
+      ctx.strokeStyle = frameColor || '#d7ad52';
+      ctx.lineWidth = 18;
+      ctx.lineJoin = 'round';
+      ctx.strokeRect(9, 9, W - 18, H - 18);
+      ctx.strokeStyle = 'rgba(255,255,255,.72)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(21, 21, W - 42, H - 42);
+      ctx.restore();
+    }
+
+    function drawBg2QEquipment(ctx) {
+      // 陰影
+      ctx.save();
+      ctx.globalAlpha = .14;
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.ellipse(740, 238, 285, 25, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Q版球棒
+      ctx.save();
+      ctx.translate(465, 152);
+      ctx.rotate(-0.18);
+      const batGrad = ctx.createLinearGradient(0, 0, 280, 0);
+      batGrad.addColorStop(0, '#d99a4b');
+      batGrad.addColorStop(.55, '#f0c477');
+      batGrad.addColorStop(1, '#c27b32');
+      ctx.fillStyle = batGrad;
+      ctx.strokeStyle = '#5c371c';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(22, -14);
+      ctx.quadraticCurveTo(80, -24, 245, -22);
+      ctx.quadraticCurveTo(282, -20, 286, 0);
+      ctx.quadraticCurveTo(282, 20, 245, 22);
+      ctx.quadraticCurveTo(80, 24, 22, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#172033';
+      ctx.beginPath();
+      ctx.roundRect(-18, -14, 52, 28, 10);
+      ctx.fill();
+      ctx.strokeStyle = '#667085';
+      ctx.lineWidth = 2;
+      for (let x = -10; x < 27; x += 9) {
+        ctx.beginPath();
+        ctx.moveTo(x, -13);
+        ctx.lineTo(x, 13);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#d99a4b';
+      ctx.strokeStyle = '#5c371c';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(-20, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Q版手套
+      ctx.save();
+      ctx.translate(690, 170);
+      ctx.fillStyle = '#bd7432';
+      ctx.strokeStyle = '#603416';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-58, 48);
+      ctx.quadraticCurveTo(-68, 5, -38, -18);
+      ctx.quadraticCurveTo(-22, -32, -8, -18);
+      ctx.quadraticCurveTo(5, -42, 22, -25);
+      ctx.quadraticCurveTo(34, -42, 48, -20);
+      ctx.quadraticCurveTo(68, -25, 73, 0);
+      ctx.quadraticCurveTo(87, 18, 71, 50);
+      ctx.quadraticCurveTo(44, 79, 3, 76);
+      ctx.quadraticCurveTo(-39, 77, -58, 48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#f2c184';
+      ctx.lineWidth = 3;
+      for (const x of [-30, -8, 15, 38]) {
+        ctx.beginPath();
+        ctx.moveTo(x, -10);
+        ctx.quadraticCurveTo(x - 3, 22, x + 2, 48);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#6b3b1c';
+      ctx.beginPath();
+      ctx.arc(8, 43, 30, .2, Math.PI - .15);
+      ctx.stroke();
+      ctx.restore();
+
+      // Q版棒球（有表情）
+      ctx.save();
+      ctx.translate(832, 178);
+      ctx.fillStyle = '#fffdf8';
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 43, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#d52b31';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(-24, 0, 33, -1.15, 1.15);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(24, 0, 33, Math.PI - 1.15, Math.PI + 1.15);
+      ctx.stroke();
+      for (let t = -20; t <= 20; t += 10) {
+        ctx.beginPath();
+        ctx.moveTo(-31, t - 4);
+        ctx.lineTo(-22, t + 2);
+        ctx.moveTo(31, t - 4);
+        ctx.lineTo(22, t + 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#172033';
+      ctx.beginPath(); ctx.arc(-11, -4, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(11, -4, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 5, 10, .2, Math.PI - .2); ctx.stroke();
+      ctx.fillStyle = '#f19aa0';
+      ctx.beginPath(); ctx.arc(-21, 8, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(21, 8, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      // Q版打擊頭盔
+      ctx.save();
+      ctx.translate(955, 160);
+      const helmetGrad = ctx.createLinearGradient(-55, -55, 60, 60);
+      helmetGrad.addColorStop(0, '#263f63');
+      helmetGrad.addColorStop(1, '#07192f');
+      ctx.fillStyle = helmetGrad;
+      ctx.strokeStyle = '#020b15';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-58, 20);
+      ctx.quadraticCurveTo(-58, -52, 5, -62);
+      ctx.quadraticCurveTo(65, -57, 68, 8);
+      ctx.lineTo(55, 42);
+      ctx.quadraticCurveTo(20, 60, -28, 45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(40, 10);
+      ctx.quadraticCurveTo(88, 12, 105, 34);
+      ctx.quadraticCurveTo(76, 48, 34, 40);
+      ctx.closePath();
+      ctx.fillStyle = '#10284a';
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.42)';
+      ctx.beginPath();
+      ctx.ellipse(-8, -33, 22, 8, -.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 小星星
+      const stars = [[546,108,'#e1282d'], [613,133,'#10284a'], [787,94,'#e1282d'], [1010,92,'#d7ad52']];
+      for (const [x,y,c] of stars) {
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.moveTo(0,-9); ctx.lineTo(3,-3); ctx.lineTo(9,0); ctx.lineTo(3,3); ctx.lineTo(0,9); ctx.lineTo(-3,3); ctx.lineTo(-9,0); ctx.lineTo(-3,-3); ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawBg2Header(ctx, layout, opponent, dateText, frameColor) {
+      const h = layout.header;
+      ctx.textAlign = 'left';
+      ctx.font = `900 ${layout.fonts.headerVs}px "Microsoft JhengHei", sans-serif`;
+      ctx.fillStyle = h.textColor || '#ffffff';
+      ctx.fillText('VS ', h.vsX, h.vsY);
+      const vsW = ctx.measureText('VS ').width;
+      ctx.fillStyle = frameColor || '#ffffff';
+      ctx.fillText(opponent, h.vsX + vsW, h.vsY);
+
+      ctx.strokeStyle = 'rgba(255,255,255,.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(h.dateX, h.dateY - 24);
+      ctx.lineTo(205, h.dateY - 24);
+      ctx.stroke();
+
+      ctx.fillStyle = h.dateColor || '#ffffff';
+      ctx.font = `800 ${layout.fonts.headerDate}px Arial, "Microsoft JhengHei", sans-serif`;
+      ctx.fillText(dateText, h.dateX, h.dateY);
+      ctx.fillStyle = '#e1282d';
+      ctx.fillRect(215, h.dateY - 22, 4, 25);
+    }
+
+    function drawBg2MetricFrame(ctx, card) {
+      ctx.save();
+      ctx.fillStyle = card.bg || 'rgba(255,255,255,.82)';
+      ctx.fillRect(card.x, card.y, card.w, card.h);
+      ctx.strokeStyle = '#ef4f43';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
+      ctx.strokeRect(card.x, card.y, card.w, card.h);
+      ctx.strokeStyle = 'rgba(239,79,67,.65)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([7, 5]);
+      ctx.strokeRect(card.x + 7, card.y + 7, card.w - 14, card.h - 14);
+      ctx.restore();
+    }
+
+    function drawBg2DetailHeading(ctx, text, detail) {
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e1282d';
+      ctx.fillRect(detail.headingX - 15, detail.headingY - 26, 5, 29);
+      ctx.fillStyle = '#10284a';
+      ctx.font = '900 31px "Microsoft JhengHei", sans-serif';
+      ctx.fillText(text, detail.headingX, detail.headingY);
+      ctx.strokeStyle = 'rgba(16,40,74,.42)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(detail.underlineX, detail.underlineY);
+      ctx.lineTo(detail.underlineX + detail.underlineW, detail.underlineY);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function tracePhotoFramePath(ctx, frame) {
+      const { x, y, w, h, r = 0, cutTopLeft = 0, cutBottomRight = 0 } = frame;
+      ctx.beginPath();
+      if (cutTopLeft || cutBottomRight) {
+        ctx.moveTo(x + cutTopLeft, y);
+        ctx.lineTo(x + w, y);
+        ctx.lineTo(x + w, y + h - cutBottomRight);
+        ctx.lineTo(x + w - cutBottomRight, y + h);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x, y + cutTopLeft);
+        ctx.closePath();
+      } else {
+        ctx.roundRect(x, y, w, h, r);
+      }
+    }
+
+    function drawPhotoFrameBase(ctx, frame) {
+      ctx.save();
+      tracePhotoFramePath(ctx, frame);
+      ctx.fillStyle = frame.bg || '#314766';
+      ctx.fill();
+      if (frame.border) {
+        ctx.strokeStyle = frame.border;
+        ctx.lineWidth = frame.borderWidth || 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPhotoImageInFrame(ctx, img, frame, transform = { x: 0, y: 0, scale: 1 }) {
+      const { x, y, w, h } = frame;
+      const safeTransform = clampPhotoTransform(img, transform);
+      const scale = Math.max(w / img.width, h / img.height) * safeTransform.scale;
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = x + (w - drawW) / 2 + safeTransform.x;
+      const drawY = y + (h - drawH) / 2 + safeTransform.y;
+      ctx.save();
+      tracePhotoFramePath(ctx, frame);
+      ctx.clip();
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
+      if (frame.border) {
+        ctx.save();
+        tracePhotoFramePath(ctx, frame);
+        ctx.strokeStyle = frame.border;
+        ctx.lineWidth = frame.borderWidth || 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawPhotoPlaceholderFrame(ctx, frame) {
+      ctx.save();
+      tracePhotoFramePath(ctx, frame);
+      ctx.fillStyle = frame.bg || '#314766';
+      ctx.fill();
+      ctx.clip();
+      if (frame.cutTopLeft || frame.cutBottomRight) {
+        ctx.fillStyle = 'rgba(16,40,74,.05)';
+        for (let x = frame.x - frame.h; x < frame.x + frame.w + frame.h; x += 44) {
+          ctx.fillRect(x, frame.y, 18, frame.h);
+        }
+      }
+      ctx.restore();
+      if (frame.border) {
+        ctx.save();
+        tracePhotoFramePath(ctx, frame);
+        ctx.strokeStyle = frame.border;
+        ctx.lineWidth = frame.borderWidth || 2;
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     function roundRect(ctx, x, y, w, h, r, fill) {
@@ -2086,8 +2676,14 @@ ctx.fillText(
     }
 
     function pointInPhotoFrame(point) {
-      const { x, y, w, h } = getPhotoFrame();
-      return point.x >= x && point.x <= x + w && point.y >= y && point.y <= y + h;
+      const frame = getPhotoFrame();
+      const { x, y, w, h, cutTopLeft = 0, cutBottomRight = 0 } = frame;
+      if (point.x < x || point.x > x + w || point.y < y || point.y > y + h) return false;
+      const lx = point.x - x;
+      const ly = point.y - y;
+      if (cutTopLeft && lx + ly < cutTopLeft) return false;
+      if (cutBottomRight && lx + ly > w + h - cutBottomRight) return false;
+      return true;
     }
 
     function drawTags(ctx, tags, boxX, boxBottom, maxWidth, bgColor = '#20324f') {
@@ -2125,7 +2721,7 @@ ctx.fillText(
           roundRect(ctx, x, y, item.width, tagHeight, 20, bgColor);
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'left';
-          ctx.font = '900 30px "Microsoft JhengHei", sans-serif';
+          ctx.font = `900 ${layout.fonts.tagText}px "Microsoft JhengHei", sans-serif`;
           ctx.fillText(item.tag, x + 20, y + 36);
           x += item.width + gap;
         }
