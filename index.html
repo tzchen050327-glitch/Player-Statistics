@@ -251,6 +251,34 @@
       background: #fafbfc;
     }
 
+    .half-switch {
+      display: flex;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    .half-btn {
+      flex: 1;
+      border: 1px solid #c8ced8;
+      background: #f8fafc;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 12px;
+      box-shadow: 0 3px 0 #c8ced8;
+      font-weight: 800;
+    }
+
+    .half-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      box-shadow: inset 0 3px 8px rgba(0,0,0,.22);
+    }
+
+    .sub-check {
+      margin-top: 12px;
+    }
+
     .photo-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -788,6 +816,14 @@ bg2: {
         date: els.gameDate.value,
         opponent: '',
         hitterPAs: [],
+        hitterAppearance: {
+          mode: 'bat',
+          inning: '1',
+          half: 'top',
+          battingOrder: '1',
+          continueDefense: false,
+          position: '游擊'
+        },
         pitcherGame: {
           innings: '0.0', k: 0, bb: 0, h: 0, hbp: 0, otherReach: 0, r: 0, er: 0,
           pitchTens: 0, pitchOnes: 0,
@@ -816,6 +852,15 @@ bg2: {
       currentRecord.playerId = player.id;
       currentRecord.date = els.gameDate.value;
       currentRecord.hitterPAs ||= [];
+      currentRecord.hitterAppearance = {
+        ...defaultGameRecord(player).hitterAppearance,
+        ...(currentRecord.hitterAppearance || {})
+      };
+      if (!['bat', 'runner', 'defense'].includes(currentRecord.hitterAppearance.mode)) currentRecord.hitterAppearance.mode = 'bat';
+      currentRecord.hitterAppearance.inning = String(Math.max(1, Math.floor(Number(currentRecord.hitterAppearance.inning) || 1)));
+      currentRecord.hitterAppearance.half = currentRecord.hitterAppearance.half === 'bottom' ? 'bottom' : 'top';
+      currentRecord.hitterAppearance.battingOrder = String(Math.min(9, Math.max(1, Math.floor(Number(currentRecord.hitterAppearance.battingOrder) || 1))));
+      currentRecord.hitterAppearance.continueDefense = Boolean(currentRecord.hitterAppearance.continueDefense);
       currentRecord.pitcherGame = {
         ...defaultGameRecord(player).pitcherGame,
         ...(currentRecord.pitcherGame || {})
@@ -855,22 +900,85 @@ bg2: {
       return html;
     }
 
-    function inningsOptions(selected = '0.0') {
-      let html = '';
-      for (let inning = 0; inning <= 12; inning++) {
-        for (let part = 0; part <= 2; part++) {
-          if (inning === 12 && part > 0) continue;
-          const value = `${inning}.${part}`;
-          html += `<option value="${value}" ${selected === value ? 'selected' : ''}>${value}</option>`;
-        }
+    const DEFENSIVE_POSITIONS = ['投手','捕手','一壘','二壘','三壘','游擊','左外野','中外野','右外野','DH'];
+
+    function ensureHitterAppearance() {
+      if (!currentRecord) return null;
+
+      // 必須維持同一個物件參照。
+      // 表單事件與 Canvas 都要讀寫同一份 hitterAppearance，
+      // 不能每次呼叫都建立新物件，否則左側欄位會改到舊物件、右側預覽卻讀到新物件。
+      if (!currentRecord.hitterAppearance || typeof currentRecord.hitterAppearance !== 'object') {
+        currentRecord.hitterAppearance = {};
       }
-      return html;
+
+      const appearance = currentRecord.hitterAppearance;
+      if (!['bat', 'runner', 'defense'].includes(appearance.mode)) appearance.mode = 'bat';
+      if (!appearance.inning) appearance.inning = '1';
+      appearance.inning = String(appearance.inning);
+      if (!['top', 'bottom'].includes(appearance.half)) appearance.half = 'top';
+      if (!appearance.battingOrder) appearance.battingOrder = '1';
+      appearance.battingOrder = String(appearance.battingOrder);
+      if (typeof appearance.continueDefense !== 'boolean') appearance.continueDefense = false;
+      if (!DEFENSIVE_POSITIONS.includes(appearance.position)) appearance.position = '游擊';
+
+      return appearance;
+    }
+
+    function substitutionInningOptions(selected = '1') {
+      const value = String(selected || '1');
+      const preset = Array.from({ length: 12 }, (_, i) => String(i + 1));
+      return [
+        ...preset.map(item => `<option value="${item}" ${value === item ? 'selected' : ''}>${item}</option>`),
+        `<option value="__other__" ${preset.includes(value) ? '' : 'selected'}>其他</option>`
+      ].join('');
+    }
+
+    function battingOrderOptions(selected = '1') {
+      const value = String(selected || '1');
+      return Array.from({ length: 9 }, (_, i) => {
+        const order = String(i + 1);
+        return `<option value="${order}" ${value === order ? 'selected' : ''}>第${order}棒</option>`;
+      }).join('');
+    }
+
+    function defensivePositionOptions(selected = '游擊') {
+      return DEFENSIVE_POSITIONS.map(position => `<option value="${position}" ${selected === position ? 'selected' : ''}>${position}</option>`).join('');
+    }
+
+    function pitcherInningsPresetValues() {
+      const values = ['0.0', '0.1', '0.2'];
+      for (let inning = 1; inning <= 11; inning++) {
+        values.push(`${inning}.0`, `${inning}.1`, `${inning}.2`);
+      }
+      values.push('12.0');
+      return values;
+    }
+
+    function pitcherInningsOptions(selected = '0.0') {
+      const value = String(selected ?? '0.0');
+      const preset = pitcherInningsPresetValues();
+      return [
+        ...preset.map(item => `<option value="${item}" ${value === item ? 'selected' : ''}>${item}局</option>`),
+        `<option value="__other__" ${preset.includes(value) ? '' : 'selected'}>其他</option>`
+      ].join('');
+    }
+
+    function isPresetPitcherInnings(value) {
+      return pitcherInningsPresetValues().includes(String(value));
+    }
+
+    function getPitcherInningsFromUI() {
+      const preset = document.getElementById('pInnings');
+      if (!preset) return '0.0';
+      if (preset.value !== '__other__') return preset.value;
+      return document.getElementById('pInningsOther')?.value.trim() || '';
     }
 
     function ipToOuts(ip) {
-      const match = String(ip).trim().match(/^(\d+)\.([012])$/);
+      const match = String(ip).trim().match(/^(\d+)(?:\.([012]))?$/);
       if (!match) return null;
-      return Number(match[1]) * 3 + Number(match[2]);
+      return Number(match[1]) * 3 + Number(match[2] || 0);
     }
 
     function outsToIP(outs) {
@@ -981,7 +1089,8 @@ bg2: {
       if (!currentRecord) return player.stats;
       if (player.type === 'hitter') {
         const base = mergeStats(player.stats, hitterDefaults);
-        const current = deriveHitterGame(currentRecord.hitterPAs);
+        const appearance = ensureHitterAppearance();
+        const current = appearance.mode === 'bat' ? deriveHitterGame(currentRecord.hitterPAs) : emptyHitterContribution();
         return addDelta(base, current, currentRecord.committedStats, Object.keys(emptyHitterContribution()));
       }
       const base = mergeStats(player.stats, pitcherDefaults);
@@ -1207,11 +1316,23 @@ bg2: {
            <div class="metric"><span>防禦率</span><strong>${fmtTwo(stats.era)}</strong></div>
            <div class="metric"><span>勝／敗</span><strong>${projected.w}／${projected.l}</strong></div>`;
 
+      const appearance = player.type === 'hitter' ? ensureHitterAppearance() : null;
+      const appearanceHtml = player.type === 'hitter'
+        ? `<label class="field" style="margin-top:10px">出賽方式
+             <select id="hitterAppearanceMode">
+               <option value="bat" ${appearance.mode === 'bat' ? 'selected' : ''}>先發／代打</option>
+               <option value="runner" ${appearance.mode === 'runner' ? 'selected' : ''}>代跑</option>
+               <option value="defense" ${appearance.mode === 'defense' ? 'selected' : ''}>純代守</option>
+             </select>
+           </label>`
+        : '';
+
       els.content.innerHTML = `
         <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜今日狀況</h2>
         <label class="field">今日對手
           <select id="opponentInput">${opponentOptions(currentRecord.opponent || '')}</select>
         </label>
+        ${appearanceHtml}
         <div class="metrics">${metricHtml}</div>
         <div id="todaySpecific"></div>`;
 
@@ -1221,14 +1342,139 @@ bg2: {
         currentRecord.opponent = opponentInput.value;
         syncOpponentSelectColor(opponentInput);
         await saveRecord();
-        renderCanvas();
+        await renderCanvas();
       });
+
+      const appearanceMode = document.getElementById('hitterAppearanceMode');
+      if (appearanceMode) {
+        appearanceMode.addEventListener('change', async () => {
+          const appearance = ensureHitterAppearance();
+          appearance.mode = appearanceMode.value;
+          await saveRecord();
+          // 模式切換只需要重建「今日狀況」下方內容；不要整頁 renderAll，
+          // 否則代跑／代守的輸入控制會被反覆拆掉重建。
+          renderHitterToday();
+          await renderCanvas();
+        });
+      }
 
       if (player.type === 'hitter') renderHitterToday();
       else renderPitcherToday();
     }
 
+    function renderHitterSubstitutionToday() {
+      const host = document.getElementById('todaySpecific');
+      const appearance = ensureHitterAppearance();
+      const isRunner = appearance.mode === 'runner';
+      const customInning = Number(appearance.inning) > 12 ? appearance.inning : '';
+      const positionField = isRunner
+        ? `<label id="subPositionWrap" class="field ${appearance.continueDefense ? '' : 'hidden'}">守備位置
+             <select id="subPosition">${defensivePositionOptions(appearance.position)}</select>
+           </label>`
+        : `<label class="field">守備位置
+             <select id="subPosition">${defensivePositionOptions(appearance.position)}</select>
+           </label>`;
+
+      host.innerHTML = `
+        <h3>${isRunner ? '代跑紀錄' : '純代守紀錄'}</h3>
+        <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
+          <div class="grid four">
+            <label class="field">局數
+              <select id="subInning">${substitutionInningOptions(appearance.inning)}</select>
+            </label>
+            <label id="subOtherInningWrap" class="field ${Number(appearance.inning) > 12 ? '' : 'hidden'}">其他局數
+              <input id="subOtherInning" type="number" min="1" step="1" inputmode="numeric" value="${escapeAttr(customInning)}" />
+            </label>
+            <label class="field">上／下半局
+              <div class="half-switch">
+                <button type="button" class="half-btn ${appearance.half === 'top' ? 'active' : ''}" data-sub-half="top">上半</button>
+                <button type="button" class="half-btn ${appearance.half === 'bottom' ? 'active' : ''}" data-sub-half="bottom">下半</button>
+              </div>
+            </label>
+            <label class="field">原棒次
+              <select id="subBattingOrder">${battingOrderOptions(appearance.battingOrder)}</select>
+            </label>
+            ${positionField}
+          </div>
+          ${isRunner ? `<label class="check sub-check"><input id="subContinueDefense" type="checkbox" ${appearance.continueDefense ? 'checked' : ''} /> 下一個半局接替守備</label>` : ''}
+        </div>`;
+
+      const inningSelect = document.getElementById('subInning');
+      const otherWrap = document.getElementById('subOtherInningWrap');
+      const otherInput = document.getElementById('subOtherInning');
+
+      inningSelect.addEventListener('change', async () => {
+        if (inningSelect.value === '__other__') {
+          otherWrap.classList.remove('hidden');
+          if (!otherInput.value) otherInput.value = Number(appearance.inning) > 12 ? appearance.inning : '13';
+          appearance.inning = otherInput.value;
+        } else {
+          otherWrap.classList.add('hidden');
+          appearance.inning = inningSelect.value;
+        }
+        await saveRecord();
+        await renderCanvas();
+      });
+
+      otherInput.addEventListener('input', () => {
+        const value = Math.floor(Number(otherInput.value));
+        if (Number.isFinite(value) && value >= 1) {
+          appearance.inning = String(value);
+          renderCanvas();
+        }
+      });
+
+      otherInput.addEventListener('change', async () => {
+        const value = Math.floor(Number(otherInput.value));
+        if (!Number.isFinite(value) || value < 1) {
+          window.alert('其他局數請輸入正整數。');
+          otherInput.value = Number(appearance.inning) > 12 ? appearance.inning : '13';
+          return;
+        }
+        appearance.inning = String(value);
+        otherInput.value = String(value);
+        await saveRecord();
+        await renderCanvas();
+      });
+
+      document.querySelectorAll('[data-sub-half]').forEach(button => {
+        button.addEventListener('click', async () => {
+          appearance.half = button.dataset.subHalf;
+          document.querySelectorAll('[data-sub-half]').forEach(item => item.classList.toggle('active', item === button));
+          await saveRecord();
+          await renderCanvas();
+        });
+      });
+
+      document.getElementById('subBattingOrder').addEventListener('change', async event => {
+        appearance.battingOrder = event.target.value;
+        await saveRecord();
+        await renderCanvas();
+      });
+
+      document.getElementById('subPosition').addEventListener('change', async event => {
+        appearance.position = event.target.value;
+        await saveRecord();
+        await renderCanvas();
+      });
+
+      const continueDefense = document.getElementById('subContinueDefense');
+      if (continueDefense) {
+        continueDefense.addEventListener('change', async () => {
+          appearance.continueDefense = continueDefense.checked;
+          document.getElementById('subPositionWrap').classList.toggle('hidden', !continueDefense.checked);
+          await saveRecord();
+          await renderCanvas();
+        });
+      }
+    }
+
     function renderHitterToday() {
+      const appearance = ensureHitterAppearance();
+      if (appearance.mode !== 'bat') {
+        renderHitterSubstitutionToday();
+        return;
+      }
       const host = document.getElementById('todaySpecific');
       const rows = currentRecord.hitterPAs.map((pa, index) => `
         <div class="pa-row">
@@ -1385,7 +1631,12 @@ bg2: {
       host.innerHTML = `
         <h3>投球戰績</h3>
         <div class="grid four">
-          <label class="field">投球局數<select id="pInnings">${inningsOptions(g.innings)}</select></label>
+          <label class="field">投球局數
+            <select id="pInnings">${pitcherInningsOptions(g.innings)}</select>
+          </label>
+          <label id="pInningsOtherWrap" class="field ${isPresetPitcherInnings(g.innings) ? 'hidden' : ''}">其他局數
+            <input id="pInningsOther" type="text" inputmode="decimal" placeholder="例如 0.2、13.1" value="${isPresetPitcherInnings(g.innings) ? '' : escapeAttr(g.innings)}" />
+          </label>
           <label class="field">三振<select id="pK">${numberOptions(36, g.k)}</select></label>
           <label class="field">保送(故意四壞球)<select id="pBB">${numberOptions(36, g.bb)}</select></label>
           <label class="field">被安打<select id="pH">${numberOptions(36, g.h)}</select></label>
@@ -1419,7 +1670,28 @@ bg2: {
           ${checkHtml('pRainCalled','因雨提前裁定',g.rainCalled)}
         </div>`;
 
-      const ids = ['pInnings','pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
+      const inningPreset = document.getElementById('pInnings');
+      const inningOther = document.getElementById('pInningsOther');
+      const inningOtherWrap = document.getElementById('pInningsOtherWrap');
+      inningPreset.addEventListener('change', async () => {
+        const isOther = inningPreset.value === '__other__';
+        inningOtherWrap.classList.toggle('hidden', !isOther);
+        if (isOther) {
+          if (isPresetPitcherInnings(g.innings)) inningOther.value = '';
+          inningOther.focus();
+          return;
+        }
+        await updatePitcherGameFromUI();
+      });
+      inningOther.addEventListener('change', async () => {
+        if (ipToOuts(inningOther.value) === null) {
+          window.alert('投球局數請輸入整數，或以 .1／.2 表示未滿一局，例如 0.2、13.1。');
+          inningOther.value = g.innings;
+          return;
+        }
+        await updatePitcherGameFromUI();
+      });
+      const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
       ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
         syncPitcherDependencies(id);
@@ -1459,7 +1731,7 @@ bg2: {
       const rainCalled = document.getElementById('pRainCalled');
       if (!cg || !sho || !noWH || !resultSV || !resultHLD || !resultND || !bsv || !inningsInput || !runsInput || !erInput) return;
 
-      const outs = ipToOuts(inningsInput.value) || 0;
+      const outs = ipToOuts(getPitcherInningsFromUI()) || 0;
       const runs = Number(runsInput.value) || 0;
       const cgEligible = outs >= 15;
       const shoEligible = cg.checked && outs >= 15 && runs === 0;
@@ -1498,7 +1770,9 @@ bg2: {
 
     async function updatePitcherGameFromUI() {
       const g = currentRecord.pitcherGame;
-      g.innings = document.getElementById('pInnings').value;
+      const inningsValue = getPitcherInningsFromUI();
+      if (ipToOuts(inningsValue) === null) return;
+      g.innings = inningsValue;
       g.k = Number(document.getElementById('pK').value);
       g.bb = Number(document.getElementById('pBB').value);
       g.h = Number(document.getElementById('pH').value);
@@ -1567,7 +1841,7 @@ bg2: {
         }
         setStatus('照片已保存到目前球員。');
         renderPhotos(player);
-        renderCanvas();
+        await renderCanvas();
       });
 
       if (selectedPhoto) {
@@ -1765,8 +2039,18 @@ bg2: {
       if (!currentRecord.opponent.trim()) throw new Error('請先輸入今日對手');
 
       if (player.type === 'hitter') {
-        if (!currentRecord.hitterPAs.length) throw new Error('至少要有一個已確定的打席');
-        const current = deriveHitterGame(currentRecord.hitterPAs);
+        const appearance = ensureHitterAppearance();
+        if (appearance.mode === 'bat' && !currentRecord.hitterPAs.length) throw new Error('至少要有一個已確定的打席');
+        if (appearance.mode !== 'bat') {
+          const inning = Math.floor(Number(appearance.inning));
+          if (!Number.isFinite(inning) || inning < 1) throw new Error('請先設定有效的出賽局數');
+          if (!['top','bottom'].includes(appearance.half)) throw new Error('請先選擇上半或下半局');
+          if (!(Number(appearance.battingOrder) >= 1 && Number(appearance.battingOrder) <= 9)) throw new Error('請先選擇原棒次');
+          if ((appearance.mode === 'defense' || appearance.continueDefense) && !DEFENSIVE_POSITIONS.includes(appearance.position)) {
+            throw new Error('請先選擇守備位置');
+          }
+        }
+        const current = appearance.mode === 'bat' ? deriveHitterGame(currentRecord.hitterPAs) : emptyHitterContribution();
         const base = mergeStats(player.stats, hitterDefaults);
         player.stats = addDelta(base, current, currentRecord.committedStats, Object.keys(emptyHitterContribution()));
         currentRecord.committedStats = current;
@@ -1786,6 +2070,82 @@ bg2: {
       await savePlayer(player);
       await saveRecord();
       return player;
+    }
+
+    function halfLabel(half) {
+      return half === 'bottom' ? '下半' : '上半';
+    }
+
+    function nextHalfInning(inning, half) {
+      const n = Math.max(1, Math.floor(Number(inning) || 1));
+      return half === 'bottom'
+        ? { inning: n + 1, half: 'top' }
+        : { inning: n, half: 'bottom' };
+    }
+
+    function hitterAppearanceHeading(appearance) {
+      if (appearance.mode === 'runner') return appearance.continueDefense ? '代跑後接替守備' : '純代跑';
+      if (appearance.mode === 'defense') return '純代守';
+      return '逐打席';
+    }
+
+    function hitterAppearanceLines(appearance) {
+      const inning = Math.max(1, Math.floor(Number(appearance.inning) || 1));
+      const order = Math.min(9, Math.max(1, Math.floor(Number(appearance.battingOrder) || 1)));
+      const half = halfLabel(appearance.half);
+      if (appearance.mode === 'runner') {
+        const lines = [`${inning}局${half}｜接替原第${order}棒打者代跑`];
+        if (appearance.continueDefense) {
+          const next = nextHalfInning(inning, appearance.half);
+          lines.push(`${next.inning}局${halfLabel(next.half)}｜接替${appearance.position}守備`);
+        }
+        return lines;
+      }
+      if (appearance.mode === 'defense') {
+        return [`${inning}局${half}｜接替原第${order}棒打者，守${appearance.position}`];
+      }
+      return [];
+    }
+
+    function drawWrappedCanvasText(ctx, text, x, y, maxWidth, font, lineHeight) {
+      ctx.font = font;
+      let line = '';
+      let currentY = y;
+      for (const char of String(text)) {
+        const test = line + char;
+        if (line && ctx.measureText(test).width > maxWidth) {
+          ctx.fillText(line, x, currentY);
+          line = char;
+          currentY += lineHeight;
+        } else {
+          line = test;
+        }
+      }
+      if (line) ctx.fillText(line, x, currentY);
+      return currentY + lineHeight;
+    }
+
+    function drawHitterAppearanceDetail(ctx, layout, isBg2, detail, appearance) {
+      const heading = hitterAppearanceHeading(appearance);
+      const lines = hitterAppearanceLines(appearance);
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#172033';
+      let y;
+      if (isBg2) {
+        y = detail.paStartY + 10;
+      } else {
+        ctx.font = `900 ${Math.min(38, layout.fonts.pitcherTitle)}px "Microsoft JhengHei", sans-serif`;
+        ctx.fillText(heading, 88, 430);
+        y = 500;
+      }
+      const x = isBg2 ? detail.dividerX1 + 10 : 88;
+      const maxWidth = isBg2 ? detail.dividerX2 - detail.dividerX1 - 20 : 390;
+      const fontSize = isBg2 ? 27 : 30;
+      for (const line of lines) {
+        y = drawWrappedCanvasText(ctx, line, x, y, maxWidth, `900 ${fontSize}px "Microsoft JhengHei", sans-serif`, fontSize + 16) + 14;
+      }
+      ctx.restore();
     }
 
     async function renderCanvas() {
@@ -1901,55 +2261,63 @@ bg2: {
       }
 
       const detail = layout.detail;
-      if (isBg2) drawBg2DetailHeading(ctx, player.type === 'hitter' ? '逐打席' : '投球成績', detail);
+      if (isBg2) {
+        const detailHeading = player.type === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績';
+        drawBg2DetailHeading(ctx, detailHeading, detail);
+      }
 
       ctx.textAlign = 'left';
       ctx.fillStyle = '#172033';
 
       if (player.type === 'hitter') {
-        const pas = currentRecord.hitterPAs.slice(0, 8);
-        pas.forEach((pa, index) => {
-          const y = isBg2 ? detail.paStartY + index * detail.paStep : 425 + index * 78;
-          const numberX = isBg2 ? detail.paNumberX : 106;
-          const textX = isBg2 ? detail.paTextX : 158;
-          const radius = isBg2 ? 22 : 28;
+        const appearance = ensureHitterAppearance();
+        if (appearance.mode === 'bat') {
+          const pas = currentRecord.hitterPAs.slice(0, 8);
+          pas.forEach((pa, index) => {
+            const y = isBg2 ? detail.paStartY + index * detail.paStep : 425 + index * 78;
+            const numberX = isBg2 ? detail.paNumberX : 106;
+            const textX = isBg2 ? detail.paTextX : 158;
+            const radius = isBg2 ? 22 : 28;
 
-          ctx.save();
-          ctx.fillStyle = index % 2 ? '#20324f' : '#d7ad52';
-          ctx.beginPath();
-          ctx.arc(numberX, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = index % 2 ? '#ffffff' : '#172033';
-          ctx.textAlign = 'center';
-          ctx.font = `900 ${layout.fonts.paNumber}px Arial, sans-serif`;
-          ctx.fillText(String(index + 1), numberX, y + (isBg2 ? 8 : 10));
-          ctx.restore();
-
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#172033';
-          ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-          ctx.fillText(paLabel(pa), textX, y + (isBg2 ? 11 : 14));
-          if (pa.rbi) {
-            const width = ctx.measureText(paLabel(pa)).width;
-            ctx.fillStyle = '#b5811b';
-            ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
-            ctx.fillText(String(pa.rbi), textX + 8 + width, y - (isBg2 ? 11 : 13));
-          }
-          if (index < pas.length - 1) {
-            ctx.strokeStyle = isBg2 ? 'rgba(16,40,74,.20)' : '#d7dce5';
-            ctx.lineWidth = isBg2 ? 1.5 : 2;
+            ctx.save();
+            ctx.fillStyle = index % 2 ? '#20324f' : '#d7ad52';
             ctx.beginPath();
-            ctx.moveTo(isBg2 ? detail.dividerX1 : 76, y + (isBg2 ? 29 : 39));
-            ctx.lineTo(isBg2 ? detail.dividerX2 : 486, y + (isBg2 ? 29 : 39));
-            ctx.stroke();
-          }
-        });
+            ctx.arc(numberX, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = index % 2 ? '#ffffff' : '#172033';
+            ctx.textAlign = 'center';
+            ctx.font = `900 ${layout.fonts.paNumber}px Arial, sans-serif`;
+            ctx.fillText(String(index + 1), numberX, y + (isBg2 ? 8 : 10));
+            ctx.restore();
 
-        const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
-        const cycle = paCodes.includes('1B') && paCodes.includes('2B') && paCodes.includes('3B') && paCodes.includes('HR');
-        if (cycle) {
-          if (isBg2) drawTags(ctx, ['完全打擊'], detail.tagsX, detail.tagsBottom, detail.tagsW, '#d4af37');
-          else drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#172033';
+            ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
+            ctx.fillText(paLabel(pa), textX, y + (isBg2 ? 11 : 14));
+            if (pa.rbi) {
+              const width = ctx.measureText(paLabel(pa)).width;
+              ctx.fillStyle = '#b5811b';
+              ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
+              ctx.fillText(String(pa.rbi), textX + 8 + width, y - (isBg2 ? 11 : 13));
+            }
+            if (index < pas.length - 1) {
+              ctx.strokeStyle = isBg2 ? 'rgba(16,40,74,.20)' : '#d7dce5';
+              ctx.lineWidth = isBg2 ? 1.5 : 2;
+              ctx.beginPath();
+              ctx.moveTo(isBg2 ? detail.dividerX1 : 76, y + (isBg2 ? 29 : 39));
+              ctx.lineTo(isBg2 ? detail.dividerX2 : 486, y + (isBg2 ? 29 : 39));
+              ctx.stroke();
+            }
+          });
+
+          const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
+          const cycle = paCodes.includes('1B') && paCodes.includes('2B') && paCodes.includes('3B') && paCodes.includes('HR');
+          if (cycle) {
+            if (isBg2) drawTags(ctx, ['完全打擊'], detail.tagsX, detail.tagsBottom, detail.tagsW, '#d4af37');
+            else drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+          }
+        } else {
+          drawHitterAppearanceDetail(ctx, layout, isBg2, detail, appearance);
         }
       } else {
         const g = currentRecord.pitcherGame;
@@ -2877,7 +3245,11 @@ bg2: {
         await renderCanvas();
         const player = selectedPlayer();
         const link = document.createElement('a');
-        link.download = `${currentRecord.date}_${player.name}_${player.type === 'pitcher' ? '投球戰績' : '逐打席紀錄'}.png`;
+        const hitterAppearance = player.type === 'hitter' ? ensureHitterAppearance() : null;
+        const hitterFileType = hitterAppearance?.mode === 'runner'
+          ? (hitterAppearance.continueDefense ? '代跑後接替守備' : '純代跑')
+          : hitterAppearance?.mode === 'defense' ? '純代守' : '逐打席紀錄';
+        link.download = `${currentRecord.date}_${player.name}_${player.type === 'pitcher' ? '投球戰績' : hitterFileType}.png`;
         link.href = els.canvas.toDataURL('image/png');
         link.click();
         setStatus('圖片已下載，球員基礎數據已同步更新。');
