@@ -484,7 +484,7 @@
     </div>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.00</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.01</button>
 
   <dialog id="addPlayerDialog">
     <div class="dialog-body">
@@ -530,7 +530,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.00';
+    const APP_VERSION = 'v1.01';
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -753,6 +753,37 @@ bg2: {
       w: 0, l: 0, sv: 0, bsv: 0, hld: 0,
       outs: 0, h: 0, bb: 0, hbp: 0, k: 0, er: 0
     });
+
+    const PITCHER_LAST_METRIC_OPTIONS = [
+      ['wl', '勝敗'],
+      ['hld', '中繼成功'],
+      ['sv', '救援成功'],
+      ['w_hld', '勝／中繼成功'],
+      ['w_sv', '勝／救援成功']
+    ];
+
+    function normalizePitcherLastMetric(value) {
+      return PITCHER_LAST_METRIC_OPTIONS.some(([key]) => key === value) ? value : 'wl';
+    }
+
+    function pitcherLastMetricOptions(selected = 'wl') {
+      const value = normalizePitcherLastMetric(selected);
+      return PITCHER_LAST_METRIC_OPTIONS.map(([key, label]) =>
+        `<option value="${key}" ${value === key ? 'selected' : ''}>${label}</option>`
+      ).join('');
+    }
+
+    function pitcherLastMetric(player, stats) {
+      const mode = normalizePitcherLastMetric(player?.pitcherLastMetric);
+      const s = mergeStats(stats, pitcherDefaults);
+      switch (mode) {
+        case 'hld': return ['中繼成功', String(s.hld)];
+        case 'sv': return ['救援成功', String(s.sv)];
+        case 'w_hld': return ['勝／中繼成功', `${s.w}／${s.hld}`];
+        case 'w_sv': return ['勝／救援成功', `${s.w}／${s.sv}`];
+        default: return ['勝／敗', `${s.w}／${s.l}`];
+      }
+    }
 
     function uid() {
       return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1660,6 +1691,7 @@ bg2: {
     }
 
     function renderPitcherToday() {
+      const player = selectedPlayer();
       const g = currentRecord.pitcherGame;
       const result = pitcherResult(g);
       const host = document.getElementById('todaySpecific');
@@ -1681,6 +1713,9 @@ bg2: {
           <label class="field">自責分<select id="pER">${numberOptions(Math.min(15, Number(g.r) || 0), Math.min(Number(g.er) || 0, Number(g.r) || 0))}</select></label>
           <label class="field">用球數（前段）<select id="pPitchTens">${numberOptions(15, g.pitchTens)}</select></label>
           <label class="field">用球數（個位）<select id="pPitchOnes">${numberOptions(9, g.pitchOnes)}</select></label>
+          <label class="field">最後一格顯示
+            <select id="pLastMetric">${pitcherLastMetricOptions(player?.pitcherLastMetric)}</select>
+          </label>
         </div>
 
         <h3>特殊紀錄</h3>
@@ -1726,6 +1761,14 @@ bg2: {
         }
         await updatePitcherGameFromUI();
       });
+      const lastMetricSelect = document.getElementById('pLastMetric');
+      lastMetricSelect.addEventListener('change', async () => {
+        if (!player) return;
+        player.pitcherLastMetric = normalizePitcherLastMetric(lastMetricSelect.value);
+        await savePlayer(player);
+        await renderCanvas();
+      });
+
       const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
       ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
@@ -2255,7 +2298,10 @@ bg2: {
       // 區塊 2：三圍
       const metrics = player.type === 'hitter'
         ? (() => { const d = hitterDerived(projected); return [['打擊率', fmtBatRate(d.avg)], ['上壘率', fmtBatRate(d.obp)], ['長打率', fmtBatRate(d.slg)]]; })()
-        : (() => { const d = pitcherDerived(projected); return [['WHIP', fmtTwo(d.whip)], ['防禦率', fmtTwo(d.era)], ['勝／敗', `${projected.w}／${projected.l}`]]; })();
+        : (() => {
+            const d = pitcherDerived(projected);
+            return [['WHIP', fmtTwo(d.whip)], ['防禦率', fmtTwo(d.era)], pitcherLastMetric(player, projected)];
+          })();
 
       metrics.forEach((metric, index) => {
         const card = layout.metricCards[index];
@@ -3154,6 +3200,7 @@ bg2: {
       const player = {
         id: uid(), name, number, type,
         stats: type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
+        pitcherLastMetric: type === 'pitcher' ? 'wl' : undefined,
         selectedPhotoId: null,
         photoTransforms: {},
         createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
