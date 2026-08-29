@@ -396,6 +396,38 @@
       flex-wrap: wrap;
     }
 
+
+
+    .app-version-badge {
+      position: fixed;
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 9999;
+      border: 1px solid rgba(109, 118, 136, .35);
+      background: rgba(255, 255, 255, .88);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 2px 10px rgba(16, 24, 40, .10);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-version-badge:active {
+      transform: translateY(1px);
+    }
+
+    .app-version-badge.checking {
+      opacity: .7;
+      pointer-events: none;
+    }
+
     .hidden { display: none !important; }
 
     @media (max-width: 880px) {
@@ -452,6 +484,8 @@
     </div>
   </main>
 
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.00</button>
+
   <dialog id="addPlayerDialog">
     <div class="dialog-body">
       <div class="dialog-head">
@@ -496,6 +530,7 @@
   </dialog>
 
   <script>
+    const APP_VERSION = 'v1.00';
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -3288,23 +3323,110 @@ bg2: {
     }
 
 
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', async () => {
+    let serviceWorkerRegistration = null;
+    let appRefreshing = false;
+
+    function setVersionBadge(text = APP_VERSION, checking = false) {
+      const badge = document.getElementById('appVersionBadge');
+      if (!badge) return;
+      badge.textContent = text;
+      badge.classList.toggle('checking', checking);
+    }
+
+    async function activateWaitingWorker(registration) {
+      if (registration?.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        return true;
+      }
+      return false;
+    }
+
+    async function checkAppUpdate({ manual = false } = {}) {
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
+        if (manual) {
+          setStatus('目前是本機檔案模式；手機自動更新需要用 HTTPS 網址／PWA 開啟。', true);
+        }
+        return;
+      }
+
+      setVersionBadge(`${APP_VERSION} · 檢查中`, true);
+      try {
+        const reg = serviceWorkerRegistration
+          || await navigator.serviceWorker.getRegistration()
+          || await navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' });
+        serviceWorkerRegistration = reg;
+
+        await reg.update();
+        const activated = await activateWaitingWorker(reg);
+
+        // 手動檢查時即使 SW 本身沒有換版，也重新整理一次。
+        // service-worker.js 對導覽採 network-first，因此會直接抓伺服器上的最新 HTML。
+        if (manual && !activated) {
+          setStatus('已檢查更新，正在重新載入最新版…');
+          setTimeout(() => location.reload(), 250);
+          return;
+        }
+
+        if (manual && activated) {
+          setStatus('找到新版，正在套用更新…');
+        }
+      } catch (error) {
+        console.error('更新檢查失敗：', error);
+        if (manual) setStatus('檢查更新失敗，請確認網路後再試。', true);
+      } finally {
+        if (!appRefreshing) {
+          setTimeout(() => setVersionBadge(APP_VERSION, false), 700);
+        }
+      }
+    }
+
+    async function setupAppUpdate() {
+      const badge = document.getElementById('appVersionBadge');
+      if (badge) {
+        badge.textContent = APP_VERSION;
+        badge.addEventListener('click', () => checkAppUpdate({ manual: true }));
+      }
+
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+
+      try {
         const reg = await navigator.serviceWorker.register('./service-worker.js', {
           updateViaCache: 'none'
         });
+        serviceWorkerRegistration = reg;
 
-        await reg.update();
-
-        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
+          if (appRefreshing) return;
+          appRefreshing = true;
           location.reload();
         });
-      });
+
+        reg.addEventListener('updatefound', () => {
+          const worker = reg.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', async () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              await activateWaitingWorker(reg);
+            }
+          });
+        });
+
+        // 每次開啟 App 立即檢查一次。
+        await checkAppUpdate();
+
+        // App 持續開著時，每 15 分鐘再檢查一次。
+        setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
+
+        // 從背景切回 App 時再檢查一次，手機使用時比較容易直接拿到新版。
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') checkAppUpdate();
+        });
+      } catch (error) {
+        console.error('Service Worker 設定失敗：', error);
+      }
     }
 
+    setupAppUpdate();
     init();
   </script>
 </body>
