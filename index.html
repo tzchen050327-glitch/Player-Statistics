@@ -485,7 +485,7 @@
     </div>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.05</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.06</button>
 
   <dialog id="addPlayerDialog">
     <div class="dialog-body">
@@ -511,7 +511,7 @@
         <button id="createManualPlayerBtn" class="press-btn">純新增</button>
         <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
       </div>
-      <div class="small" style="margin-top:8px">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢並自動帶入官方資料。</div>
+      <div class="small" style="margin-top:8px">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。名稱若為「XXX二軍」，會自動用「XXX」搜尋並抓取二軍資料。</div>
     </div>
   </dialog>
 
@@ -522,8 +522,8 @@
         <button class="press-btn dialog-close">關閉</button>
       </div>
       <div class="small" style="line-height:1.7">
-        會用目前已建立球員的「姓名＋背號」逐一搜尋中職官網。<br>
-        已經連結 CPBL 的球員不會重新搜尋；選擇更新累積成績時，會一併更新今年的一軍例行賽資料。
+        會用目前已建立球員的「姓名＋背號」逐一搜尋中職官網。名稱結尾為「二軍」時，會自動去掉「二軍」搜尋並綁定二軍資料。<br>
+        已經連結 CPBL 的球員不會重新搜尋；選擇更新累積成績時，一軍球員更新一軍例行賽，XXX二軍則更新二軍例行賽。
       </div>
       <div class="section-actions" style="margin-top:14px">
         <button id="batchCpblBindBtn" class="press-btn">只綁定中職資料</button>
@@ -552,7 +552,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.05';
+    const APP_VERSION = 'v1.06';
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -827,6 +827,22 @@ bg2: {
       return data;
     }
 
+    function cpblKindCodeFromName(name) {
+      return /二軍\s*$/.test(String(name || '').trim()) ? 'D' : 'A';
+    }
+
+    function cpblKindCodeForPlayer(player) {
+      return player?.cpblKindCode === 'D' ? 'D' : cpblKindCodeFromName(player?.name);
+    }
+
+    function cpblSearchName(name) {
+      return String(name || '').trim().replace(/\s*二軍\s*$/, '').trim();
+    }
+
+    function cpblLevelLabel(kindCode) {
+      return kindCode === 'D' ? '二軍' : '一軍';
+    }
+
     function pitcherInningsTextToOuts(value) {
       const text = String(value ?? '0.0');
       const m = text.match(/^(\d+)\.([012])$/);
@@ -837,16 +853,18 @@ bg2: {
     async function updatePlayerFromCpbl(player, silent = false) {
       if (!player?.cpblAcnt) throw new Error('此球員尚未連結中職官網。');
       const year = Number(els.gameDate.value?.slice(0, 4)) || new Date().getFullYear();
-      const data = await cpblRequest('season-stats', { acnt: player.cpblAcnt, year });
+      const kindCode = cpblKindCodeForPlayer(player);
+      player.cpblKindCode = kindCode;
+      const data = await cpblRequest('season-stats', { acnt: player.cpblAcnt, year, kindCode });
       applyCpblSeasonStatsToPlayer(player, data.stats, year);
       await savePlayer(player);
-      if (!silent) setStatus(`已更新 ${year} 年中職官網累積成績。`);
+      if (!silent) setStatus(`已更新 ${year} 年中職官網${cpblLevelLabel(kindCode)}累積成績。`);
       return data;
     }
 
     function applyCpblSeasonStatsToPlayer(player, stats, year) {
       const official = player.type === 'hitter' ? stats?.batting : stats?.pitching;
-      if (!official) throw new Error(`${year} 年找不到此球員的一軍例行賽成績。`);
+      if (!official) throw new Error(`${year} 年找不到此球員的${cpblLevelLabel(cpblKindCodeForPlayer(player))}例行賽成績。`);
       if (player.type === 'hitter') {
         player.stats = { ...hitterDefaults(), ...official };
       } else {
@@ -905,8 +923,11 @@ bg2: {
           progress.textContent = `處理中 ${index + 1}／${total}：#${player.number} ${player.name}`;
 
           try {
+            const kindCode = cpblKindCodeForPlayer(player);
+            player.cpblKindCode = kindCode;
+            const searchName = cpblSearchName(player.name);
             if (!player.cpblAcnt) {
-              const found = await cpblRequest('search-player', { name: player.name, number: player.number });
+              const found = await cpblRequest('search-player', { name: searchName, number: player.number });
               const official = found.player;
               if (!official) {
                 summary.notFound += 1;
@@ -924,7 +945,7 @@ bg2: {
             }
 
             if (updateSeasonStats) {
-              const data = await cpblRequest('season-stats', { acnt: player.cpblAcnt, year });
+              const data = await cpblRequest('season-stats', { acnt: player.cpblAcnt, year, kindCode });
               applyCpblSeasonStatsToPlayer(player, data.stats, year);
               summary.updated += 1;
             }
@@ -952,10 +973,13 @@ bg2: {
 
     async function importCpblDaily(player) {
       if (!player?.cpblAcnt || !player?.cpblTeamCode) throw new Error('此球員尚未連結中職官網。');
+      const kindCode = cpblKindCodeForPlayer(player);
+      player.cpblKindCode = kindCode;
       const data = await cpblRequest('daily', {
         acnt: player.cpblAcnt,
         date: els.gameDate.value,
-        teamCode: player.cpblTeamCode
+        teamCode: player.cpblTeamCode,
+        kindCode
       });
       const daily = data.daily;
       if (!daily?.found) throw new Error(daily?.reason || '當天找不到此球員的出賽資料。');
@@ -1510,7 +1534,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${player.cpblLastUpdatedAt ? `｜上次更新 ${new Date(player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${cpblLevelLabel(cpblKindCodeForPlayer(player))}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${player.cpblLastUpdatedAt ? `｜上次更新 ${new Date(player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
       } else {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
@@ -1542,7 +1566,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${player.cpblLastUpdatedAt ? `｜上次更新 ${new Date(player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${cpblLevelLabel(cpblKindCodeForPlayer(player))}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${player.cpblLastUpdatedAt ? `｜上次更新 ${new Date(player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
       }
 
       document.getElementById('updateCpblBtn')?.addEventListener('click', async () => {
@@ -1668,7 +1692,7 @@ bg2: {
         <label class="field">今日對手
           <select id="opponentInput">${opponentOptions(currentRecord.opponent || '')}</select>
         </label>
-        ${player.cpblAcnt ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職資料</button></div>
+        ${player.cpblAcnt ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職${cpblKindCodeForPlayer(player) === 'D' ? '二軍' : ''}資料</button></div>
         ${els.gameDate.value !== localISODate() ? '<div class="small" style="margin-top:6px">歷史日期只匯入該場資料，不會寫入球員累積數據。</div>' : ''}` : ''}
         ${appearanceHtml}
         <div class="metrics">${metricHtml}</div>
@@ -3533,7 +3557,7 @@ bg2: {
           stats: selectedType === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric: selectedType === 'pitcher' ? 'wl' : undefined,
           selectedPhotoId: null, photoTransforms: {},
-          cpblAcnt: '', cpblTeam: '', cpblTeamCode: '', cpblPosition: '',
+          cpblAcnt: '', cpblTeam: '', cpblTeamCode: '', cpblPosition: '', cpblKindCode: cpblKindCodeFromName(name),
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
         await savePlayer(player);
@@ -3556,14 +3580,16 @@ bg2: {
       btn.disabled = true;
       btn.textContent = '搜尋中職官網…';
       try {
-        const found = await cpblRequest('search-player', { name, number });
+        const kindCode = cpblKindCodeFromName(name);
+        const searchName = cpblSearchName(name);
+        const found = await cpblRequest('search-player', { name: searchName, number });
         const official = found.player;
-        if (!official) throw new Error(`中職官網找不到「${name} #${number}」。`);
+        if (!official) throw new Error(`中職官網找不到「${searchName} #${number}」。`);
 
         let type = selectedType;
         if (official.position) type = official.position.includes('投手') ? 'pitcher' : 'hitter';
         const player = {
-          id: uid(), name: official.name || name, number: official.number || number, type,
+          id: uid(), name: kindCode === 'D' ? name : (official.name || name), number: official.number || number, type,
           stats: type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric: type === 'pitcher' ? 'wl' : undefined,
           selectedPhotoId: null, photoTransforms: {},
@@ -3571,6 +3597,7 @@ bg2: {
           cpblTeam: official.team || '',
           cpblTeamCode: official.teamCode || '',
           cpblPosition: official.position || '',
+          cpblKindCode: kindCode,
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
         await savePlayer(player);
@@ -3579,7 +3606,7 @@ bg2: {
         clearNewPlayerForm();
         els.addDialog.close();
         await selectPlayer(player.id);
-        setStatus(`已從中職官網建立：${official.team} #${official.number} ${official.name}`);
+        setStatus(`已從中職官網建立：${official.team} ${cpblLevelLabel(kindCode)} #${official.number} ${kindCode === 'D' ? name : official.name}`);
       } catch (error) {
         setStatus(error.message || '搜尋中職資料失敗。', true);
       } finally {
