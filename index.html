@@ -552,7 +552,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.07';
+    const APP_VERSION = 'v1.08';
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -746,18 +746,29 @@ bg2: {
       { name: '台鋼雄鷹', color: '#008C4A' },
       { name: '中信兄弟', color: '#F2C500' },
       { name: '樂天桃猿', color: '#8B1E3F' },
-      { name: '統一獅', color: '#F58220' },
+      { name: '統一7-ELEVEn獅', color: '#F58220' },
       { name: '味全龍', color: '#D71920' }
     ];
 
+    function normalizeTeamName(name = '') {
+      const raw = String(name || '').trim();
+      const compact = raw.replace(/[\s　_-]+/g, '').toLowerCase();
+      if (['統一獅','統一7-11獅','統一7eleven獅','統一7elev en獅'.replace(/\s/g,'')].map(v => v.replace(/[\s　_-]+/g, '').toLowerCase()).includes(compact)) {
+        return '統一7-ELEVEn獅';
+      }
+      return raw;
+    }
+
     function opponentColor(name) {
-      return OPPONENTS.find(team => team.name === name)?.color || '#ffffff';
+      const normalized = normalizeTeamName(name);
+      return OPPONENTS.find(team => team.name === normalized)?.color || '#ffffff';
     }
 
     function opponentOptions(selected = '') {
+      const normalizedSelected = normalizeTeamName(selected);
       return [
-        `<option value="" ${selected ? '' : 'selected'}>請選擇對手</option>`,
-        ...OPPONENTS.map(team => `<option value="${escapeAttr(team.name)}" style="color:${team.color};font-weight:800" ${selected === team.name ? 'selected' : ''}>${escapeHtml(team.name)}</option>`)
+        `<option value="" ${normalizedSelected ? '' : 'selected'}>請選擇對手</option>`,
+        ...OPPONENTS.map(team => `<option value="${escapeAttr(team.name)}" style="color:${team.color};font-weight:800" ${normalizedSelected === team.name ? 'selected' : ''}>${escapeHtml(team.name)}</option>`)
       ].join('');
     }
 
@@ -936,7 +947,7 @@ bg2: {
               }
 
               player.cpblAcnt = official.acnt || '';
-              player.cpblTeam = official.team || '';
+              player.cpblTeam = normalizeTeamName(official.team || '');
               player.cpblTeamCode = official.teamCode || '';
               player.cpblPosition = official.position || '';
               summary.linked += 1;
@@ -983,7 +994,7 @@ bg2: {
       });
       const daily = data.daily;
       if (!daily?.found) throw new Error(daily?.reason || '當天找不到此球員的出賽資料。');
-      if (daily.game?.opponent) currentRecord.opponent = daily.game.opponent;
+      if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
       if (player.type === 'hitter') {
         const list = daily.hitter?.plateAppearances || [];
         if (!list.length) throw new Error('官網當天沒有可匯入的逐打席資料。');
@@ -1180,6 +1191,7 @@ bg2: {
       currentRecord.key = gameKey();
       currentRecord.playerId = player.id;
       currentRecord.date = els.gameDate.value;
+      currentRecord.opponent = normalizeTeamName(currentRecord.opponent || '');
       currentRecord.hitterPAs ||= [];
       currentRecord.hitterAppearance = {
         ...defaultGameRecord(player).hitterAppearance,
@@ -1367,17 +1379,20 @@ bg2: {
           case 'BB': out.pa++; out.bb++; break;
           case 'IBB': out.pa++; out.ibb++; break;
           case 'HBP': out.pa++; out.hbp++; break;
+          case 'CI': out.pa++; break;
           case 'SH': out.pa++; out.sacBunt++; break;
           case 'SF': out.pa++; out.sacFly++; break;
           case 'FC':
           case 'E':
           case 'OBS':
           case 'K':
+          case 'KREACH':
           case 'GO':
           case 'FO':
           case 'DP':
           case 'TP':
           case 'INT':
+          case 'OUT':
             out.pa++; out.ab++; break;
         }
       }
@@ -1446,14 +1461,16 @@ bg2: {
     }
 
     function paLabel(pa) {
-      if (pa.code === 'GO') return pa.position ? `${pa.position}滾` : (pa.cpblOfficialAction || '滾地出局');
-      if (pa.code === 'FO') return pa.position ? `${pa.position}飛` : (pa.cpblOfficialAction || '飛球出局');
+      const official = String(pa?.cpblOfficialAction || '').trim();
+      if (official) return official;
+      if (pa.code === 'GO') return pa.position ? `${pa.position}滾` : '滾地出局';
+      if (pa.code === 'FO') return pa.position ? `${pa.position}飛` : '飛球出局';
       const map = {
         '1B': '一安', '2B': '二安', '3B': '三安', 'HR': '全壘打',
-        'BB': '四壞', 'IBB': '故意四壞', 'HBP': '死球',
+        'BB': '四壞', 'IBB': '故意四壞', 'HBP': '死球', 'CI': '礙打',
         'FC': '野選', 'E': '失誤', 'OBS': '礙跑',
-        'K': '三振', 'DP': '雙殺', 'TP': '三殺',
-        'SH': '犧牲短打', 'SF': '犧牲高飛', 'INT': '礙守'
+        'K': '三振', 'KREACH': '不死三振', 'DP': '雙殺', 'TP': '三殺',
+        'SH': '犧牲短打', 'SF': '犧牲高飛', 'INT': '礙守', 'OUT': '出局'
       };
       return map[pa.code] || pa.code;
     }
@@ -1888,14 +1905,20 @@ bg2: {
       const pos = document.getElementById('paPosition');
       const rbi = document.getElementById('paRbi');
 
+      function selectedPaParts() {
+        const [code, ...officialParts] = String(result.value || '').split('::');
+        return { code, officialAction: officialParts.join('::') };
+      }
+
       function refreshRbiOptions() {
         const previous = Number(rbi.value) || 0;
+        const { code } = selectedPaParts();
         let min = 0;
         let max = 4;
-        const noRbiResults = new Set(['K', 'DP', 'TP']);
-        if (result.value === 'BB') max = 1;
-        if (result.value === 'HR') min = 1;
-        if (noRbiResults.has(result.value)) min = max = 0;
+        const noRbiResults = new Set(['K', 'KREACH', 'DP', 'TP', 'INT', 'OUT']);
+        if (['BB', 'IBB', 'HBP', 'CI'].includes(code)) max = 1;
+        if (code === 'HR') min = 1;
+        if (noRbiResults.has(code)) min = max = 0;
 
         let html = '';
         for (let value = min; value <= max; value++) {
@@ -1903,15 +1926,26 @@ bg2: {
         }
         rbi.innerHTML = html;
         rbi.value = String(Math.min(max, Math.max(min, previous)));
-        rbi.disabled = noRbiResults.has(result.value);
+        rbi.disabled = noRbiResults.has(code);
       }
 
       function refreshResults() {
         const onbase = [
-          ['1B','一安'],['2B','二安'],['3B','三安'],['HR','全壘打'],['BB','四壞'],['IBB','故意四壞'],['HBP','死球'],['FC','野選'],['E','失誤'],['OBS','礙跑']
+          ['1B','一安'],['1B::內安','內安'],['1B::場安','場安'],
+          ['2B','二安'],['2B::內二','內二'],['2B::場二','場二'],
+          ['3B','三安'],['3B::內三','內三'],['3B::場三','場三'],
+          ['HR','全壘打'],['HR::全打','全打'],['HR::內全','內全'],
+          ['BB','四壞'],['IBB','故意四壞'],['HBP','死球'],
+          ['FC','野選'],
+          ['E','失誤'],['E::投失','投失'],['E::捕失','捕失'],['E::一失','一失'],['E::二失','二失'],['E::三失','三失'],['E::游失','游失'],['E::左失','左失'],['E::中失','中失'],['E::右失','右失'],['E::雙誤','雙誤'],
+          ['CI::礙打','礙打'],['KREACH::不死三振','不死三振'],['OBS','礙跑']
         ];
         const out = [
-          ['K','三振'],['GO','滾地出局'],['FO','飛球出局'],['DP','雙殺'],['TP','三殺'],['SH','犧牲短打'],['SF','犧牲高飛'],['INT','礙守']
+          ['K','三振'],['GO','滾地出局'],['FO','飛球出局'],['FO::內飛','內飛'],['FO::界飛','界飛'],
+          ['DP','雙殺'],['TP','三殺'],
+          ['SH','犧牲短打'],['SH::犧短','犧短'],['SH::犧短誤','犧短誤'],['SH::犧選','犧選'],['SH::犧選誤','犧選誤'],
+          ['SF','犧牲高飛'],['SF::犧飛','犧飛'],['SF::界犧飛','界犧飛'],['SF::犧飛誤','犧飛誤'],
+          ['INT','礙守'],['OUT::裁決','裁決'],['OUT::違規','違規'],['OUT::觸球','觸球'],['OUT::觸傳球','觸傳球'],['OUT::三呎線','三呎線']
         ];
         const list = major.value === 'onbase' ? onbase : out;
         result.innerHTML = list.map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
@@ -1920,11 +1954,12 @@ bg2: {
       }
 
       function refreshPosition() {
-        const needs = result.value === 'GO' || result.value === 'FO';
+        const { code, officialAction } = selectedPaParts();
+        const needs = (code === 'GO' || code === 'FO') && !officialAction;
         posWrap.classList.toggle('hidden', !needs);
         if (!needs) return;
-        const positions = result.value === 'FO'
-          ? [['一','一飛'],['二','二飛'],['三','三飛'],['投','投飛'],['捕','捕飛'],['游','游飛'],['左','左飛'],['中','中飛'],['右','右飛'],['界','界飛']]
+        const positions = code === 'FO'
+          ? [['一','一飛'],['二','二飛'],['三','三飛'],['投','投飛'],['捕','捕飛'],['游','游飛'],['左','左飛'],['中','中飛'],['右','右飛'],['內','內飛'],['界','界飛']]
           : [['一','一滾'],['二','二滾'],['三','三滾'],['投','投滾'],['捕','捕滾'],['游','游滾'],['左','左滾'],['中','中滾'],['右','右滾']];
         pos.innerHTML = positions.map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
       }
@@ -1937,24 +1972,25 @@ bg2: {
       refreshResults();
 
       document.getElementById('confirmPaBtn').addEventListener('click', async () => {
-        const code = result.value;
+        const { code, officialAction } = selectedPaParts();
         const rbiValue = Number(rbi.value) || 0;
-        if (code === 'BB' && rbiValue > 1) {
-          window.alert('四壞球最多只能有 1 打點。');
+        if (['BB', 'IBB', 'HBP', 'CI'].includes(code) && rbiValue > 1) {
+          window.alert('此上壘方式最多只能有 1 打點。');
           return;
         }
         if (code === 'HR' && rbiValue < 1) {
           window.alert('全壘打至少要有 1 打點。');
           return;
         }
-        if (['K', 'DP', 'TP'].includes(code) && rbiValue !== 0) {
-          window.alert('三振、雙殺、三殺不可有打點。');
+        if (['K', 'KREACH', 'DP', 'TP', 'INT', 'OUT'].includes(code) && rbiValue !== 0) {
+          window.alert('此出局／特殊結果不可設定打點。');
           return;
         }
         currentRecord.hitterPAs.push({
           id: uid(), code,
-          position: (code === 'GO' || code === 'FO') ? pos.value : '',
-          rbi: rbiValue
+          position: ((code === 'GO' || code === 'FO') && !officialAction) ? pos.value : '',
+          rbi: rbiValue,
+          cpblOfficialAction: officialAction
         });
         await saveRecord();
         renderAll();
@@ -1981,13 +2017,14 @@ bg2: {
     }
 
     function fillPaForm(pa) {
-      const onbaseCodes = ['1B','2B','3B','HR','BB','IBB','HBP','FC','E','OBS'];
+      const onbaseCodes = ['1B','2B','3B','HR','BB','IBB','HBP','CI','FC','E','KREACH','OBS'];
       const major = document.getElementById('paMajor');
       const result = document.getElementById('paResult');
       if (!major || !result) return;
       major.value = onbaseCodes.includes(pa.code) ? 'onbase' : 'out';
       major.dispatchEvent(new Event('change'));
-      result.value = pa.code;
+      const officialValue = pa.cpblOfficialAction ? `${pa.code}::${pa.cpblOfficialAction}` : pa.code;
+      result.value = Array.from(result.options).some(option => option.value === officialValue) ? officialValue : pa.code;
       result.dispatchEvent(new Event('change'));
       const pos = document.getElementById('paPosition');
       if (pos && pa.position) pos.value = pa.position;
