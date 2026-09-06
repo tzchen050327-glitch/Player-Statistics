@@ -3751,6 +3751,12 @@ bg2: {
           rbi: Number(pa.rbi) || 0,
           cpblOfficialAction: pa.officialAction || ''
         }));
+        currentRecord.cpblGameSummary = {
+          runs: Math.max(0, Number(daily.hitter?.runs) || 0),
+          hits: Math.max(0, Number(daily.hitter?.hits) || 0),
+          errors: Math.max(0, Number(daily.hitter?.errors) || 0),
+          official: true
+        };
       } else {
         const p = daily.pitcher;
         if (!p) throw new Error('官網當天沒有此投手的投球紀錄。');
@@ -3993,6 +3999,12 @@ bg2: {
           hld: false, sv: false, bsv: false, rainCalled: false,
           decision: 'ND', result: 'ND'
         },
+        cpblGameSummary: {
+          runs: 0,
+          hits: 0,
+          errors: 0,
+          official: false
+        },
         committedStats: null,
         committedAt: null,
         cpblReadOnlyImport: false,
@@ -4032,6 +4044,10 @@ bg2: {
       currentRecord.pitcherGame = {
         ...defaultGameRecord(player).pitcherGame,
         ...(currentRecord.pitcherGame || {})
+      };
+      currentRecord.cpblGameSummary = {
+        ...defaultGameRecord(player).cpblGameSummary,
+        ...(currentRecord.cpblGameSummary || {})
       };
       if (!['SV','HLD','W','L','ND'].includes(currentRecord.pitcherGame.result)) {
         currentRecord.pitcherGame.result = currentRecord.pitcherGame.sv ? 'SV'
@@ -4698,6 +4714,12 @@ bg2: {
           rbi: Number(pa.rbi) || 0,
           cpblOfficialAction: pa.officialAction || ''
         }));
+        record.cpblGameSummary = {
+          runs: Math.max(0, Number(daily.hitter?.runs) || 0),
+          hits: Math.max(0, Number(daily.hitter?.hits) || 0),
+          errors: Math.max(0, Number(daily.hitter?.errors) || 0),
+          official: true
+        };
         record.committedStats = deriveHitterGame(record.hitterPAs);
       } else {
         const p = daily.pitcher;
@@ -4841,6 +4863,10 @@ bg2: {
             pitcherGame: {
               ...defaultGameRecord(player).pitcherGame,
               ...(record.pitcherGame || {})
+            },
+            cpblGameSummary: {
+              ...defaultGameRecord(player).cpblGameSummary,
+              ...(record.cpblGameSummary || {})
             }
           };
 
@@ -6615,6 +6641,10 @@ bg2: {
       ctx.fillStyle = layout.name.typeColor || '#94a3b8';
       ctx.font = `700 ${layout.fonts.playerType}px Arial, sans-serif`;
       ctx.fillText(player.type === 'pitcher' ? 'PITCHER' : 'HITTER', layout.name.typeX, layout.name.typeY);
+
+      if (layout.style === 'scoreboard-tech') {
+        drawScoreboardPlayerFooter(ctx, player, currentRecord);
+      }
     }
 
     function drawStyledTemplateBackground(ctx, layout, frameColor = '#d7ad52') {
@@ -6905,21 +6935,10 @@ bg2: {
       ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(0,1000);ctx.lineTo(W,1000);ctx.stroke();
 
-      const labels=[['R','0'],['H','0'],['E','0']];
-      labels.forEach((item,i)=>{
-        const x=740+i*92;
-        ctx.textAlign='center';
-        ctx.fillStyle='#6f95a8';
-        ctx.font='700 15px Arial, sans-serif';
-        ctx.fillText(item[0],x,1027);
-        ctx.fillStyle='#dff6ff';
-        ctx.font='900 28px "Courier New", monospace';
-        ctx.fillText(item[1],x,1060);
-      });
       ctx.fillStyle='#ffca45';
       ctx.font='900 18px "Courier New", monospace';
       ctx.textAlign='left';
-      ctx.fillText('PLAYER DATA // LIVE',46,1048);
+      ctx.fillText('PLAYER DATA',46,1048);
       ctx.restore();
 
       // 科技斜線
@@ -6939,6 +6958,56 @@ bg2: {
       ctx.strokeStyle='rgba(96,175,205,.24)';
       ctx.lineWidth=2;
       ctx.strokeRect(22,22,1036,1036);
+    }
+
+    function drawScoreboardPlayerFooter(ctx, player, record) {
+      if (!player || !record) return;
+
+      let items;
+      let descriptor;
+      if (player.type === 'pitcher') {
+        const g = record.pitcherGame || {};
+        items = [
+          ['IP', String(g.innings || '0.0')],
+          ['SO', String(Math.max(0, Number(g.k) || 0))],
+          ['ER', String(Math.max(0, Number(g.er) || 0))]
+        ];
+        descriptor = 'PITCHER';
+      } else {
+        const derived = deriveHitterGame(record.hitterPAs || []);
+        const summary = record.cpblGameSummary || {};
+        const official = Boolean(summary.official);
+        items = [
+          ['R', String(official ? Math.max(0, Number(summary.runs) || 0) : 0)],
+          ['H', String(official ? Math.max(0, Number(summary.hits) || 0) : Math.max(0, Number(derived.single || 0) + Number(derived.double || 0) + Number(derived.triple || 0) + Number(derived.hr || 0)))],
+          ['E', String(official ? Math.max(0, Number(summary.errors) || 0) : 0)]
+        ];
+        descriptor = 'HITTER';
+      }
+
+      ctx.save();
+      ctx.fillStyle='rgba(2,9,14,.98)';
+      ctx.fillRect(0,1000,1080,80);
+      ctx.strokeStyle='#2c6f8c';
+      ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(0,1000);ctx.lineTo(1080,1000);ctx.stroke();
+
+      items.forEach((item,i)=>{
+        const x=740+i*92;
+        ctx.textAlign='center';
+        ctx.fillStyle='#6f95a8';
+        ctx.font='700 15px Arial, sans-serif';
+        ctx.fillText(item[0],x,1027);
+        ctx.fillStyle='#dff6ff';
+        ctx.font='900 28px "Courier New", monospace';
+        ctx.fillText(item[1],x,1060);
+      });
+
+      ctx.fillStyle='#ffca45';
+      ctx.font='900 18px "Courier New", monospace';
+      ctx.textAlign='left';
+      ctx.fillText(`PLAYER DATA // ${descriptor}`,46,1048);
+      ctx.restore();
     }
 
     function drawBullpenBackground(ctx, frameColor = '#d7ad52') {
