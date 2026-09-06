@@ -847,7 +847,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.14</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.15</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -945,7 +945,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.14';
+    const APP_VERSION = 'v1.15';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1261,6 +1261,49 @@ bg2: {
       return Number(m[1]) * 3 + Number(m[2]);
     }
 
+    function applyCpblSeasonHistory(player, history, kindCode) {
+      kindCode = kindCode === 'D' ? 'D' : 'A';
+      player.cpblAvailableYears ||= { A: [], D: [] };
+      player.cpblHistorySynced ||= { A: false, D: false };
+
+      const years = Array.isArray(history?.years)
+        ? history.years.map(Number).filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR).sort((a, b) => b - a)
+        : [];
+
+      player.cpblAvailableYears[kindCode] = [...new Set(years)];
+      player.cpblHistorySynced[kindCode] = true;
+
+      for (const season of history?.seasons || []) {
+        const year = Number(season?.year);
+        if (!Number.isInteger(year)) continue;
+        try {
+          applyCpblSeasonStatsToPlayer(player, season, year, kindCode);
+        } catch (error) {
+          console.warn(`略過 ${year} ${cpblLevelLabel(kindCode)}資料`, error);
+        }
+      }
+    }
+
+    async function syncPlayerCpblHistory(player) {
+      if (!player?.cpblAcnt) return;
+
+      const errors = [];
+      for (const kindCode of ['A', 'D']) {
+        try {
+          const data = await cpblRequest('season-history', { acnt: player.cpblAcnt, kindCode });
+          applyCpblSeasonHistory(player, data.history, kindCode);
+        } catch (error) {
+          errors.push(`${cpblLevelLabel(kindCode)}：${error?.message || String(error)}`);
+          player.cpblAvailableYears ||= { A: [], D: [] };
+          player.cpblHistorySynced ||= { A: false, D: false };
+          player.cpblHistorySynced[kindCode] = false;
+        }
+      }
+
+      await savePlayer(player);
+      if (errors.length === 2) throw new Error(errors.join('；'));
+    }
+
     async function updatePlayerFromCpbl(player, silent = false, year = selectedSeason, kindCode = selectedLevel) {
       if (!player?.cpblAcnt) throw new Error('此球員尚未連結中職官網。');
       year = Math.max(1990, Math.floor(Number(year) || CURRENT_YEAR));
@@ -1573,19 +1616,33 @@ bg2: {
       profiles[statsProfileKey()] = { ...player.stats };
     }
 
-    function firstSeasonYearForPlayer(player) {
-      const detected = Number(player?.cpblFirstSeasonYear);
-      if (Number.isInteger(detected) && detected >= 1990 && detected <= CURRENT_YEAR) return detected;
-      return 1990;
+    function profileYearsForLevel(player, level = selectedLevel) {
+      const profiles = ensureStatsProfiles(player);
+      return Object.keys(profiles)
+        .map(key => {
+          const [yearText, levelCode] = String(key).split(':');
+          return levelCode === level ? Number(yearText) : NaN;
+        })
+        .filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR)
+        .sort((a, b) => b - a);
+    }
+
+    function availableSeasonYears(player, level = selectedLevel) {
+      const official = player?.cpblAvailableYears?.[level];
+      if (Array.isArray(official)) {
+        return [...new Set(official.map(Number).filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR))]
+          .sort((a, b) => b - a);
+      }
+      const local = profileYearsForLevel(player, level);
+      return local.length ? local : [CURRENT_YEAR];
     }
 
     function seasonOptionsHtml(player) {
-      const earliest = firstSeasonYearForPlayer(player);
-      let html = '';
-      for (let year = CURRENT_YEAR; year >= earliest; year--) {
-        html += `<option value="${year}" ${year === selectedSeason ? 'selected' : ''}>${year}</option>`;
-      }
-      return html;
+      const years = availableSeasonYears(player, selectedLevel);
+      if (!years.length) return '<option value="">無出賽資料</option>';
+      return years.map(year =>
+        `<option value="${year}" ${year === selectedSeason ? 'selected' : ''}>${year}</option>`
+      ).join('');
     }
 
     function reportPlayerName(player) {
@@ -1961,8 +2018,8 @@ bg2: {
       if (!player) return;
 
       selectedPlayerId = id;
-      selectedSeason = CURRENT_YEAR;
       selectedLevel = 'A';
+      selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
 
       player.lastUsedAt = Date.now();
@@ -1970,6 +2027,22 @@ bg2: {
       localStorage.setItem('baseballSelectedPlayerId', id);
       await loadRecord();
       currentPage = 'player';
+      renderAll();
+
+      if (player.cpblAcnt) {
+        try {
+          await syncPlayerCpblHistory(player);
+
+          const majorYears = availableSeasonYears(player, 'A');
+          selectedSeason = majorYears[0] || CURRENT_YEAR;
+          activatePlayerStatsProfile(player, selectedSeason, 'A');
+          await loadRecord();
+        } catch (error) {
+          console.warn('進入球員頁自動同步失敗', error);
+          setStatus(error?.message || '中職官網自動同步失敗。', true);
+        }
+      }
+
       renderAll();
     }
 
@@ -1981,40 +2054,24 @@ bg2: {
 
       await savePlayer(player);
       selectedLevel = level;
-      const hadProfile = hasStatsProfile(player, selectedSeason, selectedLevel);
+      const years = availableSeasonYears(player, selectedLevel);
+      selectedSeason = years[0] || CURRENT_YEAR;
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
       await loadRecord();
-
-      if (!hadProfile && player.cpblAcnt) {
-        try {
-          await updatePlayerFromCpbl(player, true, selectedSeason, selectedLevel);
-        } catch (error) {
-          console.warn('切換層級自動抓取失敗', error);
-          setStatus(error?.message || '此層級沒有可用資料。', true);
-        }
-      }
       renderAll();
     }
 
     async function switchPlayerSeason(year) {
-      year = Math.max(1990, Math.min(CURRENT_YEAR, Math.floor(Number(year) || CURRENT_YEAR)));
-      if (year === selectedSeason) return;
       const player = selectedPlayer();
       if (!player) return;
 
+      const allowedYears = availableSeasonYears(player, selectedLevel);
+      year = Math.floor(Number(year));
+      if (!allowedYears.includes(year) || year === selectedSeason) return;
+
       await savePlayer(player);
       selectedSeason = year;
-      const hadProfile = hasStatsProfile(player, selectedSeason, selectedLevel);
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
-
-      if (!hadProfile && player.cpblAcnt) {
-        try {
-          await updatePlayerFromCpbl(player, true, selectedSeason, selectedLevel);
-        } catch (error) {
-          console.warn('切換賽季自動抓取失敗', error);
-          setStatus(error?.message || '此賽季沒有可用資料。', true);
-        }
-      }
       renderAll();
     }
 
@@ -2087,11 +2144,10 @@ bg2: {
             ${hitterInput('死球', 'hbp', s.hbp)}
           </div>
           <div class="section-actions">
-            ${player.cpblAcnt ? `<button id="updateCpblBtn" class="press-btn">更新中職官網資料</button>` : ''}
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
       } else {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
@@ -2119,21 +2175,11 @@ bg2: {
             ${pitcherInput('自責分', 'er', s.er)}
           </div>
           <div class="section-actions">
-            ${player.cpblAcnt ? `<button id="updateCpblBtn" class="press-btn">更新中職官網資料</button>` : ''}
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
       }
-
-      document.getElementById('updateCpblBtn')?.addEventListener('click', async () => {
-        try {
-          await updatePlayerFromCpbl(player);
-          renderAll();
-        } catch (error) {
-          setStatus(error.message || '更新中職官網資料失敗。', true);
-        }
-      });
 
       document.getElementById('saveBaseBtn').addEventListener('click', async () => {
         try {
@@ -3025,10 +3071,11 @@ bg2: {
       els.majorLevelBtn?.classList.toggle('active', selectedLevel === 'A');
       els.minorLevelBtn?.classList.toggle('active', selectedLevel === 'D');
       if (els.seasonSelect && player) {
-        const earliest = firstSeasonYearForPlayer(player);
-        if (selectedSeason < earliest || selectedSeason > CURRENT_YEAR) selectedSeason = CURRENT_YEAR;
+        const years = availableSeasonYears(player, selectedLevel);
+        if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
         els.seasonSelect.innerHTML = seasonOptionsHtml(player);
-        els.seasonSelect.value = String(selectedSeason);
+        els.seasonSelect.disabled = years.length === 0;
+        els.seasonSelect.value = years.length ? String(selectedSeason) : '';
       }
 
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
@@ -4236,8 +4283,8 @@ bg2: {
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
         ensureStatsProfiles(player);
-        try { await updatePlayerFromCpbl(player, true, CURRENT_YEAR, 'A'); }
-        catch (error) { console.warn('CPBL season stats import failed', error); }
+        try { await syncPlayerCpblHistory(player); }
+        catch (error) { console.warn('CPBL season history import failed', error); }
         clearNewPlayerForm();
         els.addDialog.close();
         await selectPlayer(player.id);
@@ -4470,10 +4517,10 @@ bg2: {
         currentPage = 'home';
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
-        selectedSeason = CURRENT_YEAR;
         selectedLevel = 'A';
         if (selectedPlayerId) {
           const player = selectedPlayer();
+          selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
           activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
           await savePlayer(player);
           await loadRecord();
