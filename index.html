@@ -2768,7 +2768,7 @@ dialog::backdrop {
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
-        label: '背景 1',
+        label: '預設',
         enabled: true,
         innerBg: '#152238',
         frameSize: 18,
@@ -2809,7 +2809,7 @@ dialog::backdrop {
 
       // 第二個背景接口：之後把 enabled 改成 true，再修改下面座標／顏色即可啟用。
 bg2: {
-        label: '背景 2',
+        label: '棒球Q版',
         enabled: true,
         style: 'baseball-q',
         frameSize: 0,
@@ -3068,7 +3068,7 @@ bg2: {
           positioned: true,
           drawBox: true,
           x: 54, y: 308, w: 520, h: 660, r: 18,
-          bg: 'rgba(18,31,27,.88)',
+          bg: 'rgba(18,31,27,.82)',
           textColor: '#f6f4ee',
           mutedColor: '#aebbb3',
           accentColor: '#d9bd7a',
@@ -6330,55 +6330,175 @@ bg2: {
 
     function drawBullpenBackground(ctx, frameColor = '#d7ad52') {
       const wall=ctx.createLinearGradient(0,0,1080,1080);
-      wall.addColorStop(0,'#17251f');
-      wall.addColorStop(.58,'#263b32');
-      wall.addColorStop(1,'#111b17');
-      ctx.fillStyle=wall;ctx.fillRect(0,0,1080,1080);
+      wall.addColorStop(0,'#14231d');
+      wall.addColorStop(.56,'#2a4036');
+      wall.addColorStop(1,'#101a16');
+      ctx.fillStyle=wall;
+      ctx.fillRect(0,0,1080,1080);
 
-      // 牛棚鐵網
-      ctx.save();ctx.globalAlpha=.12;ctx.strokeStyle='#d5ded7';ctx.lineWidth=1.4;
-      const step=42;
+      // 明顯牛棚鐵網
+      ctx.save();
+      ctx.globalAlpha=.23;
+      ctx.strokeStyle='#d2ddd5';
+      ctx.lineWidth=1.7;
+      const step=36;
       for(let x=-1080;x<1080;x+=step){
         ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+1080,1080);ctx.stroke();
         ctx.beginPath();ctx.moveTo(x,1080);ctx.lineTo(x+1080,0);ctx.stroke();
       }
       ctx.restore();
 
-      // 上方鋼樑
-      ctx.fillStyle='rgba(6,14,11,.64)';
-      ctx.fillRect(0,0,1080,126);
-      ctx.strokeStyle='rgba(199,180,132,.36)';ctx.lineWidth=4;
-      ctx.beginPath();ctx.moveTo(0,126);ctx.lineTo(1080,126);ctx.stroke();
-      for(let x=80;x<1080;x+=180){
-        ctx.strokeStyle='rgba(166,180,169,.20)';ctx.lineWidth=6;
-        ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+52,126);ctx.stroke();
+      // 上方鋼樑與遮棚
+      ctx.fillStyle='rgba(5,13,10,.78)';
+      ctx.fillRect(0,0,1080,130);
+      ctx.strokeStyle='rgba(205,190,150,.42)';
+      ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(0,130);ctx.lineTo(1080,130);ctx.stroke();
+      for(let x=70;x<1080;x+=175){
+        ctx.strokeStyle='rgba(178,190,181,.24)';
+        ctx.lineWidth=7;
+        ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+58,130);ctx.stroke();
       }
 
-      // 牛棚土丘與草皮
-      ctx.fillStyle='#425845';ctx.fillRect(0,790,1080,290);
-      ctx.save();ctx.globalAlpha=.16;
-      for(let x=0;x<1080;x+=62){ctx.fillStyle=(x/62)%2?'#7c936e':'#263d2f';ctx.fillRect(x,790,31,290);}
+      // 右上 BULLPEN 標牌，避開 VS / 三圍
+      ctx.save();
+      ctx.fillStyle='rgba(7,18,14,.90)';
+      ctx.strokeStyle='#c6ad70';
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.roundRect(650,146,330,58,10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.textAlign='center';
+      ctx.fillStyle='#ead8a5';
+      ctx.font='900 37px Arial, sans-serif';
+      ctx.fillText('BULLPEN',815,187);
       ctx.restore();
-      const dirt=ctx.createRadialGradient(800,930,40,800,930,285);
-      dirt.addColorStop(0,'#a47a50');dirt.addColorStop(1,'rgba(121,83,52,0)');
-      ctx.fillStyle=dirt;ctx.beginPath();ctx.ellipse(800,930,320,120,0,0,Math.PI*2);ctx.fill();
+
+      // 暖色牛棚頂燈
+      const light=ctx.createRadialGradient(836,88,8,836,88,250);
+      light.addColorStop(0,'rgba(255,231,174,.34)');
+      light.addColorStop(.34,'rgba(222,198,143,.11)');
+      light.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=light;
+      ctx.fillRect(570,0,510,360);
+
+      // 後方長椅
+      ctx.fillStyle='rgba(103,70,39,.90)';
+      ctx.fillRect(16,758,560,28);
+      ctx.fillStyle='rgba(61,40,24,.92)';
+      ctx.fillRect(48,786,20,84);
+      ctx.fillRect(520,786,20,84);
+      ctx.strokeStyle='rgba(222,184,124,.30)';
+      ctx.lineWidth=2;
+      for(let x=32;x<560;x+=70){
+        ctx.beginPath();ctx.moveTo(x,762);ctx.lineTo(x+56,762);ctx.stroke();
+      }
+
+      // 草皮與投手練投區
+      const grass=ctx.createLinearGradient(0,775,0,1080);
+      grass.addColorStop(0,'#4d684e');
+      grass.addColorStop(1,'#203a2b');
+      ctx.fillStyle=grass;
+      ctx.fillRect(0,780,1080,300);
+      ctx.save();
+      ctx.globalAlpha=.18;
+      for(let x=0;x<1080;x+=58){
+        ctx.fillStyle=(x/58)%2?'#809774':'#284432';
+        ctx.fillRect(x,780,29,300);
+      }
+      ctx.restore();
+
+      // 牛棚土丘
+      const dirt=ctx.createRadialGradient(790,940,45,790,940,310);
+      dirt.addColorStop(0,'#b0875e');
+      dirt.addColorStop(.58,'rgba(144,101,65,.92)');
+      dirt.addColorStop(1,'rgba(108,76,49,0)');
+      ctx.fillStyle=dirt;
+      ctx.beginPath();
+      ctx.ellipse(790,940,330,125,0,0,Math.PI*2);
+      ctx.fill();
 
       // 投手板
-      ctx.fillStyle='rgba(246,241,222,.78)';ctx.fillRect(770,903,82,14);
+      ctx.fillStyle='#f1ead8';
+      ctx.strokeStyle='rgba(80,67,48,.35)';
+      ctx.lineWidth=2;
+      ctx.fillRect(742,900,100,17);
+      ctx.strokeRect(742,900,100,17);
 
-      // 左側木質 bench 線條
-      ctx.fillStyle='rgba(99,67,39,.72)';ctx.fillRect(25,744,540,24);
-      ctx.fillStyle='rgba(53,37,24,.78)';ctx.fillRect(54,768,18,78);ctx.fillRect(510,768,18,78);
+      // 左下球桶，刻意放在數據框下方可視區
+      ctx.save();
+      const bucketGrad=ctx.createLinearGradient(74,975,168,1060);
+      bucketGrad.addColorStop(0,'#263e5a');
+      bucketGrad.addColorStop(1,'#14283c');
+      ctx.fillStyle=bucketGrad;
+      ctx.strokeStyle='#9fb0be';
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.roundRect(72,986,114,78,12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle='#dbe4e8';
+      ctx.font='900 17px Arial, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('BASEBALL',129,1043);
 
-      // 暖色燈
-      const light=ctx.createRadialGradient(850,110,10,850,110,260);
-      light.addColorStop(0,'rgba(239,218,164,.23)');light.addColorStop(1,'rgba(255,255,255,0)');
-      ctx.fillStyle=light;ctx.fillRect(580,0,500,390);
+      // 桶裡棒球
+      for(const [x,y] of [[91,980],[117,974],[144,979],[166,986]]){
+        ctx.fillStyle='#f6f1e5';
+        ctx.strokeStyle='#b9b4aa';
+        ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(x,y,17,0,Math.PI*2);ctx.fill();ctx.stroke();
+        ctx.strokeStyle='#c64843';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(x-7,y,13,-1.1,1.1);ctx.stroke();
+        ctx.beginPath();ctx.arc(x+7,y,13,Math.PI-1.1,Math.PI+1.1);ctx.stroke();
+      }
+      ctx.restore();
+
+      // 底部球棒架
+      ctx.save();
+      ctx.strokeStyle='#5c3d24';
+      ctx.lineWidth=7;
+      ctx.beginPath();
+      ctx.moveTo(220,1062);ctx.lineTo(220,985);
+      ctx.moveTo(338,1062);ctx.lineTo(338,985);
+      ctx.moveTo(210,1025);ctx.lineTo(348,1025);
+      ctx.stroke();
+
+      const bats=[
+        {x:242,rot:-.09,c:'#d7a55f'},
+        {x:274,rot:.05,c:'#c9904b'},
+        {x:307,rot:-.04,c:'#e1b775'}
+      ];
+      for(const bat of bats){
+        ctx.save();
+        ctx.translate(bat.x,1021);
+        ctx.rotate(bat.rot);
+        ctx.fillStyle=bat.c;
+        ctx.strokeStyle='#604426';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.roundRect(-7,-78,14,91,7);
+        ctx.fill();ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // 右側窄邊直式牛棚字樣，照片旁仍看得到
+      ctx.save();
+      ctx.translate(1052,630);
+      ctx.rotate(-Math.PI/2);
+      ctx.textAlign='center';
+      ctx.fillStyle='rgba(234,216,165,.52)';
+      ctx.font='900 24px Arial, sans-serif';
+      ctx.fillText('PITCHING AREA • BULLPEN',0,0);
+      ctx.restore();
 
       drawOpponentFrame(ctx,frameColor,10,10);
-      ctx.strokeStyle='rgba(222,207,169,.22)';ctx.lineWidth=2;ctx.strokeRect(22,22,1036,1036);
+      ctx.strokeStyle='rgba(226,211,172,.28)';
+      ctx.lineWidth=2;
+      ctx.strokeRect(22,22,1036,1036);
     }
-
     function drawBg2Background(ctx, frameColor = '#d7ad52') {
       const W = 1080;
       const H = 1080;
