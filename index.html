@@ -6480,23 +6480,24 @@ bg2: {
       ctx.fill();
       ctx.stroke();
 
-      // 左右小 LED 模組
+      // 中央 LED 模組：固定放在對手名稱與日期之間，避免和日期重疊。
       const ledBox=(x,label,value,accent='#7ed6f2')=>{
+        const boxW=104;
         ctx.fillStyle='rgba(9,29,42,.95)';
         ctx.strokeStyle='rgba(63,132,162,.72)';
         ctx.lineWidth=2;
-        ctx.beginPath();ctx.roundRect(x,46,118,60,8);ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.roundRect(x,46,boxW,60,8);ctx.fill();ctx.stroke();
         ctx.textAlign='center';
         ctx.fillStyle='#7097aa';
-        ctx.font='700 12px Arial, sans-serif';
-        ctx.fillText(label,x+59,66);
+        ctx.font='700 11px Arial, sans-serif';
+        ctx.fillText(label,x+boxW/2,66);
         ctx.fillStyle=accent;
-        ctx.font='900 23px "Courier New", monospace';
-        ctx.fillText(value,x+59,94);
+        ctx.font='900 22px "Courier New", monospace';
+        ctx.fillText(value,x+boxW/2,94);
       };
-      ledBox(604,'INNING','9');
-      ledBox(732,'OUT','2','#ffca45');
-      ledBox(860,'COUNT','3-2','#ff7f6b');
+      ledBox(500,'INNING','9');
+      ledBox(616,'OUT','2','#ffca45');
+      ledBox(732,'COUNT','3-2','#ff7f6b');
       ctx.restore();
 
       // 中段跑馬燈
