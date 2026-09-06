@@ -1109,7 +1109,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.17</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.18</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1232,7 +1232,7 @@
       </div>
       <div class="small" style="line-height:1.65">
         日期：<strong id="batchReportDate"></strong><br>
-        會使用這一天已儲存的戰報資料生成圖片；優先一軍，若只有二軍紀錄就生成二軍戰報。沒有當日資料的球員會自動跳過。
+        會先使用這一天已儲存的戰報資料；本機沒有時會自動查中職官網。優先一軍，若只有二軍出賽就生成二軍戰報。
       </div>
       <div class="section-actions" style="margin-top:12px">
         <button id="batchReportSelectAllBtn" class="press-btn">全選</button>
@@ -1249,7 +1249,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.17';
+    const APP_VERSION = 'v1.18';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -2572,6 +2572,100 @@ bg2: {
         || Number(g.hbp) > 0 || Number(g.er) > 0 || Number(g.r) > 0;
     }
 
+    function batchRecordFromCpblDaily(player, daily, level) {
+      if (!daily?.found) return null;
+      const record = {
+        ...defaultGameRecord(player),
+        key: `${els.gameDate.value}:${player.id}:${level}`,
+        playerId: player.id,
+        date: els.gameDate.value,
+        level,
+        opponent: normalizeTeamName(daily.game?.opponent || ''),
+        cpblReadOnlyImport: els.gameDate.value !== localISODate(),
+        cpblImportedAt: Date.now()
+      };
+
+      if (player.type === 'hitter') {
+        const list = daily.hitter?.plateAppearances || [];
+        if (!list.length) return null;
+        record.hitterAppearance.mode = 'bat';
+        record.hitterPAs = list.map(pa => ({
+          id: uid(),
+          code: pa.code,
+          position: pa.position || '',
+          rbi: Number(pa.rbi) || 0,
+          cpblOfficialAction: pa.officialAction || ''
+        }));
+        record.committedStats = deriveHitterGame(record.hitterPAs);
+      } else {
+        const p = daily.pitcher;
+        if (!p) return null;
+        const g = record.pitcherGame;
+        g.innings = p.innings || '0.0';
+        g.k = Number(p.k) || 0;
+        g.bb = Number(p.bb) || 0;
+        g.h = Number(p.h) || 0;
+        g.hbp = Number(p.hbp) || 0;
+        g.r = Number(p.r) || 0;
+        g.er = Number(p.er) || 0;
+        const pitchCount = Number(p.pitchCount) || 0;
+        g.pitchTens = Math.floor(pitchCount / 10);
+        g.pitchOnes = pitchCount % 10;
+        g.hld = Boolean(p.hld);
+        g.sv = Boolean(p.sv);
+        g.bsv = Boolean(p.bsv);
+        g.decision = ['W','L'].includes(p.decision) ? p.decision : 'ND';
+        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
+        record.committedStats = derivePitcherGame(g);
+      }
+
+      record.committedAt = Date.now();
+      return record;
+    }
+
+    async function fetchBatchGameFromCpbl(player) {
+      if (!player?.cpblAcnt || !player?.cpblTeamCode) {
+        return { record:null, level:'A', reason:'此球員尚未連結中職官網' };
+      }
+
+      const levels = ['A','D'];
+      let lastReason = '';
+      for (const level of levels) {
+        const knownYears = player?.cpblAvailableYears?.[level];
+        const year = Number(els.gameDate.value.slice(0,4));
+        if (Array.isArray(knownYears) && knownYears.length && !knownYears.includes(year)) continue;
+
+        try {
+          const data = await cpblRequest('daily', {
+            acnt: player.cpblAcnt,
+            date: els.gameDate.value,
+            teamCode: player.cpblTeamCode,
+            kindCode: level
+          });
+          const daily = data.daily;
+          if (!daily?.found) {
+            lastReason = daily?.reason || lastReason;
+            continue;
+          }
+
+          const record = batchRecordFromCpblDaily(player, daily, level);
+          if (!record) {
+            lastReason = player.type === 'hitter'
+              ? '官網顯示有出賽，但沒有可用的逐打席資料'
+              : '官網顯示有出賽，但沒有可用的投球資料';
+            continue;
+          }
+
+          await idbPut(STORES.games, record);
+          return { record, level, fetched:true };
+        } catch (error) {
+          lastReason = error?.message || String(error);
+        }
+      }
+
+      return { record:null, level:'A', reason:lastReason || '官網查不到當天出賽資料' };
+    }
+
     async function generateBatchReports() {
       const ids = batchReportSelectedIds();
       if (!ids.length) {
@@ -2600,12 +2694,22 @@ bg2: {
             els.batchReportProgress.textContent = `正在生成 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
           }
 
-          const savedGame = await readSavedGameForBatch(player.id);
-          const record = savedGame.record;
-          const reportLevel = savedGame.level;
+          let savedGame = await readSavedGameForBatch(player.id);
+          let record = savedGame.record;
+          let reportLevel = savedGame.level;
+
           if (!hasUsableBatchRecord(record, player)) {
-            results.push({ player, ok:false, reason:'這一天沒有已儲存的戰報資料' });
-            continue;
+            if (els.batchReportProgress) {
+              els.batchReportProgress.textContent = `正在查官網 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
+            }
+            const fetched = await fetchBatchGameFromCpbl(player);
+            record = fetched.record;
+            reportLevel = fetched.level;
+
+            if (!hasUsableBatchRecord(record, player)) {
+              results.push({ player, ok:false, reason:fetched.reason || '這一天查不到出賽資料' });
+              continue;
+            }
           }
 
           selectedPlayerId = player.id;
