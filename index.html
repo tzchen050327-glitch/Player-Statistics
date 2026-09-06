@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.24</div>
+        <div class="app-splash-version">VERSION v1.25</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.24</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.25</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.24';
+    const APP_VERSION = 'v1.25';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1989,24 +1989,25 @@ bg2: {
         try { onProgress?.(percent, status); } catch {}
       };
 
-      const errors = [];
       report(12, '正在連線中職官網…');
+      report(24, '正在一次抓取一軍＋二軍歷年資料…');
+
+      const data = await cpblRequest('season-histories', { acnt: player.cpblAcnt });
+      const histories = data?.histories || {};
+      const remoteErrors = data?.errors || {};
+      const errors = [];
+
+      report(76, '正在整理一軍＋二軍賽季資料…');
 
       for (const kindCode of ['A', 'D']) {
-        const isMajor = kindCode === 'A';
-        report(isMajor ? 20 : 58, `正在抓取${cpblLevelLabel(kindCode)}歷年資料…`);
-
-        try {
-          const data = await cpblRequest('season-history', { acnt: player.cpblAcnt, kindCode });
-          report(isMajor ? 38 : 76, `正在整理${cpblLevelLabel(kindCode)}賽季資料…`);
-          applyCpblSeasonHistory(player, data.history, kindCode);
-          report(isMajor ? 48 : 86, `${cpblLevelLabel(kindCode)}資料完成`);
-        } catch (error) {
-          errors.push(`${cpblLevelLabel(kindCode)}：${error?.message || String(error)}`);
+        const history = histories[kindCode];
+        if (history) {
+          applyCpblSeasonHistory(player, history, kindCode);
+        } else {
           player.cpblAvailableYears ||= { A: [], D: [] };
           player.cpblHistorySynced ||= { A: false, D: false };
           player.cpblHistorySynced[kindCode] = false;
-          report(isMajor ? 48 : 86, `${cpblLevelLabel(kindCode)}資料讀取失敗，繼續處理…`);
+          errors.push(`${cpblLevelLabel(kindCode)}：${remoteErrors[kindCode] || '資料取得失敗'}`);
         }
       }
 
@@ -2014,7 +2015,6 @@ bg2: {
       await savePlayer(player);
       report(97, '正在更新畫面…');
 
-      if (errors.length === 2) throw new Error(errors.join('；'));
       return { partialErrors: errors };
     }
 
