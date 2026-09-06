@@ -480,12 +480,13 @@
         <canvas id="cardCanvas" width="1080" height="1080"></canvas>
         <div class="section-actions">
           <button id="downloadBtn" class="press-btn primary">下載圖片並更新基礎數據</button>
+          <button id="shareInstagramBtn" class="press-btn">新增到 IG 貼文</button>
         </div>
       </aside>
     </div>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.07</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.09</button>
 
   <dialog id="addPlayerDialog">
     <div class="dialog-body">
@@ -552,7 +553,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.08';
+    const APP_VERSION = 'v1.09';
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -567,6 +568,7 @@
       selectedPlayerText: document.getElementById('selectedPlayerText'),
       canvas: document.getElementById('cardCanvas'),
       downloadBtn: document.getElementById('downloadBtn'),
+      shareInstagramBtn: document.getElementById('shareInstagramBtn'),
       addDialog: document.getElementById('addPlayerDialog'),
       allDialog: document.getElementById('allPlayersDialog'),
       allPitchers: document.getElementById('allPitchers'),
@@ -3779,6 +3781,56 @@ bg2: {
         renderAll();
       } catch (error) {
         setStatus(error.message || '下載失敗。', true);
+      }
+    });
+
+    els.shareInstagramBtn?.addEventListener('click', async () => {
+      try {
+        setStatus('正在更新數據並準備分享到 Instagram…');
+        await commitCurrentGame();
+        await renderCanvas();
+
+        const player = selectedPlayer();
+        const hitterAppearance = player.type === 'hitter' ? ensureHitterAppearance() : null;
+        const hitterFileType = hitterAppearance?.mode === 'runner'
+          ? (hitterAppearance.continueDefense ? '代跑後接替守備' : '純代跑')
+          : hitterAppearance?.mode === 'defense' ? '純代守' : '逐打席紀錄';
+        const fileName = `${currentRecord.date}_${player.name}_${player.type === 'pitcher' ? '投球戰績' : hitterFileType}.png`;
+
+        const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('圖片產生失敗。');
+
+        const file = new File([blob], fileName, { type: 'image/png' });
+        const canShareFiles = Boolean(
+          navigator.share
+          && typeof navigator.canShare === 'function'
+          && navigator.canShare({ files: [file] })
+        );
+
+        if (canShareFiles) {
+          await navigator.share({
+            files: [file],
+            title: '球員戰績圖片'
+          });
+          setStatus(currentRecord.cpblReadOnlyImport
+            ? '已開啟分享選單；這是歷史中職資料，未更新球員基礎數據。'
+            : '已開啟分享選單，請選 Instagram；球員基礎數據已同步更新。');
+        } else {
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+          window.alert('這台裝置／瀏覽器不支援直接分享圖片，已改為下載圖片。請從 Instagram 新增貼文時選擇剛下載的圖片。');
+        }
+
+        renderAll();
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          setStatus('已取消分享。');
+          return;
+        }
+        setStatus(error?.message || '分享失敗。', true);
       }
     });
 
