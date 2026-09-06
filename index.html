@@ -511,6 +511,158 @@
       flex-wrap: wrap;
     }
 
+    .all-player-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .player-search-box {
+      position: relative;
+    }
+
+    .player-search-input {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .player-search-hint {
+      margin: 8px 2px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .player-search-results {
+      display: grid;
+      gap: 8px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .player-search-result {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      white-space: normal;
+      padding: 12px 14px;
+      border-radius: 14px;
+    }
+
+    .player-search-result .result-number {
+      flex: 0 0 auto;
+      min-width: 48px;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .player-search-result .result-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .player-search-result .result-name {
+      display: block;
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .player-search-result .result-meta {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .batch-report-list {
+      display: grid;
+      gap: 8px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .batch-report-row {
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfcfe;
+      cursor: pointer;
+    }
+
+    .batch-report-row input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+    }
+
+    .batch-report-name {
+      display: block;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .batch-report-meta {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .batch-report-results {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .batch-report-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .batch-report-result.failed {
+      border-color: rgba(220,38,38,.25);
+      background: rgba(254,242,242,.75);
+    }
+
+    .batch-report-result .result-text {
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .batch-report-result .result-text strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .batch-report-progress {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
 
 
     .app-version-badge {
@@ -898,6 +1050,7 @@
           </div>
           <div class="home-player-actions">
             <button id="addPlayerBtn" class="press-btn primary">＋ 新增球員</button>
+            <button id="homeSearchPlayerBtn" class="press-btn">搜尋球員</button>
             <button id="batchCpblBtn" class="press-btn">批次搜尋中職資料</button>
             <button id="allPlayersBtn" class="press-btn">展開全部</button>
           </div>
@@ -956,7 +1109,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.16</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.17</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1042,6 +1195,10 @@
         <h2>所有球員</h2>
         <button class="press-btn dialog-close">關閉</button>
       </div>
+      <div class="all-player-tools">
+        <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
+        <button id="batchReportBtn" class="press-btn primary">批量生成戰報</button>
+      </div>
       <div class="player-group">
         <h3>投手</h3>
         <div id="allPitchers" class="player-list"></div>
@@ -1053,8 +1210,46 @@
     </div>
   </dialog>
 
+  <dialog id="playerSearchDialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2>搜尋球員</h2>
+        <button class="press-btn dialog-close">關閉</button>
+      </div>
+      <div class="player-search-box">
+        <input id="playerSearchInput" class="player-search-input" type="search" autocomplete="off" placeholder="輸入姓名、背號、球隊、位置…" />
+      </div>
+      <div class="player-search-hint">可輸入完整姓名、其中一個字、背號、球隊名稱、投手／打者或守備位置。</div>
+      <div id="playerSearchResults" class="player-search-results"></div>
+    </div>
+  </dialog>
+
+  <dialog id="batchReportDialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2>批量生成戰報</h2>
+        <button class="press-btn dialog-close">關閉</button>
+      </div>
+      <div class="small" style="line-height:1.65">
+        日期：<strong id="batchReportDate"></strong><br>
+        會使用這一天已儲存的一軍戰報資料生成圖片；沒有當日資料的球員會自動跳過。
+      </div>
+      <div class="section-actions" style="margin-top:12px">
+        <button id="batchReportSelectAllBtn" class="press-btn">全選</button>
+        <button id="batchReportClearBtn" class="press-btn">取消全選</button>
+      </div>
+      <div id="batchReportList" class="batch-report-list" style="margin-top:12px"></div>
+      <div class="section-actions" style="margin-top:14px">
+        <button id="batchReportGenerateBtn" class="press-btn primary">生成已勾選戰報</button>
+        <button id="batchReportDownloadAllBtn" class="press-btn hidden">全部下載</button>
+      </div>
+      <div id="batchReportProgress" class="batch-report-progress"></div>
+      <div id="batchReportResults" class="batch-report-results"></div>
+    </div>
+  </dialog>
+
   <script>
-    const APP_VERSION = 'v1.16';
+    const APP_VERSION = 'v1.17';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1091,7 +1286,17 @@
       addDialog: document.getElementById('addPlayerDialog'),
       allDialog: document.getElementById('allPlayersDialog'),
       allPitchers: document.getElementById('allPitchers'),
-      allHitters: document.getElementById('allHitters')
+      allHitters: document.getElementById('allHitters'),
+      playerSearchDialog: document.getElementById('playerSearchDialog'),
+      playerSearchInput: document.getElementById('playerSearchInput'),
+      playerSearchResults: document.getElementById('playerSearchResults'),
+      batchReportDialog: document.getElementById('batchReportDialog'),
+      batchReportDate: document.getElementById('batchReportDate'),
+      batchReportList: document.getElementById('batchReportList'),
+      batchReportGenerateBtn: document.getElementById('batchReportGenerateBtn'),
+      batchReportDownloadAllBtn: document.getElementById('batchReportDownloadAllBtn'),
+      batchReportProgress: document.getElementById('batchReportProgress'),
+      batchReportResults: document.getElementById('batchReportResults')
     };
 
     let db;
@@ -1108,6 +1313,7 @@
     let photoDrag = null;
     let photoZoomSaveTimer = null;
     let preparedOutput = null;
+    let batchReportOutputs = [];
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -2163,6 +2369,74 @@ bg2: {
       if (isError) window.alert(message || '操作失敗。');
     }
 
+    function normalizedPlayerSearchText(player) {
+      const typeLabel = player?.type === 'pitcher' ? '投手 pitcher' : '打者 野手 hitter';
+      return [
+        player?.name,
+        player?.number,
+        `#${player?.number || ''}`,
+        normalizeTeamName(player?.cpblTeam || ''),
+        player?.cpblTeamCode,
+        player?.cpblPosition,
+        typeLabel
+      ].filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function searchPlayers(query) {
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) return [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
+      const compact = q.replace(/^#/, '');
+      return players.filter(player => {
+        const haystack = normalizedPlayerSearchText(player);
+        return haystack.includes(q)
+          || (compact !== q && haystack.includes(compact))
+          || String(player.number || '').includes(compact);
+      }).sort((a,b) => {
+        const aName = String(a.name || '').toLowerCase();
+        const bName = String(b.name || '').toLowerCase();
+        const aExact = aName === q || String(a.number || '') === compact ? 0 : 1;
+        const bExact = bName === q || String(b.number || '') === compact ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true });
+      });
+    }
+
+    function renderPlayerSearchResults() {
+      const list = searchPlayers(els.playerSearchInput?.value || '');
+      if (!els.playerSearchResults) return;
+      els.playerSearchResults.innerHTML = list.length ? list.map(player => {
+        const meta = [
+          player.type === 'pitcher' ? '投手' : '打者',
+          normalizeTeamName(player.cpblTeam || ''),
+          player.cpblPosition || ''
+        ].filter(Boolean).join('｜');
+        return `
+          <button class="press-btn player-search-result" type="button" data-search-player-id="${player.id}">
+            <span class="result-number">#${escapeHtml(player.number)}</span>
+            <span class="result-main">
+              <span class="result-name">${escapeHtml(player.name)}</span>
+              <span class="result-meta">${escapeHtml(meta || '未連結中職資料')}</span>
+            </span>
+          </button>`;
+      }).join('') : '<div class="empty">找不到符合條件的球員。</div>';
+
+      els.playerSearchResults.querySelectorAll('[data-search-player-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          els.playerSearchDialog?.close();
+          els.allDialog?.close();
+          await selectPlayer(btn.dataset.searchPlayerId);
+        });
+      });
+    }
+
+    function openPlayerSearch() {
+      if (!els.playerSearchDialog) return;
+      els.playerSearchInput.value = '';
+      renderPlayerSearchResults();
+      els.playerSearchDialog.showModal();
+      setTimeout(() => els.playerSearchInput?.focus(), 60);
+    }
+
     async function selectPlayer(id) {
       const player = players.find(p => p.id === id);
       if (!player) return;
@@ -2233,6 +2507,191 @@ bg2: {
       selectedSeason = year;
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
       renderAll();
+    }
+
+    function clearBatchReportOutputs() {
+      for (const output of batchReportOutputs) {
+        if (output?.url) URL.revokeObjectURL(output.url);
+      }
+      batchReportOutputs = [];
+      els.batchReportDownloadAllBtn?.classList.add('hidden');
+      if (els.batchReportResults) els.batchReportResults.innerHTML = '';
+    }
+
+    function renderBatchReportSelection() {
+      if (!els.batchReportList) return;
+      const list = [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
+      els.batchReportList.innerHTML = list.length ? list.map(player => {
+        const meta = [player.type === 'pitcher' ? '投手' : '打者', normalizeTeamName(player.cpblTeam || '')].filter(Boolean).join('｜');
+        return `
+          <label class="batch-report-row">
+            <input type="checkbox" value="${player.id}" data-batch-report-player />
+            <span>
+              <span class="batch-report-name">#${escapeHtml(player.number)} ${escapeHtml(player.name)}</span>
+              <span class="batch-report-meta">${escapeHtml(meta || '未連結中職資料')}</span>
+            </span>
+          </label>`;
+      }).join('') : '<div class="empty">目前沒有球員。</div>';
+    }
+
+    function openBatchReportDialog() {
+      clearBatchReportOutputs();
+      if (els.batchReportDate) els.batchReportDate.textContent = els.gameDate.value.replaceAll('-', '/');
+      if (els.batchReportProgress) els.batchReportProgress.textContent = '';
+      renderBatchReportSelection();
+      els.allDialog?.close();
+      els.batchReportDialog?.showModal();
+    }
+
+    function batchReportSelectedIds() {
+      return [...document.querySelectorAll('[data-batch-report-player]:checked')].map(input => input.value);
+    }
+
+    async function readSavedGameForBatch(playerId, level = 'A') {
+      const date = els.gameDate.value;
+      let record = await idbGet(STORES.games, `${date}:${playerId}:${level}`);
+      if (!record && level === 'A') record = await idbGet(STORES.games, `${date}:${playerId}`);
+      return record;
+    }
+
+    function hasUsableBatchRecord(record, player) {
+      if (!record || !String(record.opponent || '').trim()) return false;
+      if (player.type === 'hitter') {
+        const mode = record.hitterAppearance?.mode || 'bat';
+        if (mode !== 'bat') return true;
+        return Array.isArray(record.hitterPAs) && record.hitterPAs.length > 0;
+      }
+      const g = record.pitcherGame || {};
+      return String(g.innings || '0.0') !== '0.0'
+        || Number(g.k) > 0 || Number(g.h) > 0 || Number(g.bb) > 0
+        || Number(g.hbp) > 0 || Number(g.er) > 0 || Number(g.r) > 0;
+    }
+
+    async function generateBatchReports() {
+      const ids = batchReportSelectedIds();
+      if (!ids.length) {
+        setStatus('請至少勾選一名球員。', true);
+        return;
+      }
+
+      clearBatchReportOutputs();
+      els.batchReportGenerateBtn.disabled = true;
+
+      const savedState = {
+        selectedPlayerId,
+        selectedLevel,
+        selectedSeason,
+        currentRecord,
+        currentPage
+      };
+
+      const results = [];
+      try {
+        for (let index = 0; index < ids.length; index++) {
+          const player = players.find(item => item.id === ids[index]);
+          if (!player) continue;
+
+          if (els.batchReportProgress) {
+            els.batchReportProgress.textContent = `正在生成 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
+          }
+
+          const record = await readSavedGameForBatch(player.id, 'A');
+          if (!hasUsableBatchRecord(record, player)) {
+            results.push({ player, ok:false, reason:'這一天沒有已儲存的一軍戰報資料' });
+            continue;
+          }
+
+          selectedPlayerId = player.id;
+          selectedLevel = 'A';
+          const reportYear = Number(els.gameDate.value.slice(0,4)) || CURRENT_YEAR;
+          const years = availableSeasonYears(player, 'A');
+          selectedSeason = years.includes(reportYear) ? reportYear : (years[0] || reportYear);
+          activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+
+          currentRecord = {
+            ...defaultGameRecord(player),
+            ...record,
+            key: `${els.gameDate.value}:${player.id}:A`,
+            playerId: player.id,
+            date: els.gameDate.value,
+            level: 'A',
+            hitterPAs: Array.isArray(record.hitterPAs) ? record.hitterPAs : [],
+            hitterAppearance: {
+              ...defaultGameRecord(player).hitterAppearance,
+              ...(record.hitterAppearance || {})
+            },
+            pitcherGame: {
+              ...defaultGameRecord(player).pitcherGame,
+              ...(record.pitcherGame || {})
+            }
+          };
+
+          await renderCanvas();
+          const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
+          if (!blob) {
+            results.push({ player, ok:false, reason:'圖片產生失敗' });
+            continue;
+          }
+
+          const fileName = currentOutputFileName();
+          const url = URL.createObjectURL(blob);
+          const output = { playerId:player.id, player, blob, fileName, url };
+          batchReportOutputs.push(output);
+          results.push({ player, ok:true, output });
+
+          await new Promise(resolve => setTimeout(resolve, 60));
+        }
+      } finally {
+        selectedPlayerId = savedState.selectedPlayerId;
+        selectedLevel = savedState.selectedLevel;
+        selectedSeason = savedState.selectedSeason;
+        currentRecord = savedState.currentRecord;
+        currentPage = savedState.currentPage;
+        els.batchReportGenerateBtn.disabled = false;
+        renderAll();
+      }
+
+      if (els.batchReportProgress) {
+        const okCount = results.filter(item => item.ok).length;
+        els.batchReportProgress.textContent = `完成：生成 ${okCount} 張，跳過 ${results.length - okCount} 名。`;
+      }
+
+      if (els.batchReportResults) {
+        els.batchReportResults.innerHTML = results.map(item => {
+          if (!item.ok) {
+            return `
+              <div class="batch-report-result failed">
+                <div class="result-text">
+                  <strong>#${escapeHtml(item.player.number)} ${escapeHtml(item.player.name)}</strong>
+                  ${escapeHtml(item.reason)}
+                </div>
+              </div>`;
+          }
+          return `
+            <div class="batch-report-result">
+              <div class="result-text">
+                <strong>#${escapeHtml(item.player.number)} ${escapeHtml(item.player.name)}</strong>
+                已生成
+              </div>
+              <a class="press-btn" href="${item.output.url}" download="${escapeHtml(item.output.fileName)}">下載</a>
+            </div>`;
+        }).join('');
+      }
+
+      els.batchReportDownloadAllBtn?.classList.toggle('hidden', batchReportOutputs.length === 0);
+    }
+
+    async function downloadAllBatchReports() {
+      for (let i = 0; i < batchReportOutputs.length; i++) {
+        const output = batchReportOutputs[i];
+        const link = document.createElement('a');
+        link.href = output.url;
+        link.download = output.fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        if (i < batchReportOutputs.length - 1) await new Promise(resolve => setTimeout(resolve, 250));
+      }
     }
 
     function renderRecentPlayers() {
@@ -4352,6 +4811,19 @@ bg2: {
     els.seasonSelect?.addEventListener('change', () => switchPlayerSeason(els.seasonSelect.value));
 
     document.getElementById('addPlayerBtn').addEventListener('click', () => els.addDialog.showModal());
+    document.getElementById('homeSearchPlayerBtn').addEventListener('click', openPlayerSearch);
+    document.getElementById('allSearchPlayerBtn').addEventListener('click', openPlayerSearch);
+    document.getElementById('batchReportBtn').addEventListener('click', openBatchReportDialog);
+    els.playerSearchInput?.addEventListener('input', renderPlayerSearchResults);
+    document.getElementById('batchReportSelectAllBtn').addEventListener('click', () => {
+      document.querySelectorAll('[data-batch-report-player]').forEach(input => input.checked = true);
+    });
+    document.getElementById('batchReportClearBtn').addEventListener('click', () => {
+      document.querySelectorAll('[data-batch-report-player]').forEach(input => input.checked = false);
+    });
+    els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
+    els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
+
     document.getElementById('batchCpblBtn').addEventListener('click', () => {
       document.getElementById('batchCpblProgress').textContent = `目前共有 ${players.length} 名球員。`;
       document.getElementById('batchCpblResults').innerHTML = '';
@@ -4364,6 +4836,10 @@ bg2: {
       els.allDialog.showModal();
     });
     document.querySelectorAll('.dialog-close').forEach(btn => btn.addEventListener('click', () => btn.closest('dialog').close()));
+    els.batchReportDialog?.addEventListener('close', () => {
+      // 生成結果的 blob URL 只在視窗開啟期間保留。
+      clearBatchReportOutputs();
+    });
 
     function newPlayerFormValues() {
       return {
