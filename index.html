@@ -600,7 +600,7 @@
     </div>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.11</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.12</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -698,7 +698,8 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.11';
+    const APP_VERSION = 'v1.12';
+    const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
@@ -4060,7 +4061,7 @@ bg2: {
       try {
         const reg = serviceWorkerRegistration
           || await navigator.serviceWorker.getRegistration()
-          || await navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' });
+          || await navigator.serviceWorker.register(SERVICE_WORKER_URL, { updateViaCache: 'none' });
         serviceWorkerRegistration = reg;
 
         await reg.update();
@@ -4097,7 +4098,7 @@ bg2: {
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
 
       try {
-        const reg = await navigator.serviceWorker.register('./service-worker.js', {
+        const reg = await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
           updateViaCache: 'none'
         });
         serviceWorkerRegistration = reg;
