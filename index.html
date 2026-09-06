@@ -1279,7 +1279,7 @@
   </style>
 </head>
 <body>
-  <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay hidden" role="status" aria-live="polite" aria-busy="true">
+  <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
         <div class="app-splash-ball"></div>
@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.23</div>
+        <div class="app-splash-version">VERSION v1.24</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.23</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.24</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1507,6 +1507,7 @@
       <div class="all-player-tools">
         <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
         <button id="batchReportBtn" class="press-btn primary">批量生成戰報</button>
+        <button id="allDeletePlayerBtn" class="press-btn danger">刪除球員</button>
       </div>
       <div class="player-group">
         <h3>投手</h3>
@@ -1516,6 +1517,19 @@
         <h3>打者</h3>
         <div id="allHitters" class="player-list"></div>
       </div>
+    </div>
+  </dialog>
+
+  <dialog id="deletePlayerDialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2>刪除球員</h2>
+        <button class="press-btn dialog-close">關閉</button>
+      </div>
+      <div class="small" style="line-height:1.65;margin-bottom:12px">
+        點選要刪除的球員後會進行兩次確認。刪除後會一併移除該球員的照片與所有日期戰報資料。
+      </div>
+      <div id="deletePlayerList" class="player-search-results"></div>
     </div>
   </dialog>
 
@@ -1558,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.23';
+    const APP_VERSION = 'v1.24';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1604,6 +1618,8 @@
       allDialog: document.getElementById('allPlayersDialog'),
       allPitchers: document.getElementById('allPitchers'),
       allHitters: document.getElementById('allHitters'),
+      deletePlayerDialog: document.getElementById('deletePlayerDialog'),
+      deletePlayerList: document.getElementById('deletePlayerList'),
       playerSearchDialog: document.getElementById('playerSearchDialog'),
       playerSearchInput: document.getElementById('playerSearchInput'),
       playerSearchResults: document.getElementById('playerSearchResults'),
@@ -3377,32 +3393,88 @@ bg2: {
       });
     }
 
-    async function deleteSelectedPlayer() {
-      const player = selectedPlayer();
-      if (!player) return;
+    async function deletePlayerById(playerId) {
+      const player = players.find(item => item.id === playerId);
+      if (!player) return false;
 
-      const confirmed = window.confirm(`確定要刪除 #${player.number} ${player.name} 嗎？\n此球員的基礎數據與所有日期紀錄都會刪除，且無法復原。`);
-      if (!confirmed) return;
+      const firstConfirm = window.confirm(
+        `確定要刪除 #${player.number} ${player.name} 嗎？\n會刪除球員資料、照片與所有日期戰報。`
+      );
+      if (!firstConfirm) return false;
 
-      await idbDelete(STORES.players, player.id);
+      const secondConfirm = window.confirm(
+        `再次確認：永久刪除 #${player.number} ${player.name}？\n此操作無法復原。`
+      );
+      if (!secondConfirm) return false;
+
       const gameRecords = await idbGetAll(STORES.games);
       const relatedGames = gameRecords.filter(record => record.playerId === player.id);
-      await Promise.all(relatedGames.map(record => idbDelete(STORES.games, record.key)));
+      const relatedPhotos = photos.filter(photo => photo.playerId === player.id);
 
+      await Promise.all([
+        idbDelete(STORES.players, player.id),
+        ...relatedGames.map(record => idbDelete(STORES.games, record.key)),
+        ...relatedPhotos.map(photo => idbDelete(STORES.photos, photo.id))
+      ]);
+
+      relatedPhotos.forEach(photo => photoImageCache.delete(photo.id));
+      photos = photos.filter(photo => photo.playerId !== player.id);
       players = players.filter(item => item.id !== player.id);
-      selectedPlayerId = [...players]
-        .sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0))[0]?.id || null;
-      currentRecord = null;
 
-      if (selectedPlayerId) {
-        localStorage.setItem('baseballSelectedPlayerId', selectedPlayerId);
-        await loadRecord();
-      } else {
-        localStorage.removeItem('baseballSelectedPlayerId');
+      if (selectedPlayerId === player.id) {
+        selectedPlayerId = [...players]
+          .sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0))[0]?.id || null;
+        currentRecord = null;
+        currentPage = 'home';
+
+        if (selectedPlayerId) {
+          localStorage.setItem('baseballSelectedPlayerId', selectedPlayerId);
+          selectedLevel = 'A';
+          const nextPlayer = selectedPlayer();
+          selectedSeason = availableSeasonYears(nextPlayer, 'A')[0] || CURRENT_YEAR;
+          activatePlayerStatsProfile(nextPlayer, selectedSeason, selectedLevel);
+          await loadRecord();
+        } else {
+          localStorage.removeItem('baseballSelectedPlayerId');
+        }
       }
 
       renderAll();
+      renderDeletePlayerList();
       setStatus(`已刪除球員 #${player.number} ${player.name}。`);
+      return true;
+    }
+
+    async function deleteSelectedPlayer() {
+      const player = selectedPlayer();
+      if (!player) return;
+      await deletePlayerById(player.id);
+    }
+
+    function renderDeletePlayerList() {
+      if (!els.deletePlayerList) return;
+      const list = [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
+      els.deletePlayerList.innerHTML = list.length ? list.map(player => {
+        const meta = [
+          player.type === 'pitcher' ? '投手' : '打者',
+          normalizeTeamName(player.cpblTeam || '')
+        ].filter(Boolean).join('｜');
+        return `
+          <button class="press-btn player-search-result" type="button" data-delete-player-id="${player.id}">
+            <span class="result-number">#${escapeHtml(player.number)}</span>
+            <span class="result-main">
+              <span class="result-name">${escapeHtml(player.name)}</span>
+              <span class="result-meta">${escapeHtml(meta || '未連結中職資料')}</span>
+            </span>
+          </button>`;
+      }).join('') : '<div class="empty">目前沒有球員。</div>';
+
+      els.deletePlayerList.querySelectorAll('[data-delete-player-id]').forEach(button => {
+        button.addEventListener('click', async () => {
+          await deletePlayerById(button.dataset.deletePlayerId);
+          if (!players.length) els.deletePlayerDialog?.close();
+        });
+      });
     }
 
     function hitterInput(label, key, value) {
@@ -5414,6 +5486,11 @@ bg2: {
       renderAllPlayersDialog();
       els.allDialog.showModal();
     });
+    document.getElementById('allDeletePlayerBtn').addEventListener('click', () => {
+      renderDeletePlayerList();
+      els.allDialog.close();
+      els.deletePlayerDialog?.showModal();
+    });
     document.querySelectorAll('.dialog-close').forEach(btn => btn.addEventListener('click', () => btn.closest('dialog').close()));
     els.batchReportDialog?.addEventListener('close', () => {
       // 生成結果的 blob URL 只在視窗開啟期間保留。
@@ -5805,8 +5882,9 @@ bg2: {
       if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    async function finishAppUpdateProgress(status) {
+    async function finishAppUpdateProgress(status, { keepOpen = false } = {}) {
       setAppUpdateProgress(100, status);
+      if (keepOpen) return;
       await new Promise(resolve => setTimeout(resolve, 520));
       hideAppUpdateProgress();
     }
@@ -5841,11 +5919,11 @@ bg2: {
       return false;
     }
 
-    async function checkAppUpdate({ manual = false, showProgress = false } = {}) {
+    async function checkAppUpdate({ manual = false, showProgress = false, keepProgressOpen = false } = {}) {
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (showProgress) {
           await appUpdateStep(0, '準備檢查更新…', 80);
-          await finishAppUpdateProgress('本機檔案模式，不需檢查更新');
+          await finishAppUpdateProgress('本機檔案模式，不需檢查更新', { keepOpen: keepProgressOpen });
         }
         if (manual) {
           setStatus('目前是本機檔案模式；自動更新需要用 HTTPS 網址／PWA 開啟。', true);
@@ -5886,15 +5964,23 @@ bg2: {
 
         if (showProgress) {
           await appUpdateStep(90, '正在整理程式快取…', 100);
-          await finishAppUpdateProgress('目前已是最新版本');
+          if (keepProgressOpen) {
+            setAppUpdateProgress(86, '更新檢查完成，正在載入球員資料…');
+          } else {
+            await finishAppUpdateProgress('目前已是最新版本');
+          }
         }
         return { activated:false };
       } catch (error) {
         console.error('更新檢查失敗：', error);
         if (showProgress) {
-          setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
-          await new Promise(resolve => setTimeout(resolve, 950));
-          hideAppUpdateProgress();
+          if (keepProgressOpen) {
+            setAppUpdateProgress(82, '更新檢查失敗，正在載入目前資料…', { error: true });
+          } else {
+            setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
+            await new Promise(resolve => setTimeout(resolve, 950));
+            hideAppUpdateProgress();
+          }
         }
         if (manual) setStatus('檢查更新失敗，請確認網路後再試。', true);
         return { activated:false };
@@ -5916,7 +6002,11 @@ bg2: {
       if (skipStartupSplash) sessionStorage.removeItem('baseballSkipStartupSplashOnce');
 
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
-        if (!skipStartupSplash) await checkAppUpdate({ showProgress: true });
+        if (!skipStartupSplash) {
+          await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
+        } else {
+          setAppUpdateProgress(86, '正在載入球員資料…');
+        }
         return false;
       }
 
@@ -5953,7 +6043,9 @@ bg2: {
 
         let updateResult = { activated:false };
         if (!skipStartupSplash) {
-          updateResult = await checkAppUpdate({ showProgress: true });
+          updateResult = await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
+        } else {
+          setAppUpdateProgress(86, '新版已套用，正在載入球員資料…');
         }
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
@@ -5976,11 +6068,7 @@ bg2: {
         return appRefreshing;
       } catch (error) {
         console.error('Service Worker 設定失敗：', error);
-        if (appUpdateProgressVisible) {
-          setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
-          await new Promise(resolve => setTimeout(resolve, 950));
-          hideAppUpdateProgress();
-        }
+        setAppUpdateProgress(82, '更新檢查失敗，正在載入目前資料…', { error: true });
         return false;
       }
     }
@@ -5988,7 +6076,13 @@ bg2: {
     async function bootApp() {
       const willReloadForUpdate = await setupAppUpdate();
       if (willReloadForUpdate) return;
+
+      setAppUpdateProgress(90, '正在讀取球員與戰報資料…');
       await init();
+
+      setAppUpdateProgress(100, '資料已準備完成');
+      await new Promise(resolve => setTimeout(resolve, 260));
+      hideAppUpdateProgress();
     }
 
     bootApp();
