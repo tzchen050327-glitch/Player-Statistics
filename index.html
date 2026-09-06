@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.26</div>
+        <div class="app-splash-version">VERSION v1.27</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.26</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.27</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.26';
+    const APP_VERSION = 'v1.27';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1908,14 +1908,25 @@ bg2: {
       return kindCode === 'D' ? '二軍' : '一軍';
     }
 
+    function promiseTimeout(promise, ms, message = '操作逾時') {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))
+      ]);
+    }
+
     async function refreshCurrentRosterStatus() {
       const linked = players.filter(player => player.cpblAcnt);
       if (!linked.length) return;
 
       try {
-        const data = await cpblRequest('current-rosters', {
-          acnts: linked.map(player => player.cpblAcnt)
-        });
+        const data = await promiseTimeout(
+          cpblRequest('current-rosters', {
+            acnts: linked.map(player => player.cpblAcnt)
+          }),
+          4500,
+          '目前一二軍狀態查詢逾時'
+        );
         const rows = Array.isArray(data.players) ? data.players : [];
         const byAcnt = new Map(rows.filter(row => row?.ok && row.acnt).map(row => [String(row.acnt), row]));
 
@@ -2838,44 +2849,39 @@ bg2: {
       }
     }
 
-    async function switchPlayerLevel(level) {
+    function switchPlayerLevel(level) {
       level = level === 'D' ? 'D' : 'A';
       if (level === selectedLevel) return;
       const player = selectedPlayer();
       if (!player) return;
 
-      // 先把目前軍別的累積資料留在記憶體；切換時不等待任何網路或 DB 寫入。
       persistActiveStatsProfile(player);
-
       selectedLevel = level;
+
       const years = availableSeasonYears(player, selectedLevel);
       selectedSeason = years[0] ?? CURRENT_YEAR;
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
 
-      // 先立即切畫面，避免讀取當日紀錄時讓使用者感覺按鈕卡住。
       currentRecord = defaultGameRecord(player);
       renderAll();
 
-      // 球員資料背景寫入，不阻塞軍別切換。
+      const targetPlayerId = player.id;
+      const targetLevel = level;
+
       player.updatedAt = Date.now();
       idbPut(STORES.players, player).catch(error => {
         console.warn('切換軍別時儲存球員資料失敗', error);
       });
 
-      const targetPlayerId = player.id;
-      const targetLevel = level;
-      try {
-        await loadRecord();
-        // 如果讀取期間使用者又切到別的球員／軍別，就不要用舊結果重畫。
-        if (selectedPlayerId !== targetPlayerId || selectedLevel !== targetLevel) return;
-        renderAll();
-      } catch (error) {
-        console.warn('切換軍別時讀取當日紀錄失敗', error);
-        if (selectedPlayerId === targetPlayerId && selectedLevel === targetLevel) {
-          currentRecord = defaultGameRecord(player);
+      Promise.resolve()
+        .then(() => loadRecord())
+        .then(() => {
+          if (selectedPlayerId !== targetPlayerId || selectedLevel !== targetLevel) return;
           renderAll();
-        }
-      }
+        })
+        .catch(error => {
+          console.warn('切換軍別時背景讀取當日紀錄失敗', error);
+        });
     }
 
     async function switchPlayerSeason(year) {
@@ -5856,9 +5862,7 @@ bg2: {
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
 
-        // 首頁顯示的球隊／二軍標記以 CPBL 目前名單為準，不沿用建立球員時的舊值。
-        await refreshCurrentRosterStatus();
-
+        // 先完成本機資料載入；CPBL 目前軍別改成背景更新，不能卡住啟動。
         selectedLevel = 'A';
         if (selectedPlayerId) {
           const player = selectedPlayer();
@@ -5868,6 +5872,10 @@ bg2: {
           await loadRecord();
         }
         renderAll();
+
+        refreshCurrentRosterStatus()
+          .then(() => renderAll())
+          .catch(error => console.warn('背景更新目前一二軍狀態失敗', error));
       } catch (error) {
         console.error(error);
         setStatus('無法開啟瀏覽器資料庫。', true);
