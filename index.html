@@ -975,6 +975,206 @@
 
     .app-update-overlay {
       z-index: 1400;
+      padding: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 78% 16%, rgba(215,173,82,.18), transparent 22%),
+        radial-gradient(circle at 18% 82%, rgba(56,111,170,.28), transparent 28%),
+        linear-gradient(155deg, #0b1627 0%, #142844 52%, #1d395c 100%);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .app-update-overlay::before,
+    .app-update-overlay::after {
+      content: '';
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .app-update-overlay::before {
+      width: min(82vw, 620px);
+      aspect-ratio: 1;
+      left: 50%;
+      top: 47%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      border: 1px solid rgba(255,255,255,.075);
+      border-radius: 8%;
+      box-shadow:
+        0 0 0 38px rgba(255,255,255,.018),
+        0 0 0 76px rgba(255,255,255,.012);
+    }
+
+    .app-update-overlay::after {
+      width: 260px;
+      height: 260px;
+      right: -96px;
+      top: -84px;
+      border-radius: 50%;
+      border: 2px solid rgba(215,173,82,.13);
+      box-shadow:
+        inset 0 0 0 16px rgba(255,255,255,.012),
+        0 0 80px rgba(215,173,82,.08);
+    }
+
+    .app-splash {
+      position: relative;
+      z-index: 1;
+      width: min(560px, calc(100% - 38px));
+      min-height: min(760px, calc(100dvh - 36px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    .app-splash-mark {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 26px;
+      border-radius: 30px;
+      background: linear-gradient(145deg, #203e64, #10233d);
+      border: 1px solid rgba(255,255,255,.13);
+      box-shadow:
+        0 22px 55px rgba(0,0,0,.34),
+        inset 0 1px 0 rgba(255,255,255,.11);
+    }
+
+    .app-splash-ball {
+      position: relative;
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: #f4f1e8;
+      box-shadow: 0 8px 20px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+
+    .app-splash-ball::before,
+    .app-splash-ball::after {
+      content: '';
+      position: absolute;
+      width: 54px;
+      height: 80px;
+      top: -7px;
+      border: 2px solid #c64742;
+      border-radius: 50%;
+    }
+
+    .app-splash-ball::before { left: -34px; }
+    .app-splash-ball::after { right: -34px; }
+
+    .app-splash-kicker {
+      margin-bottom: 8px;
+      color: #d7ad52;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+    }
+
+    .app-splash-title {
+      margin: 0;
+      font-size: clamp(32px, 8vw, 48px);
+      line-height: 1.1;
+      font-weight: 950;
+      letter-spacing: .03em;
+      text-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+
+    .app-splash-subtitle {
+      margin-top: 12px;
+      color: rgba(232,239,248,.72);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .app-splash-progress {
+      width: min(420px, 100%);
+      margin-top: 74px;
+      padding: 0 4px;
+    }
+
+    .app-splash-progress .sync-progress-top {
+      margin-bottom: 10px;
+      align-items: flex-end;
+    }
+
+    .app-splash-progress .sync-progress-title {
+      color: rgba(255,255,255,.76);
+      font-size: 12px;
+      letter-spacing: .06em;
+    }
+
+    .app-splash-progress .sync-progress-percent {
+      color: #d7ad52;
+      font-size: 23px;
+    }
+
+    .app-splash-progress .sync-progress-status {
+      min-height: 18px;
+      margin: 0 0 11px;
+      color: rgba(232,239,248,.64);
+      text-align: left;
+      font-size: 12px;
+    }
+
+    .app-splash-progress .sync-progress-track {
+      height: 7px;
+      background: rgba(255,255,255,.13);
+      box-shadow: none;
+    }
+
+    .app-splash-progress .sync-progress-bar {
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,.18) 0 8px,
+          rgba(255,255,255,.02) 8px 16px
+        ),
+        linear-gradient(90deg, #d7ad52, #f1cc73);
+      box-shadow: 0 0 16px rgba(215,173,82,.3);
+    }
+
+    .app-splash-version {
+      margin-top: 18px;
+      color: rgba(255,255,255,.38);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .app-update-overlay .sync-progress-card.error .sync-progress-percent,
+    .app-update-overlay .sync-progress-card.error .sync-progress-status {
+      color: #ff9b98;
+    }
+
+    .app-update-overlay .sync-progress-card.error .sync-progress-bar {
+      background: #d95b57;
+    }
+
+    @media (max-width: 480px) {
+      .app-splash {
+        min-height: calc(100dvh - 24px);
+      }
+      .app-splash-mark {
+        width: 98px;
+        height: 98px;
+        border-radius: 26px;
+      }
+      .app-splash-ball {
+        width: 58px;
+        height: 58px;
+      }
+      .app-splash-progress {
+        margin-top: 58px;
+      }
     }
 
     #quickTemplateDialog {
@@ -1026,14 +1226,24 @@
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay hidden" role="status" aria-live="polite" aria-busy="true">
-    <div id="appUpdateCard" class="sync-progress-card">
-      <div class="sync-progress-top">
-        <div class="sync-progress-title">正在檢查程式更新</div>
-        <div id="appUpdatePercent" class="sync-progress-percent">0%</div>
+    <div id="appUpdateCard" class="sync-progress-card app-splash">
+      <div class="app-splash-mark" aria-hidden="true">
+        <div class="app-splash-ball"></div>
       </div>
-      <div id="appUpdateStatus" class="sync-progress-status">準備中…</div>
-      <div class="sync-progress-track" aria-hidden="true">
-        <div id="appUpdateBar" class="sync-progress-bar"></div>
+      <div class="app-splash-kicker">BASEBALL REPORT</div>
+      <h1 class="app-splash-title">球員戰績圖片</h1>
+      <div class="app-splash-subtitle">PLAYER PERFORMANCE REPORT</div>
+
+      <div class="app-splash-progress">
+        <div class="sync-progress-top">
+          <div class="sync-progress-title">啟動中</div>
+          <div id="appUpdatePercent" class="sync-progress-percent">0%</div>
+        </div>
+        <div id="appUpdateStatus" class="sync-progress-status">準備中…</div>
+        <div class="sync-progress-track" aria-hidden="true">
+          <div id="appUpdateBar" class="sync-progress-bar"></div>
+        </div>
+        <div class="app-splash-version">VERSION v1.20</div>
       </div>
     </div>
   </div>
@@ -1135,7 +1345,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.19</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.20</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1302,7 +1512,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.19';
+    const APP_VERSION = 'v1.20';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
