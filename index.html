@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.29</div>
+        <div class="app-splash-version">VERSION v1.30</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.29</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.30</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.29';
+    const APP_VERSION = 'v1.30';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -4804,13 +4804,13 @@ bg2: {
       const playerTitle = `#${player.number} ${reportPlayerName(player)}`;
       ctx.textAlign = 'left';
       ctx.fillStyle = layout.name.color || '#ffffff';
-      ctx.font = `900 ${layout.fonts.playerName}px "Microsoft JhengHei", Arial, sans-serif`;
+      let playerNameFontSize = Number(layout.fonts.playerName) || 42;
+      ctx.font = `900 ${playerNameFontSize}px "Microsoft JhengHei", Arial, sans-serif`;
       const nameMaxWidth = layout.name.maxWidth || 438;
       const nameMinSize = isBg2 ? 28 : 32;
-      while (ctx.measureText(playerTitle).width > nameMaxWidth) {
-        const currentSize = Number(ctx.font.match(/\d+/)?.[0] || layout.fonts.playerName);
-        if (currentSize <= nameMinSize) break;
-        ctx.font = `900 ${currentSize - 2}px "Microsoft JhengHei", Arial, sans-serif`;
+      while (ctx.measureText(playerTitle).width > nameMaxWidth && playerNameFontSize > nameMinSize) {
+        playerNameFontSize = Math.max(nameMinSize, playerNameFontSize - 2);
+        ctx.font = `900 ${playerNameFontSize}px "Microsoft JhengHei", Arial, sans-serif`;
       }
       ctx.fillText(playerTitle, layout.name.textX, layout.name.textY);
 
