@@ -806,13 +806,57 @@
     }
 
     .home-player-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, max-content));
+      gap: 8px;
+      margin: 14px 0 10px;
+    }
+
+    .home-player-filter-row {
       display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin: 14px 0;
+      margin-top: 9px;
+    }
+
+    .home-level-filter-btn,
+    .home-team-filter-btn {
+      border-radius: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .home-level-filter-btn {
+      min-width: 72px;
+      padding: 8px 16px;
+      border: 1px solid #c8ced8;
+      background: #eef2f6;
+      color: var(--muted);
+    }
+
+    .home-level-filter-btn.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 7px rgba(31,78,121,.22);
+    }
+
+    .home-team-filter-btn {
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: #10233d;
+      box-shadow: 0 2px 6px rgba(15,23,42,.12);
+    }
+
+    .home-team-filter-btn.active {
+      border-color: currentColor;
+      box-shadow: 0 0 0 2px currentColor, 0 3px 10px rgba(15,23,42,.18);
     }
 
     .home-player-grid {
+      margin-top: 14px;
+
       display: grid !important;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px !important;
@@ -1297,7 +1341,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.30</div>
+        <div class="app-splash-version">VERSION v1.31</div>
       </div>
     </div>
   </div>
@@ -1339,11 +1383,26 @@
             <span id="homePlayerCount"></span>
           </div>
           <div class="home-player-actions">
-            <button id="addPlayerBtn" class="press-btn primary">＋ 新增球員</button>
+            <button id="addPlayerBtn" class="press-btn primary">新增球員</button>
             <button id="homeSearchPlayerBtn" class="press-btn">搜尋球員</button>
-            <button id="batchCpblBtn" class="press-btn">批次搜尋中職資料</button>
             <button id="allPlayersBtn" class="press-btn">展開全部</button>
           </div>
+
+          <div id="homeLevelFilters" class="home-player-filter-row" aria-label="軍別篩選">
+            <button class="home-level-filter-btn active" type="button" data-home-level-filter="A">一軍</button>
+            <button class="home-level-filter-btn" type="button" data-home-level-filter="D">二軍</button>
+          </div>
+
+          <div id="homeTeamFilters" class="home-player-filter-row" aria-label="球隊篩選">
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="富邦悍將" style="color:#005BAC">富邦悍將</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="台鋼雄鷹" style="color:#008C4A">台鋼雄鷹</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="中信兄弟" style="color:#F2C500">中信兄弟</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="樂天桃猿" style="color:#8B1E3F">樂天桃猿</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="統一7-ELEVEn獅" style="color:#F58220">統一7-ELEVEn獅</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="味全龍" style="color:#D71920">味全龍</button>
+            <button class="home-team-filter-btn" type="button" data-home-team-filter="__OTHER__" style="color:#FFFFFF">其他</button>
+          </div>
+
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
@@ -1399,7 +1458,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.30</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.31</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1479,25 +1538,6 @@
     </div>
   </dialog>
 
-  <dialog id="batchCpblDialog">
-    <div class="dialog-body">
-      <div class="dialog-head">
-        <h2>批次搜尋中職資料</h2>
-        <button class="press-btn dialog-close">關閉</button>
-      </div>
-      <div class="small" style="line-height:1.7">
-        會用目前已建立球員的「姓名＋背號」逐一搜尋中職官網。<br>
-        已經連結 CPBL 的球員不會重新搜尋；批次更新累積成績預設更新今年的一軍資料。
-      </div>
-      <div class="section-actions" style="margin-top:14px">
-        <button id="batchCpblBindBtn" class="press-btn">只綁定中職資料</button>
-        <button id="batchCpblUpdateBtn" class="press-btn primary">綁定並更新本季累積成績</button>
-      </div>
-      <div id="batchCpblProgress" class="small" style="margin-top:14px"></div>
-      <div id="batchCpblResults" style="margin-top:10px;max-height:300px;overflow:auto;line-height:1.65"></div>
-    </div>
-  </dialog>
-
   <dialog id="allPlayersDialog">
     <div class="dialog-body">
       <div class="dialog-head">
@@ -1572,7 +1612,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.30';
+    const APP_VERSION = 'v1.31';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1591,6 +1631,8 @@
       playerPage: document.getElementById('playerPage'),
       homeTemplateGrid: document.getElementById('homeTemplateGrid'),
       homePlayerCount: document.getElementById('homePlayerCount'),
+      homeLevelFilters: document.getElementById('homeLevelFilters'),
+      homeTeamFilters: document.getElementById('homeTeamFilters'),
       playerPageDate: document.getElementById('playerPageDate'),
       backHomeBtn: document.getElementById('backHomeBtn'),
       majorLevelBtn: document.getElementById('majorLevelBtn'),
@@ -1641,6 +1683,8 @@
     const CURRENT_YEAR = new Date().getFullYear();
     let selectedSeason = CURRENT_YEAR;
     let selectedLevel = 'A';
+    let homeLevelFilter = 'A';
+    let homeTeamFilter = '';
     let currentRecord = null;
     let renderToken = 0;
     let photoDrag = null;
@@ -2090,82 +2134,6 @@ bg2: {
       player.cpblLastUpdatedByProfile ||= {};
       player.cpblLastUpdatedByProfile[key] = Date.now();
       player.cpblLastUpdatedAt = Date.now();
-    }
-
-    async function batchLinkCpblPlayers(updateSeasonStats = false) {
-      const progress = document.getElementById('batchCpblProgress');
-      const results = document.getElementById('batchCpblResults');
-      const bindBtn = document.getElementById('batchCpblBindBtn');
-      const updateBtn = document.getElementById('batchCpblUpdateBtn');
-      const year = CURRENT_YEAR;
-      const kindCode = 'A';
-      const total = players.length;
-
-      if (!total) {
-        progress.textContent = '目前沒有已建立的球員。';
-        results.innerHTML = '';
-        return;
-      }
-
-      if (updateSeasonStats && !window.confirm(`將以中職官網 ${year} 年資料覆蓋已連結／成功找到球員的本季累積成績，確定繼續嗎？`)) return;
-
-      bindBtn.disabled = true;
-      updateBtn.disabled = true;
-      results.innerHTML = '';
-
-      const summary = { linked: 0, updated: 0, already: 0, notFound: 0, failed: 0 };
-      const detailRows = [];
-
-      try {
-        for (let index = 0; index < players.length; index++) {
-          const player = players[index];
-          progress.textContent = `處理中 ${index + 1}／${total}：#${player.number} ${player.name}`;
-
-          try {
-            const searchName = String(player.name || '').trim();
-            if (!player.cpblAcnt) {
-              const found = await cpblRequest('search-player', { name: searchName, number: player.number });
-              const official = found.player;
-              if (!official) {
-                summary.notFound += 1;
-                detailRows.push(`<div>找不到｜#${escapeHtml(player.number)} ${escapeHtml(player.name)}</div>`);
-                continue;
-              }
-
-              player.cpblAcnt = official.acnt || '';
-              player.cpblTeam = normalizeTeamName(official.team || '');
-              player.cpblTeamCode = official.teamCode || '';
-              player.cpblPosition = official.position || '';
-              summary.linked += 1;
-            } else {
-              summary.already += 1;
-            }
-
-            if (updateSeasonStats) {
-              const data = await cpblRequest('season-stats', { acnt: player.cpblAcnt, year, kindCode });
-              applyCpblSeasonStatsToPlayer(player, data.stats, year, kindCode);
-              summary.updated += 1;
-            }
-
-            await savePlayer(player);
-          } catch (error) {
-            summary.failed += 1;
-            detailRows.push(`<div>失敗｜#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${escapeHtml(error?.message || String(error))}</div>`);
-          }
-        }
-
-        progress.textContent = `完成：新綁定 ${summary.linked} 人${updateSeasonStats ? `、更新累積 ${summary.updated} 人` : ''}、原已連結 ${summary.already} 人、找不到 ${summary.notFound} 人、失敗 ${summary.failed} 人。`;
-        results.innerHTML = detailRows.length
-          ? detailRows.join('')
-          : '<div class="small">全部處理完成，沒有找不到或失敗的球員。</div>';
-        renderAll();
-        setStatus(updateSeasonStats
-          ? `批次中職資料完成：新綁定 ${summary.linked} 人，更新 ${summary.updated} 人。`
-          : `批次中職資料完成：新綁定 ${summary.linked} 人。`);
-      } finally {
-        bindBtn.disabled = false;
-        updateBtn.disabled = false;
-      }
     }
 
     async function importCpblDaily(player) {
@@ -3323,13 +3291,48 @@ bg2: {
       }
     }
 
-    function renderRecentPlayers() {
-      const list = [...players].sort((a, b) => {
-        const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
-        if (used) return used;
-        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
+    function homePlayerLevel(player) {
+      if (player?.cpblCurrentLevel === 'D') return 'D';
+      if (player?.cpblCurrentLevel === 'A') return 'A';
+      return /二軍/.test(String(player?.cpblTeam || '')) ? 'D' : 'A';
+    }
+
+    function homePlayerTeam(player) {
+      const raw = normalizeTeamName(player?.cpblTeam || '').replace(/二軍$/, '').trim();
+      return normalizeTeamName(raw);
+    }
+
+    function renderHomePlayerFilters() {
+      els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
+        button.classList.toggle('active', button.dataset.homeLevelFilter === homeLevelFilter);
       });
-      if (els.homePlayerCount) els.homePlayerCount.textContent = `${list.length} 名`;
+      els.homeTeamFilters?.querySelectorAll('[data-home-team-filter]').forEach(button => {
+        button.classList.toggle('active', button.dataset.homeTeamFilter === homeTeamFilter);
+      });
+    }
+
+    function renderRecentPlayers() {
+      renderHomePlayerFilters();
+
+      const recognizedTeams = new Set(OPPONENTS.map(team => team.name));
+      const list = [...players]
+        .filter(player => homePlayerLevel(player) === homeLevelFilter)
+        .filter(player => {
+          if (!homeTeamFilter) return true;
+          const team = homePlayerTeam(player);
+          if (homeTeamFilter === '__OTHER__') return !recognizedTeams.has(team);
+          return team === homeTeamFilter;
+        })
+        .sort((a, b) => {
+          const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
+          if (used) return used;
+          return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
+        });
+
+      if (els.homePlayerCount) {
+        els.homePlayerCount.textContent = `${list.length} / ${players.length} 名`;
+      }
+
       els.recent.innerHTML = list.length ? list.map(p => {
         const team = normalizeTeamName(p.cpblTeam || '');
         const meta = [p.type === 'pitcher' ? '投手' : '打者', team].filter(Boolean).join('｜');
@@ -3341,7 +3344,8 @@ bg2: {
               <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
             </span>
           </button>`;
-      }).join('') : '<div class="empty" style="grid-column:1/-1">尚未建立球員，先按「＋ 新增球員」。</div>';
+      }).join('') : '<div class="empty" style="grid-column:1/-1">目前篩選條件沒有球員。</div>';
+
       els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
         btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
       });
@@ -5543,13 +5547,21 @@ bg2: {
     els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
 
-    document.getElementById('batchCpblBtn').addEventListener('click', () => {
-      document.getElementById('batchCpblProgress').textContent = `目前共有 ${players.length} 名球員。`;
-      document.getElementById('batchCpblResults').innerHTML = '';
-      document.getElementById('batchCpblDialog').showModal();
+    els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
+      button.addEventListener('click', () => {
+        homeLevelFilter = button.dataset.homeLevelFilter === 'D' ? 'D' : 'A';
+        renderRecentPlayers();
+      });
     });
-    document.getElementById('batchCpblBindBtn').addEventListener('click', () => batchLinkCpblPlayers(false));
-    document.getElementById('batchCpblUpdateBtn').addEventListener('click', () => batchLinkCpblPlayers(true));
+
+    els.homeTeamFilters?.querySelectorAll('[data-home-team-filter]').forEach(button => {
+      button.addEventListener('click', () => {
+        const value = button.dataset.homeTeamFilter || '';
+        homeTeamFilter = homeTeamFilter === value ? '' : value;
+        renderRecentPlayers();
+      });
+    });
+
     document.getElementById('allPlayersBtn').addEventListener('click', () => {
       renderAllPlayersDialog();
       els.allDialog.showModal();
