@@ -2393,6 +2393,212 @@ dialog::backdrop {
 
 /* ===== v1.33 POPUP REFRESH END ===== */
 
+
+/* ===== v1.34 CUSTOM MESSAGE DIALOG START ===== */
+#appMessageDialog {
+  width: min(520px, calc(100% - 24px));
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  overflow: visible;
+  color: #17283d;
+  background: transparent;
+  box-shadow: none;
+}
+
+#appMessageDialog::backdrop {
+  background: rgba(7, 20, 34, .58);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+#appMessageDialog[open] {
+  animation: appMessageEnter .18s ease-out both;
+}
+
+@keyframes appMessageEnter {
+  from { opacity: 0; transform: translateY(10px) scale(.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.app-message-shell {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 26px 22px;
+  border: 1px solid rgba(213, 223, 233, .96);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(199,154,57,.10), transparent 31%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 28px 70px rgba(6, 24, 42, .28);
+}
+
+.app-message-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #123f6d 0 72%, #c79a39 72% 100%);
+}
+
+.app-message-head {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 38px;
+  gap: 14px;
+  align-items: center;
+}
+
+.app-message-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background: #eaf2f9;
+  color: #123f6d;
+  box-shadow: inset 0 0 0 1px #d6e2ed;
+}
+
+.app-message-icon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.app-message-title {
+  margin: 0;
+  color: #142b43;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: .03em;
+}
+
+.app-message-close {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.app-message-text {
+  margin: 18px 0 0 66px;
+  color: #536276;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.75;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.app-message-input-wrap {
+  margin: 16px 0 0 66px;
+}
+
+.app-message-input-wrap.hidden {
+  display: none;
+}
+
+#appMessageInput {
+  min-height: 46px;
+  font-size: 15px;
+}
+
+.app-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.app-message-actions .press-btn {
+  min-width: 104px;
+}
+
+#appMessageDialog[data-tone="warning"] .app-message-icon {
+  background: #fff6df;
+  color: #a56d08;
+  box-shadow: inset 0 0 0 1px #f0dba8;
+}
+
+#appMessageDialog[data-tone="danger"] .app-message-icon {
+  background: #fff0ee;
+  color: #b42318;
+  box-shadow: inset 0 0 0 1px #efcbc6;
+}
+
+#appMessageDialog[data-tone="success"] .app-message-icon {
+  background: #eaf7ef;
+  color: #247044;
+  box-shadow: inset 0 0 0 1px #c9e4d3;
+}
+
+#appMessageDialog[data-tone="danger"] #appMessageConfirmBtn {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ba3227, #8f2119);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(180,35,24,.22);
+}
+
+#appMessageDialog[data-tone="warning"] #appMessageConfirmBtn {
+  border-color: transparent;
+  background: linear-gradient(135deg, #b88724, #8e6414);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(173,124,28,.20);
+}
+
+@media (max-width: 560px) {
+  #appMessageDialog {
+    width: calc(100% - 16px);
+  }
+
+  .app-message-shell {
+    padding: 22px 18px 18px;
+    border-radius: 20px;
+  }
+
+  .app-message-head {
+    grid-template-columns: 46px minmax(0, 1fr) 36px;
+    gap: 10px;
+  }
+
+  .app-message-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .app-message-title {
+    font-size: 18px;
+  }
+
+  .app-message-text,
+  .app-message-input-wrap {
+    margin-left: 0;
+  }
+
+  .app-message-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .app-message-actions .press-btn {
+    min-width: 0;
+  }
+
+  #appMessageCancelBtn.hidden {
+    display: none;
+  }
+
+  #appMessageCancelBtn.hidden + #appMessageConfirmBtn {
+    grid-column: 1 / -1;
+  }
+}
+/* ===== v1.34 CUSTOM MESSAGE DIALOG END ===== */
+
 </style>
 </head>
 <body>
@@ -2681,6 +2887,25 @@ dialog::backdrop {
       </div>
       <div id="batchReportProgress" class="batch-report-progress"></div>
       <div id="batchReportResults" class="batch-report-results"></div>
+    </div>
+  </dialog>
+
+
+  <dialog id="appMessageDialog" data-tone="info">
+    <div class="app-message-shell">
+      <div class="app-message-head">
+        <div id="appMessageIcon" class="app-message-icon" aria-hidden="true"></div>
+        <h2 id="appMessageTitle" class="app-message-title">提示</h2>
+        <button id="appMessageCloseBtn" class="press-btn app-message-close" type="button" aria-label="關閉" title="關閉">×</button>
+      </div>
+      <div id="appMessageText" class="app-message-text"></div>
+      <label id="appMessageInputWrap" class="app-message-input-wrap hidden">
+        <input id="appMessageInput" type="text" autocomplete="off" />
+      </label>
+      <div class="app-message-actions">
+        <button id="appMessageCancelBtn" class="press-btn" type="button">取消</button>
+        <button id="appMessageConfirmBtn" class="press-btn primary" type="button">確定</button>
+      </div>
     </div>
   </dialog>
 
@@ -3506,7 +3731,18 @@ bg2: {
       if (player.type === 'hitter') {
         const list = daily.hitter?.plateAppearances || [];
         if (!list.length) throw new Error('官網當天沒有可匯入的逐打席資料。');
-        if (currentRecord.hitterPAs.length && !window.confirm('目前已有逐打席紀錄，要用中職官網資料覆蓋嗎？')) return false;
+        if (currentRecord.hitterPAs.length) {
+          const overwrite = await showAppConfirm(
+            '目前已有逐打席紀錄。\n要用中職官網資料覆蓋目前紀錄嗎？',
+            {
+              title: '覆蓋逐打席紀錄',
+              confirmText: '覆蓋資料',
+              cancelText: '保留目前資料',
+              tone: 'warning'
+            }
+          );
+          if (!overwrite) return false;
+        }
         currentRecord.hitterAppearance.mode = 'bat';
         currentRecord.hitterPAs = list.map(pa => ({
           id: uid(),
@@ -4067,8 +4303,124 @@ bg2: {
       return map[pa.code] || pa.code;
     }
 
+    const APP_MESSAGE_ICONS = {
+      info: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 10v6M12 7h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+      warning: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 4 21 20H3L12 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+      danger: '<svg viewBox="0 0 24 24" fill="none"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>',
+      success: '<svg viewBox="0 0 24 24" fill="none"><path d="m7 12 3.2 3.2L17.5 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>'
+    };
+
+    let appMessageQueue = Promise.resolve();
+
+    function openAppMessageDialog(options = {}) {
+      return new Promise(resolve => {
+        const dialog = document.getElementById('appMessageDialog');
+        const titleEl = document.getElementById('appMessageTitle');
+        const textEl = document.getElementById('appMessageText');
+        const iconEl = document.getElementById('appMessageIcon');
+        const inputWrap = document.getElementById('appMessageInputWrap');
+        const input = document.getElementById('appMessageInput');
+        const cancelBtn = document.getElementById('appMessageCancelBtn');
+        const confirmBtn = document.getElementById('appMessageConfirmBtn');
+        const closeBtn = document.getElementById('appMessageCloseBtn');
+
+        const mode = options.mode || 'alert';
+        const tone = ['info','warning','danger','success'].includes(options.tone) ? options.tone : 'info';
+        const hasCancel = mode !== 'alert';
+        const hasInput = mode === 'prompt';
+        let settled = false;
+
+        dialog.dataset.tone = tone;
+        titleEl.textContent = options.title || (tone === 'danger' ? '操作確認' : tone === 'warning' ? '請確認' : '提示');
+        textEl.textContent = String(options.message ?? '');
+        iconEl.innerHTML = APP_MESSAGE_ICONS[tone] || APP_MESSAGE_ICONS.info;
+        confirmBtn.textContent = options.confirmText || '確定';
+        cancelBtn.textContent = options.cancelText || '取消';
+        cancelBtn.classList.toggle('hidden', !hasCancel);
+        inputWrap.classList.toggle('hidden', !hasInput);
+        input.value = hasInput ? String(options.defaultValue ?? '') : '';
+        input.placeholder = hasInput ? String(options.placeholder ?? '') : '';
+
+        const finish = value => {
+          if (settled) return;
+          settled = true;
+          dialog.removeEventListener('cancel', onCancel);
+          confirmBtn.removeEventListener('click', onConfirm);
+          cancelBtn.removeEventListener('click', onCancelClick);
+          closeBtn.removeEventListener('click', onCancelClick);
+          input.removeEventListener('keydown', onInputKey);
+          if (dialog.open) dialog.close();
+          resolve(value);
+        };
+
+        const onConfirm = () => finish(hasInput ? input.value : true);
+        const onCancelClick = () => finish(hasInput ? null : false);
+        const onCancel = event => {
+          event.preventDefault();
+          finish(hasInput ? null : false);
+        };
+        const onInputKey = event => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            onConfirm();
+          }
+        };
+
+        dialog.addEventListener('cancel', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancelClick);
+        closeBtn.addEventListener('click', onCancelClick);
+        input.addEventListener('keydown', onInputKey);
+
+        dialog.showModal();
+        requestAnimationFrame(() => {
+          if (hasInput) {
+            input.focus();
+            input.select();
+          } else {
+            confirmBtn.focus();
+          }
+        });
+      });
+    }
+
+    function queueAppMessage(options) {
+      const task = () => openAppMessageDialog(options);
+      const result = appMessageQueue.then(task, task);
+      appMessageQueue = result.catch(() => {});
+      return result;
+    }
+
+    async function showAppAlert(message, options = {}) {
+      await queueAppMessage({
+        ...options,
+        mode: 'alert',
+        message
+      });
+    }
+
+    async function showAppConfirm(message, options = {}) {
+      return Boolean(await queueAppMessage({
+        ...options,
+        mode: 'confirm',
+        message
+      }));
+    }
+
+    async function showAppPrompt(message, defaultValue = '', options = {}) {
+      return await queueAppMessage({
+        ...options,
+        mode: 'prompt',
+        message,
+        defaultValue
+      });
+    }
+
     function setStatus(message, isError = false) {
-      if (isError) window.alert(message || '操作失敗。');
+      if (isError) void showAppAlert(message || '操作失敗。', {
+        title: '操作失敗',
+        tone: 'danger'
+      });
     }
 
     function normalizedPlayerSearchText(player) {
@@ -4828,13 +5180,25 @@ bg2: {
       const player = players.find(item => item.id === playerId);
       if (!player) return false;
 
-      const firstConfirm = window.confirm(
-        `確定要刪除 #${player.number} ${player.name} 嗎？\n會刪除球員資料、照片與所有日期戰報。`
+      const firstConfirm = await showAppConfirm(
+        `確定要刪除 #${player.number} ${player.name} 嗎？\n會一併刪除球員資料、照片與所有日期戰報。`,
+        {
+          title: '刪除球員',
+          confirmText: '繼續',
+          cancelText: '取消',
+          tone: 'danger'
+        }
       );
       if (!firstConfirm) return false;
 
-      const secondConfirm = window.confirm(
-        `再次確認：永久刪除 #${player.number} ${player.name}？\n此操作無法復原。`
+      const secondConfirm = await showAppConfirm(
+        `再次確認：永久刪除 #${player.number} ${player.name}？\n此操作無法復原。`,
+        {
+          title: '永久刪除確認',
+          confirmText: '永久刪除',
+          cancelText: '取消',
+          tone: 'danger'
+        }
       );
       if (!secondConfirm) return false;
 
@@ -5067,7 +5431,7 @@ bg2: {
       otherInput.addEventListener('change', async () => {
         const value = Math.floor(Number(otherInput.value));
         if (!Number.isFinite(value) || value < 1) {
-          window.alert('其他局數請輸入正整數。');
+          await showAppAlert('其他局數請輸入正整數。', { title: '輸入有誤', tone: 'warning' });
           otherInput.value = Number(appearance.inning) > 12 ? appearance.inning : '13';
           return;
         }
@@ -5228,15 +5592,15 @@ bg2: {
         const { code, officialAction } = selectedPaParts();
         const rbiValue = Number(rbi.value) || 0;
         if (['BB', 'IBB', 'HBP', 'CI'].includes(code) && rbiValue > 1) {
-          window.alert('此上壘方式最多只能有 1 打點。');
+          await showAppAlert('此上壘方式最多只能有 1 打點。', { title: '打點設定有誤', tone: 'warning' });
           return;
         }
         if (code === 'HR' && rbiValue < 1) {
-          window.alert('全壘打至少要有 1 打點。');
+          await showAppAlert('全壘打至少要有 1 打點。', { title: '打點設定有誤', tone: 'warning' });
           return;
         }
         if (['K', 'KREACH', 'DP', 'TP', 'INT', 'OUT'].includes(code) && rbiValue !== 0) {
-          window.alert('此出局／特殊結果不可設定打點。');
+          await showAppAlert('此出局／特殊結果不可設定打點。', { title: '打點設定有誤', tone: 'warning' });
           return;
         }
         currentRecord.hitterPAs.push({
@@ -5349,7 +5713,7 @@ bg2: {
       });
       inningOther.addEventListener('change', async () => {
         if (ipToOuts(inningOther.value) === null) {
-          window.alert('投球局數請輸入整數，或以 .1／.2 表示未滿一局，例如 0.2、13.1。');
+          await showAppAlert('投球局數請輸入整數，或以 .1／.2 表示未滿一局，例如 0.2、13.1。', { title: '投球局數格式錯誤', tone: 'warning' });
           inningOther.value = g.innings;
           return;
         }
