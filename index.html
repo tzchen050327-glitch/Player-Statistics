@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.28</div>
+        <div class="app-splash-version">VERSION v1.29</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.28</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.29</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.28';
+    const APP_VERSION = 'v1.29';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1955,22 +1955,25 @@ bg2: {
       player.cpblAvailableYears ||= { A: [], D: [] };
       player.cpblHistorySynced ||= { A: false, D: false };
 
-      const years = Array.isArray(history?.years)
+      const sourceYears = Array.isArray(history?.years)
         ? history.years.map(Number).filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR).sort((a, b) => b - a)
         : [];
 
-      player.cpblAvailableYears[kindCode] = [...new Set(years)];
-      player.cpblHistorySynced[kindCode] = true;
-
+      const appliedYears = [];
       for (const season of history?.seasons || []) {
         const year = Number(season?.year);
         if (!Number.isInteger(year)) continue;
         try {
           applyCpblSeasonStatsToPlayer(player, season, year, kindCode);
+          appliedYears.push(year);
         } catch (error) {
           console.warn(`略過 ${year} ${cpblLevelLabel(kindCode)}資料`, error);
         }
       }
+
+      // 只有真的成功寫進 statsProfiles 的年份才提供給軍別／年份切換。
+      player.cpblAvailableYears[kindCode] = [...new Set(appliedYears)].sort((a,b)=>b-a);
+      player.cpblHistorySynced[kindCode] = sourceYears.length === 0 || appliedYears.length > 0;
     }
 
     function setSyncProgress(percent, status, { error = false } = {}) {
@@ -2022,11 +2025,18 @@ bg2: {
         }
       }
 
+      const majorYears = availableSeasonYears(player, 'A');
+      const minorYears = availableSeasonYears(player, 'D');
+
+      if (histories.D?.years?.length && !minorYears.length) {
+        errors.push('二軍：官網有資料，但前端寫入失敗');
+      }
+
       report(92, '正在儲存球員資料…');
       await savePlayer(player);
-      report(97, '正在更新畫面…');
+      report(97, `一軍 ${majorYears.length} 季／二軍 ${minorYears.length} 季`);
 
-      return { partialErrors: errors };
+      return { partialErrors: errors, majorYears, minorYears };
     }
 
     async function updatePlayerFromCpbl(player, silent = false, year = selectedSeason, kindCode = selectedLevel) {
@@ -2833,14 +2843,18 @@ bg2: {
           (percent, status) => setSyncProgress(percent, status)
         );
 
-        const majorYears = availableSeasonYears(player, 'A');
+        // 同步完成後把「目前軍別」與 player.stats 明確保持一致，避免 A/D profile 被錯寫。
+        selectedLevel = 'A';
+        const majorYears = result?.majorYears?.length ? result.majorYears : availableSeasonYears(player, 'A');
+        const minorYears = result?.minorYears?.length ? result.minorYears : availableSeasonYears(player, 'D');
         selectedSeason = majorYears[0] || CURRENT_YEAR;
-        activatePlayerStatsProfile(player, selectedSeason, 'A');
+        activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
         await loadRecord();
         renderAll();
 
         const partialCount = result?.partialErrors?.length || 0;
-        await finishSyncProgress(partialCount ? '同步完成，部分資料未取得' : '一軍、二軍資料同步完成');
+        const summary = `一軍 ${majorYears.length} 季／二軍 ${minorYears.length} 季`;
+        await finishSyncProgress(partialCount ? `同步完成（部分失敗）｜${summary}` : `同步完成｜${summary}`);
       } catch (error) {
         console.warn('進入球員頁自動同步失敗', error);
         setSyncProgress(100, error?.message || '中職官網同步失敗', { error: true });
@@ -2882,6 +2896,29 @@ bg2: {
         .catch(error => {
           console.warn('切換軍別時背景讀取當日紀錄失敗', error);
         });
+
+      // 保險：如果初次同步真的沒把這個軍別寫進本機，背景補抓一次，不再顯示 0~100%。
+      const officialYears = player?.cpblAvailableYears?.[level];
+      const hasAnyProfile = Array.isArray(officialYears)
+        && officialYears.some(year => hasStatsProfile(player, year, level));
+      if (player.cpblAcnt && (!Array.isArray(officialYears) || !officialYears.length || !hasAnyProfile)) {
+        cpblRequest('season-history', { acnt: player.cpblAcnt, kindCode: level })
+          .then(data => {
+            if (!data?.history) return;
+            applyCpblSeasonHistory(player, data.history, level);
+            return idbPut(STORES.players, player);
+          })
+          .then(() => {
+            if (selectedPlayerId !== targetPlayerId || selectedLevel !== targetLevel) return;
+            const repairedYears = availableSeasonYears(player, level);
+            selectedSeason = repairedYears[0] ?? CURRENT_YEAR;
+            activatePlayerStatsProfile(player, selectedSeason, level);
+            renderAll();
+          })
+          .catch(error => {
+            console.warn(`背景補抓${cpblLevelLabel(level)}資料失敗`, error);
+          });
+      }
     }
 
     async function switchPlayerSeason(year) {
