@@ -808,16 +808,30 @@
     .home-player-actions {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, max-content));
+      justify-content: center;
       gap: 8px;
-      margin: 14px 0 10px;
+      margin: 14px auto 10px;
     }
 
     .home-player-filter-row {
-      display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
       margin-top: 9px;
+    }
+
+    #homeLevelFilters {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #homeTeamFilters {
+      width: min(100%, 900px);
+      margin-left: auto;
+      margin-right: auto;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .home-level-filter-btn,
@@ -843,10 +857,20 @@
     }
 
     .home-team-filter-btn {
-      padding: 8px 12px;
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 8px;
       border: 1px solid rgba(255,255,255,.18);
       background: #10233d;
       box-shadow: 0 2px 6px rgba(15,23,42,.12);
+      text-align: center;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .home-team-filter-btn:disabled {
+      opacity: .38;
+      cursor: default;
     }
 
     .home-team-filter-btn.active {
@@ -1341,7 +1365,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.31</div>
+        <div class="app-splash-version">VERSION v1.32</div>
       </div>
     </div>
   </div>
@@ -1388,9 +1412,10 @@
             <button id="allPlayersBtn" class="press-btn">展開全部</button>
           </div>
 
-          <div id="homeLevelFilters" class="home-player-filter-row" aria-label="軍別篩選">
+          <div id="homeLevelFilters" class="home-player-filter-row" aria-label="球員分類篩選">
             <button class="home-level-filter-btn active" type="button" data-home-level-filter="A">一軍</button>
             <button class="home-level-filter-btn" type="button" data-home-level-filter="D">二軍</button>
+            <button class="home-level-filter-btn" type="button" data-home-level-filter="OTHER">其他</button>
           </div>
 
           <div id="homeTeamFilters" class="home-player-filter-row" aria-label="球隊篩選">
@@ -1400,7 +1425,6 @@
             <button class="home-team-filter-btn" type="button" data-home-team-filter="樂天桃猿" style="color:#8B1E3F">樂天桃猿</button>
             <button class="home-team-filter-btn" type="button" data-home-team-filter="統一7-ELEVEn獅" style="color:#F58220">統一7-ELEVEn獅</button>
             <button class="home-team-filter-btn" type="button" data-home-team-filter="味全龍" style="color:#D71920">味全龍</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="__OTHER__" style="color:#FFFFFF">其他</button>
           </div>
 
           <div id="recentPlayers" class="home-player-grid"></div>
@@ -1458,7 +1482,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.31</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.32</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1612,7 +1636,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.31';
+    const APP_VERSION = 'v1.32';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -3291,15 +3315,21 @@ bg2: {
       }
     }
 
-    function homePlayerLevel(player) {
-      if (player?.cpblCurrentLevel === 'D') return 'D';
-      if (player?.cpblCurrentLevel === 'A') return 'A';
-      return /二軍/.test(String(player?.cpblTeam || '')) ? 'D' : 'A';
-    }
-
     function homePlayerTeam(player) {
       const raw = normalizeTeamName(player?.cpblTeam || '').replace(/二軍$/, '').trim();
       return normalizeTeamName(raw);
+    }
+
+    function homePlayerLevel(player) {
+      const team = homePlayerTeam(player);
+      const recognized = OPPONENTS.some(item => item.name === team);
+
+      // 未連結 CPBL 或不屬於六隊的球員，歸到「其他」。
+      if (!player?.cpblAcnt || !recognized) return 'OTHER';
+
+      if (player?.cpblCurrentLevel === 'D') return 'D';
+      if (player?.cpblCurrentLevel === 'A') return 'A';
+      return /二軍/.test(String(player?.cpblTeam || '')) ? 'D' : 'A';
     }
 
     function renderHomePlayerFilters() {
@@ -3308,20 +3338,18 @@ bg2: {
       });
       els.homeTeamFilters?.querySelectorAll('[data-home-team-filter]').forEach(button => {
         button.classList.toggle('active', button.dataset.homeTeamFilter === homeTeamFilter);
+        button.disabled = homeLevelFilter === 'OTHER';
       });
     }
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
 
-      const recognizedTeams = new Set(OPPONENTS.map(team => team.name));
       const list = [...players]
         .filter(player => homePlayerLevel(player) === homeLevelFilter)
         .filter(player => {
-          if (!homeTeamFilter) return true;
-          const team = homePlayerTeam(player);
-          if (homeTeamFilter === '__OTHER__') return !recognizedTeams.has(team);
-          return team === homeTeamFilter;
+          if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
+          return homePlayerTeam(player) === homeTeamFilter;
         })
         .sort((a, b) => {
           const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
@@ -5549,7 +5577,9 @@ bg2: {
 
     els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
       button.addEventListener('click', () => {
-        homeLevelFilter = button.dataset.homeLevelFilter === 'D' ? 'D' : 'A';
+        const value = button.dataset.homeLevelFilter;
+        homeLevelFilter = value === 'D' ? 'D' : value === 'OTHER' ? 'OTHER' : 'A';
+        if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
         renderRecentPlayers();
       });
     });
@@ -5921,10 +5951,6 @@ bg2: {
           await loadRecord();
         }
         renderAll();
-
-        refreshCurrentRosterStatus()
-          .then(() => renderAll())
-          .catch(error => console.warn('背景更新目前一二軍狀態失敗', error));
       } catch (error) {
         console.error(error);
         setStatus('無法開啟瀏覽器資料庫。', true);
@@ -6164,15 +6190,19 @@ bg2: {
     }
 
     async function bootApp() {
-      // 本機資料和更新檢查同時跑；更新伺服器慢也不能拖住資料準備。
+      // 本機資料和更新檢查同時跑；首頁顯示前再確認一次所有已連結球員目前軍別。
       const initPromise = init();
       const updatePromise = setupAppUpdate();
 
       const willReloadForUpdate = await updatePromise;
       if (willReloadForUpdate) return;
 
-      setAppUpdateProgress(90, '正在完成球員與戰報資料…');
+      setAppUpdateProgress(88, '正在準備球員資料…');
       await initPromise;
+
+      setAppUpdateProgress(94, '正在確認球員目前一軍／二軍狀態…');
+      await refreshCurrentRosterStatus();
+      renderAll();
 
       setAppUpdateProgress(100, '資料已準備完成');
       await new Promise(resolve => setTimeout(resolve, 220));
