@@ -2414,7 +2414,7 @@ dialog::backdrop {
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.33</div>
+        <div id="appSplashVersion" class="app-splash-version">VERSION</div>
       </div>
     </div>
   </div>
@@ -2686,6 +2686,8 @@ dialog::backdrop {
 
   <script>
     const APP_VERSION = 'v1.34';
+    const appSplashVersionEl = document.getElementById('appSplashVersion');
+    if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -3095,12 +3097,15 @@ bg2: {
           borderWidth: 4
         },
         name: {
+          plateX: 606, plateY: 880, plateW: 424, plateH: 116, plateR: 16,
+          plateBg: 'rgba(8,20,16,.92)',
+          plateBorder: 'rgba(209,187,135,.72)',
           textX: 626, textY: 925,
           lineX: 626, lineY: 945, lineW: 372, lineH: 4,
           typeX: 628, typeY: 980,
           maxWidth: 380, minFont: 27,
           color: '#f7f3e9',
-          typeColor: '#b7c0ba',
+          typeColor: '#c7d0ca',
           lineColor: '#c7a866'
         },
         fonts: {
@@ -5635,6 +5640,25 @@ bg2: {
         }
 
         drawPhotoFrameBase(ctx, template.photo);
+        if (template.name.plateBg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(
+            template.name.plateX,
+            template.name.plateY,
+            template.name.plateW,
+            template.name.plateH,
+            template.name.plateR || 0
+          );
+          ctx.fillStyle = template.name.plateBg;
+          ctx.fill();
+          if (template.name.plateBorder) {
+            ctx.strokeStyle = template.name.plateBorder;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
         ctx.fillStyle = template.name.color || '#ffffff';
         ctx.font = `900 ${template.fonts.playerName || 42}px "Microsoft JhengHei", Arial, sans-serif`;
         ctx.fillText('#81 球員名字', template.name.textX, template.name.textY);
@@ -6115,6 +6139,26 @@ bg2: {
       }
 
       // 區塊 5：背號與名字
+      if (layout.name.plateBg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(
+          layout.name.plateX,
+          layout.name.plateY,
+          layout.name.plateW,
+          layout.name.plateH,
+          layout.name.plateR || 0
+        );
+        ctx.fillStyle = layout.name.plateBg;
+        ctx.fill();
+        if (layout.name.plateBorder) {
+          ctx.strokeStyle = layout.name.plateBorder;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
       const playerTitle = `#${player.number} ${reportPlayerName(player)}`;
       ctx.textAlign = 'left';
       ctx.fillStyle = layout.name.color || '#ffffff';
