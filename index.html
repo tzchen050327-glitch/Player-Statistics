@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.22</div>
+        <div class="app-splash-version">VERSION v1.23</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.22</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.23</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1558,7 +1558,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.22';
+    const APP_VERSION = 'v1.23';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1890,6 +1890,30 @@ bg2: {
 
     function cpblLevelLabel(kindCode) {
       return kindCode === 'D' ? '二軍' : '一軍';
+    }
+
+    async function refreshCurrentRosterStatus() {
+      const linked = players.filter(player => player.cpblAcnt);
+      if (!linked.length) return;
+
+      try {
+        const data = await cpblRequest('current-rosters', {
+          acnts: linked.map(player => player.cpblAcnt)
+        });
+        const rows = Array.isArray(data.players) ? data.players : [];
+        const byAcnt = new Map(rows.filter(row => row?.ok && row.acnt).map(row => [String(row.acnt), row]));
+
+        for (const player of linked) {
+          const current = byAcnt.get(String(player.cpblAcnt));
+          if (!current?.team) continue;
+          player.cpblTeam = normalizeTeamName(current.team);
+          player.cpblCurrentLevel = current.level === 'D' ? 'D' : 'A';
+          player.cpblRosterUpdatedAt = Date.now();
+          await idbPut(STORES.players, player);
+        }
+      } catch (error) {
+        console.warn('目前一二軍名單更新失敗', error);
+      }
     }
 
     function pitcherInningsTextToOuts(value) {
@@ -5476,6 +5500,17 @@ bg2: {
         ensureStatsProfiles(player);
         try { await syncPlayerCpblHistory(player); }
         catch (error) { console.warn('CPBL season history import failed', error); }
+        try {
+          const roster = await cpblRequest('current-roster', { acnt: player.cpblAcnt });
+          if (roster?.player?.team) {
+            player.cpblTeam = normalizeTeamName(roster.player.team);
+            player.cpblCurrentLevel = roster.player.level === 'D' ? 'D' : 'A';
+            player.cpblRosterUpdatedAt = Date.now();
+            await savePlayer(player);
+          }
+        } catch (error) {
+          console.warn('CPBL current roster import failed', error);
+        }
         clearNewPlayerForm();
         els.addDialog.close();
         await selectPlayer(player.id);
@@ -5718,6 +5753,10 @@ bg2: {
         currentPage = 'home';
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
+
+        // 首頁顯示的球隊／二軍標記以 CPBL 目前名單為準，不沿用建立球員時的舊值。
+        await refreshCurrentRosterStatus();
+
         selectedLevel = 'A';
         if (selectedPlayerId) {
           const player = selectedPlayer();
