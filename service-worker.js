@@ -1,4 +1,4 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v15';
+const CACHE_NAME = 'baseball-player-card-pwa-v16';
 const APP_SHELL = [
   './',
   './index.html',
@@ -25,15 +25,42 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  const request = event.request;
+  const isNavigation = request.mode === 'navigate';
+  const isHtml = request.destination === 'document'
+    || new URL(request.url).pathname.endsWith('/index.html');
+
+  // HTML / App 導覽：network-first，避免 PWA 長期卡在舊版。
+  if (isNavigation || isHtml) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then(response => {
+          if (response && response.status === 200 && response.type !== 'opaque') {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          return await caches.match('./index.html')
+            || await caches.match('./')
+            || Response.error();
+        })
+    );
+    return;
+  }
+
+  // 其他靜態資源維持 cache-first。
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(event.request).then(response => {
+      return fetch(request).then(response => {
         if (!response || response.status !== 200 || response.type === 'opaque') return response;
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         return response;
-      }).catch(() => caches.match('./index.html'));
+      });
     })
   );
 });
