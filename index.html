@@ -730,6 +730,102 @@
       background: #ffffff;
     }
 
+    .sync-progress-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .42);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+
+    .sync-progress-card {
+      width: min(460px, 100%);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 22px;
+      padding: 22px 22px 20px;
+      background: rgba(255,255,255,.97);
+      box-shadow: 0 28px 80px rgba(15,23,42,.28);
+    }
+
+    .sync-progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .sync-progress-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .sync-progress-percent {
+      min-width: 58px;
+      text-align: right;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sync-progress-status {
+      min-height: 20px;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .sync-progress-track {
+      height: 16px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e6ebf1;
+      box-shadow: inset 0 1px 2px rgba(15,23,42,.10);
+    }
+
+    .sync-progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,.18) 0 10px,
+          rgba(255,255,255,.02) 10px 20px
+        ),
+        var(--accent);
+      transition: width .28s ease;
+      animation: syncStripe .8s linear infinite;
+    }
+
+    .sync-progress-card.error .sync-progress-percent,
+    .sync-progress-card.error .sync-progress-status {
+      color: var(--danger);
+    }
+
+    .sync-progress-card.error .sync-progress-bar {
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,.18) 0 10px,
+          rgba(255,255,255,.02) 10px 20px
+        ),
+        var(--danger);
+    }
+
+    @keyframes syncStripe {
+      from { background-position: 0 0, 0 0; }
+      to { background-position: 28px 0, 0 0; }
+    }
+
     .player-page-tabs {
       margin-bottom: 14px;
     }
@@ -811,6 +907,19 @@
     </section>
 
     <section id="playerPage" class="hidden">
+      <div id="syncProgressOverlay" class="sync-progress-overlay hidden" role="status" aria-live="polite" aria-busy="true">
+        <div id="syncProgressCard" class="sync-progress-card">
+          <div class="sync-progress-top">
+            <div class="sync-progress-title">正在同步中職資料</div>
+            <div id="syncProgressPercent" class="sync-progress-percent">0%</div>
+          </div>
+          <div id="syncProgressStatus" class="sync-progress-status">準備中…</div>
+          <div class="sync-progress-track" aria-hidden="true">
+            <div id="syncProgressBar" class="sync-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="player-page-top">
         <div class="player-page-left">
           <button id="backHomeBtn" class="press-btn">← 返回首頁</button>
@@ -847,7 +956,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.15</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.16</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -945,7 +1054,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.15';
+    const APP_VERSION = 'v1.16';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -969,6 +1078,11 @@
       majorLevelBtn: document.getElementById('majorLevelBtn'),
       minorLevelBtn: document.getElementById('minorLevelBtn'),
       seasonSelect: document.getElementById('seasonSelect'),
+      syncProgressOverlay: document.getElementById('syncProgressOverlay'),
+      syncProgressCard: document.getElementById('syncProgressCard'),
+      syncProgressPercent: document.getElementById('syncProgressPercent'),
+      syncProgressStatus: document.getElementById('syncProgressStatus'),
+      syncProgressBar: document.getElementById('syncProgressBar'),
       canvas: document.getElementById('cardCanvas'),
       downloadBtn: document.getElementById('downloadBtn'),
       outputDialog: document.getElementById('outputDialog'),
@@ -1284,24 +1398,60 @@ bg2: {
       }
     }
 
-    async function syncPlayerCpblHistory(player) {
+    function setSyncProgress(percent, status, { error = false } = {}) {
+      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+      if (els.syncProgressOverlay) els.syncProgressOverlay.classList.remove('hidden');
+      if (els.syncProgressCard) els.syncProgressCard.classList.toggle('error', Boolean(error));
+      if (els.syncProgressPercent) els.syncProgressPercent.textContent = `${value}%`;
+      if (els.syncProgressStatus) els.syncProgressStatus.textContent = status || '';
+      if (els.syncProgressBar) els.syncProgressBar.style.width = `${value}%`;
+    }
+
+    function hideSyncProgress() {
+      els.syncProgressOverlay?.classList.add('hidden');
+      els.syncProgressCard?.classList.remove('error');
+    }
+
+    async function finishSyncProgress(status = '同步完成') {
+      setSyncProgress(100, status);
+      await new Promise(resolve => setTimeout(resolve, 420));
+      hideSyncProgress();
+    }
+
+    async function syncPlayerCpblHistory(player, onProgress = null) {
       if (!player?.cpblAcnt) return;
 
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+
       const errors = [];
+      report(12, '正在連線中職官網…');
+
       for (const kindCode of ['A', 'D']) {
+        const isMajor = kindCode === 'A';
+        report(isMajor ? 20 : 58, `正在抓取${cpblLevelLabel(kindCode)}歷年資料…`);
+
         try {
           const data = await cpblRequest('season-history', { acnt: player.cpblAcnt, kindCode });
+          report(isMajor ? 38 : 76, `正在整理${cpblLevelLabel(kindCode)}賽季資料…`);
           applyCpblSeasonHistory(player, data.history, kindCode);
+          report(isMajor ? 48 : 86, `${cpblLevelLabel(kindCode)}資料完成`);
         } catch (error) {
           errors.push(`${cpblLevelLabel(kindCode)}：${error?.message || String(error)}`);
           player.cpblAvailableYears ||= { A: [], D: [] };
           player.cpblHistorySynced ||= { A: false, D: false };
           player.cpblHistorySynced[kindCode] = false;
+          report(isMajor ? 48 : 86, `${cpblLevelLabel(kindCode)}資料讀取失敗，繼續處理…`);
         }
       }
 
+      report(92, '正在儲存球員資料…');
       await savePlayer(player);
+      report(97, '正在更新畫面…');
+
       if (errors.length === 2) throw new Error(errors.join('；'));
+      return { partialErrors: errors };
     }
 
     async function updatePlayerFromCpbl(player, silent = false, year = selectedSeason, kindCode = selectedLevel) {
@@ -2029,21 +2179,31 @@ bg2: {
       currentPage = 'player';
       renderAll();
 
-      if (player.cpblAcnt) {
-        try {
-          await syncPlayerCpblHistory(player);
+      if (!player.cpblAcnt) return;
 
-          const majorYears = availableSeasonYears(player, 'A');
-          selectedSeason = majorYears[0] || CURRENT_YEAR;
-          activatePlayerStatsProfile(player, selectedSeason, 'A');
-          await loadRecord();
-        } catch (error) {
-          console.warn('進入球員頁自動同步失敗', error);
-          setStatus(error?.message || '中職官網自動同步失敗。', true);
-        }
+      setSyncProgress(0, `準備同步 #${player.number} ${player.name}…`);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      try {
+        const result = await syncPlayerCpblHistory(
+          player,
+          (percent, status) => setSyncProgress(percent, status)
+        );
+
+        const majorYears = availableSeasonYears(player, 'A');
+        selectedSeason = majorYears[0] || CURRENT_YEAR;
+        activatePlayerStatsProfile(player, selectedSeason, 'A');
+        await loadRecord();
+        renderAll();
+
+        const partialCount = result?.partialErrors?.length || 0;
+        await finishSyncProgress(partialCount ? '同步完成，部分資料未取得' : '一軍、二軍資料同步完成');
+      } catch (error) {
+        console.warn('進入球員頁自動同步失敗', error);
+        setSyncProgress(100, error?.message || '中職官網同步失敗', { error: true });
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        hideSyncProgress();
       }
-
-      renderAll();
     }
 
     async function switchPlayerLevel(level) {
