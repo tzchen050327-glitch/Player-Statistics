@@ -973,6 +973,19 @@
         var(--danger);
     }
 
+    .app-update-overlay {
+      z-index: 1400;
+    }
+
+    #quickTemplateDialog {
+      width: min(560px, calc(100% - 24px));
+    }
+
+    .quick-template-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     @keyframes syncStripe {
       from { background-position: 0 0, 0 0; }
       to { background-position: 28px 0, 0 0; }
@@ -1012,6 +1025,19 @@
   </style>
 </head>
 <body>
+  <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay hidden" role="status" aria-live="polite" aria-busy="true">
+    <div id="appUpdateCard" class="sync-progress-card">
+      <div class="sync-progress-top">
+        <div class="sync-progress-title">正在檢查程式更新</div>
+        <div id="appUpdatePercent" class="sync-progress-percent">0%</div>
+      </div>
+      <div id="appUpdateStatus" class="sync-progress-status">準備中…</div>
+      <div class="sync-progress-track" aria-hidden="true">
+        <div id="appUpdateBar" class="sync-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <main class="app">
     <div class="title-row">
       <div>
@@ -1109,7 +1135,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.18</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.19</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1138,7 +1164,34 @@
           </svg>
           <span>分享圖片</span>
         </button>
+        <button id="outputBackgroundBtn" class="press-btn output-choice" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3.5" y="4" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="2"/>
+            <circle cx="8.5" cy="9" r="1.5" stroke="currentColor" stroke-width="2"/>
+            <path d="m5.5 17 4.2-4.3 3.2 3 2.2-2.1 3.4 3.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>背景選擇</span>
+        </button>
+        <button id="outputPhotoBtn" class="press-btn output-choice" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 16V6m0 0-3.5 3.5M12 6l3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 14.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>圖片上傳</span>
+        </button>
       </div>
+      <input id="quickPhotoUpload" class="hidden" type="file" accept="image/*" />
+    </div>
+  </dialog>
+
+  <dialog id="quickTemplateDialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2>背景選擇</h2>
+        <button class="press-btn dialog-close">關閉</button>
+      </div>
+      <div class="subtle" style="margin-bottom:12px">選擇後會直接重新產生目前這張戰報。</div>
+      <div id="quickTemplateGrid" class="template-grid quick-template-grid"></div>
     </div>
   </dialog>
 
@@ -1249,7 +1302,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.18';
+    const APP_VERSION = 'v1.19';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1283,6 +1336,16 @@
       outputDialog: document.getElementById('outputDialog'),
       downloadPreparedBtn: document.getElementById('downloadPreparedBtn'),
       sharePreparedBtn: document.getElementById('sharePreparedBtn'),
+      outputBackgroundBtn: document.getElementById('outputBackgroundBtn'),
+      outputPhotoBtn: document.getElementById('outputPhotoBtn'),
+      quickPhotoUpload: document.getElementById('quickPhotoUpload'),
+      quickTemplateDialog: document.getElementById('quickTemplateDialog'),
+      quickTemplateGrid: document.getElementById('quickTemplateGrid'),
+      appUpdateOverlay: document.getElementById('appUpdateOverlay'),
+      appUpdateCard: document.getElementById('appUpdateCard'),
+      appUpdatePercent: document.getElementById('appUpdatePercent'),
+      appUpdateStatus: document.getElementById('appUpdateStatus'),
+      appUpdateBar: document.getElementById('appUpdateBar'),
       addDialog: document.getElementById('addPlayerDialog'),
       allDialog: document.getElementById('allPlayersDialog'),
       allPitchers: document.getElementById('allPitchers'),
@@ -3686,6 +3749,40 @@ bg2: {
       });
     }
 
+    function renderQuickTemplates() {
+      if (!els.quickTemplateGrid) return;
+      els.quickTemplateGrid.innerHTML = '';
+      Object.entries(TEMPLATES).forEach(([key, template]) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `template-card ${currentTemplate === key ? 'selected' : ''}`;
+        card.disabled = !template.enabled;
+        card.innerHTML = `
+          <canvas class="template-preview" width="320" height="320" aria-label="${escapeAttr(template.label)}預覽"></canvas>
+          <div class="template-card-title">
+            <span>${escapeHtml(template.label)}</span>
+            <span class="template-card-status">${template.enabled ? (currentTemplate === key ? '使用中' : '選用') : '預留'}</span>
+          </div>`;
+        drawTemplatePreview(card.querySelector('.template-preview'), template, !template.enabled);
+        if (template.enabled) {
+          card.addEventListener('click', async () => {
+            currentTemplate = key;
+            localStorage.setItem('baseballCardTemplate', currentTemplate);
+            renderHomeTemplates();
+            renderQuickTemplates();
+            try {
+              await refreshPreparedOutputFromCanvas();
+              els.quickTemplateDialog?.close();
+              if (!els.outputDialog?.open) els.outputDialog?.showModal();
+            } catch (error) {
+              setStatus(error?.message || '背景切換失敗。', true);
+            }
+          });
+        }
+        els.quickTemplateGrid.appendChild(card);
+      });
+    }
+
     function renderTemplates() {
       els.content.innerHTML = `
         <h2>背景</h2>
@@ -5163,8 +5260,7 @@ bg2: {
       return `${currentRecord.date}_${reportPlayerName(player)}_${player.type === 'pitcher' ? '投球戰績' : hitterFileType}.png`;
     }
 
-    async function prepareOutputImage() {
-      await commitCurrentGame();
+    async function refreshPreparedOutputFromCanvas() {
       await renderCanvas();
 
       const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
@@ -5177,6 +5273,11 @@ bg2: {
         file: new File([blob], fileName, { type: 'image/png' })
       };
       return preparedOutput;
+    }
+
+    async function prepareOutputImage() {
+      await commitCurrentGame();
+      return await refreshPreparedOutputFromCanvas();
     }
 
     function downloadPreparedOutput() {
@@ -5245,6 +5346,51 @@ bg2: {
       }
     });
 
+    els.outputBackgroundBtn?.addEventListener('click', () => {
+      els.outputDialog?.close();
+      renderQuickTemplates();
+      els.quickTemplateDialog?.showModal();
+    });
+
+    els.outputPhotoBtn?.addEventListener('click', () => {
+      els.quickPhotoUpload?.click();
+    });
+
+    els.quickPhotoUpload?.addEventListener('change', async event => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        setStatus('請選擇圖片檔。', true);
+        return;
+      }
+
+      const player = selectedPlayer();
+      if (!player) {
+        setStatus('目前沒有選擇球員。', true);
+        return;
+      }
+
+      try {
+        const photo = {
+          id: uid(),
+          playerId: player.id,
+          name: file.name,
+          blob: file,
+          createdAt: Date.now()
+        };
+        await idbPut(STORES.photos, photo);
+        photos.push(photo);
+        player.selectedPhotoId = photo.id;
+        ensurePhotoTransforms(player)[photo.id] = { x: 0, y: 0, scale: 1 };
+        await savePlayer(player);
+        await refreshPreparedOutputFromCanvas();
+        setStatus('圖片已上傳並套用到目前戰報。');
+      } catch (error) {
+        setStatus(error?.message || '圖片上傳失敗。', true);
+      }
+    });
+
     async function init() {
       try {
         db = await openDB();
@@ -5284,12 +5430,62 @@ bg2: {
 
     let serviceWorkerRegistration = null;
     let appRefreshing = false;
+    let appUpdateProgressVisible = false;
 
     function setVersionBadge(text = APP_VERSION, checking = false) {
       const badge = document.getElementById('appVersionBadge');
       if (!badge) return;
       badge.textContent = text;
       badge.classList.toggle('checking', checking);
+    }
+
+    function setAppUpdateProgress(percent, status, { error = false } = {}) {
+      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+      appUpdateProgressVisible = true;
+      els.appUpdateOverlay?.classList.remove('hidden');
+      els.appUpdateCard?.classList.toggle('error', Boolean(error));
+      if (els.appUpdatePercent) els.appUpdatePercent.textContent = `${value}%`;
+      if (els.appUpdateStatus) els.appUpdateStatus.textContent = status || '';
+      if (els.appUpdateBar) els.appUpdateBar.style.width = `${value}%`;
+    }
+
+    function hideAppUpdateProgress() {
+      appUpdateProgressVisible = false;
+      els.appUpdateOverlay?.classList.add('hidden');
+      els.appUpdateCard?.classList.remove('error');
+    }
+
+    async function appUpdateStep(percent, status, delay = 110) {
+      setAppUpdateProgress(percent, status);
+      if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    async function finishAppUpdateProgress(status) {
+      setAppUpdateProgress(100, status);
+      await new Promise(resolve => setTimeout(resolve, 520));
+      hideAppUpdateProgress();
+    }
+
+    function waitForWorkerSettle(worker, timeout = 9000) {
+      return new Promise(resolve => {
+        if (!worker || ['installed','activated','redundant'].includes(worker.state)) {
+          resolve(worker?.state || 'none');
+          return;
+        }
+
+        let finished = false;
+        const done = () => {
+          if (finished) return;
+          finished = true;
+          worker.removeEventListener('statechange', onState);
+          resolve(worker.state);
+        };
+        const onState = () => {
+          if (['installed','activated','redundant'].includes(worker.state)) done();
+        };
+        worker.addEventListener('statechange', onState);
+        setTimeout(done, timeout);
+      });
     }
 
     async function activateWaitingWorker(registration) {
@@ -5300,41 +5496,64 @@ bg2: {
       return false;
     }
 
-    async function checkAppUpdate({ manual = false } = {}) {
+    async function checkAppUpdate({ manual = false, showProgress = false } = {}) {
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
+        if (showProgress) {
+          await appUpdateStep(0, '準備檢查更新…', 80);
+          await finishAppUpdateProgress('本機檔案模式，不需檢查更新');
+        }
         if (manual) {
-          setStatus('目前是本機檔案模式；手機自動更新需要用 HTTPS 網址／PWA 開啟。', true);
+          setStatus('目前是本機檔案模式；自動更新需要用 HTTPS 網址／PWA 開啟。', true);
         }
         return;
       }
 
       setVersionBadge(`${APP_VERSION} · 檢查中`, true);
+
       try {
+        if (showProgress) await appUpdateStep(0, '準備檢查更新…', 90);
+        if (showProgress) await appUpdateStep(15, `目前版本 ${APP_VERSION}`, 110);
+
         const reg = serviceWorkerRegistration
           || await navigator.serviceWorker.getRegistration()
           || await navigator.serviceWorker.register(SERVICE_WORKER_URL, { updateViaCache: 'none' });
         serviceWorkerRegistration = reg;
 
+        if (showProgress) await appUpdateStep(32, '正在連線檢查新版…', 110);
         await reg.update();
-        const activated = await activateWaitingWorker(reg);
 
-        // 手動檢查時即使 SW 本身沒有換版，也重新整理一次。
-        // service-worker.js 對導覽採 network-first，因此會直接抓伺服器上的最新 HTML。
-        if (manual && !activated) {
-          setStatus('已檢查更新，正在重新載入最新版…');
-          setTimeout(() => location.reload(), 250);
+        if (showProgress) await appUpdateStep(55, '正在比對程式版本…', 100);
+
+        const installing = reg.installing;
+        if (installing) {
+          if (showProgress) await appUpdateStep(70, '找到新版，正在下載…', 80);
+          await waitForWorkerSettle(installing);
+        } else if (showProgress) {
+          await appUpdateStep(72, '版本確認完成…', 100);
+        }
+
+        const activated = await activateWaitingWorker(reg);
+        if (activated) {
+          if (showProgress) setAppUpdateProgress(92, '正在套用新版…');
+          if (manual) setStatus('找到新版，正在套用更新…');
           return;
         }
 
-        if (manual && activated) {
-          setStatus('找到新版，正在套用更新…');
+        if (showProgress) {
+          await appUpdateStep(90, '正在整理程式快取…', 100);
+          await finishAppUpdateProgress('目前已是最新版本');
         }
       } catch (error) {
         console.error('更新檢查失敗：', error);
+        if (showProgress) {
+          setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
+          await new Promise(resolve => setTimeout(resolve, 950));
+          hideAppUpdateProgress();
+        }
         if (manual) setStatus('檢查更新失敗，請確認網路後再試。', true);
       } finally {
         if (!appRefreshing) {
-          setTimeout(() => setVersionBadge(APP_VERSION, false), 700);
+          setTimeout(() => setVersionBadge(APP_VERSION, false), 500);
         }
       }
     }
@@ -5343,10 +5562,13 @@ bg2: {
       const badge = document.getElementById('appVersionBadge');
       if (badge) {
         badge.textContent = APP_VERSION;
-        badge.addEventListener('click', () => checkAppUpdate({ manual: true }));
+        badge.addEventListener('click', () => checkAppUpdate({ manual: true, showProgress: true }));
       }
 
-      if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
+        await checkAppUpdate({ showProgress: true });
+        return;
+      }
 
       try {
         const reg = await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
@@ -5357,31 +5579,44 @@ bg2: {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (appRefreshing) return;
           appRefreshing = true;
-          location.reload();
+          if (appUpdateProgressVisible) {
+            setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
+            setTimeout(() => location.reload(), 360);
+          } else {
+            location.reload();
+          }
         });
 
         reg.addEventListener('updatefound', () => {
           const worker = reg.installing;
           if (!worker) return;
+          if (appUpdateProgressVisible) setAppUpdateProgress(68, '找到新版，正在下載…');
           worker.addEventListener('statechange', async () => {
+            if (appUpdateProgressVisible && worker.state === 'installed') {
+              setAppUpdateProgress(88, '新版下載完成，正在套用…');
+            }
             if (worker.state === 'installed' && navigator.serviceWorker.controller) {
               await activateWaitingWorker(reg);
             }
           });
         });
 
-        // 每次開啟 App 立即檢查一次。
-        await checkAppUpdate();
+        // 從桌面／PWA 或瀏覽器開啟時，顯示 0～100% 更新檢查。
+        await checkAppUpdate({ showProgress: true });
 
-        // App 持續開著時，每 15 分鐘再檢查一次。
+        // App 持續開著時，每 15 分鐘背景檢查一次，不跳出進度條。
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // 從背景切回 App 時再檢查一次，手機使用時比較容易直接拿到新版。
+        // 從背景切回 App 時再背景檢查一次。
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') checkAppUpdate();
         });
       } catch (error) {
         console.error('Service Worker 設定失敗：', error);
+        if (appUpdateProgressVisible) {
+          setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
+          setTimeout(hideAppUpdateProgress, 950);
+        }
       }
     }
 
