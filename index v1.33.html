@@ -1976,6 +1976,418 @@ dialog::backdrop{
 
 /* ===== v1.33 VISUAL REFRESH END ===== */
 
+
+/* ===== v1.33 POPUP REFRESH START ===== */
+
+@keyframes popupEnter {
+  from { opacity: 0; transform: translateY(14px) scale(.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+dialog[open] {
+  animation: popupEnter .18s cubic-bezier(.2,.75,.25,1);
+}
+
+dialog {
+  width: min(680px, calc(100% - 26px));
+  max-height: min(86vh, 820px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(205,216,228,.96);
+  border-radius: 24px;
+  background: linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
+  box-shadow: 0 34px 90px rgba(5,27,48,.30), 0 8px 24px rgba(18,63,109,.10);
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: rgba(6,22,38,.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dialog-body,
+.output-dialog-body {
+  position: relative;
+  max-height: min(86vh, 820px);
+  overflow: auto;
+  padding: 0 22px 22px;
+}
+
+.dialog-body::before,
+.output-dialog-body::before {
+  content: "";
+  display: block;
+  height: 5px;
+  margin: 0 -22px;
+  background: linear-gradient(90deg,#0d355d 0%,#174f86 58%,#c79a39 100%);
+}
+
+.dialog-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -4px 16px;
+  padding: 19px 4px 14px;
+  border-bottom: 1px solid #edf1f5;
+  background: linear-gradient(180deg,rgba(255,255,255,.99) 72%,rgba(255,255,255,.93));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dialog-head h2 {
+  position: relative;
+  margin: 0;
+  padding-left: 13px;
+  color: #142b43;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 900;
+  letter-spacing: .025em;
+}
+
+.dialog-head h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg,#174f86,#c79a39);
+}
+
+.dialog-close {
+  flex: 0 0 auto;
+  width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center;
+  border: 1px solid #d8e1ea !important;
+  border-radius: 50% !important;
+  background: linear-gradient(180deg,#fff,#f2f5f8) !important;
+  color: #607086 !important;
+  font-size: 21px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  box-shadow: 0 4px 12px rgba(18,42,68,.07) !important;
+}
+
+.dialog-close:hover {
+  transform: translateY(-1px);
+  border-color: #b9c9d9 !important;
+  color: #123f6d !important;
+  box-shadow: 0 8px 18px rgba(18,42,68,.11) !important;
+}
+
+.dialog-close:active {
+  transform: scale(.96);
+}
+
+.dialog-body > .small,
+.dialog-body > .subtle {
+  color: #687589;
+  line-height: 1.7;
+}
+
+.dialog-body .grid.two {
+  gap: 14px;
+}
+
+.dialog-body label.field {
+  gap: 7px;
+  color: #536176;
+  font-weight: 800;
+}
+
+.dialog-body input[type="text"],
+.dialog-body input[type="number"],
+.dialog-body input[type="search"],
+.dialog-body select {
+  min-height: 46px;
+  border-radius: 12px;
+  border-color: #d3dde7;
+  background: #fff;
+}
+
+.dialog-body input:focus,
+.dialog-body select:focus {
+  border-color: #7899b9;
+  box-shadow: 0 0 0 4px rgba(18,63,109,.09);
+}
+
+#allPlayersDialog {
+  width: min(760px, calc(100% - 26px));
+}
+
+#allPlayersDialog .all-player-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 9px;
+  padding: 10px;
+  margin: 0 0 14px;
+  border: 1px solid #e1e7ee;
+  border-radius: 14px;
+  background: rgba(248,250,252,.96);
+  box-shadow: 0 6px 18px rgba(17,38,66,.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#allPlayersDialog .player-group {
+  padding: 14px;
+  border: 1px solid #e3e8ef;
+  border-radius: 15px;
+  background: #fff;
+}
+
+#playerSearchDialog {
+  width: min(700px, calc(100% - 26px));
+}
+
+#playerSearchDialog .player-search-box {
+  position: sticky;
+  top: 76px;
+  z-index: 3;
+  padding: 8px 0 5px;
+  background: rgba(251,252,254,.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#playerSearchDialog .player-search-input {
+  min-height: 50px;
+  padding: 11px 15px;
+  border-radius: 14px;
+  font-size: 16px;
+  box-shadow: 0 5px 14px rgba(17,38,66,.05);
+}
+
+.player-search-result {
+  min-height: 66px;
+  border: 1px solid #dce4ec;
+  border-radius: 14px;
+  background: linear-gradient(180deg,#fff,#f9fbfd);
+  box-shadow: 0 4px 12px rgba(17,38,66,.045);
+}
+
+.player-search-result:hover {
+  transform: translateY(-1px);
+  border-color: #b9c9d8;
+  background: #f7fbff;
+  box-shadow: 0 9px 18px rgba(17,38,66,.08);
+}
+
+#deletePlayerDialog .small {
+  padding: 12px 14px;
+  border: 1px solid #f0d8d4;
+  border-radius: 13px;
+  background: #fff8f7;
+  color: #7f322a;
+}
+
+#batchReportDialog {
+  width: min(760px, calc(100% - 26px));
+}
+
+#batchReportDialog > .dialog-body > .small {
+  padding: 12px 14px;
+  border: 1px solid #dce5ee;
+  border-radius: 13px;
+  background: #f6f9fc;
+  color: #556579;
+}
+
+#batchReportDialog .batch-report-row {
+  min-height: 62px;
+  padding: 12px 13px;
+  border: 1px solid #dce4ec;
+  border-radius: 14px;
+  background: linear-gradient(180deg,#fff,#f8fafc);
+}
+
+#batchReportDialog .batch-report-row:hover {
+  transform: translateY(-1px);
+  border-color: #bdcad8;
+  box-shadow: 0 8px 18px rgba(17,38,66,.07);
+}
+
+#quickTemplateDialog {
+  width: min(600px, calc(100% - 26px));
+}
+
+#quickTemplateDialog .quick-template-grid {
+  gap: 14px;
+}
+
+#addPlayerDialog {
+  width: min(660px, calc(100% - 26px));
+}
+
+#addPlayerDialog .section-actions {
+  padding-top: 14px;
+  margin-top: 16px;
+  border-top: 1px solid #e8edf2;
+}
+
+#outputDialog {
+  width: min(450px, calc(100% - 24px));
+  border-radius: 26px;
+  overflow: hidden;
+}
+
+#outputDialog .output-dialog-body {
+  padding: 0 22px 24px;
+}
+
+#outputDialog .output-dialog-head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  padding: 26px 8px 21px;
+  text-align: center;
+  border-bottom: 1px solid #edf1f5;
+}
+
+#outputDialog .output-ready-icon {
+  width: 66px;
+  height: 66px;
+  border: 1px solid #d6e2ed;
+  border-radius: 21px;
+  background: linear-gradient(145deg,#eef5fb,#e4eef8);
+  color: #123f6d;
+  box-shadow: 0 12px 28px rgba(18,63,109,.13);
+}
+
+#outputDialog .output-dialog-head h2 {
+  color: #142b43;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+#outputDialog .output-close {
+  position: absolute;
+  top: 15px;
+  right: -2px;
+}
+
+#outputDialog .output-actions {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+  margin-top: 19px;
+}
+
+#outputDialog .output-choice {
+  min-height: 108px;
+  padding: 16px 9px;
+  border: 1px solid #dce4ed;
+  border-radius: 17px;
+  background: linear-gradient(180deg,#fff,#f5f8fb);
+  color: #26384d;
+  box-shadow: 0 7px 18px rgba(17,38,66,.065);
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+
+#outputDialog .output-choice:hover {
+  transform: translateY(-2px);
+  border-color: #b9c8d8;
+  box-shadow: 0 12px 22px rgba(17,38,66,.10);
+}
+
+#outputDialog .output-choice.primary {
+  border-color: transparent;
+  background: linear-gradient(145deg,#174f86,#0c3156);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(18,63,109,.24);
+}
+
+@media (max-width:700px) {
+  dialog,
+  #allPlayersDialog,
+  #playerSearchDialog,
+  #batchReportDialog,
+  #quickTemplateDialog,
+  #addPlayerDialog {
+    width: calc(100% - 14px);
+    max-height: 89vh;
+    border-radius: 20px;
+  }
+
+  .dialog-body,
+  .output-dialog-body {
+    max-height: 89vh;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: 16px;
+  }
+
+  .dialog-body::before,
+  .output-dialog-body::before {
+    margin-left: -14px;
+    margin-right: -14px;
+  }
+
+  .dialog-head {
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+
+  .dialog-head h2 {
+    font-size: 18px;
+  }
+
+  #allPlayersDialog .all-player-tools {
+    top: 68px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #allPlayersDialog .all-player-tools .press-btn.primary {
+    grid-column: span 2;
+    order: -1;
+  }
+
+  #playerSearchDialog .player-search-box {
+    top: 68px;
+  }
+
+  #outputDialog {
+    width: calc(100% - 16px);
+    border-radius: 22px;
+  }
+
+  #outputDialog .output-dialog-body {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: 16px;
+  }
+
+  #outputDialog .output-actions {
+    gap: 7px;
+  }
+
+  #outputDialog .output-choice {
+    min-height: 96px;
+    padding: 13px 5px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+}
+
+/* ===== v1.33 POPUP REFRESH END ===== */
+
 </style>
 </head>
 <body>
@@ -2159,7 +2571,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>背景選擇</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="subtle" style="margin-bottom:12px">選擇後會直接重新產生目前這張戰報。</div>
       <div id="quickTemplateGrid" class="template-grid quick-template-grid"></div>
@@ -2170,7 +2582,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>新增球員</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="grid two">
         <label class="field">球員名稱
@@ -2198,7 +2610,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>所有球員</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="all-player-tools">
         <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
@@ -2220,7 +2632,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>刪除球員</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="small" style="line-height:1.65;margin-bottom:12px">
         點選要刪除的球員後會進行兩次確認。刪除後會一併移除該球員的照片與所有日期戰報資料。
@@ -2233,7 +2645,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>搜尋球員</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="player-search-box">
         <input id="playerSearchInput" class="player-search-input" type="search" autocomplete="off" placeholder="輸入姓名、背號、球隊、位置…" />
@@ -2247,7 +2659,7 @@ dialog::backdrop{
     <div class="dialog-body">
       <div class="dialog-head">
         <h2>批量生成戰報</h2>
-        <button class="press-btn dialog-close">關閉</button>
+        <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <div class="small" style="line-height:1.65">
         日期：<strong id="batchReportDate"></strong><br>
