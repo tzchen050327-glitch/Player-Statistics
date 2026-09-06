@@ -668,59 +668,53 @@
       font-weight: 700;
     }
 
-    .batch-post-tools {
+    .batch-result-controls {
       display: flex;
-      gap: 8px;
+      gap: 7px;
       flex-wrap: wrap;
-      margin-top: 12px;
+      justify-content: flex-end;
+      margin-top: 8px;
     }
 
-    .batch-post-panel {
-      margin-top: 12px;
-      padding: 12px;
+    .batch-result-controls .press-btn {
+      padding: 8px 10px;
+      min-height: 38px;
+      font-size: 12px;
+    }
+
+    .batch-result-template-panel {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .batch-template-chip {
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 10px;
+      padding: 7px 10px;
       background: #f8fafc;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
     }
 
-    .batch-template-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 10px;
+    .batch-template-chip.active {
+      border-color: var(--accent);
+      background: rgba(31,78,121,.10);
+      color: var(--accent);
     }
 
-    .batch-photo-upload-list {
-      display: grid;
-      gap: 8px;
-      margin-top: 10px;
+    .batch-report-result {
+      align-items: flex-start;
     }
 
-    .batch-photo-upload-row {
-      display: grid;
-      grid-template-columns: minmax(0,1fr) auto;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 11px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-    }
-
-    .batch-photo-upload-row strong {
-      display: block;
-      font-size: 13px;
-    }
-
-    .batch-photo-upload-row span {
-      display: block;
-      margin-top: 2px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .batch-photo-file {
-      max-width: 150px;
-      font-size: 11px;
+    .batch-result-main {
+      min-width: 0;
+      flex: 1;
     }
 
 
@@ -1303,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.21</div>
+        <div class="app-splash-version">VERSION v1.22</div>
       </div>
     </div>
   </div>
@@ -1405,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.21</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.22</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1558,27 +1552,13 @@
         <button id="batchReportGenerateBtn" class="press-btn primary">生成已勾選戰報</button>
         <button id="batchReportDownloadAllBtn" class="press-btn hidden">全部下載</button>
       </div>
-      <div id="batchPostTools" class="batch-post-tools hidden">
-        <button id="batchBackgroundBtn" class="press-btn">背景選擇</button>
-        <button id="batchPhotoBtn" class="press-btn">圖片上傳</button>
-      </div>
-      <div id="batchBackgroundPanel" class="batch-post-panel hidden">
-        <strong>批量背景</strong>
-        <div class="subtle" style="margin-top:3px">選擇後會重新生成目前已勾選的戰報。</div>
-        <div id="batchTemplateGrid" class="template-grid batch-template-grid"></div>
-      </div>
-      <div id="batchPhotoPanel" class="batch-post-panel hidden">
-        <strong>批量圖片上傳</strong>
-        <div class="subtle" style="margin-top:3px">可針對這次勾選的球員分別更換圖片；上傳後會自動重新生成。</div>
-        <div id="batchPhotoUploadList" class="batch-photo-upload-list"></div>
-      </div>
       <div id="batchReportProgress" class="batch-report-progress"></div>
       <div id="batchReportResults" class="batch-report-results"></div>
     </div>
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.21';
+    const APP_VERSION = 'v1.22';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -1632,13 +1612,6 @@
       batchReportList: document.getElementById('batchReportList'),
       batchReportGenerateBtn: document.getElementById('batchReportGenerateBtn'),
       batchReportDownloadAllBtn: document.getElementById('batchReportDownloadAllBtn'),
-      batchPostTools: document.getElementById('batchPostTools'),
-      batchBackgroundBtn: document.getElementById('batchBackgroundBtn'),
-      batchPhotoBtn: document.getElementById('batchPhotoBtn'),
-      batchBackgroundPanel: document.getElementById('batchBackgroundPanel'),
-      batchPhotoPanel: document.getElementById('batchPhotoPanel'),
-      batchTemplateGrid: document.getElementById('batchTemplateGrid'),
-      batchPhotoUploadList: document.getElementById('batchPhotoUploadList'),
       batchReportProgress: document.getElementById('batchReportProgress'),
       batchReportResults: document.getElementById('batchReportResults')
     };
@@ -1658,6 +1631,7 @@
     let photoZoomSaveTimer = null;
     let preparedOutput = null;
     let batchReportOutputs = [];
+    let batchReportPreferences = {};
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -2853,102 +2827,12 @@ bg2: {
       renderAll();
     }
 
-    function renderBatchTemplates() {
-      if (!els.batchTemplateGrid) return;
-      els.batchTemplateGrid.innerHTML = '';
-
-      Object.entries(TEMPLATES).forEach(([key, template]) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = `template-card ${currentTemplate === key ? 'selected' : ''}`;
-        card.disabled = !template.enabled;
-        card.innerHTML = `
-          <canvas class="template-preview" width="300" height="300" aria-label="${escapeAttr(template.label)}預覽"></canvas>
-          <div class="template-card-title">
-            <span>${escapeHtml(template.label)}</span>
-            <span class="template-card-status">${template.enabled ? (currentTemplate === key ? '使用中' : '選用') : '預留'}</span>
-          </div>`;
-        drawTemplatePreview(card.querySelector('.template-preview'), template, !template.enabled);
-
-        if (template.enabled) {
-          card.addEventListener('click', async () => {
-            if (currentTemplate === key) return;
-            currentTemplate = key;
-            localStorage.setItem('baseballCardTemplate', currentTemplate);
-            renderHomeTemplates();
-            renderBatchTemplates();
-            await generateBatchReports();
-          });
-        }
-        els.batchTemplateGrid.appendChild(card);
-      });
-    }
-
-    function renderBatchPhotoUploads() {
-      if (!els.batchPhotoUploadList) return;
-      const ids = batchReportSelectedIds();
-      const selectedPlayers = ids.map(id => players.find(player => player.id === id)).filter(Boolean);
-
-      els.batchPhotoUploadList.innerHTML = selectedPlayers.length
-        ? selectedPlayers.map(player => {
-            const selectedPhoto = photos.find(photo => photo.id === player.selectedPhotoId && photo.playerId === player.id);
-            return `
-              <label class="batch-photo-upload-row">
-                <span>
-                  <strong>#${escapeHtml(player.number)} ${escapeHtml(player.name)}</strong>
-                  <span>${selectedPhoto ? `目前：${escapeHtml(selectedPhoto.name)}` : '目前沒有選用圖片'}</span>
-                </span>
-                <input class="batch-photo-file" type="file" accept="image/*" data-batch-photo-player-id="${player.id}" />
-              </label>`;
-          }).join('')
-        : '<div class="empty">目前沒有勾選球員。</div>';
-
-      els.batchPhotoUploadList.querySelectorAll('[data-batch-photo-player-id]').forEach(input => {
-        input.addEventListener('change', async event => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          if (!file.type.startsWith('image/')) {
-            setStatus('請選擇圖片檔。', true);
-            return;
-          }
-
-          const player = players.find(item => item.id === event.target.dataset.batchPhotoPlayerId);
-          if (!player) return;
-
-          event.target.disabled = true;
-          try {
-            const photo = {
-              id: uid(),
-              playerId: player.id,
-              name: file.name,
-              blob: file,
-              createdAt: Date.now()
-            };
-            await idbPut(STORES.photos, photo);
-            photos.push(photo);
-            player.selectedPhotoId = photo.id;
-            ensurePhotoTransforms(player)[photo.id] = { x: 0, y: 0, scale: 1 };
-            await savePlayer(player);
-            renderBatchPhotoUploads();
-            await generateBatchReports();
-          } catch (error) {
-            setStatus(error?.message || '圖片上傳失敗。', true);
-          } finally {
-            event.target.disabled = false;
-          }
-        });
-      });
-    }
-
     function clearBatchReportOutputs() {
       for (const output of batchReportOutputs) {
         if (output?.url) URL.revokeObjectURL(output.url);
       }
       batchReportOutputs = [];
       els.batchReportDownloadAllBtn?.classList.add('hidden');
-      els.batchPostTools?.classList.add('hidden');
-      els.batchBackgroundPanel?.classList.add('hidden');
-      els.batchPhotoPanel?.classList.add('hidden');
       if (els.batchReportResults) els.batchReportResults.innerHTML = '';
     }
 
@@ -2970,6 +2854,7 @@ bg2: {
 
     function openBatchReportDialog() {
       clearBatchReportOutputs();
+      batchReportPreferences = {};
       if (els.batchReportDate) els.batchReportDate.textContent = els.gameDate.value.replaceAll('-', '/');
       if (els.batchReportProgress) els.batchReportProgress.textContent = '';
       renderBatchReportSelection();
@@ -3115,7 +3000,8 @@ bg2: {
         selectedLevel,
         selectedSeason,
         currentRecord,
-        currentPage
+        currentPage,
+        currentTemplate
       };
 
       const results = [];
@@ -3148,6 +3034,10 @@ bg2: {
 
           selectedPlayerId = player.id;
           selectedLevel = reportLevel;
+          const preferredTemplate = batchReportPreferences[player.id]?.templateKey;
+          currentTemplate = preferredTemplate && TEMPLATES[preferredTemplate]?.enabled
+            ? preferredTemplate
+            : savedState.currentTemplate;
           const reportYear = Number(els.gameDate.value.slice(0,4)) || CURRENT_YEAR;
           const years = availableSeasonYears(player, reportLevel);
           selectedSeason = years.includes(reportYear) ? reportYear : (years[0] || reportYear);
@@ -3180,7 +3070,7 @@ bg2: {
 
           const fileName = currentOutputFileName();
           const url = URL.createObjectURL(blob);
-          const output = { playerId:player.id, player, blob, fileName, url };
+          const output = { playerId:player.id, player, blob, fileName, url, templateKey:currentTemplate };
           batchReportOutputs.push(output);
           results.push({ player, ok:true, output });
 
@@ -3192,6 +3082,7 @@ bg2: {
         selectedSeason = savedState.selectedSeason;
         currentRecord = savedState.currentRecord;
         currentPage = savedState.currentPage;
+        currentTemplate = savedState.currentTemplate;
         const restoredPlayer = selectedPlayer();
         if (restoredPlayer) activatePlayerStatsProfile(restoredPlayer, selectedSeason, selectedLevel);
         els.batchReportGenerateBtn.disabled = false;
@@ -3214,24 +3105,101 @@ bg2: {
                 </div>
               </div>`;
           }
+
+          const templateButtons = Object.entries(TEMPLATES)
+            .filter(([, template]) => template.enabled)
+            .map(([key, template]) => `
+              <button type="button"
+                class="batch-template-chip ${item.output.templateKey === key ? 'active' : ''}"
+                data-batch-template-player="${item.player.id}"
+                data-batch-template-key="${key}">
+                ${escapeHtml(template.label)}
+              </button>`).join('');
+
           return `
-            <div class="batch-report-result">
-              <div class="result-text">
-                <strong>#${escapeHtml(item.player.number)} ${escapeHtml(item.player.name)}</strong>
-                已生成
+            <div class="batch-report-result" data-batch-result-player="${item.player.id}">
+              <div class="batch-result-main">
+                <div class="result-text">
+                  <strong>#${escapeHtml(item.player.number)} ${escapeHtml(item.player.name)}</strong>
+                  已生成
+                </div>
+                <div class="batch-result-controls">
+                  <a class="press-btn" href="${item.output.url}" download="${escapeHtml(item.output.fileName)}">下載</a>
+                  <button class="press-btn" type="button" data-batch-bg-toggle="${item.player.id}">背景選擇</button>
+                  <button class="press-btn" type="button" data-batch-photo-trigger="${item.player.id}">圖片上傳</button>
+                  <input class="hidden" type="file" accept="image/*" data-batch-photo-input="${item.player.id}" />
+                </div>
+                <div class="batch-result-template-panel hidden" data-batch-template-panel="${item.player.id}">
+                  ${templateButtons}
+                </div>
               </div>
-              <a class="press-btn" href="${item.output.url}" download="${escapeHtml(item.output.fileName)}">下載</a>
             </div>`;
         }).join('');
+
+        els.batchReportResults.querySelectorAll('[data-batch-bg-toggle]').forEach(button => {
+          button.addEventListener('click', () => {
+            const playerId = button.dataset.batchBgToggle;
+            const panel = els.batchReportResults.querySelector(`[data-batch-template-panel="${playerId}"]`);
+            panel?.classList.toggle('hidden');
+          });
+        });
+
+        els.batchReportResults.querySelectorAll('[data-batch-template-player]').forEach(button => {
+          button.addEventListener('click', async () => {
+            const playerId = button.dataset.batchTemplatePlayer;
+            const templateKey = button.dataset.batchTemplateKey;
+            if (!TEMPLATES[templateKey]?.enabled) return;
+            batchReportPreferences[playerId] = {
+              ...(batchReportPreferences[playerId] || {}),
+              templateKey
+            };
+            await generateBatchReports();
+          });
+        });
+
+        els.batchReportResults.querySelectorAll('[data-batch-photo-trigger]').forEach(button => {
+          button.addEventListener('click', () => {
+            const input = els.batchReportResults.querySelector(`[data-batch-photo-input="${button.dataset.batchPhotoTrigger}"]`);
+            input?.click();
+          });
+        });
+
+        els.batchReportResults.querySelectorAll('[data-batch-photo-input]').forEach(input => {
+          input.addEventListener('change', async event => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+              setStatus('請選擇圖片檔。', true);
+              return;
+            }
+
+            const player = players.find(item => item.id === event.target.dataset.batchPhotoInput);
+            if (!player) return;
+
+            event.target.disabled = true;
+            try {
+              const photo = {
+                id: uid(),
+                playerId: player.id,
+                name: file.name,
+                blob: file,
+                createdAt: Date.now()
+              };
+              await idbPut(STORES.photos, photo);
+              photos.push(photo);
+              player.selectedPhotoId = photo.id;
+              ensurePhotoTransforms(player)[photo.id] = { x: 0, y: 0, scale: 1 };
+              await savePlayer(player);
+              await generateBatchReports();
+            } catch (error) {
+              setStatus(error?.message || '圖片上傳失敗。', true);
+            }
+          });
+        });
       }
 
       const hasOutputs = batchReportOutputs.length > 0;
       els.batchReportDownloadAllBtn?.classList.toggle('hidden', !hasOutputs);
-      els.batchPostTools?.classList.toggle('hidden', !hasOutputs);
-      if (hasOutputs) {
-        renderBatchTemplates();
-        renderBatchPhotoUploads();
-      }
     }
 
     async function downloadAllBatchReports() {
@@ -5410,18 +5378,6 @@ bg2: {
     });
     els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
-    els.batchBackgroundBtn?.addEventListener('click', () => {
-      const opening = els.batchBackgroundPanel?.classList.contains('hidden');
-      els.batchBackgroundPanel?.classList.toggle('hidden', !opening);
-      els.batchPhotoPanel?.classList.add('hidden');
-      if (opening) renderBatchTemplates();
-    });
-    els.batchPhotoBtn?.addEventListener('click', () => {
-      const opening = els.batchPhotoPanel?.classList.contains('hidden');
-      els.batchPhotoPanel?.classList.toggle('hidden', !opening);
-      els.batchBackgroundPanel?.classList.add('hidden');
-      if (opening) renderBatchPhotoUploads();
-    });
 
     document.getElementById('batchCpblBtn').addEventListener('click', () => {
       document.getElementById('batchCpblProgress').textContent = `目前共有 ${players.length} 名球員。`;
@@ -5855,7 +5811,7 @@ bg2: {
         if (manual) {
           setStatus('目前是本機檔案模式；自動更新需要用 HTTPS 網址／PWA 開啟。', true);
         }
-        return;
+        return { activated:false };
       }
 
       setVersionBadge(`${APP_VERSION} · 檢查中`, true);
@@ -5886,13 +5842,14 @@ bg2: {
         if (activated) {
           if (showProgress) setAppUpdateProgress(92, '正在套用新版…');
           if (manual) setStatus('找到新版，正在套用更新…');
-          return;
+          return { activated:true };
         }
 
         if (showProgress) {
           await appUpdateStep(90, '正在整理程式快取…', 100);
           await finishAppUpdateProgress('目前已是最新版本');
         }
+        return { activated:false };
       } catch (error) {
         console.error('更新檢查失敗：', error);
         if (showProgress) {
@@ -5901,6 +5858,7 @@ bg2: {
           hideAppUpdateProgress();
         }
         if (manual) setStatus('檢查更新失敗，請確認網路後再試。', true);
+        return { activated:false };
       } finally {
         if (!appRefreshing) {
           setTimeout(() => setVersionBadge(APP_VERSION, false), 500);
@@ -5915,9 +5873,12 @@ bg2: {
         badge.addEventListener('click', () => checkAppUpdate({ manual: true, showProgress: true }));
       }
 
+      const skipStartupSplash = sessionStorage.getItem('baseballSkipStartupSplashOnce') === '1';
+      if (skipStartupSplash) sessionStorage.removeItem('baseballSkipStartupSplashOnce');
+
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
-        await checkAppUpdate({ showProgress: true });
-        return;
+        if (!skipStartupSplash) await checkAppUpdate({ showProgress: true });
+        return false;
       }
 
       try {
@@ -5929,9 +5890,11 @@ bg2: {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (appRefreshing) return;
           appRefreshing = true;
+          sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+
           if (appUpdateProgressVisible) {
             setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
-            setTimeout(() => location.reload(), 360);
+            setTimeout(() => location.reload(), 280);
           } else {
             location.reload();
           }
@@ -5941,37 +5904,55 @@ bg2: {
           const worker = reg.installing;
           if (!worker) return;
           if (appUpdateProgressVisible) setAppUpdateProgress(68, '找到新版，正在下載…');
+
           worker.addEventListener('statechange', async () => {
             if (appUpdateProgressVisible && worker.state === 'installed') {
               setAppUpdateProgress(88, '新版下載完成，正在套用…');
             }
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-              await activateWaitingWorker(reg);
-            }
           });
         });
 
-        // 從桌面／PWA 或瀏覽器開啟時，顯示 0～100% 更新檢查。
-        await checkAppUpdate({ showProgress: true });
+        let updateResult = { activated:false };
+        if (!skipStartupSplash) {
+          updateResult = await checkAppUpdate({ showProgress: true });
+        }
 
-        // App 持續開著時，每 15 分鐘背景檢查一次，不跳出進度條。
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // 從背景切回 App 時再背景檢查一次。
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') checkAppUpdate();
         });
+
+        if (updateResult?.activated) {
+          // controllerchange 正常會立刻重新載入；留一個 fallback 避免瀏覽器漏事件。
+          setTimeout(() => {
+            if (appRefreshing) return;
+            appRefreshing = true;
+            sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+            location.reload();
+          }, 1300);
+          return true;
+        }
+
+        return appRefreshing;
       } catch (error) {
         console.error('Service Worker 設定失敗：', error);
         if (appUpdateProgressVisible) {
           setAppUpdateProgress(100, '更新檢查失敗，使用目前版本', { error: true });
-          setTimeout(hideAppUpdateProgress, 950);
+          await new Promise(resolve => setTimeout(resolve, 950));
+          hideAppUpdateProgress();
         }
+        return false;
       }
     }
 
-    setupAppUpdate();
-    init();
+    async function bootApp() {
+      const willReloadForUpdate = await setupAppUpdate();
+      if (willReloadForUpdate) return;
+      await init();
+    }
+
+    bootApp();
   </script>
 </body>
 </html>
