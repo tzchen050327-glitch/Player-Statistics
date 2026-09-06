@@ -545,13 +545,154 @@
 
     .hidden { display: none !important; }
 
+    .home-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .home-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .home-card-title,
+    .home-player-head,
+    .player-page-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .home-card-title {
+      margin-bottom: 14px;
+    }
+
+    .home-card-title h2,
+    .home-player-head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .home-card-title span,
+    .home-player-head span,
+    .player-page-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .home-template-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 0;
+      gap: 10px;
+    }
+
+    .home-template-grid .template-card {
+      padding: 7px;
+    }
+
+    .home-template-grid .template-card-title {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .home-player-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+
+    .home-player-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px !important;
+    }
+
+    .home-player-card {
+      min-width: 0;
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      text-align: left;
+      white-space: normal;
+      border-radius: 16px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+
+    .home-player-card.active {
+      outline: 2px solid var(--accent-2);
+    }
+
+    .home-player-number {
+      display: inline-grid;
+      place-items: center;
+      min-width: 42px;
+      height: 38px;
+      padding: 0 9px;
+      border-radius: 12px;
+      background: #eaf0f7;
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .home-player-name {
+      display: block;
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .home-player-meta {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .player-page-top {
+      margin-bottom: 10px;
+    }
+
+    .player-page-top .press-btn {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .player-page-tabs {
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 1000px) {
+      .home-player-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 880px) {
+      .home-layout { grid-template-columns: 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      .canvas-wrap { position: static; }
+    }
+
+    @media (max-width: 640px) {
       .workspace { grid-template-columns: 1fr; }
       .canvas-wrap { position: static; }
     }
 
     @media (max-width: 640px) {
       .app { padding: 10px; }
+      .home-player-grid { grid-template-columns: 1fr; }
+      .home-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grid, .grid.two, .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .photo-grid, .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .pa-row { grid-template-columns: 38px 1fr auto; }
@@ -565,42 +706,75 @@
     <div class="title-row">
       <div>
         <h1>球員戰績圖片</h1>
+        <div id="pageSubtitle" class="subtle">首頁</div>
       </div>
       <div id="selectedPlayerText" class="subtle"></div>
     </div>
 
-    <div class="toolbar" aria-label="主功能列">
-      <label class="date-wrap">日期
-        <input id="gameDate" type="date" />
-      </label>
-      <button class="press-btn tab-btn active" data-tab="base">球員基礎設定</button>
-      <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>
-      <button class="press-btn tab-btn" data-tab="photos">照片</button>
-      <button class="press-btn tab-btn" data-tab="templates">背景</button>
-    </div>
+    <section id="homePage">
+      <div class="home-layout">
+        <div class="home-sidebar">
+          <section class="panel">
+            <div class="home-card-title">
+              <h2>本日設定</h2>
+              <span>共用設定</span>
+            </div>
+            <label class="date-wrap" style="width:100%;justify-content:space-between">日期
+              <input id="gameDate" type="date" />
+            </label>
+          </section>
 
-    <div class="toolbar" aria-label="球員選擇列">
-      <button id="addPlayerBtn" class="press-btn">＋ 新增球員</button>
-      <button id="batchCpblBtn" class="press-btn">批次搜尋中職資料</button>
-      <button id="allPlayersBtn" class="press-btn">展開全部</button>
-      <span class="recent-label">最近使用：</span>
-      <div id="recentPlayers" style="display:flex;gap:8px"></div>
-    </div>
-
-    <div class="workspace">
-      <section id="contentPanel" class="panel"></section>
-
-      <aside class="panel canvas-wrap">
-        <h2>下載圖片預覽</h2>
-        <canvas id="cardCanvas" width="1080" height="1080"></canvas>
-        <div class="section-actions">
-          <button id="downloadBtn" class="press-btn primary">更新數據並輸出圖片</button>
+          <section class="panel">
+            <div class="home-card-title">
+              <h2>背景設定</h2>
+              <span>點選切換</span>
+            </div>
+            <div id="homeTemplateGrid" class="template-grid home-template-grid"></div>
+          </section>
         </div>
-      </aside>
-    </div>
+
+        <section class="panel">
+          <div class="home-player-head">
+            <h2>球員</h2>
+            <span id="homePlayerCount"></span>
+          </div>
+          <div class="home-player-actions">
+            <button id="addPlayerBtn" class="press-btn primary">＋ 新增球員</button>
+            <button id="batchCpblBtn" class="press-btn">批次搜尋中職資料</button>
+            <button id="allPlayersBtn" class="press-btn">展開全部</button>
+          </div>
+          <div id="recentPlayers" class="home-player-grid"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="playerPage" class="hidden">
+      <div class="player-page-top">
+        <button id="backHomeBtn" class="press-btn">← 返回首頁</button>
+        <div id="playerPageDate" class="player-page-date"></div>
+      </div>
+
+      <div class="toolbar player-page-tabs" aria-label="球員功能列">
+        <button class="press-btn tab-btn active" data-tab="base">球員基礎設定</button>
+        <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>
+        <button class="press-btn tab-btn" data-tab="photos">照片</button>
+      </div>
+
+      <div class="workspace">
+        <section id="contentPanel" class="panel"></section>
+
+        <aside class="panel canvas-wrap">
+          <h2>下載圖片預覽</h2>
+          <canvas id="cardCanvas" width="1080" height="1080"></canvas>
+          <div class="section-actions">
+            <button id="downloadBtn" class="press-btn primary">更新數據並輸出圖片</button>
+          </div>
+        </aside>
+      </div>
+    </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.12</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.13</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -698,7 +872,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.12';
+    const APP_VERSION = 'v1.13';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -712,6 +886,13 @@
       content: document.getElementById('contentPanel'),
       recent: document.getElementById('recentPlayers'),
       selectedPlayerText: document.getElementById('selectedPlayerText'),
+      pageSubtitle: document.getElementById('pageSubtitle'),
+      homePage: document.getElementById('homePage'),
+      playerPage: document.getElementById('playerPage'),
+      homeTemplateGrid: document.getElementById('homeTemplateGrid'),
+      homePlayerCount: document.getElementById('homePlayerCount'),
+      playerPageDate: document.getElementById('playerPageDate'),
+      backHomeBtn: document.getElementById('backHomeBtn'),
       canvas: document.getElementById('cardCanvas'),
       downloadBtn: document.getElementById('downloadBtn'),
       outputDialog: document.getElementById('outputDialog'),
@@ -728,6 +909,7 @@
     let photos = [];
     let selectedPlayerId = null;
     let selectedTab = 'base';
+    let currentPage = 'home';
     let currentRecord = null;
     let renderToken = 0;
     let photoDrag = null;
@@ -1638,16 +1820,31 @@ bg2: {
       await savePlayer(player);
       localStorage.setItem('baseballSelectedPlayerId', id);
       await loadRecord();
+      currentPage = 'player';
+      if (selectedTab === 'templates') selectedTab = 'base';
       renderAll();
     }
 
     function renderRecentPlayers() {
-      const recent = [...players]
-        .sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0))
-        .slice(0, 8);
-      els.recent.innerHTML = recent.length ? recent.map(p =>
-        `<button class="player-btn ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">#${escapeHtml(p.number)} ${escapeHtml(p.name)}</button>`
-      ).join('') : '';
+      const list = [...players].sort((a, b) => {
+        const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
+        if (used) return used;
+        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
+      });
+      if (els.homePlayerCount) els.homePlayerCount.textContent = `${list.length} 名`;
+      els.recent.innerHTML = list.length ? list.map(p => {
+        const level = cpblKindCodeForPlayer(p) === 'D' ? '二軍' : '';
+        const team = normalizeTeamName(p.cpblTeam || '');
+        const meta = [p.type === 'pitcher' ? '投手' : '打者', team, level].filter(Boolean).join('｜');
+        return `
+          <button class="player-btn home-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
+            <span class="home-player-number">#${escapeHtml(p.number)}</span>
+            <span>
+              <span class="home-player-name">${escapeHtml(p.name)}</span>
+              <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
+            </span>
+          </button>`;
+      }).join('') : '<div class="empty" style="grid-column:1/-1">尚未建立球員，先按「＋ 新增球員」。</div>';
       els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
         btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
       });
@@ -2492,6 +2689,33 @@ bg2: {
       }
     }
 
+    function renderHomeTemplates() {
+      if (!els.homeTemplateGrid) return;
+      els.homeTemplateGrid.innerHTML = '';
+      Object.entries(TEMPLATES).forEach(([key, template]) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `template-card ${currentTemplate === key ? 'selected' : ''}`;
+        card.disabled = !template.enabled;
+        card.innerHTML = `
+          <canvas class="template-preview" width="300" height="300" aria-label="${escapeAttr(template.label)}預覽"></canvas>
+          <div class="template-card-title">
+            <span>${escapeHtml(template.label)}</span>
+            <span class="template-card-status">${template.enabled ? (currentTemplate === key ? '使用中' : '選用') : '預留'}</span>
+          </div>`;
+        drawTemplatePreview(card.querySelector('.template-preview'), template, !template.enabled);
+        if (template.enabled) {
+          card.addEventListener('click', () => {
+            currentTemplate = key;
+            localStorage.setItem('baseballCardTemplate', currentTemplate);
+            renderHomeTemplates();
+            if (selectedPlayer()) renderCanvas();
+          });
+        }
+        els.homeTemplateGrid.appendChild(card);
+      });
+    }
+
     function renderTemplates() {
       els.content.innerHTML = `
         <h2>背景</h2>
@@ -2582,10 +2806,6 @@ bg2: {
     function renderContent() {
       const player = selectedPlayer();
       els.selectedPlayerText.textContent = player ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}）` : '';
-      if (selectedTab === 'templates') {
-        renderTemplates();
-        return;
-      }
       if (!player) {
         els.content.innerHTML = '';
         return;
@@ -2596,16 +2816,36 @@ bg2: {
     }
 
     function renderAll() {
+      const player = selectedPlayer();
+      const playerPageActive = currentPage === 'player' && Boolean(player);
+
+      els.homePage?.classList.toggle('hidden', playerPageActive);
+      els.playerPage?.classList.toggle('hidden', !playerPageActive);
+      if (els.pageSubtitle) els.pageSubtitle.textContent = playerPageActive ? '球員設定' : '首頁';
+      if (els.selectedPlayerText) {
+        els.selectedPlayerText.textContent = playerPageActive
+          ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}）`
+          : '';
+      }
+      if (els.playerPageDate) {
+        els.playerPageDate.textContent = els.gameDate.value ? `日期｜${els.gameDate.value.replaceAll('-', '/')}` : '';
+      }
+
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
         els.downloadBtn.textContent = currentRecord?.cpblReadOnlyImport
-          ? '下載圖片（歷史資料不更新基礎數據）'
-          : '下載圖片並更新基礎數據';
+          ? '輸出圖片（歷史資料不更新基礎數據）'
+          : '更新數據並輸出圖片';
       }
+
       renderRecentPlayers();
       renderAllPlayersDialog();
-      renderContent();
-      renderCanvas();
+      renderHomeTemplates();
+
+      if (playerPageActive) {
+        renderContent();
+        renderCanvas();
+      }
     }
 
     async function commitCurrentGame() {
@@ -3695,6 +3935,12 @@ bg2: {
 
     function escapeAttr(value) { return escapeHtml(value); }
 
+    els.backHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
     document.getElementById('addPlayerBtn').addEventListener('click', () => els.addDialog.showModal());
     document.getElementById('batchCpblBtn').addEventListener('click', () => {
       document.getElementById('batchCpblProgress').textContent = `目前共有 ${players.length} 名球員。`;
@@ -4019,7 +4265,8 @@ bg2: {
         }
         els.gameDate.value = localISODate();
         selectedTab = localStorage.getItem('baseballSelectedTab') || 'base';
-        if (!['base', 'today', 'photos', 'templates'].includes(selectedTab)) selectedTab = 'base';
+        if (!['base', 'today', 'photos'].includes(selectedTab)) selectedTab = 'base';
+        currentPage = 'home';
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
         if (selectedPlayerId) await loadRecord();
