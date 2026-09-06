@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.27</div>
+        <div class="app-splash-version">VERSION v1.28</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.27</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.28</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.27';
+    const APP_VERSION = 'v1.28';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -5976,14 +5976,18 @@ bg2: {
         serviceWorkerRegistration = reg;
 
         if (showProgress) await appUpdateStep(32, '正在連線檢查新版…', 110);
-        await reg.update();
+        await promiseTimeout(
+          reg.update(),
+          manual ? 8000 : 2500,
+          '更新伺服器回應逾時'
+        );
 
         if (showProgress) await appUpdateStep(55, '正在比對程式版本…', 100);
 
         const installing = reg.installing;
         if (installing) {
           if (showProgress) await appUpdateStep(70, '找到新版，正在下載…', 80);
-          await waitForWorkerSettle(installing);
+          await waitForWorkerSettle(installing, manual ? 9000 : 3500);
         } else if (showProgress) {
           await appUpdateStep(72, '版本確認完成…', 100);
         }
@@ -6044,9 +6048,13 @@ bg2: {
       }
 
       try {
-        const reg = await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
-          updateViaCache: 'none'
-        });
+        const reg = await promiseTimeout(
+          navigator.serviceWorker.register(SERVICE_WORKER_URL, {
+            updateViaCache: 'none'
+          }),
+          2500,
+          'Service Worker 註冊逾時'
+        );
         serviceWorkerRegistration = reg;
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -6107,14 +6115,18 @@ bg2: {
     }
 
     async function bootApp() {
-      const willReloadForUpdate = await setupAppUpdate();
+      // 本機資料和更新檢查同時跑；更新伺服器慢也不能拖住資料準備。
+      const initPromise = init();
+      const updatePromise = setupAppUpdate();
+
+      const willReloadForUpdate = await updatePromise;
       if (willReloadForUpdate) return;
 
-      setAppUpdateProgress(90, '正在讀取球員與戰報資料…');
-      await init();
+      setAppUpdateProgress(90, '正在完成球員與戰報資料…');
+      await initPromise;
 
       setAppUpdateProgress(100, '資料已準備完成');
-      await new Promise(resolve => setTimeout(resolve, 260));
+      await new Promise(resolve => setTimeout(resolve, 220));
       hideAppUpdateProgress();
     }
 
