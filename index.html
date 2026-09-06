@@ -1297,7 +1297,7 @@
         <div class="sync-progress-track" aria-hidden="true">
           <div id="appUpdateBar" class="sync-progress-bar"></div>
         </div>
-        <div class="app-splash-version">VERSION v1.25</div>
+        <div class="app-splash-version">VERSION v1.26</div>
       </div>
     </div>
   </div>
@@ -1399,7 +1399,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.25</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.26</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1572,7 +1572,7 @@
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.25';
+    const APP_VERSION = 'v1.26';
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
@@ -2844,13 +2844,38 @@ bg2: {
       const player = selectedPlayer();
       if (!player) return;
 
-      await savePlayer(player);
+      // 先把目前軍別的累積資料留在記憶體；切換時不等待任何網路或 DB 寫入。
+      persistActiveStatsProfile(player);
+
       selectedLevel = level;
       const years = availableSeasonYears(player, selectedLevel);
-      selectedSeason = years[0] || CURRENT_YEAR;
+      selectedSeason = years[0] ?? CURRENT_YEAR;
       activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
-      await loadRecord();
+
+      // 先立即切畫面，避免讀取當日紀錄時讓使用者感覺按鈕卡住。
+      currentRecord = defaultGameRecord(player);
       renderAll();
+
+      // 球員資料背景寫入，不阻塞軍別切換。
+      player.updatedAt = Date.now();
+      idbPut(STORES.players, player).catch(error => {
+        console.warn('切換軍別時儲存球員資料失敗', error);
+      });
+
+      const targetPlayerId = player.id;
+      const targetLevel = level;
+      try {
+        await loadRecord();
+        // 如果讀取期間使用者又切到別的球員／軍別，就不要用舊結果重畫。
+        if (selectedPlayerId !== targetPlayerId || selectedLevel !== targetLevel) return;
+        renderAll();
+      } catch (error) {
+        console.warn('切換軍別時讀取當日紀錄失敗', error);
+        if (selectedPlayerId === targetPlayerId && selectedLevel === targetLevel) {
+          currentRecord = defaultGameRecord(player);
+          renderAll();
+        }
+      }
     }
 
     async function switchPlayerSeason(year) {
