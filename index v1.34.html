@@ -3116,7 +3116,80 @@ bg2: {
           playerName: 44, playerType: 19, tagText: 24
         },
         decorHeads: { enabled: false }
-      }
+ ,
+
+      bg6: {
+        label: '記分板科技風',
+        enabled: true,
+        style: 'scoreboard-tech',
+        frameSize: 0,
+        innerBg: '#071018',
+        header: {
+          drawBox: false,
+          vsX: 58, vsY: 92,
+          dateX: 1018, dateY: 91,
+          dateAlign: 'right',
+          textColor: '#dcecff',
+          dateColor: '#ffcc4d'
+        },
+        metricCards: [
+          { x: 54,  y: 156, w: 196, h: 118, r: 10, bg: 'rgba(8,23,34,.94)', border: '#2b607b', label: '#78a8be', value: '#f6fbff', labelOffset: 38, valueOffset: 91 },
+          { x: 266, y: 156, w: 196, h: 118, r: 10, bg: 'rgba(255,193,57,.94)', border: '#ffd36a', label: '#17212a', value: '#111920', labelOffset: 38, valueOffset: 91 },
+          { x: 478, y: 156, w: 196, h: 118, r: 10, bg: 'rgba(8,23,34,.94)', border: '#2b607b', label: '#78a8be', value: '#f6fbff', labelOffset: 38, valueOffset: 91 }
+        ],
+        detail: {
+          positioned: true,
+          drawBox: true,
+          x: 54, y: 316, w: 500, h: 650, r: 16,
+          bg: 'rgba(5,16,24,.91)',
+          border: 'rgba(49,116,148,.72)',
+          borderWidth: 2,
+          textColor: '#eaf6ff',
+          mutedColor: '#83a4b4',
+          accentColor: '#ffca45',
+          dividerColor: 'rgba(80,155,188,.22)',
+          paCircle: '#ffca45',
+          paCircleAlt: '#123b50',
+          paCircleText: '#17212a',
+          paCircleAltText: '#ffffff',
+          rbiColor: '#ffd86b',
+          headingX: 82, headingY: 368,
+          underlineX: 82, underlineY: 385, underlineW: 438,
+          paStartY: 434, paStep: 64,
+          paNumberX: 90, paTextX: 138,
+          dividerX1: 74, dividerX2: 530,
+          pitcherLabelX: 82, pitcherValueX: 530,
+          pitcherStartY: 440, pitcherStep: 58,
+          tagsX: 72, tagsBottom: 944, tagsW: 452,
+          appearanceFontSize: 27
+        },
+        photo: {
+          x: 590, y: 316, w: 436, h: 532, r: 12,
+          bg: '#0a1c29',
+          border: '#3d83a3',
+          borderWidth: 3
+        },
+        name: {
+          plateX: 586, plateY: 870, plateW: 444, plateH: 112, plateR: 12,
+          plateBg: 'rgba(4,13,20,.95)',
+          plateBorder: 'rgba(255,202,69,.72)',
+          textX: 610, textY: 916,
+          lineX: 610, lineY: 936, lineW: 394, lineH: 3,
+          typeX: 612, typeY: 970,
+          maxWidth: 396, minFont: 27,
+          color: '#f5fbff',
+          typeColor: '#75a2b7',
+          lineColor: '#ffca45'
+        },
+        fonts: {
+          headerVs: 38, headerDate: 26,
+          metricLabel: 22, metricValue: 42,
+          paNumber: 22, paResult: 31, paRbi: 19,
+          pitcherTitle: 31, pitcherLabel: 22, pitcherValue: 30,
+          playerName: 44, playerType: 19, tagText: 24
+        },
+        decorHeads: { enabled: false }
+      }     }
     };
 
     let currentTemplate = localStorage.getItem('baseballCardTemplate') || 'bg1';
@@ -6186,6 +6259,7 @@ bg2: {
         case 'stadium-night': return drawStadiumNightBackground(ctx, frameColor);
         case 'baseball-seam': return drawBaseballSeamBackground(ctx, frameColor);
         case 'bullpen': return drawBullpenBackground(ctx, frameColor);
+        case 'scoreboard-tech': return drawScoreboardTechBackground(ctx, frameColor);
       }
       ctx.fillStyle = layout.innerBg || '#152238';
       ctx.fillRect(0, 0, 1080, 1080);
@@ -6370,6 +6444,136 @@ bg2: {
       ctx.restore();
 
       drawOpponentFrame(ctx,frameColor,10,10);
+    }
+
+    function drawScoreboardTechBackground(ctx, frameColor = '#d7ad52') {
+      const W=1080,H=1080;
+
+      // 深色電子記分板底
+      const bg=ctx.createLinearGradient(0,0,0,H);
+      bg.addColorStop(0,'#061019');
+      bg.addColorStop(.52,'#0a1b27');
+      bg.addColorStop(1,'#040b11');
+      ctx.fillStyle=bg;
+      ctx.fillRect(0,0,W,H);
+
+      // LED 點陣
+      ctx.save();
+      ctx.globalAlpha=.13;
+      ctx.fillStyle='#4ea1c5';
+      for(let y=26;y<H;y+=20){
+        for(let x=28;x<W;x+=20){
+          ctx.beginPath();
+          ctx.arc(x,y,1.35,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // 頂部主記分板框
+      ctx.save();
+      ctx.fillStyle='rgba(3,10,15,.94)';
+      ctx.strokeStyle='#2b6a88';
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.roundRect(34,34,1012,86,12);
+      ctx.fill();
+      ctx.stroke();
+
+      // 左右小 LED 模組
+      const ledBox=(x,label,value,accent='#7ed6f2')=>{
+        ctx.fillStyle='rgba(9,29,42,.95)';
+        ctx.strokeStyle='rgba(63,132,162,.72)';
+        ctx.lineWidth=2;
+        ctx.beginPath();ctx.roundRect(x,46,118,60,8);ctx.fill();ctx.stroke();
+        ctx.textAlign='center';
+        ctx.fillStyle='#7097aa';
+        ctx.font='700 12px Arial, sans-serif';
+        ctx.fillText(label,x+59,66);
+        ctx.fillStyle=accent;
+        ctx.font='900 23px "Courier New", monospace';
+        ctx.fillText(value,x+59,94);
+      };
+      ledBox(604,'INNING','9');
+      ledBox(732,'OUT','2','#ffca45');
+      ledBox(860,'COUNT','3-2','#ff7f6b');
+      ctx.restore();
+
+      // 中段跑馬燈
+      ctx.save();
+      ctx.fillStyle='#0d2533';
+      ctx.fillRect(0,126,W,6);
+      ctx.fillStyle='rgba(13,37,51,.80)';
+      ctx.fillRect(0,286,W,10);
+      ctx.globalAlpha=.72;
+      ctx.fillStyle='#2c718e';
+      for(let x=0;x<W;x+=48) ctx.fillRect(x,288,28,6);
+      ctx.restore();
+
+      // 右上方球場數據格線
+      ctx.save();
+      ctx.globalAlpha=.14;
+      ctx.strokeStyle='#6db2d0';
+      ctx.lineWidth=1;
+      for(let x=700;x<1040;x+=42){
+        ctx.beginPath();ctx.moveTo(x,138);ctx.lineTo(x,292);ctx.stroke();
+      }
+      for(let y=138;y<292;y+=31){
+        ctx.beginPath();ctx.moveTo(700,y);ctx.lineTo(1040,y);ctx.stroke();
+      }
+      ctx.restore();
+
+      // 右下電子面板輪廓，照片區後方仍看得到
+      ctx.save();
+      ctx.strokeStyle='rgba(53,132,166,.28)';
+      ctx.lineWidth=2;
+      for(const off of [0,12,24]){
+        ctx.strokeRect(572+off,304+off,474-off*2,692-off*2);
+      }
+      ctx.restore();
+
+      // 底部 scoreboard strip
+      ctx.save();
+      ctx.fillStyle='rgba(2,9,14,.94)';
+      ctx.fillRect(0,1000,W,80);
+      ctx.strokeStyle='#2c6f8c';
+      ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(0,1000);ctx.lineTo(W,1000);ctx.stroke();
+
+      const labels=[['R','0'],['H','0'],['E','0']];
+      labels.forEach((item,i)=>{
+        const x=740+i*92;
+        ctx.textAlign='center';
+        ctx.fillStyle='#6f95a8';
+        ctx.font='700 15px Arial, sans-serif';
+        ctx.fillText(item[0],x,1027);
+        ctx.fillStyle='#dff6ff';
+        ctx.font='900 28px "Courier New", monospace';
+        ctx.fillText(item[1],x,1060);
+      });
+      ctx.fillStyle='#ffca45';
+      ctx.font='900 18px "Courier New", monospace';
+      ctx.textAlign='left';
+      ctx.fillText('PLAYER DATA // LIVE',46,1048);
+      ctx.restore();
+
+      // 科技斜線
+      ctx.save();
+      ctx.globalAlpha=.22;
+      ctx.strokeStyle='#2a7190';
+      ctx.lineWidth=2;
+      for(let x=-160;x<1080;x+=150){
+        ctx.beginPath();
+        ctx.moveTo(x,1080);
+        ctx.lineTo(x+310,770);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      drawOpponentFrame(ctx,frameColor,10,10);
+      ctx.strokeStyle='rgba(96,175,205,.24)';
+      ctx.lineWidth=2;
+      ctx.strokeRect(22,22,1036,1036);
     }
 
     function drawBullpenBackground(ctx, frameColor = '#d7ad52') {
