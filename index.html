@@ -1232,7 +1232,7 @@
       </div>
       <div class="small" style="line-height:1.65">
         日期：<strong id="batchReportDate"></strong><br>
-        會使用這一天已儲存的一軍戰報資料生成圖片；沒有當日資料的球員會自動跳過。
+        會使用這一天已儲存的戰報資料生成圖片；優先一軍，若只有二軍紀錄就生成二軍戰報。沒有當日資料的球員會自動跳過。
       </div>
       <div class="section-actions" style="margin-top:12px">
         <button id="batchReportSelectAllBtn" class="press-btn">全選</button>
@@ -2547,11 +2547,16 @@ bg2: {
       return [...document.querySelectorAll('[data-batch-report-player]:checked')].map(input => input.value);
     }
 
-    async function readSavedGameForBatch(playerId, level = 'A') {
+    async function readSavedGameForBatch(playerId) {
       const date = els.gameDate.value;
-      let record = await idbGet(STORES.games, `${date}:${playerId}:${level}`);
-      if (!record && level === 'A') record = await idbGet(STORES.games, `${date}:${playerId}`);
-      return record;
+      let record = await idbGet(STORES.games, `${date}:${playerId}:A`);
+      if (!record) record = await idbGet(STORES.games, `${date}:${playerId}`);
+      if (record) return { record, level:'A' };
+
+      record = await idbGet(STORES.games, `${date}:${playerId}:D`);
+      if (record) return { record, level:'D' };
+
+      return { record:null, level:'A' };
     }
 
     function hasUsableBatchRecord(record, player) {
@@ -2595,26 +2600,28 @@ bg2: {
             els.batchReportProgress.textContent = `正在生成 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
           }
 
-          const record = await readSavedGameForBatch(player.id, 'A');
+          const savedGame = await readSavedGameForBatch(player.id);
+          const record = savedGame.record;
+          const reportLevel = savedGame.level;
           if (!hasUsableBatchRecord(record, player)) {
-            results.push({ player, ok:false, reason:'這一天沒有已儲存的一軍戰報資料' });
+            results.push({ player, ok:false, reason:'這一天沒有已儲存的戰報資料' });
             continue;
           }
 
           selectedPlayerId = player.id;
-          selectedLevel = 'A';
+          selectedLevel = reportLevel;
           const reportYear = Number(els.gameDate.value.slice(0,4)) || CURRENT_YEAR;
-          const years = availableSeasonYears(player, 'A');
+          const years = availableSeasonYears(player, reportLevel);
           selectedSeason = years.includes(reportYear) ? reportYear : (years[0] || reportYear);
           activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
 
           currentRecord = {
             ...defaultGameRecord(player),
             ...record,
-            key: `${els.gameDate.value}:${player.id}:A`,
+            key: `${els.gameDate.value}:${player.id}:${reportLevel}`,
             playerId: player.id,
             date: els.gameDate.value,
-            level: 'A',
+            level: reportLevel,
             hitterPAs: Array.isArray(record.hitterPAs) ? record.hitterPAs : [],
             hitterAppearance: {
               ...defaultGameRecord(player).hitterAppearance,
@@ -2647,6 +2654,8 @@ bg2: {
         selectedSeason = savedState.selectedSeason;
         currentRecord = savedState.currentRecord;
         currentPage = savedState.currentPage;
+        const restoredPlayer = selectedPlayer();
+        if (restoredPlayer) activatePlayerStatsProfile(restoredPlayer, selectedSeason, selectedLevel);
         els.batchReportGenerateBtn.disabled = false;
         renderAll();
       }
