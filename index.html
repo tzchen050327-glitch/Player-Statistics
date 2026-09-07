@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.48</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.49</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.48';
+    const APP_VERSION = 'v1.49';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3245,6 +3245,9 @@ dialog::backdrop {
       'MLB:660271': { name: '大谷翔平', aliases: ['大谷'] },
       'MLB:808967': { name: '山本由伸', aliases: ['山本'] }
     };
+    const PREFERRED_EXTERNAL_TEAM_FIXES = {
+      'NPB:21925136': 'Fukuoka SoftBank Hawks'
+    };
 
     function applyStoredPreferredExternalName(player) {
       const key = `${String(player?.externalProvider || '').toUpperCase()}:${String(player?.externalPlayerId || '')}`;
@@ -3253,6 +3256,14 @@ dialog::backdrop {
       const currentName = String(player?.name || '').replace(/\s+/g, '');
       if (!(fix.aliases || []).includes(currentName)) return false;
       player.name = fix.name;
+      return true;
+    }
+
+    function applyStoredPreferredExternalTeam(player) {
+      const key = `${String(player?.externalProvider || '').toUpperCase()}:${String(player?.externalPlayerId || '')}`;
+      const preferredTeam = PREFERRED_EXTERNAL_TEAM_FIXES[key];
+      if (!preferredTeam || player?.externalTeam === preferredTeam) return false;
+      player.externalTeam = preferredTeam;
       return true;
     }
     let renderToken = 0;
@@ -9648,7 +9659,9 @@ bg2: {
         photos = await idbGetAll(STORES.photos);
         for (const player of players) {
           ensurePhotoTransforms(player);
-          if (applyStoredPreferredExternalName(player)) await idbPut(STORES.players, player);
+          const fixedName = applyStoredPreferredExternalName(player);
+          const fixedTeam = applyStoredPreferredExternalTeam(player);
+          if (fixedName || fixedTeam) await idbPut(STORES.players, player);
         }
         for (const photo of photos) {
           if (!photo.playerId) {
