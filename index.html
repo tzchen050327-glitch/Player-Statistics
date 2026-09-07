@@ -2800,6 +2800,31 @@ dialog::backdrop {
 }
 /* ===== v1.34 CUSTOM MESSAGE DIALOG END ===== */
 
+/* ===== v1.51 INTERNATIONAL HUB START ===== */
+.international-explorer{margin-top:12px;margin-bottom:18px}
+.international-explorer.hidden{display:none}
+.intl-explorer-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px}
+.intl-explorer-head strong{color:#20334a;font-size:14px;font-weight:900}
+.intl-explorer-head span{color:#7b8796;font-size:11px;font-weight:700}
+.intl-tournament-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.intl-tournament-card{min-height:88px;padding:12px 11px;border:1px solid #dfe6ed;border-radius:15px;background:linear-gradient(180deg,#fff,#f7f9fb);color:#26384c;text-align:left;cursor:pointer;box-shadow:0 5px 14px rgba(17,38,66,.045);transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}
+.intl-tournament-card:hover{transform:translateY(-1px);border-color:#d3bf86;box-shadow:0 9px 20px rgba(17,38,66,.08)}
+.intl-tournament-card.active{border-color:#b98a27;background:linear-gradient(145deg,#fffaf0,#f4e6bd);box-shadow:0 8px 20px rgba(158,119,31,.14)}
+.intl-tournament-code{display:block;color:#9a711d;font-size:11px;font-weight:1000;letter-spacing:.08em}
+.intl-tournament-name{display:block;margin-top:5px;color:#1f3349;font-size:14px;font-weight:950;line-height:1.25}
+.intl-tournament-count{display:block;margin-top:8px;color:#7b8796;font-size:11px;font-weight:800}
+.intl-path-panel{margin-top:12px;padding:12px;border:1px solid #e2e8ef;border-radius:14px;background:#fafbfd}
+.intl-path-row{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:start}
+.intl-path-row+.intl-path-row{margin-top:10px}
+.intl-path-label{padding-top:8px;color:#758295;font-size:11px;font-weight:900}
+.intl-chip-list{display:flex;flex-wrap:wrap;gap:7px}
+.intl-filter-chip{min-height:32px;padding:6px 11px;border:1px solid #d8e0e8;border-radius:999px;background:#fff;color:#536477;font-size:11px;font-weight:900;cursor:pointer}
+.intl-filter-chip.active{border-color:#9e771f;background:#9e771f;color:#fff}
+.intl-empty-path{color:#7b8796;font-size:12px;line-height:1.6}
+.intl-breadcrumb{margin:4px 0 12px;color:#8a6821;font-size:12px;font-weight:900}
+@media(max-width:900px){.intl-tournament-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.intl-tournament-grid{grid-template-columns:1fr 1fr;gap:7px}.intl-tournament-card{min-height:78px;padding:10px}.intl-path-row{grid-template-columns:50px minmax(0,1fr);gap:7px}}
+/* ===== v1.51 INTERNATIONAL HUB END ===== */
 </style>
 </head>
 <body>
@@ -2889,7 +2914,8 @@ dialog::backdrop {
             <button class="home-team-filter-btn" type="button" data-home-team-filter="味全龍" style="color:#D71920">味全龍</button>
           </div>
 
-          <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國際賽與國外聯盟篩選"></div>
+          <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國外聯盟篩選"></div>
+          <div id="homeInternationalExplorer" class="international-explorer hidden" aria-label="國際賽賽事瀏覽"></div>
 
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
@@ -3029,13 +3055,13 @@ dialog::backdrop {
             <option value="overseas">國外聯盟</option>
           </select>
         </label>
-        <label class="field">賽事／聯盟
+        <label id="newPlayerCompetitionLabel" class="field">賽事／聯盟
           <select id="newPlayerCompetition"></select>
         </label>
-        <label class="field">代表隊／球隊
-          <input id="newPlayerExternalTeam" type="text" maxlength="40" placeholder="例如：中華隊、Los Angeles Dodgers" />
+        <label id="newPlayerTeamLabel" class="field">代表隊／球隊
+          <input id="newPlayerExternalTeam" type="text" maxlength="40" placeholder="例如：中華台北、Los Angeles Dodgers" />
         </label>
-        <label class="field">年份
+        <label id="newPlayerYearLabel" class="field">年份
           <input id="newPlayerExternalYear" type="number" min="1990" max="2100" step="1" />
         </label>
       </div>
@@ -3170,6 +3196,10 @@ dialog::backdrop {
       homeLevelFilters: document.getElementById('homeLevelFilters'),
       homeTeamFilters: document.getElementById('homeTeamFilters'),
       homeSpecialFilters: document.getElementById('homeSpecialFilters'),
+      homeInternationalExplorer: document.getElementById('homeInternationalExplorer'),
+      newPlayerCompetitionLabel: document.getElementById('newPlayerCompetitionLabel'),
+      newPlayerTeamLabel: document.getElementById('newPlayerTeamLabel'),
+      newPlayerYearLabel: document.getElementById('newPlayerYearLabel'),
       playerPageDate: document.getElementById('playerPageDate'),
       backHomeBtn: document.getElementById('backHomeBtn'),
       playerLevelSwitch: document.getElementById('playerLevelSwitch'),
@@ -3236,9 +3266,26 @@ dialog::backdrop {
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
     let homeSpecialFilter = '';
+    let homeInternationalEditionFilter = '';
+    let homeInternationalTeamFilter = '';
     let currentRecord = null;
 
     const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', '其他國際賽'];
+    const INTERNATIONAL_TOURNAMENT_META = {
+      'WBC': { code:'WBC', name:'世界棒球經典賽' },
+      'WBCQ': { code:'WBCQ', name:'經典賽資格賽' },
+      '世界12強': { code:'P12', name:'世界12強' },
+      '亞洲運動會': { code:'AG', name:'亞洲運動會' },
+      '其他國際賽': { code:'INTL', name:'其他國際賽' }
+    };
+    const INTERNATIONAL_TEAM_NAME_MAP = {
+      'Chinese Taipei':'中華台北',
+      'Taiwan':'中華台北',
+      '中華隊':'中華台北',
+      '日本隊':'日本',
+      '韓國隊':'韓國',
+      '美國隊':'美國'
+    };
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];
     const PREFERRED_EXTERNAL_NAME_FIXES = {
       'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
@@ -5765,6 +5812,20 @@ bg2: {
 
     function playerSpecialCompetition(player) {
       return String(player?.externalCompetition || '').trim();
+    }
+
+    function normalizeInternationalTeamName(value = '') {
+      const raw = String(value || '').trim();
+      return INTERNATIONAL_TEAM_NAME_MAP[raw] || raw;
+    }
+
+    function internationalEdition(player) {
+      const year = Math.floor(Number(player?.externalYear) || 0);
+      return year > 0 ? String(year) : '';
+    }
+
+    function internationalTeam(player) {
+      return normalizeInternationalTeamName(player?.externalTeam || '');
     }
 
     function playerDisplayTeam(player) {
