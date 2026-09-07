@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.47</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.48</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.47';
+    const APP_VERSION = 'v1.48';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -9260,23 +9260,32 @@ bg2: {
         });
         const official = profileData.player || {};
 
-        const seasonData = await baseballRequest('season-stats', {
-          provider,
-          id:picked.id,
-          year:externalYear
-        });
-        const remote = seasonData.stats;
-        if (!remote) throw new Error('讀不到賽季成績。');
+        let remote = null;
+        let seasonSyncError = '';
+        try {
+          const seasonData = await baseballRequest('season-stats', {
+            provider,
+            id:picked.id,
+            year:externalYear
+          });
+          remote = seasonData.stats || null;
+          if (!remote) seasonSyncError = '讀不到賽季成績。';
+        } catch (error) {
+          seasonSyncError = error?.message || '賽季成績同步失敗。';
+          if (provider !== 'MILB') throw error;
+        }
 
         const isTwoWay = Boolean(
           official.twoWay
           || picked.twoWay
-          || remote.profile?.twoWay
+          || remote?.profile?.twoWay
         );
         let type = isTwoWay ? selectedType : (official.type || picked.type || selectedType);
         if (type !== 'pitcher' && type !== 'hitter') type = selectedType;
-        if (type === 'pitcher' && !remote.pitcher && remote.hitter) type = 'hitter';
-        if (type === 'hitter' && !remote.hitter && remote.pitcher) type = 'pitcher';
+        if (remote) {
+          if (type === 'pitcher' && !remote.pitcher && remote.hitter) type = 'hitter';
+          if (type === 'hitter' && !remote.hitter && remote.pitcher) type = 'pitcher';
+        }
 
         const typedChineseName = /[㐀-鿿]/.test(name) ? name : '';
         const displayName = picked.zhName || typedChineseName || picked.name || official.name || name;
@@ -9299,11 +9308,13 @@ bg2: {
           externalTeam:official.team || picked.team || '',
           externalYear,
           externalAvailableYears:[],
+          externalSeasonSyncPending:Boolean(provider === 'MILB' && seasonSyncError),
+          externalSeasonSyncError:provider === 'MILB' ? seasonSyncError : '',
           cpblAcnt:'',cpblTeam:'',cpblTeamCode:'',cpblPosition:'',
           createdAt:Date.now(),updatedAt:Date.now(),lastUsedAt:Date.now()
         };
 
-        applyExternalSeasonStats(player, remote, externalYear);
+        if (remote) applyExternalSeasonStats(player, remote, externalYear);
         const sameLinkedPlayers = players.filter(p => playerScope(p) === 'overseas'
           && p.externalProvider === provider
           && String(p.externalPlayerId || '') === String(player.externalPlayerId));
@@ -9319,7 +9330,9 @@ bg2: {
         clearNewPlayerForm();
         els.addDialog.close();
         await selectPlayer(player.id);
-        setStatus(`已從 ${overseasProviderLabel(provider)} 建立：${player.name}｜${player.externalTeam || '球隊未提供'}`);
+        setStatus(seasonSyncError && provider === 'MILB'
+          ? `已建立 ${player.name}；MiLB 賽季累積同步暫時失敗，但仍可抓指定日期單場資料。`
+          : `已從 ${overseasProviderLabel(provider)} 建立：${player.name}｜${player.externalTeam || '球隊未提供'}`);
       } catch (error) {
         setStatus(error?.message || '搜尋國外聯盟資料失敗。', true);
       } finally {
