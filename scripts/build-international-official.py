@@ -5,6 +5,12 @@ from datetime import datetime, timezone
 
 SOURCES = [
     {
+        "competition": "亞洲運動會",
+        "year": 2023,
+        "url": "https://www.ocagames.com/orb/books/Hangzhou_2022/Baseball.pdf",
+        "source": "OCA Hangzhou 2022 Baseball Official Results Book"
+    },
+    {
         "competition": "世界12強",
         "year": 2024,
         "url": "https://static.wbsc.org/uploads/federations/0/documents/82f90f98-607b-6a2c-59ba-47dbefdf741f.pdf",
