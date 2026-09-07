@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.36</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.37</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.36';
+    const APP_VERSION = 'v1.37';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4803,11 +4803,129 @@ bg2: {
       return projected;
     }
 
+    function paPositionFromText(raw, fallback = '') {
+      const normalizePos = value => {
+        const key = String(value || '').trim().charAt(0);
+        const map = { '投':'投', '捕':'捕', '一':'一', '二':'二', '三':'三', '遊':'游', '游':'游', '左':'左', '中':'中', '右':'右' };
+        return map[key] || '';
+      };
+      const fallbackPos = normalizePos(fallback);
+      if (fallbackPos) return fallbackPos;
+    
+      const text = String(raw || '').normalize('NFKC');
+      const tests = [
+        ['投', /投手|(?:^|[\s,，、])投(?:ゴロ|飛|直|失|安)|\bpitcher\b|투수/i],
+        ['捕', /捕手|(?:^|[\s,，、])捕(?:ゴロ|飛|直|失|安)|\bcatcher\b|포수/i],
+        ['一', /一塁手|(?:^|[\s,，、])一(?:ゴロ|飛|直|失|安)|\bfirst baseman\b|1루수/i],
+        ['二', /二塁手|(?:^|[\s,，、])二(?:ゴロ|飛|直|失|安)|\bsecond baseman\b|2루수/i],
+        ['三', /三塁手|(?:^|[\s,，、])三(?:ゴロ|飛|直|失|安)|\bthird baseman\b|3루수/i],
+        ['游', /遊撃手|游撃手|(?:^|[\s,，、])(?:遊|游)(?:ゴロ|飛|直|失|安)|\bshortstop\b|유격수/i],
+        ['左', /左翼手|(?:^|[\s,，、])左(?:飛|直|失|安)|\bleft fielder\b|좌익수/i],
+        ['中', /中堅手|(?:^|[\s,，、])中(?:飛|直|失|安)|\bcenter fielder\b|중견수/i],
+        ['右', /右翼手|(?:^|[\s,，、])右(?:飛|直|失|安)|\bright fielder\b|우익수/i]
+      ];
+      let bestPos = '';
+      let bestIndex = Infinity;
+      for (const [pos, re] of tests) {
+        const match = re.exec(text);
+        if (match && match.index < bestIndex) {
+          bestIndex = match.index;
+          bestPos = pos;
+        }
+      }
+      return bestPos;
+    }
+
+    function paHitDirectionFromText(raw) {
+      const text = String(raw || '').normalize('NFKC');
+      const tests = [
+        ['左中', /左中|left[\s-]?center|좌중간/i],
+        ['右中', /右中|right[\s-]?center|우중간/i],
+        ['左', /(?:^|[\s,，、])左(?:安|2|3|二|三|本)|\bleft field\b|좌전|좌익/i],
+        ['中', /(?:^|[\s,，、])中(?:安|2|3|二|三|本)|\bcenter field\b|중전|중견/i],
+        ['右', /(?:^|[\s,，、])右(?:安|2|3|二|三|本)|\bright field\b|우전|우익/i]
+      ];
+      let best = '';
+      let bestIndex = Infinity;
+      for (const [label, re] of tests) {
+        const match = re.exec(text);
+        if (match && match.index < bestIndex) {
+          bestIndex = match.index;
+          best = label;
+        }
+      }
+      return best;
+    }
+
+    function localizePaAction(pa) {
+      const code = String(pa?.code || 'OUT').toUpperCase();
+      const raw = String(pa?.cpblOfficialAction || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+      const compact = raw.replace(/\s+/g, '');
+      const lower = raw.toLowerCase();
+    
+      const preserved = new Set([
+        '內安','場安','內二','場二','內三','場三','全打','內全',
+        '四壞','故意四壞','死球','野選','失誤','投失','捕失','一失','二失','三失','游失','左失','中失','右失','雙誤',
+        '礙打','不死三振','礙跑','三振','滾地出局','飛球出局','內飛','界飛','雙殺','三殺',
+        '犧牲短打','犧短','犧短誤','犧選','犧選誤','犧牲高飛','犧飛','界犧飛','犧飛誤',
+        '礙守','裁決','違規','觸球','觸傳球','三呎線'
+      ]);
+      if (preserved.has(raw)) return raw;
+    
+      const position = paPositionFromText(raw, pa?.position || '');
+      const direction = paHitDirectionFromText(raw);
+      const foul = /邪飛|ファウル(?:フライ|飛|アウト)|foul(?:\s+territory)?(?:\s+fly|\s+out|\s+pop)|파울(?:플라이|뜬공|아웃)/i.test(raw);
+      const lineDrive = /直(?:球|飛)?|ライナー|line(?:s|d)?\s+out|lineout|직선타/i.test(raw);
+      const infieldFly = /内飛|內飛|infield\s+fly|내야\s*(?:플라이|뜬공)/i.test(raw);
+    
+      if (code === '1B') {
+        const infield = /^(?:投|捕|一|二|三|遊|游)安/.test(compact)
+          || /(?:pitcher|catcher|first baseman|second baseman|third baseman|shortstop).*(?:single|base hit)/i.test(lower)
+          || /(?:투수|포수|1루수|2루수|3루수|유격수).*(?:안타)/.test(raw);
+        if (infield) return '內安';
+        return direction ? `${direction}安` : '一安';
+      }
+      if (code === '2B') return direction ? `${direction}二` : '二安';
+      if (code === '3B') return direction ? `${direction}三` : '三安';
+      if (code === 'HR') return direction ? `${direction}本` : '全壘打';
+      if (code === 'BB') return '四壞';
+      if (code === 'IBB') return '故意四壞';
+      if (code === 'HBP') return '死球';
+      if (code === 'CI') return '礙打';
+      if (code === 'FC') return '野選';
+      if (code === 'E') return position ? `${position}失` : '失誤';
+      if (code === 'OBS') return '礙跑';
+      if (code === 'K') return '三振';
+      if (code === 'KREACH') return '不死三振';
+      if (code === 'DP') return '雙殺';
+      if (code === 'TP') return '三殺';
+      if (code === 'SH') return '犧短';
+      if (code === 'SF') return foul ? '界犧飛' : '犧飛';
+      if (code === 'INT') return '礙守';
+      if (code === 'GO') return position ? `${position}滾` : '滾地出局';
+      if (code === 'FO') {
+        if (foul) return '界飛';
+        if (infieldFly) return '內飛';
+        if (lineDrive && position) return `${position}直`;
+        return position ? `${position}飛` : '飛球出局';
+      }
+      if (code === 'OUT') {
+        if (/三振|strike\s*out|strikeout|삼진/i.test(raw)) return '三振';
+        if (/併打|double\s*play|병살/i.test(raw)) return '雙殺';
+        if (/ゴロ|ground(?:s|ed)?\s*out|groundout|땅볼/i.test(raw)) return position ? `${position}滾` : '滾地出局';
+        if (foul) return '界飛';
+        if (/飛|フライ|fly(?:\s*out)?|pop(?:s|ped)?\s*out|뜬공|플라이/i.test(raw)) return position ? `${position}飛` : '飛球出局';
+        return '出局';
+      }
+    
+      return raw || code;
+    }
+
     function paLabel(pa) {
       const official = String(pa?.cpblOfficialAction || '').trim();
-      if (official) return official;
-      if (pa.code === 'GO') return pa.position ? `${pa.position}滾` : '滾地出局';
-      if (pa.code === 'FO') return pa.position ? `${pa.position}飛` : '飛球出局';
+      if (official) return localizePaAction(pa);
+      if (pa.code === 'GO') return pa.position ? `${pa.position === '遊' ? '游' : pa.position}滾` : '滾地出局';
+      if (pa.code === 'FO') return pa.position ? `${pa.position === '遊' ? '游' : pa.position}飛` : '飛球出局';
       const map = {
         '1B': '一安', '2B': '二安', '3B': '三安', 'HR': '全壘打',
         'BB': '四壞', 'IBB': '故意四壞', 'HBP': '死球', 'CI': '礙打',
