@@ -66,7 +66,98 @@ async function browserProbe(url, needle, {watch=false}={}){
     await browser.close();
   }
 }
+
+const APP_CLIENT='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
+const APP_KEY='TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
+const APP_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
+
+async function appRequest(action,params={}){
+  const r=await fetch(APP_CLIENT,{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({appKey:APP_KEY,anonKey:APP_ANON,action,...params})
+  });
+  const txt=await r.text();
+  let data=null;
+  try{data=JSON.parse(txt)}catch{}
+  if(!r.ok || !data?.ok){
+    throw new Error(action+' HTTP '+r.status+' '+txt.slice(0,1200));
+  }
+  return data;
+}
+function compactPitcher(p){
+  if(!p) return null;
+  return {
+    innings:p.innings,outs:p.outs,w:p.w,l:p.l,era:p.era,whip:p.whip,
+    h:p.h,r:p.r,er:p.er,bb:p.bb,k:p.k
+  };
+}
+function compactHitter(h){
+  if(!h) return null;
+  return {
+    pa:h.pa,ab:h.ab,runs:h.runs,hits:h.hits,
+    double:h.double,triple:h.triple,hr:h.hr,rbi:h.rbi,bb:h.bb,k:h.k
+  };
+}
+function pickUsefulPlayer(roster){
+  const list=roster?.players||[];
+  return list.find(p=>{
+    const h=p?.hitter||{},pit=p?.pitcher||{};
+    return Number(h.pa||h.ab||h.hits||0)>0 || Number(pit.outs||pit.h||pit.bb||pit.k||0)>0;
+  }) || list[0] || null;
+}
+async function e2eAppApi(){
+  console.log('E2E_BEGIN');
+
+  const wbcParams={
+    competition:'WBC',year:2026,team:'中華台北',
+    playerId:'838359',playerName:'Yi Chang'
+  };
+  const ws=await appRequest('international-player-stats',wbcParams);
+  const wg=await appRequest('international-player-games',wbcParams);
+  console.log('E2E_WBC_STATS',JSON.stringify({
+    found:ws.stats?.found,source:ws.stats?.source,pitcher:compactPitcher(ws.stats?.pitcher)
+  }));
+  console.log('E2E_WBC_GAMES',JSON.stringify({
+    count:(wg.games||[]).length,
+    games:(wg.games||[]).map(g=>({date:g.date,opponent:g.opponent,pitcher:compactPitcher(g.pitcher)}))
+  }));
+
+  for(const test of [
+    {tag:'P12',competition:'世界12強',year:2024,team:'中華台北'},
+    {tag:'ABC',competition:'亞錦賽',year:2025,team:'中華台北'}
+  ]){
+    const rr=await appRequest('international-roster',test);
+    const player=pickUsefulPlayer(rr.roster);
+    console.log('E2E_'+test.tag+'_ROSTER',JSON.stringify({
+      count:(rr.roster?.players||[]).length,
+      source:rr.roster?.source,
+      sample:player?{
+        id:player.id,name:player.name,type:player.type,
+        hitter:compactHitter(player.hitter),pitcher:compactPitcher(player.pitcher)
+      }:null
+    }));
+    if(!player) continue;
+    const params={...test,playerId:String(player.id||''),playerName:player.name};
+    const ps=await appRequest('international-player-stats',params);
+    const pg=await appRequest('international-player-games',params);
+    console.log('E2E_'+test.tag+'_STATS',JSON.stringify({
+      found:ps.stats?.found,source:ps.stats?.source,
+      hitter:compactHitter(ps.stats?.hitter),pitcher:compactPitcher(ps.stats?.pitcher)
+    }));
+    console.log('E2E_'+test.tag+'_GAMES',JSON.stringify({
+      count:(pg.games||[]).length,
+      games:(pg.games||[]).map(g=>({
+        date:g.date,opponent:g.opponent,
+        hitter:compactHitter(g.hitter),pitcher:compactPitcher(g.pitcher)
+      }))
+    }));
+  }
+  console.log('E2E_END');
+}
+
 async function official(){
+  await e2eAppApi();
   for(const year of [2026,2025,2023]){
     try{
       const teams=await getJson('https://statsapi.mlb.com/api/v1/teams?sportId=51&season='+year);
