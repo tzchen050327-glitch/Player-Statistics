@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.43</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.44</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.43';
+    const APP_VERSION = 'v1.44';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3242,6 +3242,7 @@ dialog::backdrop {
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];
     const PREFERRED_EXTERNAL_NAME_FIXES = {
       'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
+      'MLB:660271': { name: '大谷翔平', aliases: ['大谷'] },
       'MLB:808967': { name: '山本由伸', aliases: ['山本'] }
     };
 
@@ -3863,6 +3864,8 @@ bg2: {
       const profile = remote.profile || {};
       const hitter = remote.hitter || null;
       const pitcher = remote.pitcher || null;
+
+      player.externalTwoWay = Boolean(player.externalTwoWay || profile.twoWay);
 
       if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
       if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
@@ -5765,6 +5768,7 @@ bg2: {
       }
       return [
         player.type === 'pitcher' ? '投手' : '打者',
+        player.externalTwoWay ? '二刀流' : '',
         playerSpecialCompetition(player),
         String(player.externalTeam || '').trim(),
         Number(player.externalYear) || ''
@@ -8889,7 +8893,7 @@ bg2: {
       };
     }
 
-    function validateNewPlayer(name, number, scope = 'cpbl', competition = '') {
+    function validateNewPlayer(name, number, scope = 'cpbl', competition = '', deferLinkedDuplicate = false) {
       if (!name || (scope !== 'overseas' && !number)) {
         setStatus(scope === 'overseas' ? '球員名稱要填寫。' : '球員名稱與背號都要填寫。', true);
         return false;
@@ -8898,7 +8902,7 @@ bg2: {
         setStatus('請先選擇賽事／聯盟。', true);
         return false;
       }
-      if (players.some(p =>
+      if (!deferLinkedDuplicate && players.some(p =>
         p.name === name
         && p.number === number
         && playerScope(p) === scope
@@ -8934,7 +8938,7 @@ bg2: {
         const officialName = item.name && item.name !== displayName ? ` · ${item.name}` : '';
         const meta = item.source === 'cpbl'
           ? ['中職', item.team, item.number ? `#${item.number}` : '', item.position].filter(Boolean).join('｜')
-          : [overseasProviderLabel(item.provider), item.team, item.number ? `#${item.number}` : '', item.position].filter(Boolean).join('｜');
+          : [overseasProviderLabel(item.provider), item.twoWay ? '二刀流' : '', item.team, item.number ? `#${item.number}` : '', item.position].filter(Boolean).join('｜');
         return `
           <button type="button" class="new-player-suggestion" role="option" data-suggest-index="${index}">
             <strong>${escapeHtml(displayName)}${escapeHtml(officialName)}</strong>
@@ -8993,11 +8997,14 @@ bg2: {
               number: official.number || item.number || '',
               team: official.team || item.team || '',
               position: official.position || item.position || '',
-              type: official.type || item.type || 'hitter'
+              type: official.type || item.type || 'hitter',
+              twoWay: Boolean(official.twoWay || item.twoWay)
             };
             els.newPlayerName.value = newExternalSelected.zhName || newExternalSelected.name || newExternalSelected.officialName;
             els.newPlayerNumber.value = newExternalSelected.number || '';
-            els.newPlayerType.value = newExternalSelected.type === 'pitcher' ? 'pitcher' : 'hitter';
+            if (!newExternalSelected.twoWay) {
+              els.newPlayerType.value = newExternalSelected.type === 'pitcher' ? 'pitcher' : 'hitter';
+            }
             if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = newExternalSelected.team || '';
             hideNewPlayerSuggestions();
             document.getElementById('createExternalPlayerBtn')?.focus();
@@ -9049,7 +9056,8 @@ bg2: {
             number:item.number || '',
             team:item.team || '',
             position:item.position || '',
-            type:item.type || ''
+            type:item.type || '',
+            twoWay:Boolean(item.twoWay)
           }));
           emptyText = `找不到符合的 ${overseasProviderLabel(provider)} 球員`;
         } else {
@@ -9181,7 +9189,7 @@ bg2: {
         setStatus('請先選擇 MLB、MiLB、NPB 或 KBO。', true);
         return;
       }
-      if (!validateNewPlayer(name, number, scope, competition)) return;
+      if (!validateNewPlayer(name, number, scope, competition, true)) return;
 
       const btn = document.getElementById('createExternalPlayerBtn');
       const originalText = btn.textContent;
@@ -9213,7 +9221,8 @@ bg2: {
               number:item.number || '',
               team:item.team || '',
               position:item.position || '',
-              type:item.type || ''
+              type:item.type || '',
+              twoWay:Boolean(item.twoWay)
             })));
             throw new Error('找到多位同名／相近球員，請先從姓名下方選擇正確球員。');
           }
@@ -9227,7 +9236,8 @@ bg2: {
             number:candidate.number || '',
             team:candidate.team || '',
             position:candidate.position || '',
-            type:candidate.type || selectedType
+            type:candidate.type || selectedType,
+            twoWay:Boolean(candidate.twoWay)
           };
         }
 
@@ -9248,7 +9258,12 @@ bg2: {
         const remote = seasonData.stats;
         if (!remote) throw new Error('讀不到賽季成績。');
 
-        let type = official.type || picked.type || selectedType;
+        const isTwoWay = Boolean(
+          official.twoWay
+          || picked.twoWay
+          || remote.profile?.twoWay
+        );
+        let type = isTwoWay ? selectedType : (official.type || picked.type || selectedType);
         if (type !== 'pitcher' && type !== 'hitter') type = selectedType;
         if (type === 'pitcher' && !remote.pitcher && remote.hitter) type = 'hitter';
         if (type === 'hitter' && !remote.hitter && remote.pitcher) type = 'pitcher';
@@ -9268,6 +9283,7 @@ bg2: {
           externalCompetition:competition,
           externalProvider:provider,
           externalPlayerId:String(picked.id),
+          externalTwoWay:isTwoWay,
           externalOfficialName:official.name || picked.officialName || picked.name || '',
           externalPosition:official.position || picked.position || '',
           externalTeam:official.team || picked.team || '',
@@ -9278,9 +9294,13 @@ bg2: {
         };
 
         applyExternalSeasonStats(player, remote, externalYear);
-        if (players.some(p => playerScope(p) === 'overseas'
+        const sameLinkedPlayers = players.filter(p => playerScope(p) === 'overseas'
           && p.externalProvider === provider
-          && String(p.externalPlayerId || '') === String(player.externalPlayerId))) {
+          && String(p.externalPlayerId || '') === String(player.externalPlayerId));
+        if (sameLinkedPlayers.some(p => p.type === player.type)) {
+          throw new Error(`這位球員的${player.type === 'pitcher' ? '投手' : '打者'}版本已經存在。`);
+        }
+        if (sameLinkedPlayers.length && !isTwoWay) {
           throw new Error('這位球員已經存在於此國外聯盟專區。');
         }
 
