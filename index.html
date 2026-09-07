@@ -3069,7 +3069,6 @@ dialog::backdrop {
         <label class="field">專區
           <select id="newPlayerScope">
             <option value="cpbl">中職</option>
-            <option value="international">國際賽</option>
             <option value="overseas">國外聯盟</option>
           </select>
         </label>
@@ -7321,7 +7320,9 @@ bg2: {
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       if (els.pageSubtitle) {
         els.pageSubtitle.textContent = playerPageActive
-          ? `球員設定｜${scopeLabel(playerScope(player))}`
+          ? (playerScope(player) === 'international'
+              ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
+              : `球員設定｜${scopeLabel(playerScope(player))}`)
           : homeZone === 'cpbl' ? '首頁｜中職' : homeZone === 'international' ? '首頁｜國際賽專區' : '首頁｜國外聯盟專區';
       }
       if (els.selectedPlayerText) {
@@ -7341,7 +7342,7 @@ bg2: {
         els.externalScopeBadge.textContent = [
           scopeLabel(playerScopeCode),
           playerSpecialCompetition(player),
-          player.externalTeam || '',
+          playerScopeCode === 'international' ? internationalTeam(player) : (player.externalTeam || ''),
           Number(selectedSeason || player.externalYear) || ''
         ].filter(Boolean).join('｜');
       }
@@ -7356,6 +7357,10 @@ bg2: {
         els.seasonSelect.value = years.length ? String(selectedSeason) : '';
       }
 
+      const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
+      const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
+      if (baseTab) baseTab.textContent = playerScopeCode === 'international' ? '賽事總成績' : '球員基礎設定';
+      if (todayTab) todayTab.textContent = playerScopeCode === 'international' ? '單場戰績' : '球員今日狀況';
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
         const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
