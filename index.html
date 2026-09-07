@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.41</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.42</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.41';
+    const APP_VERSION = 'v1.42';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3240,6 +3240,19 @@ dialog::backdrop {
 
     const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', '其他國際賽'];
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];
+    const PREFERRED_EXTERNAL_NAME_FIXES = {
+      'KBO:52605': { name: '金倒永', aliases: ['金道英'] }
+    };
+
+    function applyStoredPreferredExternalName(player) {
+      const key = `${String(player?.externalProvider || '').toUpperCase()}:${String(player?.externalPlayerId || '')}`;
+      const fix = PREFERRED_EXTERNAL_NAME_FIXES[key];
+      if (!fix) return false;
+      const currentName = String(player?.name || '').replace(/\s+/g, '');
+      if (!(fix.aliases || []).includes(currentName)) return false;
+      player.name = fix.name;
+      return true;
+    }
     let renderToken = 0;
     let photoDrag = null;
     let photoZoomSaveTimer = null;
@@ -3869,11 +3882,17 @@ bg2: {
       const localizedName = String(profile.zhName || '').replace(/\s+/g, '');
       if (localizedName && /[\u3400-\u9fff]/.test(localizedName)) {
         const currentName = String(player.name || '').replace(/\s+/g, '');
+        const preferredAliases = new Set(
+          (Array.isArray(profile.zhNameAliases) ? profile.zhNameAliases : [])
+            .map(value => String(value || '').replace(/\s+/g, ''))
+            .filter(Boolean)
+        );
         const shouldUpgradeName = !currentName
           || !/[\u3400-\u9fff]/.test(currentName)
           || localizedName === currentName
           || localizedName.includes(currentName)
-          || currentName === String(player.externalOfficialName || '').replace(/\s+/g, '');
+          || currentName === String(player.externalOfficialName || '').replace(/\s+/g, '')
+          || (Boolean(profile.zhNamePreferred) && preferredAliases.has(currentName));
         if (shouldUpgradeName) player.name = localizedName;
       }
 
@@ -4115,7 +4134,15 @@ bg2: {
       const localizedDailyName = String(daily.profile?.zhName || '').replace(/\s+/g, '');
       if (localizedDailyName && /[\u3400-\u9fff]/.test(localizedDailyName)) {
         const currentName = String(player.name || '').replace(/\s+/g, '');
-        if (!currentName || !/[\u3400-\u9fff]/.test(currentName) || localizedDailyName.includes(currentName)) {
+        const preferredAliases = new Set(
+          (Array.isArray(daily.profile?.zhNameAliases) ? daily.profile.zhNameAliases : [])
+            .map(value => String(value || '').replace(/\s+/g, ''))
+            .filter(Boolean)
+        );
+        if (!currentName
+          || !/[\u3400-\u9fff]/.test(currentName)
+          || localizedDailyName.includes(currentName)
+          || (Boolean(daily.profile?.zhNamePreferred) && preferredAliases.has(currentName))) {
           player.name = localizedDailyName;
           player.externalOfficialName = daily.profile?.name || player.externalOfficialName || '';
           await savePlayer(player);
@@ -9457,6 +9484,23 @@ bg2: {
     }
 
     async function prepareOutputImage() {
+      const player = selectedPlayer();
+      const shouldRefreshKboPlateAppearances = Boolean(
+        player
+        && playerScope(player) === 'overseas'
+        && String(player.externalProvider || '').toUpperCase() === 'KBO'
+        && player.type === 'hitter'
+        && currentRecord?.externalReadOnlyImport
+        && currentRecord?.cpblGameSummary?.official
+        && !(Array.isArray(currentRecord?.hitterPAs) && currentRecord.hitterPAs.length)
+      );
+      if (shouldRefreshKboPlateAppearances) {
+        try {
+          await importExternalDaily(player);
+        } catch (error) {
+          console.warn('KBO 逐打席重新抓取失敗', error);
+        }
+      }
       await commitCurrentGame();
       return await refreshPreparedOutputFromCanvas();
     }
@@ -9538,7 +9582,10 @@ bg2: {
         db = await openDB();
         players = await idbGetAll(STORES.players);
         photos = await idbGetAll(STORES.photos);
-        for (const player of players) ensurePhotoTransforms(player);
+        for (const player of players) {
+          ensurePhotoTransforms(player);
+          if (applyStoredPreferredExternalName(player)) await idbPut(STORES.players, player);
+        }
         for (const photo of photos) {
           if (!photo.playerId) {
             const owner = players.find(player => player.selectedPhotoId === photo.id);
