@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.38</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.39</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.38';
+    const APP_VERSION = 'v1.39';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4841,9 +4841,9 @@ bg2: {
       const tests = [
         ['左中', /左中|left[\s-]?center|좌중간/i],
         ['右中', /右中|right[\s-]?center|우중간/i],
-        ['左', /(?:^|[\s,，、])左(?:安|2|3|二|三|本)|\bleft field\b|좌전|좌익/i],
-        ['中', /(?:^|[\s,，、])中(?:安|2|3|二|三|本)|\bcenter field\b|중전|중견/i],
-        ['右', /(?:^|[\s,，、])右(?:安|2|3|二|三|本)|\bright field\b|우전|우익/i]
+        ['左', /(?:^|[\s,，、])左(?:前|線|越)?(?:安|2|3|二|三|本)|\bleft field\b|좌전|좌익/i],
+        ['中', /(?:^|[\s,，、])中(?:前|越)?(?:安|2|3|二|三|本)|\bcenter field\b|중전|중견/i],
+        ['右', /(?:^|[\s,，、])右(?:前|線|越)?(?:安|2|3|二|三|本)|\bright field\b|우전|우익/i]
       ];
       let best = '';
       let bestIndex = Infinity;
