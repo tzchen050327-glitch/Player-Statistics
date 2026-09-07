@@ -2991,7 +2991,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.57</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.58</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3185,7 +3185,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.57';
+    const APP_VERSION = 'v1.58';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4058,7 +4058,7 @@ bg2: {
       const team = internationalTeam(player);
       const playerName = String(player.externalOfficialName || player.name || '').trim();
 
-      report(16, `正在連線 ${competition} ${year} 賽事資料…`);
+      report(12, `正在連線 ${competition} ${year} 賽事資料…`);
       const data = await baseballRequest('international-player-stats', {
         competition,
         year,
@@ -4066,7 +4066,7 @@ bg2: {
         playerId: String(player.externalPlayerId || ''),
         playerName
       });
-      report(72, `正在整理 ${player.name} 的賽事成績…`);
+      report(42, `正在整理 ${player.name} 的賽事成績…`);
 
       const remote = data?.stats || {};
       const hitter = remote?.hitter || null;
@@ -4097,8 +4097,217 @@ bg2: {
         await savePlayer(player);
       }
 
-      report(94, '正在更新賽事總成績…');
+      report(52, '賽事總成績已整理完成…');
       return remote;
+    }
+
+
+    function internationalHitterTotalsFromGames(games = []) {
+      const next = hitterDefaults();
+      for (const game of games) {
+        const h = game?.hitter;
+        if (!h) continue;
+        for (const key of ['pa','ab','rbi','runs','single','double','triple','hr','sacBunt','sacFly','bb','ibb','hbp']) {
+          next[key] += Math.max(0, Number(h?.[key]) || 0);
+        }
+      }
+      return next;
+    }
+
+    function internationalPitcherTotalsFromGames(games = []) {
+      const next = pitcherDefaults();
+      let totalRuns = 0;
+      for (const game of games) {
+        const p = game?.pitcher;
+        if (!p) continue;
+        for (const key of ['cg','sho','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']) {
+          next[key] += Math.max(0, Number(p?.[key]) || 0);
+        }
+        totalRuns += Math.max(0, Number(p?.r) || 0);
+      }
+      next.noWalkHbp = 0;
+      return next;
+    }
+
+    function internationalGameRecordFromRemote(player, game) {
+      const date = String(game?.date || '').slice(0, 10);
+      if (!date) return null;
+
+      const record = {
+        key: `${date}:${player.id}:A`,
+        playerId: player.id,
+        date,
+        level: 'A',
+        opponent: normalizeInternationalTeamName(game?.opponent || ''),
+        hitterPAs: [],
+        hitterAppearance: {
+          mode: 'bat',
+          inning: '1',
+          half: 'top',
+          battingOrder: '1',
+          continueDefense: false,
+          position: '游擊'
+        },
+        pitcherGame: {
+          innings: '0.0', k: 0, bb: 0, h: 0, hbp: 0, otherReach: 0, r: 0, er: 0,
+          pitchTens: 0, pitchOnes: 0,
+          cg: false, sho: false, noWalkHbp: false,
+          hld: false, sv: false, bsv: false, rainCalled: false,
+          decision: 'ND', result: 'ND'
+        },
+        cpblGameSummary: {
+          runs: 0,
+          hits: 0,
+          errors: 0,
+          official: true
+        },
+        committedStats: null,
+        committedAt: Date.now(),
+        cpblReadOnlyImport: false,
+        externalReadOnlyImport: true,
+        internationalOfficialImport: true,
+        internationalGameId: String(game?.gameId || ''),
+        externalSource: `INT:${game?.source || player.internationalSource || 'international'}`,
+        externalImportedAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      if (game?.hitter) {
+        const h = game.hitter;
+        const list = Array.isArray(h.plateAppearances) ? h.plateAppearances : [];
+        record.hitterPAs = list.map(pa => ({
+          id: uid(),
+          code: pa.code || 'OUT',
+          position: pa.position || '',
+          rbi: Math.max(0, Number(pa.rbi) || 0),
+          cpblOfficialAction: pa.officialAction || ''
+        }));
+        record.internationalHitterGame = {
+          pa: Math.max(0, Number(h.pa) || 0),
+          ab: Math.max(0, Number(h.ab) || 0),
+          runs: Math.max(0, Number(h.runs) || 0),
+          hits: Math.max(0, Number(h.hits) || (
+            (Number(h.single)||0)+(Number(h.double)||0)+(Number(h.triple)||0)+(Number(h.hr)||0)
+          )),
+          single: Math.max(0, Number(h.single) || 0),
+          double: Math.max(0, Number(h.double) || 0),
+          triple: Math.max(0, Number(h.triple) || 0),
+          hr: Math.max(0, Number(h.hr) || 0),
+          rbi: Math.max(0, Number(h.rbi) || 0),
+          bb: Math.max(0, Number(h.bb) || 0),
+          ibb: Math.max(0, Number(h.ibb) || 0),
+          hbp: Math.max(0, Number(h.hbp) || 0),
+          k: Math.max(0, Number(h.k) || 0),
+          sacBunt: Math.max(0, Number(h.sacBunt) || 0),
+          sacFly: Math.max(0, Number(h.sacFly) || 0),
+          errors: Math.max(0, Number(h.errors) || 0)
+        };
+        record.cpblGameSummary = {
+          runs: record.internationalHitterGame.runs,
+          hits: record.internationalHitterGame.hits,
+          errors: record.internationalHitterGame.errors,
+          official: true
+        };
+        record.committedStats = record.hitterPAs.length
+          ? deriveHitterGame(record.hitterPAs)
+          : {
+              pa:record.internationalHitterGame.pa,
+              ab:record.internationalHitterGame.ab,
+              rbi:record.internationalHitterGame.rbi,
+              runs:record.internationalHitterGame.runs,
+              single:record.internationalHitterGame.single,
+              double:record.internationalHitterGame.double,
+              triple:record.internationalHitterGame.triple,
+              hr:record.internationalHitterGame.hr,
+              sacBunt:record.internationalHitterGame.sacBunt,
+              sacFly:record.internationalHitterGame.sacFly,
+              bb:record.internationalHitterGame.bb,
+              ibb:record.internationalHitterGame.ibb,
+              hbp:record.internationalHitterGame.hbp
+            };
+      }
+
+      if (game?.pitcher) {
+        const p = game.pitcher;
+        const g = record.pitcherGame;
+        g.innings = p.innings || outsToIP(Number(p.outs)||0) || '0.0';
+        g.k = Math.max(0, Number(p.k) || 0);
+        g.bb = Math.max(0, Number(p.bb) || 0);
+        g.h = Math.max(0, Number(p.h) || 0);
+        g.hbp = Math.max(0, Number(p.hbp) || 0);
+        g.r = Math.max(0, Number(p.r) || 0);
+        g.er = Math.min(g.r, Math.max(0, Number(p.er) || 0));
+        const pitchCount = Math.max(0, Number(p.pitchCount) || 0);
+        g.pitchTens = Math.floor(Math.min(159, pitchCount) / 10);
+        g.pitchOnes = Math.min(159, pitchCount) % 10;
+        g.cg = Boolean(Number(p.cg) || p.cg);
+        g.sho = Boolean(Number(p.sho) || p.sho);
+        g.hld = Boolean(Number(p.hld) || p.hld);
+        g.sv = Boolean(Number(p.sv) || p.sv);
+        g.bsv = Boolean(Number(p.bsv) || p.bsv);
+        g.decision = Number(p.w)>0 ? 'W' : Number(p.l)>0 ? 'L' : 'ND';
+        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
+        record.committedStats = derivePitcherGame(g);
+      }
+
+      return record;
+    }
+
+    async function syncInternationalTournamentGames(player, onProgress = null) {
+      if (playerScope(player) !== 'international') return [];
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+      const competition = playerSpecialCompetition(player);
+      const year = Number(player.externalYear) || CURRENT_YEAR;
+      const team = internationalTeam(player);
+
+      report(58, '正在搜尋本屆每場出賽資料…');
+      const data = await baseballRequest('international-player-games', {
+        competition,
+        year,
+        team,
+        playerId: String(player.externalPlayerId || ''),
+        playerName: String(player.externalOfficialName || player.name || '').trim()
+      });
+      const games = Array.isArray(data?.games) ? data.games : [];
+      report(82, `找到 ${games.length} 場出賽，正在寫入單場戰績…`);
+
+      let saved = 0;
+      for (const game of games) {
+        const record = internationalGameRecordFromRemote(player, game);
+        if (!record) continue;
+        const existing = await idbGet(STORES.games, record.key);
+        // 使用者自己手動建立的同日紀錄不覆蓋；只更新我們自己的官方國際賽匯入。
+        if (existing && !existing.internationalOfficialImport) continue;
+        await idbPut(STORES.games, record);
+        saved += 1;
+      }
+
+      // 若累積統計來源暫時沒有資料，至少可用官方逐場 Box 合計回填賽事總成績。
+      if (!player.internationalStatsFound && games.length) {
+        const hitterGames = games.filter(game => game?.hitter);
+        const pitcherGames = games.filter(game => game?.pitcher);
+        if (player.type === 'pitcher' && pitcherGames.length) {
+          player.stats = internationalPitcherTotalsFromGames(pitcherGames);
+          player.internationalStatsFound = true;
+          player.internationalSource = '官方逐場 Box 合計';
+          player.externalLastUpdatedAt = Date.now();
+          await savePlayer(player);
+        } else if (player.type === 'hitter' && hitterGames.length) {
+          player.stats = internationalHitterTotalsFromGames(hitterGames);
+          player.internationalStatsFound = true;
+          player.internationalSource = '官方逐場 Box 合計';
+          player.externalLastUpdatedAt = Date.now();
+          await savePlayer(player);
+        }
+      }
+
+      player.internationalGamesLastCheckedAt = Date.now();
+      player.internationalGameCount = saved;
+      await savePlayer(player);
+      report(94, `單場戰績已更新｜${saved} 場`);
+      return games;
     }
 
     function cpblLevelLabel(kindCode) {
@@ -5365,11 +5574,15 @@ bg2: {
             player,
             (percent,status) => setSyncProgress(percent,status)
           );
+          const games = await syncInternationalTournamentGames(
+            player,
+            (percent,status) => setSyncProgress(percent,status)
+          );
           selectedSeason = year;
           await loadRecord();
           renderAll();
-          if (remote?.found) {
-            await finishSyncProgress(`同步完成｜${competition} ${year}`);
+          if (remote?.found || games.length) {
+            await finishSyncProgress(`同步完成｜${competition} ${year}｜${games.length} 場單場資料`);
           } else {
             await finishSyncProgress(`目前尚無可用的 ${competition} ${year} 官方賽事成績`);
           }
@@ -6390,6 +6603,10 @@ bg2: {
 
     function internationalGameSummaryText(player, record) {
       if (player.type === 'hitter') {
+        const official=record?.internationalHitterGame;
+        if (official && !(record?.hitterPAs || []).length) {
+          return `${Number(official.hits)||0}安／${Number(official.ab)||0}打數｜${Number(official.rbi)||0}打點｜${Number(official.runs)||0}得分`;
+        }
         const game=deriveHitterGame(record?.hitterPAs || []);
         const hits=(Number(game.single)||0)+(Number(game.double)||0)+(Number(game.triple)||0)+(Number(game.hr)||0);
         const runs=Math.max(0,Number(record?.cpblGameSummary?.runs)||0);
@@ -6871,6 +7088,21 @@ bg2: {
         return;
       }
       const host = document.getElementById('todaySpecific');
+      const officialBox = currentRecord?.internationalHitterGame;
+      if (currentRecord?.externalReadOnlyImport && officialBox && !currentRecord.hitterPAs.length) {
+        const fields = [
+          ['打席', officialBox.pa], ['打數', officialBox.ab], ['安打', officialBox.hits], ['打點', officialBox.rbi],
+          ['得分', officialBox.runs], ['全壘打', officialBox.hr], ['保送', officialBox.bb], ['死球', officialBox.hbp],
+          ['三振', officialBox.k], ['二安', officialBox.double], ['三安', officialBox.triple], ['失誤', officialBox.errors]
+        ];
+        host.innerHTML = `
+          <h3>官方單場打擊成績</h3>
+          <div class="small" style="margin-bottom:10px">此來源提供 Box Score 彙總，未提供可驗證的逐打席順序，因此不會生成假的逐打席。</div>
+          <div class="grid four">
+            ${fields.map(([label,value]) => `<label class="field">${escapeHtml(label)}<input type="text" value="${escapeAttr(String(Number(value)||0))}" readonly /></label>`).join('')}
+          </div>`;
+        return;
+      }
       const rows = currentRecord.hitterPAs.map((pa, index) => `
         <div class="pa-row">
           <div class="pa-no">${index + 1}</div>
@@ -7883,7 +8115,31 @@ bg2: {
       if (player.type === 'hitter') {
         const appearance = ensureHitterAppearance();
         if (appearance.mode === 'bat') {
+          const officialBox = currentRecord?.internationalHitterGame;
           const pas = currentRecord.hitterPAs.slice(0, 8);
+          if (currentRecord?.externalReadOnlyImport && officialBox && !pas.length) {
+            const hits = Number(officialBox.hits) || 0;
+            const summaryLines = [
+              ['打數', Number(officialBox.ab)||0],
+              ['安打', hits],
+              ['打點', Number(officialBox.rbi)||0],
+              ['得分', Number(officialBox.runs)||0],
+              ['保送', Number(officialBox.bb)||0],
+              ['三振', Number(officialBox.k)||0],
+              ['全壘打', Number(officialBox.hr)||0]
+            ];
+            summaryLines.forEach((line, index) => {
+              const y = positioned ? detail.pitcherStartY + index * detail.pitcherStep : 492 + index * 52;
+              ctx.fillStyle = positioned ? (detail.mutedColor || '#52657d') : '#6d7688';
+              ctx.font = `700 ${layout.fonts.pitcherLabel}px "Microsoft JhengHei", sans-serif`;
+              ctx.fillText(line[0], positioned ? detail.pitcherLabelX : 90, y);
+              ctx.textAlign = 'right';
+              ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
+              ctx.font = `900 ${layout.fonts.pitcherValue}px Arial, sans-serif`;
+              ctx.fillText(String(line[1]), positioned ? detail.pitcherValueX : 470, y);
+              ctx.textAlign = 'left';
+            });
+          } else {
           pas.forEach((pa, index) => {
             const y = positioned ? detail.paStartY + index * detail.paStep : 425 + index * 78;
             const numberX = positioned ? detail.paNumberX : 106;
@@ -7926,6 +8182,7 @@ bg2: {
           if (cycle) {
             if (positioned) drawTags(ctx, ['完全打擊'], detail.tagsX, detail.tagsBottom, detail.tagsW, detail.accentColor || '#d4af37');
             else drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+          }
           }
         } else {
           drawHitterAppearanceDetail(ctx, layout, positioned, detail, appearance);
