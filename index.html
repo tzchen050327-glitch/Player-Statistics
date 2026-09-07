@@ -5230,6 +5230,8 @@ bg2: {
       selectedPlayerId = id;
       homeZone = playerScope(player);
       homeSpecialFilter = playerScope(player) === 'cpbl' ? '' : playerSpecialCompetition(player);
+      homeInternationalEditionFilter = playerScope(player) === 'international' ? internationalEdition(player) : '';
+      homeInternationalTeamFilter = playerScope(player) === 'international' ? internationalTeam(player) : '';
       selectedLevel = 'A';
       selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
 
@@ -5828,6 +5830,114 @@ bg2: {
       return normalizeInternationalTeamName(player?.externalTeam || '');
     }
 
+    function renderInternationalExplorer() {
+      if (!els.homeInternationalExplorer) return;
+      if (homeZone !== 'international') {
+        els.homeInternationalExplorer.classList.add('hidden');
+        els.homeInternationalExplorer.innerHTML = '';
+        return;
+      }
+
+      const zonePlayers = players.filter(p => playerScope(p) === 'international');
+      const counts = new Map(INTERNATIONAL_COMPETITIONS.map(key => [key, 0]));
+      zonePlayers.forEach(player => {
+        const key = playerSpecialCompetition(player);
+        if (counts.has(key)) counts.set(key, (counts.get(key) || 0) + 1);
+      });
+
+      const tournamentPlayers = homeSpecialFilter
+        ? zonePlayers.filter(p => playerSpecialCompetition(p) === homeSpecialFilter)
+        : zonePlayers;
+      const editions = [...new Set(tournamentPlayers.map(internationalEdition).filter(Boolean))]
+        .sort((a,b) => Number(b) - Number(a));
+      if (homeInternationalEditionFilter && !editions.includes(homeInternationalEditionFilter)) {
+        homeInternationalEditionFilter = '';
+      }
+
+      const editionPlayers = homeInternationalEditionFilter
+        ? tournamentPlayers.filter(p => internationalEdition(p) === homeInternationalEditionFilter)
+        : tournamentPlayers;
+      const teams = [...new Set(editionPlayers.map(internationalTeam).filter(Boolean))]
+        .sort((a,b) => a.localeCompare(b, 'zh-Hant'));
+      if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
+        homeInternationalTeamFilter = '';
+      }
+
+      const tournamentButtons = [];
+      tournamentButtons.push(
+        '<button class="intl-tournament-card ' + (homeSpecialFilter ? '' : 'active') + '" type="button" data-intl-tournament="">' +
+        '<span class="intl-tournament-code">ALL</span>' +
+        '<span class="intl-tournament-name">全部賽事</span>' +
+        '<span class="intl-tournament-count">' + zonePlayers.length + ' 名球員</span></button>'
+      );
+      INTERNATIONAL_COMPETITIONS.forEach(key => {
+        const meta = INTERNATIONAL_TOURNAMENT_META[key] || {code:key,name:key};
+        tournamentButtons.push(
+          '<button class="intl-tournament-card ' + (homeSpecialFilter === key ? 'active' : '') + '" type="button" data-intl-tournament="' + escapeHtml(key) + '">' +
+          '<span class="intl-tournament-code">' + escapeHtml(meta.code) + '</span>' +
+          '<span class="intl-tournament-name">' + escapeHtml(meta.name) + '</span>' +
+          '<span class="intl-tournament-count">' + (counts.get(key) || 0) + ' 名球員</span></button>'
+        );
+      });
+
+      const editionButtons = [];
+      if (editions.length) {
+        editionButtons.push('<button class="intl-filter-chip ' + (homeInternationalEditionFilter ? '' : 'active') + '" type="button" data-intl-edition="">全部屆別</button>');
+        editions.forEach(year => editionButtons.push(
+          '<button class="intl-filter-chip ' + (homeInternationalEditionFilter === year ? 'active' : '') + '" type="button" data-intl-edition="' + year + '">' + year + '</button>'
+        ));
+      } else {
+        editionButtons.push('<span class="intl-empty-path">目前沒有已建立的屆別；新增球員後會依年份自動出現在這裡。</span>');
+      }
+
+      const teamButtons = [];
+      if (teams.length) {
+        teamButtons.push('<button class="intl-filter-chip ' + (homeInternationalTeamFilter ? '' : 'active') + '" type="button" data-intl-team="">全部代表隊</button>');
+        teams.forEach(team => teamButtons.push(
+          '<button class="intl-filter-chip ' + (homeInternationalTeamFilter === team ? 'active' : '') + '" type="button" data-intl-team="' + escapeHtml(team) + '">' + escapeHtml(team) + '</button>'
+        ));
+      } else {
+        teamButtons.push('<span class="intl-empty-path">目前沒有代表隊資料。</span>');
+      }
+
+      const tournamentName = homeSpecialFilter
+        ? (INTERNATIONAL_TOURNAMENT_META[homeSpecialFilter]?.name || homeSpecialFilter)
+        : '全部賽事';
+      const path = [tournamentName, homeInternationalEditionFilter, homeInternationalTeamFilter].filter(Boolean).join(' → ');
+
+      els.homeInternationalExplorer.innerHTML =
+        '<div class="intl-explorer-head"><strong>國際賽事</strong><span>賽事 → 屆別 → 代表隊 → 球員</span></div>' +
+        '<div class="intl-tournament-grid">' + tournamentButtons.join('') + '</div>' +
+        '<div class="intl-path-panel">' +
+          '<div class="intl-breadcrumb">' + escapeHtml(path) + '</div>' +
+          '<div class="intl-path-row"><span class="intl-path-label">屆別</span><div class="intl-chip-list">' + editionButtons.join('') + '</div></div>' +
+          '<div class="intl-path-row"><span class="intl-path-label">代表隊</span><div class="intl-chip-list">' + teamButtons.join('') + '</div></div>' +
+        '</div>';
+      els.homeInternationalExplorer.classList.remove('hidden');
+
+      els.homeInternationalExplorer.querySelectorAll('[data-intl-tournament]').forEach(button => {
+        button.addEventListener('click', () => {
+          homeSpecialFilter = button.dataset.intlTournament || '';
+          homeInternationalEditionFilter = '';
+          homeInternationalTeamFilter = '';
+          renderRecentPlayers();
+        });
+      });
+      els.homeInternationalExplorer.querySelectorAll('[data-intl-edition]').forEach(button => {
+        button.addEventListener('click', () => {
+          homeInternationalEditionFilter = button.dataset.intlEdition || '';
+          homeInternationalTeamFilter = '';
+          renderRecentPlayers();
+        });
+      });
+      els.homeInternationalExplorer.querySelectorAll('[data-intl-team]').forEach(button => {
+        button.addEventListener('click', () => {
+          homeInternationalTeamFilter = button.dataset.intlTeam || '';
+          renderRecentPlayers();
+        });
+      });
+    }
+
     function playerDisplayTeam(player) {
       return playerScope(player) === 'cpbl'
         ? normalizeTeamName(player?.cpblTeam || '')
@@ -5897,9 +6007,11 @@ bg2: {
       });
 
       const cpbl = homeZone === 'cpbl';
+      const international = homeZone === 'international';
       els.homeLevelFilters?.classList.toggle('hidden', !cpbl);
       els.homeTeamFilters?.classList.toggle('hidden', !cpbl);
-      els.homeSpecialFilters?.classList.toggle('hidden', cpbl);
+      els.homeSpecialFilters?.classList.toggle('hidden', cpbl || international);
+      els.homeInternationalExplorer?.classList.toggle('hidden', !international);
 
       if (els.homePlayerTitle) {
         els.homePlayerTitle.textContent = cpbl ? '中職球員' : homeZone === 'international' ? '國際賽球員' : '國外聯盟球員';
@@ -5925,7 +6037,7 @@ bg2: {
         button.disabled = homeLevelFilter === 'OTHER';
       });
 
-      if (!cpbl && els.homeSpecialFilters) {
+      if (!cpbl && homeZone === 'overseas' && els.homeSpecialFilters) {
         const options = specialOptionsForScope(homeZone);
         els.homeSpecialFilters.innerHTML = [
           `<button class="home-special-filter-btn ${homeSpecialFilter ? '' : 'active'}" type="button" data-home-special-filter="">全部</button>`,
@@ -5941,6 +6053,7 @@ bg2: {
           });
         });
       }
+      renderInternationalExplorer();
     }
 
     function renderRecentPlayers() {
@@ -5956,6 +6069,10 @@ bg2: {
             if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
             return homePlayerTeam(player) === homeTeamFilter;
           });
+      } else if (homeZone === 'international') {
+        if (homeSpecialFilter) list = list.filter(player => playerSpecialCompetition(player) === homeSpecialFilter);
+        if (homeInternationalEditionFilter) list = list.filter(player => internationalEdition(player) === homeInternationalEditionFilter);
+        if (homeInternationalTeamFilter) list = list.filter(player => internationalTeam(player) === homeInternationalTeamFilter);
       } else if (homeSpecialFilter) {
         list = list.filter(player => playerSpecialCompetition(player) === homeSpecialFilter);
       }
@@ -8906,6 +9023,8 @@ bg2: {
         const zone = button.dataset.homeZone;
         homeZone = zone === 'international' || zone === 'overseas' ? zone : 'cpbl';
         homeSpecialFilter = '';
+        homeInternationalEditionFilter = '';
+        homeInternationalTeamFilter = '';
         homeTeamFilter = '';
         renderRecentPlayers();
       });
