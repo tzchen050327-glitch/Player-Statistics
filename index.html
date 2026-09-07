@@ -2973,7 +2973,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.50</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.51</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3168,7 +3168,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.50';
+    const APP_VERSION = 'v1.51';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -5191,11 +5191,13 @@ bg2: {
       const list = searchPlayers(els.playerSearchInput?.value || '');
       if (!els.playerSearchResults) return;
       els.playerSearchResults.innerHTML = list.length ? list.map(player => {
-        const meta = [
-          player.type === 'pitcher' ? '投手' : '打者',
-          normalizeTeamName(player.cpblTeam || ''),
-          player.cpblPosition || ''
-        ].filter(Boolean).join('｜');
+        const meta = playerScope(player) === 'cpbl'
+          ? [
+              player.type === 'pitcher' ? '投手' : '打者',
+              normalizeTeamName(player.cpblTeam || ''),
+              player.cpblPosition || ''
+            ].filter(Boolean).join('｜')
+          : playerSourceMeta(player);
         return `
           <button class="press-btn player-search-result" type="button" data-search-player-id="${player.id}">
             <span class="result-number">#${escapeHtml(player.number)}</span>
