@@ -5872,105 +5872,90 @@ bg2: {
       }
 
       const zonePlayers = players.filter(p => playerScope(p) === 'international');
-      const counts = new Map(INTERNATIONAL_COMPETITIONS.map(key => [key, 0]));
-      zonePlayers.forEach(player => {
-        const key = playerSpecialCompetition(player);
-        if (counts.has(key)) counts.set(key, (counts.get(key) || 0) + 1);
-      });
-
-      const tournamentPlayers = homeSpecialFilter
-        ? zonePlayers.filter(p => playerSpecialCompetition(p) === homeSpecialFilter)
-        : zonePlayers;
-      const editions = [...new Set(tournamentPlayers.map(internationalEdition).filter(Boolean))]
-        .sort((a,b) => Number(b) - Number(a));
-      if (homeInternationalEditionFilter && !editions.includes(homeInternationalEditionFilter)) {
+      const competition = homeSpecialFilter || '';
+      const years = competition ? (INTERNATIONAL_TOURNAMENT_YEARS[competition] || []) : [];
+      if (homeInternationalEditionFilter && !years.map(String).includes(String(homeInternationalEditionFilter))) {
         homeInternationalEditionFilter = '';
       }
 
-      const editionPlayers = homeInternationalEditionFilter
-        ? tournamentPlayers.filter(p => internationalEdition(p) === homeInternationalEditionFilter)
-        : tournamentPlayers;
-      const teams = [...new Set(editionPlayers.map(internationalTeam).filter(Boolean))]
-        .sort((a,b) => a.localeCompare(b, 'zh-Hant'));
+      const year = homeInternationalEditionFilter || '';
+      const matchingYearPlayers = competition && year
+        ? zonePlayers.filter(p => playerSpecialCompetition(p) === competition && internationalEdition(p) === String(year))
+        : [];
+      const teams = [...new Set(matchingYearPlayers.map(internationalTeam).filter(Boolean))]
+        .sort((a,b) => a.localeCompare(b,'zh-Hant'));
       if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
         homeInternationalTeamFilter = '';
       }
 
-      const tournamentButtons = [];
-      tournamentButtons.push(
-        '<button class="intl-tournament-card ' + (homeSpecialFilter ? '' : 'active') + '" type="button" data-intl-tournament="">' +
-        '<span class="intl-tournament-code">ALL</span>' +
-        '<span class="intl-tournament-name">全部賽事</span>' +
-        '<span class="intl-tournament-count">' + zonePlayers.length + ' 名球員</span></button>'
-      );
-      INTERNATIONAL_COMPETITIONS.forEach(key => {
-        const meta = INTERNATIONAL_TOURNAMENT_META[key] || {code:key,name:key};
-        tournamentButtons.push(
-          '<button class="intl-tournament-card ' + (homeSpecialFilter === key ? 'active' : '') + '" type="button" data-intl-tournament="' + escapeHtml(key) + '">' +
-          '<span class="intl-tournament-code">' + escapeHtml(meta.code) + '</span>' +
-          '<span class="intl-tournament-name">' + escapeHtml(meta.name) + '</span>' +
-          '<span class="intl-tournament-count">' + (counts.get(key) || 0) + ' 名球員</span></button>'
-        );
-      });
+      const team = homeInternationalTeamFilter || '';
+      const teamPlayers = competition && year && team
+        ? matchingYearPlayers.filter(p => internationalTeam(p) === team)
+        : [];
+      teamPlayers.sort((a,b) => String(a.number||'').localeCompare(String(b.number||''),'zh-Hant',{numeric:true}));
 
-      const editionButtons = [];
-      if (editions.length) {
-        editionButtons.push('<button class="intl-filter-chip ' + (homeInternationalEditionFilter ? '' : 'active') + '" type="button" data-intl-edition="">全部屆別</button>');
-        editions.forEach(year => editionButtons.push(
-          '<button class="intl-filter-chip ' + (homeInternationalEditionFilter === year ? 'active' : '') + '" type="button" data-intl-edition="' + year + '">' + year + '</button>'
-        ));
-      } else {
-        editionButtons.push('<span class="intl-empty-path">目前沒有已建立的屆別；新增球員後會依年份自動出現在這裡。</span>');
+      const competitionOptions = ['<option value="">選擇賽事</option>']
+        .concat(INTERNATIONAL_COMPETITIONS.map(key => {
+          const meta=INTERNATIONAL_TOURNAMENT_META[key]||{name:key};
+          return '<option value="'+escapeHtml(key)+'" '+(competition===key?'selected':'')+'>'+escapeHtml(meta.name)+'</option>';
+        })).join('');
+      const yearOptions = ['<option value="">選擇年份</option>']
+        .concat(years.map(value => '<option value="'+value+'" '+(String(year)===String(value)?'selected':'')+'>'+value+'</option>')).join('');
+      const teamOptions = ['<option value="">選擇球隊</option>']
+        .concat(teams.map(value => '<option value="'+escapeHtml(value)+'" '+(team===value?'selected':'')+'>'+escapeHtml(value)+'</option>')).join('');
+      const playerOptions = ['<option value="">選擇球員</option>']
+        .concat(teamPlayers.map(player => '<option value="'+escapeHtml(player.id)+'">#'+escapeHtml(player.number)+' '+escapeHtml(player.name)+'</option>')).join('');
+
+      const path = [
+        competition ? (INTERNATIONAL_TOURNAMENT_META[competition]?.name || competition) : '',
+        year,
+        team
+      ].filter(Boolean).join(' → ');
+
+      let emptyText='';
+      if (competition && year && !teams.length) {
+        emptyText='這個賽事年份目前尚未匯入球隊資料。之後接上官方資料源後，球隊會直接出現在下拉選單。';
+      } else if (competition && year && team && !teamPlayers.length) {
+        emptyText='這支代表隊目前尚未匯入球員名單。';
       }
-
-      const teamButtons = [];
-      if (teams.length) {
-        teamButtons.push('<button class="intl-filter-chip ' + (homeInternationalTeamFilter ? '' : 'active') + '" type="button" data-intl-team="">全部代表隊</button>');
-        teams.forEach(team => teamButtons.push(
-          '<button class="intl-filter-chip ' + (homeInternationalTeamFilter === team ? 'active' : '') + '" type="button" data-intl-team="' + escapeHtml(team) + '">' + escapeHtml(team) + '</button>'
-        ));
-      } else {
-        teamButtons.push('<span class="intl-empty-path">目前沒有代表隊資料。</span>');
-      }
-
-      const tournamentName = homeSpecialFilter
-        ? (INTERNATIONAL_TOURNAMENT_META[homeSpecialFilter]?.name || homeSpecialFilter)
-        : '全部賽事';
-      const path = [tournamentName, homeInternationalEditionFilter, homeInternationalTeamFilter].filter(Boolean).join(' → ');
 
       els.homeInternationalExplorer.innerHTML =
-        '<div class="intl-explorer-head"><strong>國際賽事</strong><span>賽事 → 屆別 → 代表隊 → 球員</span></div>' +
-        '<div class="intl-tournament-grid">' + tournamentButtons.join('') + '</div>' +
-        '<div class="intl-path-panel">' +
-          '<div class="intl-breadcrumb">' + escapeHtml(path) + '</div>' +
-          '<div class="intl-path-row"><span class="intl-path-label">屆別</span><div class="intl-chip-list">' + editionButtons.join('') + '</div></div>' +
-          '<div class="intl-path-row"><span class="intl-path-label">代表隊</span><div class="intl-chip-list">' + teamButtons.join('') + '</div></div>' +
-        '</div>';
+        '<div class="intl-explorer-head"><strong>國際賽資料庫</strong><span>賽事 → 年份 → 球隊 → 球員</span></div>' +
+        '<div class="intl-select-flow">' +
+          '<label class="intl-select-step"><span>1．賽事</span><select id="intlCompetitionSelect">'+competitionOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>2．年份</span><select id="intlYearSelect" '+(!competition?'disabled':'')+'>'+yearOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>3．球隊</span><select id="intlTeamSelect" '+(!(competition&&year)?'disabled':'')+'>'+teamOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>4．球員</span><select id="intlPlayerSelect" '+(!(competition&&year&&team)?'disabled':'')+'>'+playerOptions+'</select></label>' +
+        '</div>' +
+        (path ? '<div class="intl-flow-path">'+escapeHtml(path)+'</div>' : '') +
+        (emptyText ? '<div class="intl-flow-empty">'+escapeHtml(emptyText)+'</div>' : '');
       els.homeInternationalExplorer.classList.remove('hidden');
 
-      els.homeInternationalExplorer.querySelectorAll('[data-intl-tournament]').forEach(button => {
-        button.addEventListener('click', () => {
-          homeSpecialFilter = button.dataset.intlTournament || '';
-          homeInternationalEditionFilter = '';
-          homeInternationalTeamFilter = '';
-          renderRecentPlayers();
-        });
+      const competitionSelect=document.getElementById('intlCompetitionSelect');
+      const yearSelect=document.getElementById('intlYearSelect');
+      const teamSelect=document.getElementById('intlTeamSelect');
+      const playerSelect=document.getElementById('intlPlayerSelect');
+
+      competitionSelect?.addEventListener('change', () => {
+        homeSpecialFilter=competitionSelect.value||'';
+        homeInternationalEditionFilter='';
+        homeInternationalTeamFilter='';
+        renderRecentPlayers();
       });
-      els.homeInternationalExplorer.querySelectorAll('[data-intl-edition]').forEach(button => {
-        button.addEventListener('click', () => {
-          homeInternationalEditionFilter = button.dataset.intlEdition || '';
-          homeInternationalTeamFilter = '';
-          renderRecentPlayers();
-        });
+      yearSelect?.addEventListener('change', () => {
+        homeInternationalEditionFilter=yearSelect.value||'';
+        homeInternationalTeamFilter='';
+        renderRecentPlayers();
       });
-      els.homeInternationalExplorer.querySelectorAll('[data-intl-team]').forEach(button => {
-        button.addEventListener('click', () => {
-          homeInternationalTeamFilter = button.dataset.intlTeam || '';
-          renderRecentPlayers();
-        });
+      teamSelect?.addEventListener('change', () => {
+        homeInternationalTeamFilter=teamSelect.value||'';
+        renderRecentPlayers();
+      });
+      playerSelect?.addEventListener('change', async () => {
+        const id=playerSelect.value||'';
+        if (id) await selectPlayer(id);
       });
     }
-
     function playerDisplayTeam(player) {
       return playerScope(player) === 'cpbl'
         ? normalizeTeamName(player?.cpblTeam || '')
