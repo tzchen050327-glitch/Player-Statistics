@@ -1,0 +1,36 @@
+name: International data diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/international-diagnostics.mjs'
+      - '.github/workflows/international-diagnostics.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  official-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/international-diagnostics.mjs official
+
+  fallback-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/international-diagnostics.mjs fallback
