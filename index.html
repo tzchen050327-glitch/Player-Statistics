@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.42</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.43</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.42';
+    const APP_VERSION = 'v1.43';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3241,7 +3241,8 @@ dialog::backdrop {
     const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', '其他國際賽'];
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];
     const PREFERRED_EXTERNAL_NAME_FIXES = {
-      'KBO:52605': { name: '金倒永', aliases: ['金道英'] }
+      'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
+      'MLB:808967': { name: '山本由伸', aliases: ['山本'] }
     };
 
     function applyStoredPreferredExternalName(player) {
