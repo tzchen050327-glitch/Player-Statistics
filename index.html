@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.40</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.41</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.40';
+    const APP_VERSION = 'v1.41';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4871,6 +4871,10 @@ bg2: {
         '礙守','裁決','違規','觸球','觸傳球','三呎線'
       ]);
       if (preserved.has(raw)) return raw;
+
+      // MLB may classify a strikeout + caught-stealing sequence as strikeout_double_play.
+      // For batter-facing PA reports, the batter result is still a strikeout, not a GIDP.
+      if (code === 'DP' && /三振|strike\s*out|strikeout|called\s+out\s+on\s+strikes|struck\s+out|삼진/i.test(raw)) return '三振';
     
       const position = paPositionFromText(raw, pa?.position || '');
       const direction = paHitDirectionFromText(raw);
