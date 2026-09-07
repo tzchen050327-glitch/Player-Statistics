@@ -2394,6 +2394,132 @@ dialog::backdrop {
 /* ===== v1.33 POPUP REFRESH END ===== */
 
 
+/* ===== v1.34 INTERNATIONAL OVERSEAS ZONE START ===== */
+.home-zone-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 6px;
+  border: 1px solid #dce5ee;
+  border-radius: 16px;
+  background: #f3f6f9;
+}
+
+.home-zone-btn {
+  min-height: 42px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #5d6b7d;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease, box-shadow .14s ease;
+}
+
+.home-zone-btn.active {
+  background: linear-gradient(145deg,#174f86,#0c3156);
+  color: #fff;
+  box-shadow: 0 7px 17px rgba(18,63,109,.18);
+}
+
+.home-zone-btn[data-home-zone="international"].active {
+  background: linear-gradient(145deg,#9e771f,#75530f);
+}
+
+.home-zone-btn[data-home-zone="overseas"].active {
+  background: linear-gradient(145deg,#44586d,#273746);
+}
+
+.home-special-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home-special-filter-btn {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid #ccd7e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #526276;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.home-special-filter-btn.active {
+  border-color: #123f6d;
+  background: #123f6d;
+  color: #fff;
+}
+
+.home-zone-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #e1e8ef;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.external-scope-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 7px 14px;
+  border: 1px solid #d7e0e9;
+  border-radius: 999px;
+  background: #f5f8fb;
+  color: #34475b;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.external-scope-badge.international {
+  border-color: #ead9ab;
+  background: #fff8e8;
+  color: #866018;
+}
+
+.external-scope-badge.overseas {
+  border-color: #cfd8e1;
+  background: #edf2f6;
+  color: #3f5367;
+}
+
+#newPlayerExternalFields {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #e7edf3;
+}
+
+.new-player-scope-help {
+  margin-top: 10px;
+  color: #718095;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .home-zone-switch {
+    gap: 5px;
+    padding: 5px;
+  }
+  .home-zone-btn {
+    min-height: 39px;
+    padding: 5px;
+    font-size: 12px;
+  }
+}
+/* ===== v1.34 INTERNATIONAL OVERSEAS ZONE END ===== */
+
 /* ===== v1.34 PLAYER NAME SUGGEST START ===== */
 #addPlayerDialog .new-player-name-field {
   position: relative;
@@ -2732,8 +2858,14 @@ dialog::backdrop {
         </div>
 
         <section class="panel">
+          <div id="homeZoneSwitch" class="home-zone-switch" aria-label="球員資料專區">
+            <button class="home-zone-btn active" type="button" data-home-zone="cpbl">中職</button>
+            <button class="home-zone-btn" type="button" data-home-zone="international">國際賽</button>
+            <button class="home-zone-btn" type="button" data-home-zone="overseas">國外聯盟</button>
+          </div>
+          <div id="homeZoneNote" class="home-zone-note hidden"></div>
           <div class="home-player-head">
-            <h2>球員</h2>
+            <h2 id="homePlayerTitle">球員</h2>
             <span id="homePlayerCount"></span>
           </div>
           <div class="home-player-actions">
@@ -2757,6 +2889,8 @@ dialog::backdrop {
             <button class="home-team-filter-btn" type="button" data-home-team-filter="味全龍" style="color:#D71920">味全龍</button>
           </div>
 
+          <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國際賽與國外聯盟篩選"></div>
+
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
@@ -2779,10 +2913,11 @@ dialog::backdrop {
       <div class="player-page-top">
         <div class="player-page-left">
           <button id="backHomeBtn" class="press-btn">← 返回首頁</button>
-          <div class="level-switch" aria-label="一軍二軍切換">
+          <div id="playerLevelSwitch" class="level-switch" aria-label="一軍二軍切換">
             <button id="majorLevelBtn" class="level-btn active" type="button" data-level="A">一軍</button>
             <button id="minorLevelBtn" class="level-btn" type="button" data-level="D">二軍</button>
           </div>
+          <div id="externalScopeBadge" class="external-scope-badge hidden"></div>
         </div>
         <div class="player-page-right">
           <label class="season-field">賽季
@@ -2885,11 +3020,31 @@ dialog::backdrop {
           </select>
         </label>
       </div>
+
+      <div id="newPlayerExternalFields" class="grid two hidden">
+        <label class="field">專區
+          <select id="newPlayerScope">
+            <option value="cpbl">中職</option>
+            <option value="international">國際賽</option>
+            <option value="overseas">國外聯盟</option>
+          </select>
+        </label>
+        <label class="field">賽事／聯盟
+          <select id="newPlayerCompetition"></select>
+        </label>
+        <label class="field">代表隊／球隊
+          <input id="newPlayerExternalTeam" type="text" maxlength="40" placeholder="例如：中華隊、Los Angeles Dodgers" />
+        </label>
+        <label class="field">年份
+          <input id="newPlayerExternalYear" type="number" min="1990" max="2100" step="1" />
+        </label>
+      </div>
+
       <div class="section-actions">
         <button id="createManualPlayerBtn" class="press-btn">純新增</button>
         <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
       </div>
-      <div class="small" style="margin-top:8px">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。</div>
+      <div id="newPlayerScopeHelp" class="small new-player-scope-help">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。</div>
     </div>
   </dialog>
 
@@ -3007,10 +3162,16 @@ dialog::backdrop {
       playerPage: document.getElementById('playerPage'),
       homeTemplateGrid: document.getElementById('homeTemplateGrid'),
       homePlayerCount: document.getElementById('homePlayerCount'),
+      homePlayerTitle: document.getElementById('homePlayerTitle'),
+      homeZoneSwitch: document.getElementById('homeZoneSwitch'),
+      homeZoneNote: document.getElementById('homeZoneNote'),
       homeLevelFilters: document.getElementById('homeLevelFilters'),
       homeTeamFilters: document.getElementById('homeTeamFilters'),
+      homeSpecialFilters: document.getElementById('homeSpecialFilters'),
       playerPageDate: document.getElementById('playerPageDate'),
       backHomeBtn: document.getElementById('backHomeBtn'),
+      playerLevelSwitch: document.getElementById('playerLevelSwitch'),
+      externalScopeBadge: document.getElementById('externalScopeBadge'),
       majorLevelBtn: document.getElementById('majorLevelBtn'),
       minorLevelBtn: document.getElementById('minorLevelBtn'),
       seasonSelect: document.getElementById('seasonSelect'),
@@ -3036,6 +3197,12 @@ dialog::backdrop {
       newPlayerName: document.getElementById('newPlayerName'),
       newPlayerNumber: document.getElementById('newPlayerNumber'),
       newPlayerType: document.getElementById('newPlayerType'),
+      newPlayerScope: document.getElementById('newPlayerScope'),
+      newPlayerCompetition: document.getElementById('newPlayerCompetition'),
+      newPlayerExternalTeam: document.getElementById('newPlayerExternalTeam'),
+      newPlayerExternalYear: document.getElementById('newPlayerExternalYear'),
+      newPlayerExternalFields: document.getElementById('newPlayerExternalFields'),
+      newPlayerScopeHelp: document.getElementById('newPlayerScopeHelp'),
       newPlayerSuggestions: document.getElementById('newPlayerSuggestions'),
       allDialog: document.getElementById('allPlayersDialog'),
       allPitchers: document.getElementById('allPitchers'),
@@ -3065,7 +3232,12 @@ dialog::backdrop {
     let selectedLevel = 'A';
     let homeLevelFilter = 'A';
     let homeTeamFilter = '';
+    let homeZone = 'cpbl';
+    let homeSpecialFilter = '';
     let currentRecord = null;
+
+    const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', '其他國際賽'];
+    const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];
     let renderToken = 0;
     let photoDrag = null;
     let photoZoomSaveTimer = null;
@@ -4011,6 +4183,10 @@ bg2: {
     }
 
     function availableSeasonYears(player, level = selectedLevel) {
+      if (playerScope(player) !== 'cpbl') {
+        const year = Math.floor(Number(player?.externalYear) || CURRENT_YEAR);
+        return [Math.min(2100, Math.max(1990, year))];
+      }
       const official = player?.cpblAvailableYears?.[level];
       if (Array.isArray(official)) {
         return [...new Set(official.map(Number).filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR))]
@@ -4030,6 +4206,7 @@ bg2: {
 
     function reportPlayerName(player) {
       const base = String(player?.name || '').trim();
+      if (playerScope(player) !== 'cpbl') return base;
       return selectedLevel === 'D' ? `${base}(二軍)` : base;
     }
 
@@ -4154,7 +4331,7 @@ bg2: {
     }
 
     async function savePlayer(player) {
-      if (player?.id === selectedPlayerId) persistActiveStatsProfile(player);
+      if (player?.id === selectedPlayerId && playerScope(player) === 'cpbl') persistActiveStatsProfile(player);
       player.updatedAt = Date.now();
       await idbPut(STORES.players, player);
       const index = players.findIndex(p => p.id === player.id);
@@ -4531,15 +4708,20 @@ bg2: {
         normalizeTeamName(player?.cpblTeam || ''),
         player?.cpblTeamCode,
         player?.cpblPosition,
+        player?.externalCompetition,
+        player?.externalTeam,
+        player?.externalYear,
+        scopeLabel(playerScope(player)),
         typeLabel
       ].filter(Boolean).join(' ').toLowerCase();
     }
 
     function searchPlayers(query) {
       const q = String(query || '').trim().toLowerCase();
-      if (!q) return [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
+      const zonePlayers = players.filter(player => playerScope(player) === homeZone);
+      if (!q) return [...zonePlayers].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
       const compact = q.replace(/^#/, '');
-      return players.filter(player => {
+      return zonePlayers.filter(player => {
         const haystack = normalizedPlayerSearchText(player);
         return haystack.includes(q)
           || (compact !== q && haystack.includes(compact))
@@ -4595,9 +4777,14 @@ bg2: {
       if (!player) return;
 
       selectedPlayerId = id;
+      homeZone = playerScope(player);
+      homeSpecialFilter = playerScope(player) === 'cpbl' ? '' : playerSpecialCompetition(player);
       selectedLevel = 'A';
       selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
-      activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+
+      if (playerScope(player) === 'cpbl') {
+        activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+      }
 
       player.lastUsedAt = Date.now();
       await savePlayer(player);
@@ -4606,7 +4793,7 @@ bg2: {
       currentPage = 'player';
       renderAll();
 
-      if (!player.cpblAcnt) return;
+      if (playerScope(player) !== 'cpbl' || !player.cpblAcnt) return;
 
       setSyncProgress(0, `準備同步 #${player.number} ${player.name}…`);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -4617,7 +4804,6 @@ bg2: {
           (percent, status) => setSyncProgress(percent, status)
         );
 
-        // 同步完成後把「目前軍別」與 player.stats 明確保持一致，避免 A/D profile 被錯寫。
         selectedLevel = 'A';
         const majorYears = result?.majorYears?.length ? result.majorYears : availableSeasonYears(player, 'A');
         const minorYears = result?.minorYears?.length ? result.minorYears : availableSeasonYears(player, 'D');
@@ -4720,9 +4906,11 @@ bg2: {
 
     function renderBatchReportSelection() {
       if (!els.batchReportList) return;
-      const list = [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
+      const list = players
+        .filter(player => playerScope(player) === homeZone)
+        .sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
       els.batchReportList.innerHTML = list.length ? list.map(player => {
-        const meta = [player.type === 'pitcher' ? '投手' : '打者', normalizeTeamName(player.cpblTeam || '')].filter(Boolean).join('｜');
+        const meta = playerSourceMeta(player);
         return `
           <label class="batch-report-row">
             <input type="checkbox" value="${player.id}" data-batch-report-player />
@@ -4831,6 +5019,9 @@ bg2: {
     }
 
     async function fetchBatchGameFromCpbl(player) {
+      if (playerScope(player) !== 'cpbl') {
+        return { record:null, level:'A', reason:'國際賽／國外聯盟球員只使用已儲存的當日戰報資料' };
+      }
       if (!player?.cpblAcnt || !player?.cpblTeamCode) {
         return { record:null, level:'A', reason:'此球員尚未連結中職官網' };
       }
@@ -5107,6 +5298,65 @@ bg2: {
       }
     }
 
+    function playerScope(player) {
+      const scope = String(player?.scope || '').trim();
+      return scope === 'international' || scope === 'overseas' ? scope : 'cpbl';
+    }
+
+    function scopeLabel(scope) {
+      if (scope === 'international') return '國際賽';
+      if (scope === 'overseas') return '國外聯盟';
+      return '中職';
+    }
+
+    function specialOptionsForScope(scope) {
+      return scope === 'international'
+        ? INTERNATIONAL_COMPETITIONS
+        : scope === 'overseas'
+          ? OVERSEAS_LEAGUES
+          : [];
+    }
+
+    function playerSpecialCompetition(player) {
+      return String(player?.externalCompetition || '').trim();
+    }
+
+    function playerDisplayTeam(player) {
+      return playerScope(player) === 'cpbl'
+        ? normalizeTeamName(player?.cpblTeam || '')
+        : String(player?.externalTeam || '').trim();
+    }
+
+    function playerSourceMeta(player) {
+      const scope = playerScope(player);
+      if (scope === 'cpbl') {
+        return [player.type === 'pitcher' ? '投手' : '打者', normalizeTeamName(player.cpblTeam || '')]
+          .filter(Boolean).join('｜');
+      }
+      return [
+        player.type === 'pitcher' ? '投手' : '打者',
+        playerSpecialCompetition(player),
+        String(player.externalTeam || '').trim(),
+        Number(player.externalYear) || ''
+      ].filter(Boolean).join('｜');
+    }
+
+    function playerSourceInfoHtml(player) {
+      const scope = playerScope(player);
+      if (scope === 'cpbl') {
+        return player.cpblAcnt
+          ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>`
+          : '';
+      }
+      const detail = [
+        scopeLabel(scope),
+        playerSpecialCompetition(player),
+        String(player.externalTeam || '').trim(),
+        Number(player.externalYear) || ''
+      ].filter(Boolean).join('｜');
+      return `<div class="small" style="margin-top:8px">${escapeHtml(detail || scopeLabel(scope))}｜獨立資料，不與中職累積成績共用</div>`;
+    }
+
     function homePlayerTeam(player) {
       const raw = normalizeTeamName(player?.cpblTeam || '').replace(/二軍$/, '').trim();
       return normalizeTeamName(raw);
@@ -5125,6 +5375,31 @@ bg2: {
     }
 
     function renderHomePlayerFilters() {
+      els.homeZoneSwitch?.querySelectorAll('[data-home-zone]').forEach(button => {
+        button.classList.toggle('active', button.dataset.homeZone === homeZone);
+      });
+
+      const cpbl = homeZone === 'cpbl';
+      els.homeLevelFilters?.classList.toggle('hidden', !cpbl);
+      els.homeTeamFilters?.classList.toggle('hidden', !cpbl);
+      els.homeSpecialFilters?.classList.toggle('hidden', cpbl);
+
+      if (els.homePlayerTitle) {
+        els.homePlayerTitle.textContent = cpbl ? '中職球員' : homeZone === 'international' ? '國際賽球員' : '國外聯盟球員';
+      }
+
+      if (els.homeZoneNote) {
+        if (cpbl) {
+          els.homeZoneNote.classList.add('hidden');
+          els.homeZoneNote.textContent = '';
+        } else {
+          els.homeZoneNote.classList.remove('hidden');
+          els.homeZoneNote.textContent = homeZone === 'international'
+            ? '國際賽資料獨立保存，可分 WBC、WBCQ、世界12強、亞運等賽事建立球員紀錄。'
+            : '國外聯盟資料獨立保存，可分 MLB、MiLB、NPB、KBO 等聯盟建立球員紀錄。';
+        }
+      }
+
       els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
         button.classList.toggle('active', button.dataset.homeLevelFilter === homeLevelFilter);
       });
@@ -5132,30 +5407,54 @@ bg2: {
         button.classList.toggle('active', button.dataset.homeTeamFilter === homeTeamFilter);
         button.disabled = homeLevelFilter === 'OTHER';
       });
+
+      if (!cpbl && els.homeSpecialFilters) {
+        const options = specialOptionsForScope(homeZone);
+        els.homeSpecialFilters.innerHTML = [
+          `<button class="home-special-filter-btn ${homeSpecialFilter ? '' : 'active'}" type="button" data-home-special-filter="">全部</button>`,
+          ...options.map(option =>
+            `<button class="home-special-filter-btn ${homeSpecialFilter === option ? 'active' : ''}" type="button" data-home-special-filter="${escapeHtml(option)}">${escapeHtml(option)}</button>`
+          )
+        ].join('');
+
+        els.homeSpecialFilters.querySelectorAll('[data-home-special-filter]').forEach(button => {
+          button.addEventListener('click', () => {
+            homeSpecialFilter = button.dataset.homeSpecialFilter || '';
+            renderRecentPlayers();
+          });
+        });
+      }
     }
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
 
-      const list = [...players]
-        .filter(player => homePlayerLevel(player) === homeLevelFilter)
-        .filter(player => {
-          if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
-          return homePlayerTeam(player) === homeTeamFilter;
-        })
-        .sort((a, b) => {
-          const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
-          if (used) return used;
-          return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
-        });
+      const zonePlayers = players.filter(player => playerScope(player) === homeZone);
+      let list = [...zonePlayers];
+
+      if (homeZone === 'cpbl') {
+        list = list
+          .filter(player => homePlayerLevel(player) === homeLevelFilter)
+          .filter(player => {
+            if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
+            return homePlayerTeam(player) === homeTeamFilter;
+          });
+      } else if (homeSpecialFilter) {
+        list = list.filter(player => playerSpecialCompetition(player) === homeSpecialFilter);
+      }
+
+      list.sort((a, b) => {
+        const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
+        if (used) return used;
+        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
+      });
 
       if (els.homePlayerCount) {
-        els.homePlayerCount.textContent = `${list.length} / ${players.length} 名`;
+        els.homePlayerCount.textContent = `${list.length} / ${zonePlayers.length} 名`;
       }
 
       els.recent.innerHTML = list.length ? list.map(p => {
-        const team = normalizeTeamName(p.cpblTeam || '');
-        const meta = [p.type === 'pitcher' ? '投手' : '打者', team].filter(Boolean).join('｜');
+        const meta = playerSourceMeta(p);
         return `
           <button class="player-btn home-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
             <span class="home-player-number">#${escapeHtml(p.number)}</span>
@@ -5164,7 +5463,7 @@ bg2: {
               <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
             </span>
           </button>`;
-      }).join('') : '<div class="empty" style="grid-column:1/-1">目前篩選條件沒有球員。</div>';
+      }).join('') : '<div class="empty" style="grid-column:1/-1">這個專區目前沒有符合條件的球員。</div>';
 
       els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
         btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
@@ -5172,10 +5471,11 @@ bg2: {
     }
 
     function renderAllPlayersDialog() {
-      const pitchers = players.filter(p => p.type === 'pitcher');
-      const hitters = players.filter(p => p.type === 'hitter');
+      const zonePlayers = players.filter(p => playerScope(p) === homeZone);
+      const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
+      const hitters = zonePlayers.filter(p => p.type === 'hitter');
       const make = list => list.length ? list.map(p =>
-        `<button class="player-btn ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">#${escapeHtml(p.number)} ${escapeHtml(p.name)}</button>`
+        `<button class="player-btn ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">#${escapeHtml(p.number)} ${escapeHtml(p.name)}<span class="small">${escapeHtml(playerSourceMeta(p))}</span></button>`
       ).join('') : '';
       els.allPitchers.innerHTML = make(pitchers);
       els.allHitters.innerHTML = make(hitters);
@@ -5219,7 +5519,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${playerSourceInfoHtml(player)}`;
       } else {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
@@ -5250,7 +5550,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${player.cpblAcnt ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>` : ''}`;
+          ${playerSourceInfoHtml(player)}`;
       }
 
       document.getElementById('saveBaseBtn').addEventListener('click', async () => {
@@ -5359,10 +5659,7 @@ bg2: {
       if (!els.deletePlayerList) return;
       const list = [...players].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
       els.deletePlayerList.innerHTML = list.length ? list.map(player => {
-        const meta = [
-          player.type === 'pitcher' ? '投手' : '打者',
-          normalizeTeamName(player.cpblTeam || '')
-        ].filter(Boolean).join('｜');
+        const meta = playerSourceMeta(player);
         return `
           <button class="press-btn player-search-result" type="button" data-delete-player-id="${player.id}">
             <span class="result-number">#${escapeHtml(player.number)}</span>
@@ -6267,14 +6564,30 @@ bg2: {
 
       els.homePage?.classList.toggle('hidden', playerPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
-      if (els.pageSubtitle) els.pageSubtitle.textContent = playerPageActive ? '球員設定' : '首頁';
+      if (els.pageSubtitle) {
+        els.pageSubtitle.textContent = playerPageActive
+          ? `球員設定｜${scopeLabel(playerScope(player))}`
+          : homeZone === 'cpbl' ? '首頁｜中職' : homeZone === 'international' ? '首頁｜國際賽專區' : '首頁｜國外聯盟專區';
+      }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
-          ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}）`
+          ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
       if (els.playerPageDate) {
         els.playerPageDate.textContent = els.gameDate.value ? `日期｜${els.gameDate.value.replaceAll('-', '/')}` : '';
+      }
+      const playerScopeCode = player ? playerScope(player) : 'cpbl';
+      const externalPlayer = playerScopeCode !== 'cpbl';
+      els.playerLevelSwitch?.classList.toggle('hidden', externalPlayer);
+      els.externalScopeBadge?.classList.toggle('hidden', !externalPlayer);
+      if (els.externalScopeBadge && externalPlayer && player) {
+        els.externalScopeBadge.className = `external-scope-badge ${playerScopeCode}`;
+        els.externalScopeBadge.textContent = [
+          scopeLabel(playerScopeCode),
+          playerSpecialCompetition(player),
+          Number(player.externalYear) || ''
+        ].filter(Boolean).join('｜');
       }
       els.majorLevelBtn?.classList.toggle('active', selectedLevel === 'A');
       els.minorLevelBtn?.classList.toggle('active', selectedLevel === 'D');
@@ -6282,7 +6595,7 @@ bg2: {
         const years = availableSeasonYears(player, selectedLevel);
         if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
         els.seasonSelect.innerHTML = seasonOptionsHtml(player);
-        els.seasonSelect.disabled = years.length === 0;
+        els.seasonSelect.disabled = years.length === 0 || externalPlayer;
         els.seasonSelect.value = years.length ? String(selectedSeason) : '';
       }
 
@@ -7971,7 +8284,59 @@ bg2: {
     els.minorLevelBtn?.addEventListener('click', () => switchPlayerLevel('D'));
     els.seasonSelect?.addEventListener('change', () => switchPlayerSeason(els.seasonSelect.value));
 
-    document.getElementById('addPlayerBtn').addEventListener('click', () => els.addDialog.showModal());
+    function competitionOptionsHtml(scope, selected = '') {
+      const options = specialOptionsForScope(scope);
+      return options.map(option =>
+        `<option value="${escapeHtml(option)}" ${selected === option ? 'selected' : ''}>${escapeHtml(option)}</option>`
+      ).join('');
+    }
+
+    function updateAddPlayerScopeUI(scope = homeZone) {
+      scope = scope === 'international' || scope === 'overseas' ? scope : 'cpbl';
+      if (els.newPlayerScope) els.newPlayerScope.value = scope;
+      const external = scope !== 'cpbl';
+      els.newPlayerExternalFields?.classList.toggle('hidden', !external);
+
+      if (els.newPlayerCompetition) {
+        els.newPlayerCompetition.innerHTML = external ? competitionOptionsHtml(scope) : '';
+      }
+      if (els.newPlayerExternalYear && !els.newPlayerExternalYear.value) {
+        els.newPlayerExternalYear.value = String(CURRENT_YEAR);
+      }
+
+      const cpblButton = document.getElementById('createCpblPlayerBtn');
+      const manualButton = document.getElementById('createManualPlayerBtn');
+      cpblButton?.classList.toggle('hidden', external);
+      if (manualButton) manualButton.textContent = external ? '建立球員' : '純新增';
+
+      if (els.newPlayerScopeHelp) {
+        els.newPlayerScopeHelp.textContent = external
+          ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
+          : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。';
+      }
+
+      if (external) hideNewPlayerSuggestions();
+    }
+
+    function prepareAddPlayerDialog() {
+      clearNewPlayerForm();
+      if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
+      if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
+      updateAddPlayerScopeUI(homeZone);
+      els.addDialog.showModal();
+    }
+
+    document.getElementById('addPlayerBtn').addEventListener('click', prepareAddPlayerDialog);
+
+    els.homeZoneSwitch?.querySelectorAll('[data-home-zone]').forEach(button => {
+      button.addEventListener('click', () => {
+        const zone = button.dataset.homeZone;
+        homeZone = zone === 'international' || zone === 'overseas' ? zone : 'cpbl';
+        homeSpecialFilter = '';
+        homeTeamFilter = '';
+        renderRecentPlayers();
+      });
+    });
     document.getElementById('homeSearchPlayerBtn').addEventListener('click', openPlayerSearch);
     document.getElementById('allSearchPlayerBtn').addEventListener('click', openPlayerSearch);
     document.getElementById('batchReportBtn').addEventListener('click', openBatchReportDialog);
@@ -8018,20 +8383,36 @@ bg2: {
     });
 
     function newPlayerFormValues() {
+      const scope = els.newPlayerScope?.value === 'international' || els.newPlayerScope?.value === 'overseas'
+        ? els.newPlayerScope.value
+        : 'cpbl';
       return {
         name: document.getElementById('newPlayerName').value.trim(),
         number: document.getElementById('newPlayerNumber').value.trim(),
-        selectedType: document.getElementById('newPlayerType').value
+        selectedType: document.getElementById('newPlayerType').value,
+        scope,
+        competition: scope === 'cpbl' ? '' : String(els.newPlayerCompetition?.value || '').trim(),
+        externalTeam: scope === 'cpbl' ? '' : String(els.newPlayerExternalTeam?.value || '').trim(),
+        externalYear: scope === 'cpbl' ? CURRENT_YEAR : Math.floor(Number(els.newPlayerExternalYear?.value) || CURRENT_YEAR)
       };
     }
 
-    function validateNewPlayer(name, number) {
+    function validateNewPlayer(name, number, scope = 'cpbl', competition = '') {
       if (!name || !number) {
         setStatus('球員名稱與背號都要填寫。', true);
         return false;
       }
-      if (players.some(p => p.name === name && p.number === number)) {
-        setStatus('此球員已存在。', true);
+      if (scope !== 'cpbl' && !competition) {
+        setStatus('請先選擇賽事／聯盟。', true);
+        return false;
+      }
+      if (players.some(p =>
+        p.name === name
+        && p.number === number
+        && playerScope(p) === scope
+        && (scope === 'cpbl' || playerSpecialCompetition(p) === competition)
+      )) {
+        setStatus('這個專區已經有相同球員。', true);
         return false;
       }
       return true;
@@ -8109,6 +8490,8 @@ bg2: {
     function clearNewPlayerForm() {
       document.getElementById('newPlayerName').value = '';
       document.getElementById('newPlayerNumber').value = '';
+      if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
+      if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       newPlayerSuggestionPicked = false;
       newPlayerSuggestRequestId++;
       if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
@@ -8117,7 +8500,12 @@ bg2: {
 
     els.newPlayerName?.addEventListener('input', () => {
       newPlayerSuggestionPicked = false;
+      const scope = els.newPlayerScope?.value || 'cpbl';
       const query = String(els.newPlayerName.value || '').trim();
+      if (scope !== 'cpbl') {
+        hideNewPlayerSuggestions();
+        return;
+      }
       newPlayerSuggestRequestId++;
       if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
       if (!query) {
@@ -8126,6 +8514,10 @@ bg2: {
       }
       renderNewPlayerSuggestions([], '搜尋中職球員…');
       newPlayerSuggestTimer = setTimeout(() => requestNewPlayerSuggestions(query), 300);
+    });
+
+    els.newPlayerScope?.addEventListener('change', () => {
+      updateAddPlayerScopeUI(els.newPlayerScope.value);
     });
 
     els.newPlayerName?.addEventListener('focus', () => {
@@ -8148,8 +8540,8 @@ bg2: {
     });
 
     document.getElementById('createManualPlayerBtn').addEventListener('click', async () => {
-      const { name, number, selectedType } = newPlayerFormValues();
-      if (!validateNewPlayer(name, number)) return;
+      const { name, number, selectedType, scope, competition, externalTeam, externalYear } = newPlayerFormValues();
+      if (!validateNewPlayer(name, number, scope, competition)) return;
       const btn = document.getElementById('createManualPlayerBtn');
       btn.disabled = true;
       try {
@@ -8158,6 +8550,10 @@ bg2: {
           stats: selectedType === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric: selectedType === 'pitcher' ? 'wl' : undefined,
           selectedPhotoId: null, photoTransforms: {},
+          scope,
+          externalCompetition: competition,
+          externalTeam,
+          externalYear,
           cpblAcnt: '', cpblTeam: '', cpblTeamCode: '', cpblPosition: '',
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
@@ -8165,7 +8561,9 @@ bg2: {
         clearNewPlayerForm();
         els.addDialog.close();
         await selectPlayer(player.id);
-        setStatus('球員已純新增，未連結中職官網。');
+        setStatus(scope === 'cpbl'
+          ? '球員已純新增，未連結中職官網。'
+          : `已建立${scopeLabel(scope)}球員資料。`);
       } catch (error) {
         setStatus(error.message || '建立球員失敗。', true);
       } finally {
@@ -8175,7 +8573,7 @@ bg2: {
 
     document.getElementById('createCpblPlayerBtn').addEventListener('click', async () => {
       const { name, number, selectedType } = newPlayerFormValues();
-      if (!validateNewPlayer(name, number)) return;
+      if (!validateNewPlayer(name, number, 'cpbl', '')) return;
       const btn = document.getElementById('createCpblPlayerBtn');
       const originalText = btn.textContent;
       btn.disabled = true;
@@ -8190,6 +8588,7 @@ bg2: {
         if (official.position) type = official.position.includes('投手') ? 'pitcher' : 'hitter';
         const player = {
           id: uid(), name: official.name || name, number: official.number || number, type,
+          scope: 'cpbl',
           stats: type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric: type === 'pitcher' ? 'wl' : undefined,
           selectedPhotoId: null, photoTransforms: {},
