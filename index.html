@@ -2991,7 +2991,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.55</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.56</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3185,7 +3185,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.55';
+    const APP_VERSION = 'v1.56';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3287,35 +3287,32 @@ dialog::backdrop {
     let homeInternationalTeamFilter = '';
     let currentRecord = null;
 
-    const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', 'U12', 'U15', 'U18', 'U21', 'U23', '亞錦賽'];
+    const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', 'U18亞青', '亞錦賽'];
     const INTERNATIONAL_TOURNAMENT_META = {
       'WBC': { code:'WBC', name:'世界棒球經典賽' },
       'WBCQ': { code:'WBCQ', name:'經典賽資格賽' },
       '世界12強': { code:'P12', name:'世界12強' },
       '亞洲運動會': { code:'AG', name:'亞洲運動會' },
-      'U12': { code:'U12', name:'U-12 世界盃' },
-      'U15': { code:'U15', name:'U-15 世界盃' },
-      'U18': { code:'U18', name:'U-18 世界盃' },
-      'U21': { code:'U21', name:'U-21 世界盃' },
-      'U23': { code:'U23', name:'U-23 世界盃' },
+      'U18亞青': { code:'BFAU18', name:'U18亞洲青棒錦標賽' },
       '亞錦賽': { code:'ABC', name:'亞洲棒球錦標賽' }
     };
     const INTERNATIONAL_TOURNAMENT_YEARS = {
       'WBC': [2026,2023,2017,2013,2009,2006],
       'WBCQ': [2025,2022,2016,2012],
       '世界12強': [2024,2019,2015],
-      '亞洲運動會': [2023,2018,2014,2010,2006,2002,1998,1994],
-      'U12': [2025,2023,2022,2019,2017,2015,2013,2011],
-      'U15': [2024,2022,2018,2016,2014,2012],
-      'U18': [2025,2023,2022,2019,2017,2015,2013,2012,2010,2008,2006,2004,2002,2000,1999],
-      'U21': [2014],
-      'U23': [2024,2022,2021,2018,2016],
-      '亞錦賽': [2023,2019,2017,2015,2012,2009,2007,2005,2003,2001]
+      '亞洲運動會': [2026,2023,2018,2014,2010,2006,2002,1998,1994],
+      'U18亞青': [2026],
+      '亞錦賽': [2025,2023,2019,2017,2015,2012,2009,2007,2005,2003,2001]
     };
     const INTERNATIONAL_TEAM_NAME_MAP = {
       'Chinese Taipei':'中華台北','Chinese-Taipei':'中華台北','Taiwan':'中華台北','中華隊':'中華台北','TPE':'中華台北',
       'Japan':'日本','JPN':'日本','Korea':'韓國','South Korea':'韓國','KOR':'韓國',
-      'United States':'美國','USA':'美國','Spain':'西班牙','ESP':'西班牙'
+      'United States':'美國','USA':'美國','Spain':'西班牙','ESP':'西班牙',
+      'China':'中國','CHN':'中國','Hong Kong':'香港','HKG':'香港',
+      'Philippines':'菲律賓','PHI':'菲律賓','Sri Lanka':'斯里蘭卡','SRI':'斯里蘭卡',
+      'Singapore':'新加坡','SGP':'新加坡','Thailand':'泰國','THA':'泰國',
+      'Pakistan':'巴基斯坦','PAK':'巴基斯坦','Palestine':'巴勒斯坦','PLE':'巴勒斯坦',
+      'Laos':'寮國','LAO':'寮國','Indonesia':'印尼','INA':'印尼','Mongolia':'蒙古','MGL':'蒙古'
     };
     const INTERNATIONAL_TEAM_CATALOG = {
       'WBC:2026': ['中華台北','日本','韓國','澳洲','捷克','美國','墨西哥','義大利','英國','巴西','加拿大','哥倫比亞','古巴','巴拿馬','波多黎各','多明尼加','以色列','荷蘭','尼加拉瓜','委內瑞拉'],
@@ -3334,8 +3331,11 @@ dialog::backdrop {
       '世界12強:2019': ['中華台北','日本','韓國','澳洲','加拿大','古巴','多明尼加','墨西哥','荷蘭','波多黎各','美國','委內瑞拉'],
       '世界12強:2015': ['中華台北','日本','韓國','加拿大','古巴','多明尼加','義大利','墨西哥','荷蘭','波多黎各','美國','委內瑞拉'],
 
-      'U12:2025': ['中華台北','日本','韓國','美國','澳洲','古巴','德國','墨西哥','捷克','多明尼加','巴拿馬','南非'],
-      'U18:2025': ['中華台北','日本','韓國','美國','澳洲','中國','古巴','德國','義大利','巴拿馬','波多黎各','南非']
+      'U18亞青:2026': ['日本','菲律賓','香港','斯里蘭卡','中華台北','韓國','泰國','新加坡'],
+      '亞洲運動會:2026': ['日本','中國','菲律賓','巴勒斯坦','中華台北','韓國','香港','泰國'],
+      '亞洲運動會:2023': ['日本','韓國','中華台北','中國','菲律賓','香港','泰國','寮國','新加坡'],
+      '亞錦賽:2025': ['日本','中國','菲律賓','巴基斯坦','中華台北','韓國','香港','巴勒斯坦'],
+      '亞錦賽:2023': ['日本','韓國','中華台北','泰國','菲律賓','巴基斯坦','巴勒斯坦','香港']
     };
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];    const PREFERRED_EXTERNAL_NAME_FIXES = {
       'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
@@ -3378,6 +3378,8 @@ dialog::backdrop {
     let newPlayerTypeTouched = false;
     const internationalRosterCache = new Map();
     const internationalRosterLoading = new Set();
+    const internationalTeamCache = new Map();
+    const internationalTeamLoading = new Set();
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -5888,6 +5890,29 @@ bg2: {
       return [String(competition||''),String(year||''),normalizeInternationalTeamName(team||'')].join('|');
     }
 
+    function internationalTeamListKey(competition, year) {
+      return [String(competition||''), String(year||'')].join('|');
+    }
+
+    async function loadInternationalTeams(competition, year) {
+      const key=internationalTeamListKey(competition,year);
+      if (!competition || !year || internationalTeamCache.has(key) || internationalTeamLoading.has(key)) return;
+      internationalTeamLoading.add(key);
+      try {
+        const data=await baseballRequest('international-teams',{competition,year:Number(year)});
+        const teams=Array.isArray(data?.teams) ? data.teams.map(normalizeInternationalTeamName).filter(Boolean) : [];
+        internationalTeamCache.set(key,[...new Set(teams)]);
+      } catch (error) {
+        console.error('國際賽球隊載入失敗',error);
+        internationalTeamCache.set(key,[]);
+      } finally {
+        internationalTeamLoading.delete(key);
+        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year)) {
+          renderRecentPlayers();
+        }
+      }
+    }
+
     async function loadInternationalRoster(competition, year, team) {
       const key=internationalRosterKey(competition,year,team);
       if (!competition || !year || !team || internationalRosterCache.has(key) || internationalRosterLoading.has(key)) return;
@@ -5973,9 +5998,15 @@ bg2: {
       const matchingYearPlayers = competition && year
         ? zonePlayers.filter(p => playerSpecialCompetition(p) === competition && internationalEdition(p) === String(year))
         : [];
+      const teamListKey=competition&&year ? internationalTeamListKey(competition,year) : '';
       const catalogTeams = INTERNATIONAL_TEAM_CATALOG[`${competition}:${year}`] || [];
+      const remoteTeams = teamListKey ? (internationalTeamCache.get(teamListKey) || []) : [];
+      if (competition && year && !internationalTeamCache.has(teamListKey) && !internationalTeamLoading.has(teamListKey)) {
+        void loadInternationalTeams(competition,year);
+      }
       const teams = [...new Set([
         ...catalogTeams,
+        ...remoteTeams,
         ...matchingYearPlayers.map(internationalTeam).filter(Boolean)
       ])].sort((a,b) => a.localeCompare(b,'zh-Hant'));
       if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
@@ -6023,7 +6054,7 @@ bg2: {
 
       let emptyText='';
       if (competition && year && !teams.length) {
-        emptyText='這個賽事年份目前尚未匯入球隊資料。之後接上官方資料源後，球隊會直接出現在下拉選單。';
+        emptyText=internationalTeamLoading.has(teamListKey)?'正在載入這屆參賽球隊…':'這個賽事年份目前沒有可用的球隊資料。';
       } else if (competition && year && team && rosterData?.error) {
         emptyText='球員名單讀取失敗：'+rosterData.error;
       } else if (competition && year && team && rosterData && !remotePlayers.length && !localTeamPlayers.length) {
