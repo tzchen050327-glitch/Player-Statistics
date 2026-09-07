@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.44</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.45</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.44';
+    const APP_VERSION = 'v1.45';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3266,6 +3266,7 @@ dialog::backdrop {
     let newPlayerSuggestionPicked = false;
     let newPlayerSuggestionItems = [];
     let newExternalSelected = null;
+    let newPlayerTypeTouched = false;
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -5763,8 +5764,11 @@ bg2: {
     function playerSourceMeta(player) {
       const scope = playerScope(player);
       if (scope === 'cpbl') {
-        return [player.type === 'pitcher' ? '投手' : '打者', normalizeTeamName(player.cpblTeam || '')]
-          .filter(Boolean).join('｜');
+        return [
+          player.type === 'pitcher' ? '投手' : '打者',
+          player.cpblDualRole ? '雙角色' : '',
+          normalizeTeamName(player.cpblTeam || '')
+        ].filter(Boolean).join('｜');
       }
       return [
         player.type === 'pitcher' ? '投手' : '打者',
@@ -8806,7 +8810,7 @@ bg2: {
           ? `可直接用中文／英文／日文／韓文姓名搜尋 ${overseasProviderLabel(provider)}；建立後會自動同步賽季資料，當日資料可在球員頁匯入。`
           : external
             ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
-            : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。';
+            : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。一般情況會依官網守位判斷打者／投手；若手動切換球員類型，可為同一位球員建立另一個角色。';
       }
 
       if (scope === 'international' || (scope === 'overseas' && !provider)) {
@@ -8968,6 +8972,7 @@ bg2: {
               els.newPlayerNumber.value = official.number || '';
               if (official.position) {
                 els.newPlayerType.value = official.position.includes('投手') ? 'pitcher' : 'hitter';
+                newPlayerTypeTouched = false;
               }
               hideNewPlayerSuggestions();
               els.newPlayerNumber.focus();
@@ -9083,11 +9088,16 @@ bg2: {
       if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       newPlayerSuggestionPicked = false;
       newExternalSelected = null;
+      newPlayerTypeTouched = false;
       newPlayerSuggestionItems = [];
       newPlayerSuggestRequestId++;
       if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
       hideNewPlayerSuggestions();
     }
+
+    document.getElementById('newPlayerType')?.addEventListener('change', () => {
+      newPlayerTypeTouched = true;
+    });
 
     els.newPlayerName?.addEventListener('input', () => {
       newPlayerSuggestionPicked = false;
@@ -9321,7 +9331,7 @@ bg2: {
 
     document.getElementById('createCpblPlayerBtn').addEventListener('click', async () => {
       const { name, number, selectedType } = newPlayerFormValues();
-      if (!validateNewPlayer(name, number, 'cpbl', '')) return;
+      if (!validateNewPlayer(name, number, 'cpbl', '', true)) return;
       const btn = document.getElementById('createCpblPlayerBtn');
       const originalText = btn.textContent;
       btn.disabled = true;
@@ -9333,7 +9343,18 @@ bg2: {
         if (!official) throw new Error(`中職官網找不到「${searchName} #${number}」。`);
 
         let type = selectedType;
-        if (official.position) type = official.position.includes('投手') ? 'pitcher' : 'hitter';
+        if (!newPlayerTypeTouched && official.position) {
+          type = official.position.includes('投手') ? 'pitcher' : 'hitter';
+        }
+
+        const sameLinkedPlayers = players.filter(p =>
+          playerScope(p) === 'cpbl'
+          && String(p.cpblAcnt || '') === String(official.acnt || '')
+        );
+        if (sameLinkedPlayers.some(p => p.type === type)) {
+          throw new Error(`這位球員的${type === 'pitcher' ? '投手' : '打者'}版本已經存在。`);
+        }
+
         const player = {
           id: uid(), name: official.name || name, number: official.number || number, type,
           scope: 'cpbl',
@@ -9344,8 +9365,17 @@ bg2: {
           cpblTeam: official.team || '',
           cpblTeamCode: official.teamCode || '',
           cpblPosition: official.position || '',
+          cpblDualRole: sameLinkedPlayers.length > 0,
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
+        if (sameLinkedPlayers.length) {
+          for (const linked of sameLinkedPlayers) {
+            if (!linked.cpblDualRole) {
+              linked.cpblDualRole = true;
+              await savePlayer(linked);
+            }
+          }
+        }
         ensureStatsProfiles(player);
         try { await syncPlayerCpblHistory(player); }
         catch (error) { console.warn('CPBL season history import failed', error); }
