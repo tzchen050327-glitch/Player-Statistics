@@ -5957,7 +5957,7 @@ bg2: {
         player.type === 'pitcher' ? '投手' : '打者',
         player.externalTwoWay ? '二刀流' : '',
         playerSpecialCompetition(player),
-        String(player.externalTeam || '').trim(),
+        scope === 'international' ? internationalTeam(player) : String(player.externalTeam || '').trim(),
         Number(player.externalYear) || ''
       ].filter(Boolean).join('｜');
     }
@@ -6024,7 +6024,7 @@ bg2: {
         } else {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = homeZone === 'international'
-            ? '國際賽資料獨立保存，可分 WBC、WBCQ、世界12強、亞運等賽事建立球員紀錄。'
+            ? '依「賽事 → 屆別 → 代表隊 → 球員」管理國際賽紀錄；不同屆賽事彼此獨立保存。'
             : '國外聯盟資料獨立保存，可分 MLB、MiLB、NPB、KBO 等聯盟建立球員紀錄。';
         }
       }
@@ -8983,6 +8983,22 @@ bg2: {
 
       const competition = String(els.newPlayerCompetition?.value || '');
       const provider = overseasProvider(competition);
+
+      if (els.newPlayerCompetitionLabel?.childNodes?.[0]) {
+        els.newPlayerCompetitionLabel.childNodes[0].nodeValue = scope === 'international' ? '賽事\n          ' : '聯盟\n          ';
+      }
+      if (els.newPlayerTeamLabel?.childNodes?.[0]) {
+        els.newPlayerTeamLabel.childNodes[0].nodeValue = scope === 'international' ? '代表隊\n          ' : '球隊\n          ';
+      }
+      if (els.newPlayerYearLabel?.childNodes?.[0]) {
+        els.newPlayerYearLabel.childNodes[0].nodeValue = scope === 'international' ? '屆別年份\n          ' : '賽季年份\n          ';
+      }
+      if (els.newPlayerExternalTeam) {
+        els.newPlayerExternalTeam.placeholder = scope === 'international'
+          ? '例如：中華台北、日本、韓國'
+          : '例如：Los Angeles Dodgers';
+      }
+
       const cpblButton = document.getElementById('createCpblPlayerBtn');
       const externalButton = document.getElementById('createExternalPlayerBtn');
       const manualButton = document.getElementById('createManualPlayerBtn');
@@ -8998,9 +9014,11 @@ bg2: {
       if (els.newPlayerScopeHelp) {
         els.newPlayerScopeHelp.textContent = scope === 'overseas' && provider
           ? `可直接用中文／英文／日文／韓文姓名搜尋 ${overseasProviderLabel(provider)}；建立後會自動同步賽季資料，當日資料可在球員頁匯入。`
-          : external
-            ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
-            : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。一般情況會依官網守位判斷打者／投手；若手動切換球員類型，可為同一位球員建立另一個角色。';
+          : scope === 'international'
+            ? '國際賽以「賽事 → 屆別 → 代表隊」獨立保存；同一位球員可以在不同屆賽事各自建立紀錄。'
+            : external
+              ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
+              : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。一般情況會依官網守位判斷打者／投手；若手動切換球員類型，可為同一位球員建立另一個角色。';
       }
 
       if (scope === 'international' || (scope === 'overseas' && !provider)) {
@@ -9010,9 +9028,15 @@ bg2: {
 
     function prepareAddPlayerDialog() {
       clearNewPlayerForm();
-      if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
-      if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       updateAddPlayerScopeUI(homeZone);
+      if (homeZone === 'international') {
+        if (homeSpecialFilter && els.newPlayerCompetition) els.newPlayerCompetition.value = homeSpecialFilter;
+        if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = homeInternationalEditionFilter || String(CURRENT_YEAR);
+        if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = homeInternationalTeamFilter || '';
+      } else {
+        if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
+        if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
+      }
       els.addDialog.showModal();
     }
 
@@ -9365,7 +9389,7 @@ bg2: {
           selectedPhotoId: null, photoTransforms: {},
           scope,
           externalCompetition: competition,
-          externalTeam,
+          externalTeam: scope === 'international' ? normalizeInternationalTeamName(externalTeam) : externalTeam,
           externalYear,
           cpblAcnt: '', cpblTeam: '', cpblTeamCode: '', cpblPosition: '',
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
