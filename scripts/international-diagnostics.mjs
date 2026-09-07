@@ -67,6 +67,30 @@ async function browserProbe(url, needle, {watch=false}={}){
   }
 }
 async function official(){
+  for(const year of [2026,2025,2023]){
+    try{
+      const teams=await getJson('https://statsapi.mlb.com/api/v1/teams?sportId=51&season='+year);
+      console.log('TEAMS',year,JSON.stringify((teams.teams||[]).map(t=>({id:t.id,name:t.name}))));
+    }catch(e){console.log('TEAMS_ERR',year,String(e))}
+  }
+  for(const year of [2026,2025,2023]){
+    for(const gameType of ['F','W']){
+      try{
+        const url='https://statsapi.mlb.com/api/v1/teams/791/roster?hydrate='+encodeURIComponent('person(stats(type=season,season='+year+',sportId=51,teamId=791,gameType='+gameType+'))')+'&rosterType=active&season='+year+'&sportId=51';
+        const d=await getJson(url);
+        const hit=(d.roster||[]).find(x=>/Yi.?Chang/i.test(x?.person?.fullName||''));
+        console.log('ROSTER_TEST',year,gameType,'count=',(d.roster||[]).length,'YiChang=',JSON.stringify(hit||null));
+      }catch(e){console.log('ROSTER_TEST_ERR',year,gameType,String(e))}
+    }
+    for(const gameType of ['F','W']){
+      try{
+        const url='https://statsapi.mlb.com/api/v1/schedule?sportId=51&season='+year+'&teamId=791&gameType='+gameType+'&hydrate=team';
+        const d=await getJson(url);
+        const games=(d.dates||[]).flatMap(x=>x.games||[]);
+        console.log('SCHEDULE_TEST',year,gameType,'count=',games.length,'games=',JSON.stringify(games.map(g=>({gamePk:g.gamePk,date:g.officialDate,away:g.teams?.away?.team?.name,home:g.teams?.home?.team?.name}))));
+      }catch(e){console.log('SCHEDULE_TEST_ERR',year,gameType,String(e))}
+    }
+  }
   const base='https://statsapi.mlb.com/api/v1/stats';
   for(const gameType of ['', '&gameTypes=W','&gameType=W','&gameTypes=F','&gameType=F']){
     for(const group of ['pitching','hitting']){
