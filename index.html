@@ -2842,6 +2842,15 @@ dialog::backdrop {
 .intl-game-main span{display:block;margin-top:4px;color:#7b8796;font-size:11px;font-weight:750}
 @media(max-width:800px){.intl-select-flow{grid-template-columns:1fr 1fr}.intl-game-card{grid-template-columns:1fr auto}.intl-game-date{grid-column:1/-1}}
 @media(max-width:520px){.intl-select-flow{grid-template-columns:1fr}.intl-game-card{grid-template-columns:1fr}.intl-game-card .press-btn{width:100%}}
+.intl-games-tab-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.intl-games-tab-head h2{margin-bottom:4px}
+.intl-games-tab-meta{color:#728095;font-size:12px;font-weight:800;line-height:1.55}
+.intl-game-detail-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:10px 12px;border:1px solid #dce4ec;border-radius:12px;background:#f8fafc}
+.intl-game-detail-date{font-size:12px;font-weight:900;color:#536477}
+.workspace.international-overview{grid-template-columns:minmax(0,1fr)}
+.workspace.international-overview .canvas-wrap{display:none}
+.intl-game-card.is-selected{border-color:#b98a27;background:#fffaf0}
+@media(max-width:620px){.intl-games-tab-head,.intl-game-detail-nav{align-items:stretch;flex-direction:column}}
 /* ===== v1.52 INTERNATIONAL SELECT FLOW END ===== */
 </style>
 </head>
@@ -2991,7 +3000,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.58</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.59</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3185,7 +3194,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.58';
+    const APP_VERSION = 'v1.59';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3286,6 +3295,7 @@ dialog::backdrop {
     let homeInternationalEditionFilter = '';
     let homeInternationalTeamFilter = '';
     let currentRecord = null;
+    let internationalSelectedGameKey = '';
 
     const INTERNATIONAL_COMPETITIONS = ['WBC', 'WBCQ', '世界12強', '亞洲運動會', 'U18亞青', '亞錦賽'];
     const INTERNATIONAL_TOURNAMENT_META = {
@@ -5552,6 +5562,7 @@ bg2: {
       homeInternationalTeamFilter = playerScope(player) === 'international' ? internationalTeam(player) : '';
       selectedLevel = 'A';
       selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
+      internationalSelectedGameKey = '';
 
       if (playerScope(player) === 'cpbl') {
         activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
@@ -6617,38 +6628,126 @@ bg2: {
       return `${innings}局｜${game.k||0}K｜${game.h||0}H｜${game.bb||0}BB｜${game.er||0}ER`;
     }
 
+    async function internationalPlayerGameRecords(player) {
+      return (await idbGetAll(STORES.games))
+        .filter(record => record?.playerId === player.id && record?.internationalOfficialImport)
+        .sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')));
+    }
+
+    async function syncInternationalGamesFromTab(player) {
+      const competition = playerSpecialCompetition(player);
+      const year = Number(player.externalYear) || CURRENT_YEAR;
+      setSyncProgress(0, '重新同步 ' + competition + ' ' + year + '…');
+      try {
+        await syncInternationalTournamentStats(
+          player,
+          (percent,status) => setSyncProgress(Math.min(50, percent), status)
+        );
+        const games = await syncInternationalTournamentGames(
+          player,
+          (percent,status) => setSyncProgress(Math.max(52, percent), status)
+        );
+        internationalSelectedGameKey = '';
+        renderAll();
+        await finishSyncProgress('同步完成｜' + games.length + ' 場出賽資料');
+      } catch (error) {
+        console.warn('國際賽逐場同步失敗', error);
+        setSyncProgress(100, error?.message || '國際賽逐場同步失敗', { error:true });
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        hideSyncProgress();
+      }
+    }
+
+    async function openInternationalGameRecord(player, key) {
+      const record = await idbGet(STORES.games, key);
+      if (!record || record.playerId !== player.id || !record.internationalOfficialImport) {
+        setStatus('找不到這場國際賽紀錄，請重新同步。', true);
+        return;
+      }
+      internationalSelectedGameKey = record.key;
+      els.gameDate.value = record.date;
+      selectedLevel = 'A';
+      await loadRecord();
+      selectedTab = 'today';
+      renderAll();
+    }
+
+    async function renderInternationalGamesTab(player) {
+      if (playerScope(player) !== 'international') return;
+
+      if (internationalSelectedGameKey) {
+        const selected = await idbGet(STORES.games, internationalSelectedGameKey);
+        if (selected?.playerId === player.id && selected?.internationalOfficialImport) {
+          els.gameDate.value = selected.date;
+          currentRecord = selected;
+          renderToday(player);
+          const opponent = normalizeInternationalTeamName(selected.opponent || '') || '對手未提供';
+          const nav =
+            '<div class="intl-game-detail-nav">' +
+              '<button id="backInternationalGamesBtn" class="press-btn" type="button">← 返回逐場比賽</button>' +
+              '<div class="intl-game-detail-date">' +
+                escapeHtml(playerSpecialCompetition(player)) + ' ' +
+                escapeHtml(internationalEdition(player)) + '｜' +
+                escapeHtml(String(selected.date || '').replaceAll('-', '/')) + '｜VS ' +
+                escapeHtml(opponent) +
+              '</div>' +
+            '</div>';
+          els.content.insertAdjacentHTML('afterbegin', nav);
+          document.getElementById('backInternationalGamesBtn')?.addEventListener('click', () => {
+            internationalSelectedGameKey = '';
+            renderAll();
+          });
+          return;
+        }
+        internationalSelectedGameKey = '';
+      }
+
+      els.content.innerHTML =
+        '<div class="intl-games-tab-head">' +
+          '<div>' +
+            '<h2>#' + escapeHtml(player.number) + ' ' + escapeHtml(player.name) + '｜逐場比賽</h2>' +
+            '<div class="intl-games-tab-meta">' +
+              escapeHtml(playerSpecialCompetition(player)) + '｜' +
+              escapeHtml(internationalEdition(player)) + '｜' +
+              escapeHtml(internationalTeam(player)) +
+            '</div>' +
+          '</div>' +
+          '<button id="refreshInternationalGamesBtn" class="press-btn" type="button">重新同步</button>' +
+        '</div>' +
+        '<div id="internationalGameArchive" class="intl-game-archive" style="margin-top:0"></div>';
+
+      document.getElementById('refreshInternationalGamesBtn')?.addEventListener('click', () => {
+        void syncInternationalGamesFromTab(player);
+      });
+      await renderInternationalGameArchive(player);
+    }
+
     async function renderInternationalGameArchive(player) {
       const host=document.getElementById('internationalGameArchive');
       if (!host || playerScope(player) !== 'international') return;
-      const records=(await idbGetAll(STORES.games))
-        .filter(record => record?.playerId === player.id)
-        .sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')));
+      const records=await internationalPlayerGameRecords(player);
 
       if (!records.length) {
-        host.innerHTML='<div class="intl-game-archive-head"><h3>本屆每場比賽</h3></div><div class="intl-flow-empty">這名球員目前尚未匯入本屆單場資料。官方資料接入後，每一場都會列在這裡並可直接開啟戰績圖。</div>';
+        host.innerHTML='<div class="intl-flow-empty">目前還沒有這名球員的逐場紀錄。可以按右上角「重新同步」再抓一次官方資料。</div>';
         return;
       }
 
       const rows=records.map(record => {
         const opponent=normalizeInternationalTeamName(record?.opponent || '') || '對手未提供';
         const summary=internationalGameSummaryText(player,record);
-        return '<div class="intl-game-card">' +
-          '<div class="intl-game-date">'+escapeHtml(record.date||'')+'</div>' +
+        const selectedClass=record.key===internationalSelectedGameKey?' is-selected':'';
+        return '<div class="intl-game-card'+selectedClass+'">' +
+          '<div class="intl-game-date">'+escapeHtml(String(record.date||'').replaceAll('-', '/'))+'</div>' +
           '<div class="intl-game-main"><strong>VS '+escapeHtml(opponent)+'</strong><span>'+escapeHtml(summary)+'</span></div>' +
-          '<button class="press-btn" type="button" data-intl-game-date="'+escapeHtml(record.date||'')+'">查看／輸出</button>' +
+          '<button class="press-btn" type="button" data-intl-game-key="'+encodeURIComponent(record.key||'')+'">查看／輸出</button>' +
         '</div>';
       }).join('');
 
-      host.innerHTML='<div class="intl-game-archive-head"><h3>本屆每場比賽</h3><span class="small">共 '+records.length+' 場</span></div><div class="intl-game-archive-list">'+rows+'</div>';
-      host.querySelectorAll('[data-intl-game-date]').forEach(button => {
-        button.addEventListener('click', async () => {
-          const date=button.dataset.intlGameDate||'';
-          if (!date) return;
-          els.gameDate.value=date;
-          selectedTab='today';
-          localStorage.setItem('baseballSelectedTab','today');
-          await loadRecord();
-          renderAll();
+      host.innerHTML='<div class="intl-game-archive-head"><h3 style="margin:0">本屆每場比賽</h3><span class="small">共 '+records.length+' 場</span></div><div class="intl-game-archive-list">'+rows+'</div>';
+      host.querySelectorAll('[data-intl-game-key]').forEach(button => {
+        button.addEventListener('click', () => {
+          const key=decodeURIComponent(button.dataset.intlGameKey||'');
+          if (key) void openInternationalGameRecord(player,key);
         });
       });
     }
@@ -6684,8 +6783,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${playerSourceInfoHtml(player)}
-          ${playerScope(player) === 'international' ? '<div id="internationalGameArchive" class="intl-game-archive"></div>' : ''}`;
+          ${playerSourceInfoHtml(player)}`;
       } else {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
@@ -6716,8 +6814,7 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${playerSourceInfoHtml(player)}
-          ${playerScope(player) === 'international' ? '<div id="internationalGameArchive" class="intl-game-archive"></div>' : ''}`;
+          ${playerSourceInfoHtml(player)}`;
       }
 
       document.getElementById('saveBaseBtn').addEventListener('click', async () => {
@@ -6750,7 +6847,6 @@ bg2: {
           setStatus(error.message || '刪除球員失敗。', true);
         }
       });
-      if (playerScope(player) === 'international') void renderInternationalGameArchive(player);
     }
 
     async function deletePlayerById(playerId) {
@@ -7771,7 +7867,14 @@ bg2: {
         return;
       }
       if (selectedTab === 'base') renderBaseSettings(player);
-      if (selectedTab === 'today') renderToday(player);
+      if (selectedTab === 'today') {
+        if (playerScope(player) === 'international') {
+          els.content.innerHTML = '<div class="intl-flow-empty">正在讀取本屆逐場比賽…</div>';
+          void renderInternationalGamesTab(player);
+        } else {
+          renderToday(player);
+        }
+      }
       if (selectedTab === 'photos') renderPhotos(player);
     }
 
@@ -7793,10 +7896,17 @@ bg2: {
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      if (els.playerPageDate) {
-        els.playerPageDate.textContent = els.gameDate.value ? `日期｜${els.gameDate.value.replaceAll('-', '/')}` : '';
-      }
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
+      if (els.playerPageDate) {
+        if (playerScopeCode === 'international') {
+          const gameDate = internationalSelectedGameKey && currentRecord?.internationalOfficialImport
+            ? String(currentRecord.date || '')
+            : '';
+          els.playerPageDate.textContent = gameDate ? `比賽日期｜${gameDate.replaceAll('-', '/')}` : '';
+        } else {
+          els.playerPageDate.textContent = els.gameDate.value ? `日期｜${els.gameDate.value.replaceAll('-', '/')}` : '';
+        }
+      }
       const externalPlayer = playerScopeCode !== 'cpbl';
       els.playerLevelSwitch?.classList.toggle('hidden', externalPlayer);
       els.externalScopeBadge?.classList.toggle('hidden', !externalPlayer);
@@ -7823,7 +7933,7 @@ bg2: {
       const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
       const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
       if (baseTab) baseTab.textContent = playerScopeCode === 'international' ? '賽事總成績' : '球員基礎設定';
-      if (todayTab) todayTab.textContent = playerScopeCode === 'international' ? '單場戰績' : '球員今日狀況';
+      if (todayTab) todayTab.textContent = playerScopeCode === 'international' ? '逐場比賽' : '球員今日狀況';
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
         const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
@@ -7837,8 +7947,11 @@ bg2: {
       renderHomeTemplates();
 
       if (playerPageActive) {
+        const internationalOverview = playerScopeCode === 'international'
+          && (selectedTab === 'base' || (selectedTab === 'today' && !internationalSelectedGameKey));
+        document.querySelector('#playerPage .workspace')?.classList.toggle('international-overview', internationalOverview);
         renderContent();
-        renderCanvas();
+        if (!internationalOverview) renderCanvas();
       }
     }
 
@@ -10214,12 +10327,20 @@ bg2: {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         selectedTab = btn.dataset.tab;
+        if (selectedTab === 'today' && playerScope(selectedPlayer()) === 'international') {
+          internationalSelectedGameKey = '';
+        }
         localStorage.setItem('baseballSelectedTab', selectedTab);
         renderAll();
       });
     });
 
     els.gameDate.addEventListener('change', async () => {
+      const player=selectedPlayer();
+      if (playerScope(player) === 'international' && !internationalSelectedGameKey) {
+        renderAll();
+        return;
+      }
       await loadRecord();
       renderAll();
     });
