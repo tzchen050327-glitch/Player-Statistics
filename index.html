@@ -3363,6 +3363,8 @@ dialog::backdrop {
     let newPlayerSuggestionItems = [];
     let newExternalSelected = null;
     let newPlayerTypeTouched = false;
+    const internationalRosterCache = new Map();
+    const internationalRosterLoading = new Set();
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -5869,6 +5871,76 @@ bg2: {
       return normalizeInternationalTeamName(player?.externalTeam || '');
     }
 
+    function internationalRosterKey(competition, year, team) {
+      return [String(competition||''),String(year||''),normalizeInternationalTeamName(team||'')].join('|');
+    }
+
+    async function loadInternationalRoster(competition, year, team) {
+      const key=internationalRosterKey(competition,year,team);
+      if (!competition || !year || !team || internationalRosterCache.has(key) || internationalRosterLoading.has(key)) return;
+      internationalRosterLoading.add(key);
+      try {
+        const data=await baseballRequest('international-roster',{competition,year:Number(year),team});
+        internationalRosterCache.set(key,data.roster||{players:[]});
+      } catch (error) {
+        console.error('國際賽 roster 載入失敗',error);
+        internationalRosterCache.set(key,{players:[],error:error?.message||'球員名單載入失敗'});
+      } finally {
+        internationalRosterLoading.delete(key);
+        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year) && homeInternationalTeamFilter===team) {
+          renderRecentPlayers();
+        }
+      }
+    }
+
+    async function openInternationalRosterPlayer(entry, competition, year, team) {
+      if (!entry) return;
+      const officialId=String(entry.id||'');
+      let player=players.find(p =>
+        playerScope(p)==='international'
+        && playerSpecialCompetition(p)===competition
+        && internationalEdition(p)===String(year)
+        && internationalTeam(p)===normalizeInternationalTeamName(team)
+        && (String(p.externalPlayerId||'')===officialId || String(p.externalOfficialName||'')===String(entry.name||''))
+      );
+
+      if (!player) {
+        let type=entry.type==='pitcher'?'pitcher':'hitter';
+        if (type==='pitcher' && !entry.pitcher && entry.hitter) type='hitter';
+        if (type==='hitter' && !entry.hitter && entry.pitcher) type='pitcher';
+        player={
+          id:uid(),
+          name:entry.zhName||entry.name||'未命名球員',
+          number:String(entry.number||'—'),
+          type,
+          scope:'international',
+          stats:type==='pitcher'
+            ? externalPitcherStatsToLocal(entry.pitcher||{})
+            : externalHitterStatsToLocal(entry.hitter||{}),
+          pitcherLastMetric:type==='pitcher'?'wl':undefined,
+          selectedPhotoId:null,photoTransforms:{},
+          externalCompetition:competition,
+          externalTeam:normalizeInternationalTeamName(team),
+          externalYear:Number(year)||CURRENT_YEAR,
+          externalProvider:'INT',
+          externalPlayerId:officialId,
+          externalOfficialName:entry.name||'',
+          externalPosition:entry.position||'',
+          internationalSource:'MLB International Baseball',
+          createdAt:Date.now(),updatedAt:Date.now(),lastUsedAt:Date.now()
+        };
+        await savePlayer(player);
+      } else {
+        player.name=entry.zhName||player.name||entry.name;
+        player.number=String(entry.number||player.number||'—');
+        player.externalOfficialName=entry.name||player.externalOfficialName||'';
+        player.externalPosition=entry.position||player.externalPosition||'';
+        if (player.type==='pitcher' && entry.pitcher) player.stats=externalPitcherStatsToLocal(entry.pitcher);
+        if (player.type==='hitter' && entry.hitter) player.stats=externalHitterStatsToLocal(entry.hitter);
+        await savePlayer(player);
+      }
+      await selectPlayer(player.id);
+    }
     function renderInternationalExplorer() {
       if (!els.homeInternationalExplorer) return;
       if (homeZone !== 'international') {
@@ -5898,10 +5970,16 @@ bg2: {
       }
 
       const team = homeInternationalTeamFilter || '';
-      const teamPlayers = competition && year && team
+      const localTeamPlayers = competition && year && team
         ? matchingYearPlayers.filter(p => internationalTeam(p) === team)
         : [];
-      teamPlayers.sort((a,b) => String(a.number||'').localeCompare(String(b.number||''),'zh-Hant',{numeric:true}));
+      localTeamPlayers.sort((a,b) => String(a.number||'').localeCompare(String(b.number||''),'zh-Hant',{numeric:true}));
+      const rosterKey=competition&&year&&team ? internationalRosterKey(competition,year,team) : '';
+      const rosterData=rosterKey ? internationalRosterCache.get(rosterKey) : null;
+      const remotePlayers=Array.isArray(rosterData?.players) ? rosterData.players : [];
+      if (competition && year && team && !rosterData && !internationalRosterLoading.has(rosterKey)) {
+        void loadInternationalRoster(competition,year,team);
+      }
 
       const competitionOptions = ['<option value="">選擇賽事</option>']
         .concat(INTERNATIONAL_COMPETITIONS.map(key => {
@@ -5912,8 +5990,17 @@ bg2: {
         .concat(years.map(value => '<option value="'+value+'" '+(String(year)===String(value)?'selected':'')+'>'+value+'</option>')).join('');
       const teamOptions = ['<option value="">選擇球隊</option>']
         .concat(teams.map(value => '<option value="'+escapeHtml(value)+'" '+(team===value?'selected':'')+'>'+escapeHtml(value)+'</option>')).join('');
-      const playerOptions = ['<option value="">選擇球員</option>']
-        .concat(teamPlayers.map(player => '<option value="'+escapeHtml(player.id)+'">#'+escapeHtml(player.number)+' '+escapeHtml(player.name)+'</option>')).join('');
+      let playerOptions = ['<option value="">'+(internationalRosterLoading.has(rosterKey)?'載入球員中…':'選擇球員')+'</option>'];
+      if (remotePlayers.length) {
+        playerOptions=playerOptions.concat(remotePlayers.map(player =>
+          '<option value="remote:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number||'—')+' '+escapeHtml(player.zhName||player.name)+'</option>'
+        ));
+      } else {
+        playerOptions=playerOptions.concat(localTeamPlayers.map(player =>
+          '<option value="local:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number)+' '+escapeHtml(player.name)+'</option>'
+        ));
+      }
+      playerOptions=playerOptions.join('');
 
       const path = [
         competition ? (INTERNATIONAL_TOURNAMENT_META[competition]?.name || competition) : '',
@@ -5924,8 +6011,10 @@ bg2: {
       let emptyText='';
       if (competition && year && !teams.length) {
         emptyText='這個賽事年份目前尚未匯入球隊資料。之後接上官方資料源後，球隊會直接出現在下拉選單。';
-      } else if (competition && year && team && !teamPlayers.length) {
-        emptyText='這支代表隊目前尚未匯入球員名單。';
+      } else if (competition && year && team && rosterData?.error) {
+        emptyText='球員名單讀取失敗：'+rosterData.error;
+      } else if (competition && year && team && rosterData && !remotePlayers.length && !localTeamPlayers.length) {
+        emptyText='官方來源目前沒有回傳這支代表隊的球員名單。';
       }
 
       els.homeInternationalExplorer.innerHTML =
@@ -5961,8 +6050,17 @@ bg2: {
         renderRecentPlayers();
       });
       playerSelect?.addEventListener('change', async () => {
-        const id=playerSelect.value||'';
-        if (id) await selectPlayer(id);
+        const value=playerSelect.value||'';
+        if (!value) return;
+        if (value.startsWith('local:')) {
+          await selectPlayer(value.slice(6));
+          return;
+        }
+        if (value.startsWith('remote:')) {
+          const id=value.slice(7);
+          const entry=remotePlayers.find(item => String(item.id)===id);
+          if (entry) await openInternationalRosterPlayer(entry,competition,year,team);
+        }
       });
     }
     function playerDisplayTeam(player) {
