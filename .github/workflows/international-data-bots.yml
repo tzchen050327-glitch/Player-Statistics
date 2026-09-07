@@ -1,0 +1,101 @@
+name: International stats data bots
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    paths:
+      - 'scripts/build-international-official.py'
+      - 'scripts/check-international-fallback.mjs'
+      - '.github/workflows/international-data-bots.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  official-data-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PDF tools
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Parse official WBSC BFA OCA reports
+        run: python3 scripts/build-international-official.py --output tmp/official.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: official-international-data
+          path: tmp/official.json
+
+  fallback-browser-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - name: Check browser-only fallback sources
+        run: node scripts/check-international-fallback.mjs tmp/fallback.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fallback-international-data
+          path: tmp/fallback.json
+
+  merge-and-publish:
+    needs: [official-data-bot, fallback-browser-bot]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: official-international-data
+          path: tmp
+      - uses: actions/download-artifact@v4
+        with:
+          name: fallback-international-data
+          path: tmp
+      - name: Merge bot outputs
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          with open('tmp/official.json',encoding='utf-8') as f:
+              official=json.load(f)
+          with open('tmp/fallback.json',encoding='utf-8') as f:
+              fallback=json.load(f)
+          old={}
+          if os.path.exists('data/international-stats.json'):
+              try:
+                  with open('data/international-stats.json',encoding='utf-8') as f: old=json.load(f)
+              except Exception: old={}
+          comparable={
+              'schemaVersion':1,
+              'events':official.get('events',{}),
+              'officialErrors':official.get('errors',[]),
+              'fallbackChecks':fallback.get('checks',[])
+          }
+          old_comp={k:old.get(k) for k in comparable}
+          if old_comp==comparable:
+              print('No data changes')
+              raise SystemExit(0)
+          comparable['generatedAt']=datetime.now(timezone.utc).isoformat()
+          comparable['generators']=['official-data-bot','fallback-browser-bot']
+          os.makedirs('data',exist_ok=True)
+          with open('data/international-stats.json','w',encoding='utf-8') as f:
+              json.dump(comparable,f,ensure_ascii=False,separators=(',',':'))
+          PY
+      - name: Commit refreshed data
+        run: |
+          if git diff --quiet -- data/international-stats.json; then
+            echo "No international data changes to commit"
+            exit 0
+          fi
+          git config user.name "international-stats-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/international-stats.json
+          git commit -m "refresh international tournament stats data [skip ci]"
+          git push
