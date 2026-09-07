@@ -6148,12 +6148,59 @@ bg2: {
       });
     }
 
+    function internationalGameSummaryText(player, record) {
+      if (player.type === 'hitter') {
+        const game=deriveHitterGame(record?.hitterPAs || []);
+        const hits=(Number(game.single)||0)+(Number(game.double)||0)+(Number(game.triple)||0)+(Number(game.hr)||0);
+        const runs=Math.max(0,Number(record?.cpblGameSummary?.runs)||0);
+        return `${hits}安／${game.ab||0}打數｜${game.rbi||0}打點｜${runs}得分`;
+      }
+      const game=derivePitcherGame(record?.pitcherGame || defaultGameRecord(player).pitcherGame);
+      const innings=record?.pitcherGame?.innings || outsToIP(game.outs||0);
+      return `${innings}局｜${game.k||0}K｜${game.h||0}H｜${game.bb||0}BB｜${game.er||0}ER`;
+    }
+
+    async function renderInternationalGameArchive(player) {
+      const host=document.getElementById('internationalGameArchive');
+      if (!host || playerScope(player) !== 'international') return;
+      const records=(await idbGetAll(STORES.games))
+        .filter(record => record?.playerId === player.id)
+        .sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')));
+
+      if (!records.length) {
+        host.innerHTML='<div class="intl-game-archive-head"><h3>本屆每場比賽</h3></div><div class="intl-flow-empty">這名球員目前尚未匯入本屆單場資料。官方資料接入後，每一場都會列在這裡並可直接開啟戰績圖。</div>';
+        return;
+      }
+
+      const rows=records.map(record => {
+        const opponent=normalizeInternationalTeamName(record?.opponent || '') || '對手未提供';
+        const summary=internationalGameSummaryText(player,record);
+        return '<div class="intl-game-card">' +
+          '<div class="intl-game-date">'+escapeHtml(record.date||'')+'</div>' +
+          '<div class="intl-game-main"><strong>VS '+escapeHtml(opponent)+'</strong><span>'+escapeHtml(summary)+'</span></div>' +
+          '<button class="press-btn" type="button" data-intl-game-date="'+escapeHtml(record.date||'')+'">查看／輸出</button>' +
+        '</div>';
+      }).join('');
+
+      host.innerHTML='<div class="intl-game-archive-head"><h3>本屆每場比賽</h3><span class="small">共 '+records.length+' 場</span></div><div class="intl-game-archive-list">'+rows+'</div>';
+      host.querySelectorAll('[data-intl-game-date]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const date=button.dataset.intlGameDate||'';
+          if (!date) return;
+          els.gameDate.value=date;
+          selectedTab='today';
+          localStorage.setItem('baseballSelectedTab','today');
+          await loadRecord();
+          renderAll();
+        });
+      });
+    }
     function renderBaseSettings(player) {
       if (player.type === 'hitter') {
         const s = mergeStats(player.stats, hitterDefaults);
         const d = hitterDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜打者基礎設定</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : '打者基礎設定'}</h2>
           <div class="metrics">
             <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
             <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
@@ -6180,12 +6227,13 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${playerSourceInfoHtml(player)}`;
+          ${playerSourceInfoHtml(player)}
+          ${playerScope(player) === 'international' ? '<div id="internationalGameArchive" class="intl-game-archive"></div>' : ''}`;
       } else {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜投手基礎設定</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : '投手基礎設定'}</h2>
           <div class="metrics">
             <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
             <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
@@ -6211,7 +6259,8 @@ bg2: {
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
           </div>
-          ${playerSourceInfoHtml(player)}`;
+          ${playerSourceInfoHtml(player)}
+          ${playerScope(player) === 'international' ? '<div id="internationalGameArchive" class="intl-game-archive"></div>' : ''}`;
       }
 
       document.getElementById('saveBaseBtn').addEventListener('click', async () => {
@@ -6244,6 +6293,7 @@ bg2: {
           setStatus(error.message || '刪除球員失敗。', true);
         }
       });
+      if (playerScope(player) === 'international') void renderInternationalGameArchive(player);
     }
 
     async function deletePlayerById(playerId) {
