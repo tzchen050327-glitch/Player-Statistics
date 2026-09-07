@@ -2991,7 +2991,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.56</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.57</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3185,7 +3185,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.56';
+    const APP_VERSION = 'v1.57';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4045,6 +4045,59 @@ bg2: {
       applyExternalSeasonStats(player, remote, requestedYear);
       await savePlayer(player);
       report(94, '正在更新球員資料…');
+      return remote;
+    }
+
+    async function syncInternationalTournamentStats(player, onProgress = null) {
+      if (playerScope(player) !== 'international') return null;
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+      const competition = playerSpecialCompetition(player);
+      const year = Number(player.externalYear) || CURRENT_YEAR;
+      const team = internationalTeam(player);
+      const playerName = String(player.externalOfficialName || player.name || '').trim();
+
+      report(16, `正在連線 ${competition} ${year} 賽事資料…`);
+      const data = await baseballRequest('international-player-stats', {
+        competition,
+        year,
+        team,
+        playerId: String(player.externalPlayerId || ''),
+        playerName
+      });
+      report(72, `正在整理 ${player.name} 的賽事成績…`);
+
+      const remote = data?.stats || {};
+      const hitter = remote?.hitter || null;
+      const pitcher = remote?.pitcher || null;
+
+      // 有官方資料時才覆蓋，避免尚未開打／來源暫時沒資料時把既有成績洗成 0。
+      if (hitter || pitcher) {
+        if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
+        if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
+
+        const official = player.type === 'pitcher' ? pitcher : hitter;
+        if (official) {
+          player.stats = player.type === 'pitcher'
+            ? externalPitcherStatsToLocal(official)
+            : externalHitterStatsToLocal(official);
+        }
+
+        player.internationalSource = remote.source || player.internationalSource || '';
+        player.internationalSourceUrl = remote.sourceUrl || player.internationalSourceUrl || '';
+        player.externalLastUpdatedAt = Date.now();
+        player.internationalStatsFound = true;
+        await savePlayer(player);
+      } else {
+        player.internationalSource = remote.source || player.internationalSource || '';
+        player.internationalSourceUrl = remote.sourceUrl || player.internationalSourceUrl || '';
+        player.externalLastCheckedAt = Date.now();
+        player.internationalStatsFound = false;
+        await savePlayer(player);
+      }
+
+      report(94, '正在更新賽事總成績…');
       return remote;
     }
 
@@ -5302,6 +5355,33 @@ bg2: {
       currentPage = 'player';
       renderAll();
 
+      if (playerScope(player) === 'international') {
+        const competition = playerSpecialCompetition(player);
+        const year = Number(player.externalYear) || CURRENT_YEAR;
+        setSyncProgress(0, `準備同步 ${competition} ${year} 賽事成績…`);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        try {
+          const remote = await syncInternationalTournamentStats(
+            player,
+            (percent,status) => setSyncProgress(percent,status)
+          );
+          selectedSeason = year;
+          await loadRecord();
+          renderAll();
+          if (remote?.found) {
+            await finishSyncProgress(`同步完成｜${competition} ${year}`);
+          } else {
+            await finishSyncProgress(`目前尚無可用的 ${competition} ${year} 官方賽事成績`);
+          }
+        } catch (error) {
+          console.warn('國際賽成績同步失敗', error);
+          setSyncProgress(100, error?.message || '國際賽成績同步失敗', { error:true });
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          hideSyncProgress();
+        }
+        return;
+      }
+
       if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
         setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} 資料…`);
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -6144,6 +6224,15 @@ bg2: {
         String(player.externalTeam || '').trim(),
         Number(player.externalYear) || ''
       ].filter(Boolean).join('｜');
+      if (scope === 'international') {
+        const synced = player.externalLastUpdatedAt
+          ? `｜上次同步 ${new Date(player.externalLastUpdatedAt).toLocaleString('zh-TW')}`
+          : player.externalLastCheckedAt
+            ? `｜上次檢查 ${new Date(player.externalLastCheckedAt).toLocaleString('zh-TW')}`
+            : '';
+        const source = player.internationalSource ? `｜來源 ${escapeHtml(player.internationalSource)}` : '';
+        return `<div class="small" style="margin-top:8px">${escapeHtml(detail)}｜自動同步${source}${synced}</div>`;
+      }
       if (scope === 'overseas' && player.externalProvider && player.externalPlayerId) {
         const synced = player.externalLastUpdatedAt
           ? `｜上次更新 ${new Date(player.externalLastUpdatedAt).toLocaleString('zh-TW')}`
