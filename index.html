@@ -6030,9 +6030,12 @@ bg2: {
       els.homeTeamFilters?.classList.toggle('hidden', !cpbl);
       els.homeSpecialFilters?.classList.toggle('hidden', cpbl || international);
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
+      document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
+      document.querySelector('.home-player-actions')?.classList.toggle('hidden', international);
+      els.recent?.classList.toggle('hidden', international);
 
       if (els.homePlayerTitle) {
-        els.homePlayerTitle.textContent = cpbl ? '中職球員' : homeZone === 'international' ? '國際賽球員' : '國外聯盟球員';
+        els.homePlayerTitle.textContent = cpbl ? '中職球員' : homeZone === 'international' ? '國際賽資料庫' : '國外聯盟球員';
       }
 
       if (els.homeZoneNote) {
@@ -6042,7 +6045,7 @@ bg2: {
         } else {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = homeZone === 'international'
-            ? '依「賽事 → 屆別 → 代表隊 → 球員」管理國際賽紀錄；不同屆賽事彼此獨立保存。'
+            ? '請依序選擇「賽事 → 年份 → 球隊 → 球員」。選到球員後會直接進入該屆總成績與每場比賽戰績。'
             : '國外聯盟資料獨立保存，可分 MLB、MiLB、NPB、KBO 等聯盟建立球員紀錄。';
         }
       }
@@ -6076,6 +6079,12 @@ bg2: {
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
+
+      if (homeZone === 'international') {
+        if (els.homePlayerCount) els.homePlayerCount.textContent = '';
+        if (els.recent) els.recent.innerHTML = '';
+        return;
+      }
 
       const zonePlayers = players.filter(player => playerScope(player) === homeZone);
       let list = [...zonePlayers];
