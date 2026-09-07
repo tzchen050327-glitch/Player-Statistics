@@ -3318,6 +3318,13 @@ dialog::backdrop {
       'Japan':'日本','JPN':'日本','Korea':'韓國','South Korea':'韓國','KOR':'韓國',
       'United States':'美國','USA':'美國','Spain':'西班牙','ESP':'西班牙'
     };
+    const INTERNATIONAL_TEAM_CATALOG = {
+      'WBC:2026': ['中華台北','日本','韓國','澳洲','捷克','美國','墨西哥','義大利','英國','巴西','加拿大','哥倫比亞','古巴','巴拿馬','波多黎各','多明尼加','以色列','荷蘭','尼加拉瓜','委內瑞拉'],
+      'WBCQ:2025': ['中華台北','西班牙','尼加拉瓜','南非','哥倫比亞','巴西','德國','中國'],
+      '世界12強:2024': ['中華台北','日本','韓國','澳洲','古巴','多明尼加','墨西哥','荷蘭','巴拿馬','波多黎各','美國','委內瑞拉'],
+      'U12:2025': ['中華台北','日本','韓國','美國','澳洲','古巴','德國','墨西哥','捷克','多明尼加','巴拿馬','南非'],
+      'U18:2025': ['中華台北','日本','韓國','美國','澳洲','中國','古巴','德國','義大利','巴拿馬','波多黎各','南非']
+    };
     const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];    const PREFERRED_EXTERNAL_NAME_FIXES = {
       'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
       'MLB:660271': { name: '大谷翔平', aliases: ['大谷'] },
@@ -5882,8 +5889,11 @@ bg2: {
       const matchingYearPlayers = competition && year
         ? zonePlayers.filter(p => playerSpecialCompetition(p) === competition && internationalEdition(p) === String(year))
         : [];
-      const teams = [...new Set(matchingYearPlayers.map(internationalTeam).filter(Boolean))]
-        .sort((a,b) => a.localeCompare(b,'zh-Hant'));
+      const catalogTeams = INTERNATIONAL_TEAM_CATALOG[`${competition}:${year}`] || [];
+      const teams = [...new Set([
+        ...catalogTeams,
+        ...matchingYearPlayers.map(internationalTeam).filter(Boolean)
+      ])].sort((a,b) => a.localeCompare(b,'zh-Hant'));
       if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
         homeInternationalTeamFilter = '';
       }
