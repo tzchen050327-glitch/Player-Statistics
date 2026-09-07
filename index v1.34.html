@@ -3008,7 +3008,7 @@ dialog::backdrop {
       <div class="grid two">
         <label class="field new-player-name-field">球員名稱
           <input id="newPlayerName" type="text" maxlength="30" autocomplete="off" />
-          <div id="newPlayerSuggestions" class="new-player-suggestions hidden" role="listbox" aria-label="中職球員建議"></div>
+          <div id="newPlayerSuggestions" class="new-player-suggestions hidden" role="listbox" aria-label="球員搜尋建議"></div>
         </label>
         <label class="field">背號
           <input id="newPlayerNumber" type="text" maxlength="4" />
@@ -3043,6 +3043,7 @@ dialog::backdrop {
       <div class="section-actions">
         <button id="createManualPlayerBtn" class="press-btn">純新增</button>
         <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
+        <button id="createExternalPlayerBtn" class="press-btn primary hidden">搜尋國外聯盟資料</button>
       </div>
       <div id="newPlayerScopeHelp" class="small new-player-scope-help">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。</div>
     </div>
@@ -3149,6 +3150,7 @@ dialog::backdrop {
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
+    const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -3247,6 +3249,8 @@ dialog::backdrop {
     let newPlayerSuggestTimer = null;
     let newPlayerSuggestRequestId = 0;
     let newPlayerSuggestionPicked = false;
+    let newPlayerSuggestionItems = [];
+    let newExternalSelected = null;
     const photoImageCache = new Map();
     const TEMPLATES = {
       bg1: {
@@ -3783,6 +3787,118 @@ bg2: {
       return data;
     }
 
+    async function baseballRequest(action, payload = {}) {
+      const response = await fetch(BASEBALL_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          appKey: CPBL_APP_KEY,
+          anonKey: CPBL_ANON_KEY,
+          action,
+          ...payload
+        })
+      });
+      let data = null;
+      try { data = await response.json(); } catch (_) {}
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || `國外聯盟資料連線失敗（${response.status}）`);
+      }
+      return data;
+    }
+
+    function overseasProvider(competition = '') {
+      const value = String(competition || '').trim();
+      if (value === 'MLB') return 'MLB';
+      if (value === 'MiLB') return 'MILB';
+      if (value === 'NPB') return 'NPB';
+      if (value === 'KBO') return 'KBO';
+      return '';
+    }
+
+    function overseasProviderLabel(provider = '') {
+      const value = String(provider || '').toUpperCase();
+      return value === 'MILB' ? 'MiLB' : value;
+    }
+
+    function externalHitterStatsToLocal(stats = {}) {
+      const next = hitterDefaults();
+      for (const key of ['pa','ab','rbi','runs','single','double','triple','hr','sacBunt','sacFly','bb','ibb','hbp']) {
+        next[key] = Math.max(0, Number(stats?.[key]) || 0);
+      }
+      return next;
+    }
+
+    function externalPitcherStatsToLocal(stats = {}) {
+      const next = pitcherDefaults();
+      for (const key of ['cg','sho','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']) {
+        next[key] = Math.max(0, Number(stats?.[key]) || 0);
+      }
+      const era = Number(stats?.era);
+      const whip = Number(stats?.whip);
+      if (Number.isFinite(era) && Number.isFinite(whip)) {
+        next.cpblEra = era;
+        next.cpblWhip = whip;
+        next.cpblRatesOfficial = true;
+      }
+      return next;
+    }
+
+    function applyExternalSeasonStats(player, remote, requestedYear) {
+      if (!player || !remote) throw new Error('國外聯盟賽季資料格式錯誤。');
+
+      const profile = remote.profile || {};
+      const hitter = remote.hitter || null;
+      const pitcher = remote.pitcher || null;
+
+      if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
+      if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
+
+      const official = player.type === 'pitcher' ? pitcher : hitter;
+      if (!official) {
+        throw new Error(`${requestedYear} 年找不到此球員的例行賽成績。`);
+      }
+
+      player.stats = player.type === 'pitcher'
+        ? externalPitcherStatsToLocal(official)
+        : externalHitterStatsToLocal(official);
+
+      player.externalTeam = profile.team || player.externalTeam || '';
+      player.externalPosition = profile.position || player.externalPosition || '';
+      player.externalOfficialName = profile.name || player.externalOfficialName || '';
+      player.externalYear = Number(requestedYear) || player.externalYear || CURRENT_YEAR;
+
+      const remoteYears = Array.isArray(profile.years)
+        ? profile.years.map(Number).filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100)
+        : [];
+      player.externalAvailableYears = [...new Set([
+        ...remoteYears,
+        ...(Array.isArray(player.externalAvailableYears) ? player.externalAvailableYears.map(Number) : []),
+        Number(requestedYear)
+      ].filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100))].sort((a,b)=>b-a);
+
+      player.externalLastUpdatedAt = Date.now();
+      return official;
+    }
+
+    async function syncExternalSeason(player, requestedYear = selectedSeason, onProgress = null) {
+      if (playerScope(player) !== 'overseas' || !player?.externalProvider || !player?.externalPlayerId) return null;
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+      report(18, `正在連線 ${overseasProviderLabel(player.externalProvider)}…`);
+      const data = await baseballRequest('season-stats', {
+        provider: player.externalProvider,
+        id: player.externalPlayerId,
+        year: requestedYear
+      });
+      report(76, `正在整理 ${requestedYear} 賽季資料…`);
+      const remote = data.stats;
+      applyExternalSeasonStats(player, remote, requestedYear);
+      await savePlayer(player);
+      report(94, '正在更新球員資料…');
+      return remote;
+    }
+
     function cpblLevelLabel(kindCode) {
       return kindCode === 'D' ? '二軍' : '一軍';
     }
@@ -3969,6 +4085,98 @@ bg2: {
       player.cpblLastUpdatedByProfile ||= {};
       player.cpblLastUpdatedByProfile[key] = Date.now();
       player.cpblLastUpdatedAt = Date.now();
+    }
+
+    async function importExternalDaily(player) {
+      if (playerScope(player) !== 'overseas' || !player?.externalProvider || !player?.externalPlayerId) {
+        throw new Error('此球員尚未連結國外聯盟資料。');
+      }
+
+      const data = await baseballRequest('daily', {
+        provider:player.externalProvider,
+        id:player.externalPlayerId,
+        date:els.gameDate.value
+      });
+      const daily = data.daily;
+      if (!daily?.found) throw new Error('當天找不到此球員的出賽資料。');
+
+      if (daily.opponent) currentRecord.opponent = String(daily.opponent).trim();
+
+      if (player.type === 'hitter') {
+        const hitter = daily.hitter;
+        if (!hitter) throw new Error('當天沒有此球員的打擊紀錄。');
+        const list = Array.isArray(hitter.plateAppearances) ? hitter.plateAppearances : [];
+
+        if (list.length && currentRecord.hitterPAs.length) {
+          const overwrite = await showAppConfirm(
+            '目前已有逐打席紀錄。\n要用國外聯盟資料覆蓋目前紀錄嗎？',
+            {
+              title:'覆蓋逐打席紀錄',
+              confirmText:'覆蓋資料',
+              cancelText:'保留目前資料',
+              tone:'warning'
+            }
+          );
+          if (!overwrite) return false;
+        }
+
+        currentRecord.hitterAppearance.mode = 'bat';
+        if (list.length) {
+          currentRecord.hitterPAs = list.map(pa => ({
+            id:uid(),
+            code:pa.code || 'OUT',
+            position:pa.position || '',
+            rbi:Number(pa.rbi) || 0,
+            cpblOfficialAction:pa.officialAction || ''
+          }));
+        }
+
+        currentRecord.cpblGameSummary = {
+          runs:Math.max(0,Number(hitter.runs)||0),
+          hits:Math.max(0,Number(hitter.hits)||0),
+          errors:Math.max(0,Number(hitter.errors)||0),
+          official:true
+        };
+      } else {
+        const p=daily.pitcher;
+        if (!p) throw new Error('當天沒有此投手的投球紀錄。');
+        const g=currentRecord.pitcherGame;
+        g.innings=p.innings || outsToIP(Number(p.outs)||0) || '0.0';
+        g.k=Number(p.k)||0;
+        g.bb=Number(p.bb)||0;
+        g.h=Number(p.h)||0;
+        g.hbp=Number(p.hbp)||0;
+        g.r=Number(p.r)||0;
+        g.er=Math.min(g.r,Number(p.er)||0);
+        g.pitchTens=0;
+        g.pitchOnes=0;
+        g.cg=Boolean(Number(p.cg)||p.cg);
+        g.sho=Boolean(Number(p.sho)||p.sho);
+        g.hld=Boolean(Number(p.hld)||p.hld);
+        g.sv=Boolean(Number(p.sv)||p.sv);
+        g.bsv=Boolean(Number(p.bsv)||p.bsv);
+        g.decision=Number(p.w)>0?'W':Number(p.l)>0?'L':'ND';
+        g.result=g.sv?'SV':g.hld?'HLD':g.decision;
+      }
+
+      currentRecord.externalReadOnlyImport = true;
+      currentRecord.cpblReadOnlyImport = false;
+      currentRecord.externalSource = player.externalProvider;
+      currentRecord.externalImportedAt = Date.now();
+      currentRecord.committedStats = player.type === 'hitter'
+        ? deriveHitterGame(currentRecord.hitterPAs)
+        : derivePitcherGame(currentRecord.pitcherGame);
+      currentRecord.committedAt = Date.now();
+
+      await saveRecord();
+      renderAll();
+
+      const noPa = player.type === 'hitter'
+        && !(Array.isArray(daily.hitter?.plateAppearances) && daily.hitter.plateAppearances.length);
+      setStatus(noPa
+        ? `已匯入 ${els.gameDate.value} 的 ${overseasProviderLabel(player.externalProvider)} 當日彙總；該來源未提供可解析的逐打席順序，可手動補逐打席。`
+        : `已匯入 ${els.gameDate.value} 的 ${overseasProviderLabel(player.externalProvider)} 當日資料。`);
+      return true;
     }
 
     async function importCpblDaily(player) {
@@ -4184,8 +4392,12 @@ bg2: {
 
     function availableSeasonYears(player, level = selectedLevel) {
       if (playerScope(player) !== 'cpbl') {
+        const linkedYears = playerScope(player) === 'overseas' && Array.isArray(player?.externalAvailableYears)
+          ? player.externalAvailableYears.map(Number).filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100)
+          : [];
+        if (linkedYears.length) return [...new Set(linkedYears)].sort((a,b)=>b-a);
         const year = Math.floor(Number(player?.externalYear) || CURRENT_YEAR);
-        return [Math.min(2100, Math.max(1990, year))];
+        return [Math.min(2100, Math.max(1900, year))];
       }
       const official = player?.cpblAvailableYears?.[level];
       if (Array.isArray(official)) {
@@ -4268,6 +4480,8 @@ bg2: {
         committedStats: null,
         committedAt: null,
         cpblReadOnlyImport: false,
+        externalReadOnlyImport: false,
+        externalSource: '',
         updatedAt: Date.now()
       };
     }
@@ -4541,8 +4755,8 @@ bg2: {
 
     function projectedPlayerStats(player) {
       if (!currentRecord) return player.stats;
-      // 歷史日期從 CPBL 匯入只呈現該場內容，不改動／推算球員累積資料。
-      if (currentRecord.cpblReadOnlyImport) return player.stats;
+      // 官方匯入的單場資料只呈現該場，不重複加到已同步的累積賽季資料。
+      if (currentRecord.cpblReadOnlyImport || currentRecord.externalReadOnlyImport) return player.stats;
       if (player.type === 'hitter') {
         const base = mergeStats(player.stats, hitterDefaults);
         const appearance = ensureHitterAppearance();
@@ -4793,6 +5007,29 @@ bg2: {
       currentPage = 'player';
       renderAll();
 
+      if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
+        setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} 資料…`);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        try {
+          const targetYear = selectedSeason || Number(player.externalYear) || CURRENT_YEAR;
+          await syncExternalSeason(
+            player,
+            targetYear,
+            (percent,status) => setSyncProgress(percent,status)
+          );
+          selectedSeason = targetYear;
+          await loadRecord();
+          renderAll();
+          await finishSyncProgress(`同步完成｜${overseasProviderLabel(player.externalProvider)} ${targetYear}`);
+        } catch (error) {
+          console.warn('國外聯盟賽季同步失敗', error);
+          setSyncProgress(100, error?.message || '國外聯盟資料同步失敗', { error:true });
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          hideSyncProgress();
+        }
+        return;
+      }
+
       if (playerScope(player) !== 'cpbl' || !player.cpblAcnt) return;
 
       setSyncProgress(0, `準備同步 #${player.number} ${player.name}…`);
@@ -4888,6 +5125,25 @@ bg2: {
       const allowedYears = availableSeasonYears(player, selectedLevel);
       year = Math.floor(Number(year));
       if (!allowedYears.includes(year) || year === selectedSeason) return;
+
+      if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
+        selectedSeason = year;
+        player.externalYear = year;
+        setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} ${year}…`);
+        try {
+          await syncExternalSeason(player, year, (percent,status)=>setSyncProgress(percent,status));
+          await loadRecord();
+          renderAll();
+          await finishSyncProgress(`同步完成｜${overseasProviderLabel(player.externalProvider)} ${year}`);
+        } catch (error) {
+          setSyncProgress(100, error?.message || '賽季同步失敗', { error:true });
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          hideSyncProgress();
+        }
+        return;
+      }
+
+      if (playerScope(player) !== 'cpbl') return;
 
       await savePlayer(player);
       selectedSeason = year;
@@ -5354,6 +5610,12 @@ bg2: {
         String(player.externalTeam || '').trim(),
         Number(player.externalYear) || ''
       ].filter(Boolean).join('｜');
+      if (scope === 'overseas' && player.externalProvider && player.externalPlayerId) {
+        const synced = player.externalLastUpdatedAt
+          ? `｜上次更新 ${new Date(player.externalLastUpdatedAt).toLocaleString('zh-TW')}`
+          : '';
+        return `<div class="small" style="margin-top:8px">${escapeHtml(detail)}｜自動同步｜${escapeHtml(overseasProviderLabel(player.externalProvider))} ID ${escapeHtml(player.externalPlayerId)}${synced}</div>`;
+      }
       return `<div class="small" style="margin-top:8px">${escapeHtml(detail || scopeLabel(scope))}｜獨立資料，不與中職累積成績共用</div>`;
     }
 
@@ -5727,25 +5989,46 @@ bg2: {
            </label>`
         : '';
 
+      const scope = playerScope(player);
+      const linkedOverseas = scope === 'overseas' && player.externalProvider && player.externalPlayerId;
+      const opponentField = scope === 'overseas'
+        ? `<label class="field">今日對手
+             <input id="opponentInput" type="text" maxlength="60" value="${escapeAttr(currentRecord.opponent || '')}" placeholder="輸入對手球隊" />
+           </label>`
+        : `<label class="field">今日對手
+             <select id="opponentInput">${opponentOptions(currentRecord.opponent || '')}</select>
+           </label>`;
+
+      const importButton = player.cpblAcnt
+        ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職${selectedLevel === 'D' ? '二軍' : '一軍'}資料</button></div>
+           ${els.gameDate.value !== localISODate() ? '<div class="small" style="margin-top:6px">歷史日期只匯入該場資料，不會寫入球員累積數據。</div>' : ''}`
+        : linkedOverseas
+          ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
+             <div class="small" style="margin-top:6px">官方／聯盟來源的當日資料只用來產生該場戰報，不會重複累加到已同步的賽季成績。</div>`
+          : '';
+
       els.content.innerHTML = `
         <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜今日狀況</h2>
-        <label class="field">今日對手
-          <select id="opponentInput">${opponentOptions(currentRecord.opponent || '')}</select>
-        </label>
-        ${player.cpblAcnt ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職${selectedLevel === 'D' ? '二軍' : '一軍'}資料</button></div>
-        ${els.gameDate.value !== localISODate() ? '<div class="small" style="margin-top:6px">歷史日期只匯入該場資料，不會寫入球員累積數據。</div>' : ''}` : ''}
+        ${opponentField}
+        ${importButton}
         ${appearanceHtml}
         <div class="metrics">${metricHtml}</div>
         <div id="todaySpecific"></div>`;
 
       const opponentInput = document.getElementById('opponentInput');
-      syncOpponentSelectColor(opponentInput);
+      if (scope !== 'overseas') syncOpponentSelectColor(opponentInput);
       opponentInput.addEventListener('change', async () => {
         currentRecord.opponent = opponentInput.value;
-        syncOpponentSelectColor(opponentInput);
+        if (scope !== 'overseas') syncOpponentSelectColor(opponentInput);
         await saveRecord();
         await renderCanvas();
       });
+      if (scope === 'overseas') {
+        opponentInput.addEventListener('input', () => {
+          currentRecord.opponent = opponentInput.value;
+          renderCanvas();
+        });
+      }
 
       document.getElementById('importCpblDailyBtn')?.addEventListener('click', async () => {
         try {
@@ -5755,14 +6038,27 @@ bg2: {
         }
       });
 
+      document.getElementById('importExternalDailyBtn')?.addEventListener('click', async event => {
+        const btn = event.currentTarget;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '正在抓取…';
+        try {
+          await importExternalDaily(player);
+        } catch (error) {
+          setStatus(error?.message || '抓取國外聯盟當日資料失敗。', true);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      });
+
       const appearanceMode = document.getElementById('hitterAppearanceMode');
       if (appearanceMode) {
         appearanceMode.addEventListener('change', async () => {
           const appearance = ensureHitterAppearance();
           appearance.mode = appearanceMode.value;
           await saveRecord();
-          // 模式切換只需要重建「今日狀況」下方內容；不要整頁 renderAll，
-          // 否則代跑／代守的輸入控制會被反覆拆掉重建。
           renderHitterToday();
           await renderCanvas();
         });
@@ -6586,7 +6882,8 @@ bg2: {
         els.externalScopeBadge.textContent = [
           scopeLabel(playerScopeCode),
           playerSpecialCompetition(player),
-          Number(player.externalYear) || ''
+          player.externalTeam || '',
+          Number(selectedSeason || player.externalYear) || ''
         ].filter(Boolean).join('｜');
       }
       els.majorLevelBtn?.classList.toggle('active', selectedLevel === 'A');
@@ -6595,14 +6892,16 @@ bg2: {
         const years = availableSeasonYears(player, selectedLevel);
         if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
         els.seasonSelect.innerHTML = seasonOptionsHtml(player);
-        els.seasonSelect.disabled = years.length === 0 || externalPlayer;
+        const linkedOverseas = playerScopeCode === 'overseas' && Boolean(player.externalProvider && player.externalPlayerId);
+        els.seasonSelect.disabled = years.length === 0 || (externalPlayer && !linkedOverseas);
         els.seasonSelect.value = years.length ? String(selectedSeason) : '';
       }
 
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
-        els.downloadBtn.textContent = currentRecord?.cpblReadOnlyImport
-          ? '輸出圖片（歷史資料不更新基礎數據）'
+        const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
+        els.downloadBtn.textContent = officialReadOnly
+          ? '輸出圖片（官方單場資料不重複更新累積數據）'
           : '更新數據並輸出圖片';
       }
 
@@ -6623,7 +6922,10 @@ bg2: {
 
       if (player.type === 'hitter') {
         const appearance = ensureHitterAppearance();
-        if (appearance.mode === 'bat' && !currentRecord.hitterPAs.length) throw new Error('至少要有一個已確定的打席');
+        if (appearance.mode === 'bat' && !currentRecord.hitterPAs.length
+          && !(currentRecord.externalReadOnlyImport && currentRecord.cpblGameSummary?.official)) {
+          throw new Error('至少要有一個已確定的打席');
+        }
         if (appearance.mode !== 'bat') {
           const inning = Math.floor(Number(appearance.inning));
           if (!Number.isFinite(inning) || inning < 1) throw new Error('請先設定有效的出賽局數');
@@ -6634,7 +6936,7 @@ bg2: {
           }
         }
         const current = appearance.mode === 'bat' ? deriveHitterGame(currentRecord.hitterPAs) : emptyHitterContribution();
-        if (!currentRecord.cpblReadOnlyImport) {
+        if (!currentRecord.cpblReadOnlyImport && !currentRecord.externalReadOnlyImport) {
           const base = mergeStats(player.stats, hitterDefaults);
           player.stats = addDelta(base, current, currentRecord.committedStats, Object.keys(emptyHitterContribution()));
         }
@@ -6646,7 +6948,7 @@ bg2: {
         if (outs < 27 || Number(game.r) !== 0 || !game.cg) game.sho = false;
         if (!game.sho) game.noWalkHbp = false;
         const current = derivePitcherGame(game);
-        if (!currentRecord.cpblReadOnlyImport) {
+        if (!currentRecord.cpblReadOnlyImport && !currentRecord.externalReadOnlyImport) {
           const base = mergeStats(player.stats, pitcherDefaults);
           const keys = Object.keys(current);
           const nextStats = addDelta(base, current, currentRecord.committedStats, keys);
@@ -6664,7 +6966,7 @@ bg2: {
       }
 
       currentRecord.committedAt = Date.now();
-      if (!currentRecord.cpblReadOnlyImport) await savePlayer(player);
+      if (!currentRecord.cpblReadOnlyImport && !currentRecord.externalReadOnlyImport) await savePlayer(player);
       await saveRecord();
       return player;
     }
@@ -8298,24 +8600,40 @@ bg2: {
       els.newPlayerExternalFields?.classList.toggle('hidden', !external);
 
       if (els.newPlayerCompetition) {
-        els.newPlayerCompetition.innerHTML = external ? competitionOptionsHtml(scope) : '';
+        const previous = String(els.newPlayerCompetition.value || '');
+        const options = specialOptionsForScope(scope);
+        els.newPlayerCompetition.innerHTML = external ? competitionOptionsHtml(scope, previous) : '';
+        if (external && options.includes(previous)) els.newPlayerCompetition.value = previous;
       }
       if (els.newPlayerExternalYear && !els.newPlayerExternalYear.value) {
         els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       }
 
+      const competition = String(els.newPlayerCompetition?.value || '');
+      const provider = overseasProvider(competition);
       const cpblButton = document.getElementById('createCpblPlayerBtn');
+      const externalButton = document.getElementById('createExternalPlayerBtn');
       const manualButton = document.getElementById('createManualPlayerBtn');
-      cpblButton?.classList.toggle('hidden', external);
-      if (manualButton) manualButton.textContent = external ? '建立球員' : '純新增';
 
-      if (els.newPlayerScopeHelp) {
-        els.newPlayerScopeHelp.textContent = external
-          ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
-          : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。';
+      cpblButton?.classList.toggle('hidden', scope !== 'cpbl');
+      externalButton?.classList.toggle('hidden', !(scope === 'overseas' && provider));
+      if (externalButton && provider) externalButton.textContent = `搜尋 ${overseasProviderLabel(provider)} 資料`;
+
+      if (manualButton) {
+        manualButton.textContent = scope === 'cpbl' ? '純新增' : scope === 'overseas' && provider ? '手動建立' : '建立球員';
       }
 
-      if (external) hideNewPlayerSuggestions();
+      if (els.newPlayerScopeHelp) {
+        els.newPlayerScopeHelp.textContent = scope === 'overseas' && provider
+          ? `可直接用中文／英文／日文／韓文姓名搜尋 ${overseasProviderLabel(provider)}；建立後會自動同步賽季資料，當日資料可在球員頁匯入。`
+          : external
+            ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
+            : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。';
+      }
+
+      if (scope === 'international' || (scope === 'overseas' && !provider)) {
+        hideNewPlayerSuggestions();
+      }
     }
 
     function prepareAddPlayerDialog() {
@@ -8398,8 +8716,8 @@ bg2: {
     }
 
     function validateNewPlayer(name, number, scope = 'cpbl', competition = '') {
-      if (!name || !number) {
-        setStatus('球員名稱與背號都要填寫。', true);
+      if (!name || (scope !== 'overseas' && !number)) {
+        setStatus(scope === 'overseas' ? '球員名稱要填寫。' : '球員名稱與背號都要填寫。', true);
         return false;
       }
       if (scope !== 'cpbl' && !competition) {
@@ -8426,47 +8744,93 @@ bg2: {
 
     function renderNewPlayerSuggestions(items, stateText = '') {
       if (!els.newPlayerSuggestions) return;
+      newPlayerSuggestionItems = Array.isArray(items) ? items : [];
       if (stateText) {
         els.newPlayerSuggestions.innerHTML = `<div class="new-player-suggestion-state">${escapeHtml(stateText)}</div>`;
         els.newPlayerSuggestions.classList.remove('hidden');
         return;
       }
-      if (!Array.isArray(items) || !items.length) {
+      if (!newPlayerSuggestionItems.length) {
         hideNewPlayerSuggestions();
         return;
       }
-      els.newPlayerSuggestions.innerHTML = items.map(item => `
-        <button type="button" class="new-player-suggestion" role="option"
-          data-suggest-acnt="${escapeHtml(item.acnt || '')}"
-          data-suggest-name="${escapeHtml(item.name || '')}">
-          <strong>${escapeHtml(item.name || '')}</strong>
-          <span>中職球員</span>
-        </button>
-      `).join('');
+
+      els.newPlayerSuggestions.innerHTML = newPlayerSuggestionItems.map((item,index) => {
+        const displayName = item.zhName || item.name || '';
+        const officialName = item.name && item.name !== displayName ? ` · ${item.name}` : '';
+        const meta = item.source === 'cpbl'
+          ? ['中職', item.team, item.number ? `#${item.number}` : '', item.position].filter(Boolean).join('｜')
+          : [overseasProviderLabel(item.provider), item.team, item.number ? `#${item.number}` : '', item.position].filter(Boolean).join('｜');
+        return `
+          <button type="button" class="new-player-suggestion" role="option" data-suggest-index="${index}">
+            <strong>${escapeHtml(displayName)}${escapeHtml(officialName)}</strong>
+            <span>${escapeHtml(meta || (item.source === 'cpbl' ? '中職球員' : '國外聯盟球員'))}</span>
+          </button>
+        `;
+      }).join('');
       els.newPlayerSuggestions.classList.remove('hidden');
 
-      els.newPlayerSuggestions.querySelectorAll('[data-suggest-acnt]').forEach(button => {
+      els.newPlayerSuggestions.querySelectorAll('[data-suggest-index]').forEach(button => {
         button.addEventListener('click', async () => {
-          const acnt = String(button.dataset.suggestAcnt || '');
-          if (!acnt) return;
-          const expectedName = String(button.dataset.suggestName || '');
+          const item = newPlayerSuggestionItems[Number(button.dataset.suggestIndex)];
+          if (!item) return;
           newPlayerSuggestionPicked = true;
-          els.newPlayerName.value = expectedName;
-          renderNewPlayerSuggestions([], '正在讀取球員資料…');
-          try {
-            const data = await cpblRequest('player-profile', { acnt });
-            const official = data.player;
-            if (!official) throw new Error('讀不到球員資料');
-            els.newPlayerName.value = official.name || expectedName;
-            els.newPlayerNumber.value = official.number || '';
-            if (official.position) {
-              els.newPlayerType.value = official.position.includes('投手') ? 'pitcher' : 'hitter';
+
+          if (item.source === 'cpbl') {
+            const acnt = String(item.id || '');
+            if (!acnt) return;
+            const expectedName = String(item.name || '');
+            els.newPlayerName.value = expectedName;
+            renderNewPlayerSuggestions([], '正在讀取球員資料…');
+            try {
+              const data = await cpblRequest('player-profile', { acnt });
+              const official = data.player;
+              if (!official) throw new Error('讀不到球員資料');
+              els.newPlayerName.value = official.name || expectedName;
+              els.newPlayerNumber.value = official.number || '';
+              if (official.position) {
+                els.newPlayerType.value = official.position.includes('投手') ? 'pitcher' : 'hitter';
+              }
+              hideNewPlayerSuggestions();
+              els.newPlayerNumber.focus();
+            } catch (error) {
+              hideNewPlayerSuggestions();
+              setStatus(error?.message || '球員資料讀取失敗。', true);
             }
+            return;
+          }
+
+          const provider = String(item.provider || '');
+          const id = String(item.id || '');
+          if (!provider || !id) return;
+          const displayName = item.zhName || item.name || String(els.newPlayerName.value || '').trim();
+          els.newPlayerName.value = displayName;
+          renderNewPlayerSuggestions([], `正在讀取 ${overseasProviderLabel(provider)} 球員資料…`);
+
+          try {
+            const data = await baseballRequest('player-profile', { provider, id });
+            const official = data.player || {};
+            newExternalSelected = {
+              provider,
+              id,
+              zhName: item.zhName || (/[㐀-鿿]/.test(displayName) ? displayName : ''),
+              officialName: official.name || item.name || '',
+              name: displayName,
+              number: official.number || item.number || '',
+              team: official.team || item.team || '',
+              position: official.position || item.position || '',
+              type: official.type || item.type || 'hitter'
+            };
+            els.newPlayerName.value = newExternalSelected.zhName || newExternalSelected.name || newExternalSelected.officialName;
+            els.newPlayerNumber.value = newExternalSelected.number || '';
+            els.newPlayerType.value = newExternalSelected.type === 'pitcher' ? 'pitcher' : 'hitter';
+            if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = newExternalSelected.team || '';
             hideNewPlayerSuggestions();
-            els.newPlayerNumber.focus();
+            document.getElementById('createExternalPlayerBtn')?.focus();
           } catch (error) {
+            newExternalSelected = null;
             hideNewPlayerSuggestions();
-            setStatus(error?.message || '球員資料讀取失敗。', true);
+            setStatus(error?.message || '國外聯盟球員資料讀取失敗。', true);
           }
         });
       });
@@ -8474,16 +8838,59 @@ bg2: {
 
     async function requestNewPlayerSuggestions(query) {
       const requestId = ++newPlayerSuggestRequestId;
+      const scope = els.newPlayerScope?.value || 'cpbl';
+
       try {
-        const data = await cpblRequest('suggest-players', { query, limit: 10 });
+        let items = [];
+        let emptyText = '';
+
+        if (scope === 'cpbl') {
+          const data = await cpblRequest('suggest-players', { query, limit: 10 });
+          items = (data.players || []).map(item => ({
+            source:'cpbl',
+            id:item.acnt || '',
+            name:item.name || '',
+            number:item.number || '',
+            team:item.team || '',
+            position:item.position || ''
+          }));
+          emptyText = '找不到符合的中職球員';
+        } else if (scope === 'overseas') {
+          const provider = overseasProvider(els.newPlayerCompetition?.value);
+          if (!provider) {
+            hideNewPlayerSuggestions();
+            return;
+          }
+          const data = await baseballRequest('search-player', {
+            provider,
+            query,
+            year: Number(els.newPlayerExternalYear?.value) || CURRENT_YEAR
+          });
+          items = (data.players || []).map(item => ({
+            source:'external',
+            provider:item.provider || provider,
+            id:item.id || '',
+            name:item.name || '',
+            zhName:item.zhName || '',
+            number:item.number || '',
+            team:item.team || '',
+            position:item.position || '',
+            type:item.type || ''
+          }));
+          emptyText = `找不到符合的 ${overseasProviderLabel(provider)} 球員`;
+        } else {
+          hideNewPlayerSuggestions();
+          return;
+        }
+
         if (requestId !== newPlayerSuggestRequestId) return;
         const latest = String(els.newPlayerName?.value || '').trim();
         if (latest !== query || !latest) return;
-        renderNewPlayerSuggestions(data.players || [], (data.players || []).length ? '' : '找不到符合的中職球員');
+        renderNewPlayerSuggestions(items, items.length ? '' : emptyText);
       } catch (error) {
         if (requestId !== newPlayerSuggestRequestId) return;
         hideNewPlayerSuggestions();
-        console.warn('中職球員即時建議失敗', error);
+        console.warn('球員即時建議失敗', error);
       }
     }
 
@@ -8493,6 +8900,8 @@ bg2: {
       if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
       if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       newPlayerSuggestionPicked = false;
+      newExternalSelected = null;
+      newPlayerSuggestionItems = [];
       newPlayerSuggestRequestId++;
       if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
       hideNewPlayerSuggestions();
@@ -8500,24 +8909,44 @@ bg2: {
 
     els.newPlayerName?.addEventListener('input', () => {
       newPlayerSuggestionPicked = false;
+      newExternalSelected = null;
       const scope = els.newPlayerScope?.value || 'cpbl';
       const query = String(els.newPlayerName.value || '').trim();
-      if (scope !== 'cpbl') {
+      const provider = scope === 'overseas' ? overseasProvider(els.newPlayerCompetition?.value) : '';
+
+      if (scope === 'international' || (scope === 'overseas' && !provider)) {
         hideNewPlayerSuggestions();
         return;
       }
+
       newPlayerSuggestRequestId++;
       if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
       if (!query) {
         hideNewPlayerSuggestions();
         return;
       }
-      renderNewPlayerSuggestions([], '搜尋中職球員…');
+
+      renderNewPlayerSuggestions([], scope === 'cpbl'
+        ? '搜尋中職球員…'
+        : `搜尋 ${overseasProviderLabel(provider)} 球員…`);
       newPlayerSuggestTimer = setTimeout(() => requestNewPlayerSuggestions(query), 300);
     });
 
     els.newPlayerScope?.addEventListener('change', () => {
+      newExternalSelected = null;
       updateAddPlayerScopeUI(els.newPlayerScope.value);
+    });
+
+    els.newPlayerCompetition?.addEventListener('change', () => {
+      newExternalSelected = null;
+      hideNewPlayerSuggestions();
+      updateAddPlayerScopeUI(els.newPlayerScope?.value || homeZone);
+      const query = String(els.newPlayerName?.value || '').trim();
+      if (query && els.newPlayerScope?.value === 'overseas' && overseasProvider(els.newPlayerCompetition.value)) {
+        renderNewPlayerSuggestions([], `搜尋 ${els.newPlayerCompetition.value} 球員…`);
+        if (newPlayerSuggestTimer) clearTimeout(newPlayerSuggestTimer);
+        newPlayerSuggestTimer = setTimeout(() => requestNewPlayerSuggestions(query), 250);
+      }
     });
 
     els.newPlayerName?.addEventListener('focus', () => {
@@ -8568,6 +8997,131 @@ bg2: {
         setStatus(error.message || '建立球員失敗。', true);
       } finally {
         btn.disabled = false;
+      }
+    });
+
+    document.getElementById('createExternalPlayerBtn').addEventListener('click', async () => {
+      const { name, number, selectedType, scope, competition, externalYear } = newPlayerFormValues();
+      const provider = overseasProvider(competition);
+      if (scope !== 'overseas' || !provider) {
+        setStatus('請先選擇 MLB、MiLB、NPB 或 KBO。', true);
+        return;
+      }
+      if (!validateNewPlayer(name, number, scope, competition)) return;
+
+      const btn = document.getElementById('createExternalPlayerBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = `搜尋 ${overseasProviderLabel(provider)}…`;
+
+      try {
+        let picked = newExternalSelected;
+        if (!picked || picked.provider !== provider) {
+          const result = await baseballRequest('search-player', {
+            provider,
+            query: name,
+            year: externalYear
+          });
+          const candidates = result.players || [];
+          if (!candidates.length) throw new Error(`${overseasProviderLabel(provider)} 找不到「${name}」。`);
+
+          const exact = candidates.find(item =>
+            String(item.zhName || '').trim() === name || String(item.name || '').trim() === name
+          );
+          const candidate = exact || (candidates.length === 1 ? candidates[0] : null);
+          if (!candidate) {
+            renderNewPlayerSuggestions(candidates.map(item => ({
+              source:'external',
+              provider:item.provider || provider,
+              id:item.id || '',
+              name:item.name || '',
+              zhName:item.zhName || '',
+              number:item.number || '',
+              team:item.team || '',
+              position:item.position || '',
+              type:item.type || ''
+            })));
+            throw new Error('找到多位同名／相近球員，請先從姓名下方選擇正確球員。');
+          }
+
+          picked = {
+            provider,
+            id:String(candidate.id || ''),
+            zhName:candidate.zhName || '',
+            officialName:candidate.name || '',
+            name:candidate.zhName || candidate.name || name,
+            number:candidate.number || '',
+            team:candidate.team || '',
+            position:candidate.position || '',
+            type:candidate.type || selectedType
+          };
+        }
+
+        if (!picked?.id) throw new Error('找不到球員識別資料。');
+
+        btn.textContent = '同步賽季資料…';
+        const profileData = await baseballRequest('player-profile', {
+          provider,
+          id:picked.id
+        });
+        const official = profileData.player || {};
+
+        const seasonData = await baseballRequest('season-stats', {
+          provider,
+          id:picked.id,
+          year:externalYear
+        });
+        const remote = seasonData.stats;
+        if (!remote) throw new Error('讀不到賽季成績。');
+
+        let type = official.type || picked.type || selectedType;
+        if (type !== 'pitcher' && type !== 'hitter') type = selectedType;
+        if (type === 'pitcher' && !remote.pitcher && remote.hitter) type = 'hitter';
+        if (type === 'hitter' && !remote.hitter && remote.pitcher) type = 'pitcher';
+
+        const typedChineseName = /[㐀-鿿]/.test(name) ? name : '';
+        const displayName = picked.zhName || typedChineseName || picked.name || official.name || name;
+        const player = {
+          id:uid(),
+          name:displayName,
+          number:official.number || picked.number || number || '—',
+          type,
+          scope:'overseas',
+          stats:type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
+          pitcherLastMetric:type === 'pitcher' ? 'wl' : undefined,
+          selectedPhotoId:null,
+          photoTransforms:{},
+          externalCompetition:competition,
+          externalProvider:provider,
+          externalPlayerId:String(picked.id),
+          externalOfficialName:official.name || picked.officialName || picked.name || '',
+          externalPosition:official.position || picked.position || '',
+          externalTeam:official.team || picked.team || '',
+          externalYear,
+          externalAvailableYears:[],
+          cpblAcnt:'',cpblTeam:'',cpblTeamCode:'',cpblPosition:'',
+          createdAt:Date.now(),updatedAt:Date.now(),lastUsedAt:Date.now()
+        };
+
+        applyExternalSeasonStats(player, remote, externalYear);
+        if (players.some(p => playerScope(p) === 'overseas'
+          && p.externalProvider === provider
+          && String(p.externalPlayerId || '') === String(player.externalPlayerId))) {
+          throw new Error('這位球員已經存在於此國外聯盟專區。');
+        }
+
+        await savePlayer(player);
+        newExternalSelected = null;
+        clearNewPlayerForm();
+        els.addDialog.close();
+        await selectPlayer(player.id);
+        setStatus(`已從 ${overseasProviderLabel(provider)} 建立：${player.name}｜${player.externalTeam || '球隊未提供'}`);
+      } catch (error) {
+        setStatus(error?.message || '搜尋國外聯盟資料失敗。', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        updateAddPlayerScopeUI(els.newPlayerScope?.value || homeZone);
       }
     });
 
@@ -8796,8 +9350,8 @@ bg2: {
         setStatus('正在更新數據並產生圖片…');
         await prepareOutputImage();
         els.outputDialog?.showModal();
-        setStatus(currentRecord.cpblReadOnlyImport
-          ? '圖片已準備完成；這是歷史中職資料，未更新球員基礎數據。'
+        setStatus((currentRecord.cpblReadOnlyImport || currentRecord.externalReadOnlyImport)
+          ? '圖片已準備完成；官方單場資料不會重複更新球員累積數據。'
           : '圖片已準備完成，球員基礎數據已同步更新。');
         renderAll();
       } catch (error) {
@@ -8860,7 +9414,9 @@ bg2: {
         if (selectedPlayerId) {
           const player = selectedPlayer();
           selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
-          activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          if (playerScope(player) === 'cpbl') {
+            activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          }
           await savePlayer(player);
           await loadRecord();
         }
