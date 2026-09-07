@@ -2947,7 +2947,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.49</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.50</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3142,7 +3142,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.49';
+    const APP_VERSION = 'v1.50';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3246,7 +3246,8 @@ dialog::backdrop {
       'MLB:808967': { name: '山本由伸', aliases: ['山本'] }
     };
     const PREFERRED_EXTERNAL_TEAM_FIXES = {
-      'NPB:21925136': 'Fukuoka SoftBank Hawks'
+      'NPB:21925136': 'Fukuoka SoftBank Hawks',
+      'NPB:33935152': 'Saitama Seibu Lions'
     };
 
     function applyStoredPreferredExternalName(player) {
