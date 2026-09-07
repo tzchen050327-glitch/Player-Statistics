@@ -90,7 +90,7 @@ jobs:
           PY
       - name: Commit refreshed data
         run: |
-          if git diff --quiet -- data/international-stats.json; then
+          if [ -z "$(git status --porcelain -- data/international-stats.json)" ]; then
             echo "No international data changes to commit"
             exit 0
           fi
