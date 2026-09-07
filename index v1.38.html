@@ -4879,11 +4879,10 @@ bg2: {
       const infieldFly = /内飛|內飛|infield\s+fly|내야\s*(?:플라이|뜬공)/i.test(raw);
     
       if (code === '1B') {
-        const infield = /^(?:投|捕|一|二|三|遊|游)安/.test(compact)
-          || /(?:pitcher|catcher|first baseman|second baseman|third baseman|shortstop).*(?:single|base hit)/i.test(lower)
-          || /(?:투수|포수|1루수|2루수|3루수|유격수).*(?:안타)/.test(raw);
-        if (infield) return '內安';
-        return direction ? `${direction}安` : '一安';
+        // Preserve the field/direction when the source provides it: 投安、游安、左安、中安、右安…
+        if (position) return `${position}安`;
+        if (direction) return `${direction}安`;
+        return '一安';
       }
       if (code === '2B') return direction ? `${direction}二` : '二安';
       if (code === '3B') return direction ? `${direction}三` : '三安';
