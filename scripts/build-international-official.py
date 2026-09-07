@@ -313,6 +313,15 @@ def mlb_ip_to_outs(v):
     m=re.fullmatch(r"(\d+)(?:\.([012]))?",clean(v))
     return int(m.group(1))*3+int(m.group(2) or 0) if m else 0
 
+def safe_float(v, fallback=0.0):
+    try:
+        text=clean(v)
+        if not text or text in ("-.--","---","--","-"):
+            return float(fallback)
+        return float(text)
+    except Exception:
+        return float(fallback)
+
 def mlb_hitter_stat(stat, errors=0):
     if not stat:
         return None
@@ -365,8 +374,8 @@ def mlb_pitcher_stat(stat):
         "cg":int(stat.get("completeGames") or 0),
         "sho":int(stat.get("shutouts") or 0),
         "pitchCount":int(stat.get("numberOfPitches") or stat.get("pitchesThrown") or 0),
-        "era":float(stat.get("era") or (er*27/outs if outs else 0)),
-        "whip":float(stat.get("whip") or ((h+bb)*3/outs if outs else 0))
+        "era":safe_float(stat.get("era"), er*27/outs if outs else 0),
+        "whip":safe_float(stat.get("whip"), (h+bb)*3/outs if outs else 0)
     }
 
 def mlb_pa_code(event_type):
