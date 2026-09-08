@@ -153,6 +153,33 @@ async function e2eAppApi(){
       }))
     }));
   }
+
+  for (const playerName of ['劉任右','張乙安']) {
+    const tag = playerName === '劉任右' ? 'U18_LIU' : 'U18_CHANG';
+    const params = {
+      competition:'U18亞青',
+      year:2026,
+      team:'中華台北',
+      playerName
+    };
+    const ps = await appRequest('international-player-stats',params);
+    const pg = await appRequest('international-player-games',params);
+    console.log('E2E_'+tag+'_STATS',JSON.stringify({
+      found:ps.stats?.found,
+      source:ps.stats?.source,
+      hitter:compactHitter(ps.stats?.hitter),
+      pitcher:compactPitcher(ps.stats?.pitcher)
+    }));
+    console.log('E2E_'+tag+'_GAMES',JSON.stringify({
+      count:(pg.games||[]).length,
+      games:(pg.games||[]).map(g=>({
+        date:g.date,opponent:g.opponent,
+        hitter:compactHitter(g.hitter),
+        pitcher:compactPitcher(g.pitcher)
+      }))
+    }));
+  }
+
   console.log('E2E_END');
 }
 
