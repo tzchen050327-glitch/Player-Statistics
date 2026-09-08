@@ -3520,7 +3520,7 @@ dialog::backdrop {
       <div id="syncProgressOverlay" class="sync-progress-overlay hidden" role="status" aria-live="polite" aria-busy="true">
         <div id="syncProgressCard" class="sync-progress-card">
           <div class="sync-progress-top">
-            <div class="sync-progress-title">正在同步中職資料</div>
+            <div id="syncProgressTitle" class="sync-progress-title">正在同步資料</div>
             <div id="syncProgressPercent" class="sync-progress-percent">0%</div>
           </div>
           <div id="syncProgressStatus" class="sync-progress-status">準備中…</div>
@@ -3784,7 +3784,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.78';
+    const APP_VERSION = 'v1.79';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3829,6 +3829,7 @@ dialog::backdrop {
       seasonSelect: document.getElementById('seasonSelect'),
       syncProgressOverlay: document.getElementById('syncProgressOverlay'),
       syncProgressCard: document.getElementById('syncProgressCard'),
+      syncProgressTitle: document.getElementById('syncProgressTitle'),
       syncProgressPercent: document.getElementById('syncProgressPercent'),
       syncProgressStatus: document.getElementById('syncProgressStatus'),
       syncProgressBar: document.getElementById('syncProgressBar'),
@@ -4594,7 +4595,7 @@ bg2: {
 
     function externalPitcherStatsToLocal(stats = {}) {
       const next = pitcherDefaults();
-      for (const key of ['cg','sho','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']) {
+      for (const key of ['cg','sho','noWalkHbp','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']) {
         next[key] = Math.max(0, Math.round(Number(stats?.[key]) || 0));
       }
       const era = Number(stats?.era);
@@ -5040,10 +5041,24 @@ bg2: {
       player.cpblHistorySynced[kindCode] = sourceYears.length === 0 || appliedYears.length > 0;
     }
 
+    function syncProgressTitleForPlayer(player = selectedPlayer()) {
+      if (!player) return '正在同步資料';
+      const scope = playerScope(player);
+      if (scope === 'cpbl') return '正在同步中職資料';
+      if (scope === 'international') return '正在同步國際賽資料';
+      const provider = String(player.externalProvider || playerSpecialCompetition(player) || '').toUpperCase();
+      if (provider === 'NPB') return '正在同步 NPB 日職資料';
+      if (provider === 'KBO') return '正在同步 KBO 韓職資料';
+      if (provider === 'MILB') return '正在同步 MiLB 小聯盟資料';
+      if (provider === 'MLB') return '正在同步 MLB 資料';
+      return '正在同步國外聯盟資料';
+    }
+
     function setSyncProgress(percent, status, { error = false } = {}) {
       const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
       if (els.syncProgressOverlay) els.syncProgressOverlay.classList.remove('hidden');
       if (els.syncProgressCard) els.syncProgressCard.classList.toggle('error', Boolean(error));
+      if (els.syncProgressTitle) els.syncProgressTitle.textContent = syncProgressTitleForPlayer();
       if (els.syncProgressPercent) els.syncProgressPercent.textContent = `${value}%`;
       if (els.syncProgressStatus) els.syncProgressStatus.textContent = status || '';
       if (els.syncProgressBar) els.syncProgressBar.style.width = `${value}%`;
