@@ -3426,6 +3426,24 @@ dialog::backdrop {
   }
 }
 /* ===== v1.77 HOME LIST + OFFICIAL ROLE FIX END ===== */
+/* ===== v1.82 DUAL ROLE + FARM HISTORY START ===== */
+.dual-role-season-block{
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid #dbe3ec;
+}
+.dual-role-season-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.dual-role-season-head h3{margin:0;}
+@media(max-width:640px){
+  .dual-role-season-head{align-items:flex-start;flex-direction:column;gap:4px;}
+}
+/* ===== v1.82 DUAL ROLE + FARM HISTORY END ===== */
 
 
 </style>
@@ -3784,7 +3802,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.81';
+    const APP_VERSION = 'v1.82';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4576,21 +4594,28 @@ bg2: {
     }
 
     function officialExternalPlayerType(player, profile = {}) {
-      if (player?.externalTwoWay || profile?.twoWay) return '';
+      if (['pitcher','hitter'].includes(player?.primaryType)) return player.primaryType;
       const explicit = ['pitcher','hitter'].includes(profile?.type) ? profile.type : '';
       return explicit || externalPositionType(
         profile?.position || profile?.jpPosition || player?.externalPosition || ''
-      );
+      ) || (['pitcher','hitter'].includes(player?.type) ? player.type : '');
     }
 
     function repairStoredExternalPlayerType(player) {
-      if (!player || playerScope(player) !== 'overseas' || player.externalTwoWay) return false;
-      const officialType = externalPositionType(player.externalPosition || '');
-      if (!officialType || officialType === player.type) return false;
-      player.type = officialType;
-      player.stats = officialType === 'pitcher' ? pitcherDefaults() : hitterDefaults();
-      if (officialType === 'pitcher') player.pitcherLastMetric = normalizePitcherLastMetric(player.pitcherLastMetric);
-      return true;
+      if (!player || playerScope(player) !== 'overseas') return false;
+      const officialType = externalPositionType(player.externalPosition || '') || player.primaryType || '';
+      let changed = false;
+      if (officialType && player.primaryType !== officialType) {
+        player.primaryType = officialType;
+        changed = true;
+      }
+      if (officialType && player.type !== officialType) {
+        player.type = officialType;
+        player.stats = officialType === 'pitcher' ? pitcherDefaults() : hitterDefaults();
+        if (officialType === 'pitcher') player.pitcherLastMetric = normalizePitcherLastMetric(player.pitcherLastMetric);
+        changed = true;
+      }
+      return changed;
     }
 
     function externalPitcherStatsToLocal(stats = {}) {
@@ -4608,6 +4633,157 @@ bg2: {
       return next;
     }
 
+    function ensureRoleStatsProfiles(player) {
+      if (!player.roleStatsProfiles || typeof player.roleStatsProfiles !== 'object' || Array.isArray(player.roleStatsProfiles)) {
+        player.roleStatsProfiles = {};
+      }
+      return player.roleStatsProfiles;
+    }
+
+    function roleStatsPair(player, year = selectedSeason, level = selectedLevel) {
+      return ensureRoleStatsProfiles(player)[statsProfileKey(year, level)] || { hitter:null, pitcher:null };
+    }
+
+    function hitterRoleHasData(stats) {
+      if (!stats) return false;
+      return ['pa','ab','rbi','runs','single','double','triple','hr','sacBunt','sacFly','bb','ibb','hbp']
+        .some(key => Number(stats?.[key]) > 0);
+    }
+
+    function pitcherRoleHasData(stats) {
+      if (!stats) return false;
+      return ['cg','sho','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']
+        .some(key => Number(stats?.[key]) > 0);
+    }
+
+    function storeRoleStatsProfile(player, year, level, hitterStats = null, pitcherStats = null) {
+      const profiles = ensureRoleStatsProfiles(player);
+      profiles[statsProfileKey(year, level)] = {
+        hitter: hitterStats ? { ...hitterStats } : null,
+        pitcher: pitcherStats ? { ...pitcherStats } : null
+      };
+      player.hasCrossRoleStats = Boolean(
+        (player.type === 'pitcher' && hitterRoleHasData(hitterStats))
+        || (player.type === 'hitter' && pitcherRoleHasData(pitcherStats))
+      );
+    }
+
+    function readonlyStatField(label, value) {
+      return `<label class="field">${escapeHtml(label)}<input type="text" value="${escapeAttr(String(value ?? 0))}" readonly /></label>`;
+    }
+
+    function secondarySeasonStatsHtml(player) {
+      if (!player || !supportsLeagueLevelTabs(player)) return '';
+      const pair = roleStatsPair(player);
+      const secondaryType = player.type === 'pitcher' ? 'hitter' : 'pitcher';
+      const stats = pair?.[secondaryType] || null;
+
+      if (secondaryType === 'hitter') {
+        if (!hitterRoleHasData(stats)) return '';
+        const d = hitterDerived(stats);
+        return `
+          <div class="dual-role-season-block">
+            <div class="dual-role-season-head">
+              <h3>同季打擊成績</h3>
+              <span class="small">主要守位仍為投手</span>
+            </div>
+            <div class="metrics">
+              <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
+              <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
+              <div class="metric"><span>長打率</span><strong>${fmtBatRate(d.slg)}</strong></div>
+            </div>
+            <div class="grid four">
+              ${readonlyStatField('打席', stats.pa)}
+              ${readonlyStatField('打數', stats.ab)}
+              ${readonlyStatField('安打', d.hits)}
+              ${readonlyStatField('得分', stats.runs)}
+              ${readonlyStatField('打點', stats.rbi)}
+              ${readonlyStatField('一安', stats.single)}
+              ${readonlyStatField('二安', stats.double)}
+              ${readonlyStatField('三安', stats.triple)}
+              ${readonlyStatField('全壘打', stats.hr)}
+              ${readonlyStatField('四壞球', stats.bb)}
+              ${readonlyStatField('死球', stats.hbp)}
+              ${readonlyStatField('犧牲短打', stats.sacBunt)}
+            </div>
+          </div>`;
+      }
+
+      if (!pitcherRoleHasData(stats)) return '';
+      const d = pitcherDerived(stats);
+      return `
+        <div class="dual-role-season-block">
+          <div class="dual-role-season-head">
+            <h3>同季投球成績</h3>
+            <span class="small">主要守位仍為打者</span>
+          </div>
+          <div class="metrics">
+            <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
+            <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
+            <div class="metric"><span>勝／敗</span><strong>${stats.w || 0}／${stats.l || 0}</strong></div>
+          </div>
+          <div class="grid four">
+            ${readonlyStatField('投球局數', outsToIP(stats.outs || 0))}
+            ${readonlyStatField('被安打', stats.h)}
+            ${readonlyStatField('保送', stats.bb)}
+            ${readonlyStatField('死球', stats.hbp)}
+            ${readonlyStatField('三振', stats.k)}
+            ${readonlyStatField('自責分', stats.er)}
+            ${readonlyStatField('完投', stats.cg)}
+            ${readonlyStatField('完封', stats.sho)}
+            ${readonlyStatField('救援成功', stats.sv)}
+            ${readonlyStatField('中繼成功', stats.hld)}
+          </div>
+        </div>`;
+    }
+
+    function secondaryDailyRoleHtml(player) {
+      const pair = currentRecord?.externalRoleDaily;
+      if (!player || !pair) return '';
+      if (player.type === 'pitcher') {
+        const h = pair.hitter;
+        if (!h || !(
+          Number(h.pa)>0 || Number(h.ab)>0 || Number(h.hits)>0 || Number(h.runs)>0 || Number(h.rbi)>0
+          || Number(h.bb)>0 || Number(h.hbp)>0 || Number(h.hr)>0
+        )) return '';
+        return `
+          <div class="dual-role-season-block">
+            <div class="dual-role-season-head"><h3>本場打擊成績</h3><span class="small">同一場投打紀錄合併顯示</span></div>
+            <div class="grid four">
+              ${readonlyStatField('打席', h.pa || 0)}
+              ${readonlyStatField('打數', h.ab || 0)}
+              ${readonlyStatField('安打', h.hits || 0)}
+              ${readonlyStatField('得分', h.runs || 0)}
+              ${readonlyStatField('打點', h.rbi || 0)}
+              ${readonlyStatField('全壘打', h.hr || 0)}
+              ${readonlyStatField('保送', h.bb || 0)}
+              ${readonlyStatField('死球', h.hbp || 0)}
+              ${readonlyStatField('三振', h.k || 0)}
+            </div>
+          </div>`;
+      }
+
+      const p = pair.pitcher;
+      if (!p || !(
+        Number(p.outs)>0 || String(p.innings || '0.0') !== '0.0' || Number(p.h)>0 || Number(p.k)>0
+        || Number(p.bb)>0 || Number(p.hbp)>0 || Number(p.r)>0 || Number(p.er)>0
+      )) return '';
+      return `
+        <div class="dual-role-season-block">
+          <div class="dual-role-season-head"><h3>本場投球成績</h3><span class="small">同一場投打紀錄合併顯示</span></div>
+          <div class="grid four">
+            ${readonlyStatField('投球局數', p.innings || outsToIP(Number(p.outs)||0) || '0.0')}
+            ${readonlyStatField('被安打', p.h || 0)}
+            ${readonlyStatField('保送', p.bb || 0)}
+            ${readonlyStatField('死球', p.hbp || 0)}
+            ${readonlyStatField('三振', p.k || 0)}
+            ${readonlyStatField('失分', p.r || 0)}
+            ${readonlyStatField('自責分', p.er || 0)}
+            ${readonlyStatField('用球數', p.pitchCount || 0)}
+          </div>
+        </div>`;
+    }
+
     function applyExternalSeasonStats(player, remote, requestedYear, level = selectedLevel) {
       if (!player || !remote) throw new Error('國外聯盟賽季資料格式錯誤。');
       level = level === 'D' ? 'D' : 'A';
@@ -4618,18 +4794,27 @@ bg2: {
 
       player.externalTwoWay = Boolean(player.externalTwoWay || profile.twoWay);
 
-      // 球員角色以官方守位／profile 為準，不能因為投手曾經有打席就改成打者。
+      // type/primaryType 只代表主要守位；同一球員可同時保存打擊與投球資料。
       const officialType = officialExternalPlayerType(player, profile);
-      if (officialType) player.type = officialType;
+      if (officialType) {
+        player.primaryType = officialType;
+        player.type = officialType;
+      } else if (!player.primaryType) {
+        player.primaryType = player.type;
+      }
 
-      const official = player.type === 'pitcher' ? pitcher : hitter;
-      if (!official) {
+      if (!hitter && !pitcher) {
         throw new Error(`${requestedYear} 年找不到此球員的例行賽成績。`);
       }
 
+      const hitterLocal = hitter ? externalHitterStatsToLocal(hitter) : null;
+      const pitcherLocal = pitcher ? externalPitcherStatsToLocal(pitcher) : null;
+      storeRoleStatsProfile(player, requestedYear, level, hitterLocal, pitcherLocal);
+
+      const official = player.type === 'pitcher' ? pitcher : hitter;
       const nextStats = player.type === 'pitcher'
-        ? externalPitcherStatsToLocal(official)
-        : externalHitterStatsToLocal(official);
+        ? (pitcherLocal || pitcherDefaults())
+        : (hitterLocal || hitterDefaults());
 
       const profiles = ensureStatsProfiles(player);
       profiles[statsProfileKey(requestedYear, level)] = { ...nextStats };
@@ -4679,6 +4864,30 @@ bg2: {
       player.externalLastSyncSource = remote?.sourceMode || '';
       player.externalLastUpdatedAt = Date.now();
       return official;
+    }
+
+    async function syncExternalLevelYears(player, level = 'D', onProgress = null) {
+      if (playerScope(player) !== 'overseas' || !player?.externalProvider || !player?.externalPlayerId) return [];
+      level = level === 'D' ? 'D' : 'A';
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+      report(10, `正在搜尋 ${overseasProviderLabel(player.externalProvider)} ${level === 'D' ? '二軍' : '一軍'}歷年出賽…`);
+      const data = await baseballRequest('season-years', {
+        provider:player.externalProvider,
+        id:player.externalPlayerId,
+        level
+      });
+      const years = Array.isArray(data?.history?.years)
+        ? data.history.years.map(Number).filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100)
+        : [];
+      player.externalAvailableYearsByLevel ||= { A:[], D:[] };
+      player.externalAvailableYearsByLevel[level] = [...new Set(years)].sort((a,b)=>b-a);
+      player.externalLevelYearsCheckedAt ||= {};
+      player.externalLevelYearsCheckedAt[level] = Date.now();
+      report(48, `${level === 'D' ? '二軍' : '一軍'}找到 ${years.length} 個有出賽的賽季…`);
+      await savePlayer(player);
+      return player.externalAvailableYearsByLevel[level];
     }
 
     async function syncExternalSeason(player, requestedYear = selectedSeason, onProgress = null, level = selectedLevel) {
@@ -5159,6 +5368,19 @@ bg2: {
         }
       }
 
+      const cpblHitterRole = stats?.batting
+        ? { ...hitterDefaults(), ...stats.batting }
+        : null;
+      let cpblPitcherRole = null;
+      if (stats?.pitching) {
+        cpblPitcherRole = { ...pitcherDefaults(), ...stats.pitching };
+        cpblPitcherRole.outs = Number.isFinite(Number(stats.pitching.outs))
+          ? Number(stats.pitching.outs)
+          : pitcherInningsTextToOuts(stats.pitching.innings);
+        delete cpblPitcherRole.innings;
+      }
+      storeRoleStatsProfile(player, year, kindCode, cpblHitterRole, cpblPitcherRole);
+
       const profiles = ensureStatsProfiles(player);
       const key = statsProfileKey(year, kindCode);
       profiles[key] = { ...next };
@@ -5201,6 +5423,10 @@ bg2: {
 
       currentRecord.externalLeagueLevel = String(daily.leagueLevel || '一軍');
       currentRecord.externalWalksCombined = false;
+      currentRecord.externalRoleDaily = {
+        hitter: daily.hitter ? { ...daily.hitter } : null,
+        pitcher: daily.pitcher ? { ...daily.pitcher } : null
+      };
 
       const localizedDailyName = String(daily.profile?.zhName || '').replace(/\s+/g, '');
       if (localizedDailyName && /[\u3400-\u9fff]/.test(localizedDailyName)) {
@@ -5224,8 +5450,7 @@ bg2: {
 
       if (player.type === 'hitter') {
         const hitter = daily.hitter;
-        if (!hitter) throw new Error('當天沒有此球員的打擊紀錄。');
-        const list = Array.isArray(hitter.plateAppearances) ? hitter.plateAppearances : [];
+        const list = Array.isArray(hitter?.plateAppearances) ? hitter.plateAppearances : [];
 
         if (list.length && currentRecord.hitterPAs.length) {
           const overwrite = await showAppConfirm(
@@ -5241,7 +5466,7 @@ bg2: {
         }
 
         currentRecord.hitterAppearance.mode = 'bat';
-        if (list.length) {
+        if (hitter && list.length) {
           currentRecord.hitterPAs = list.map(pa => ({
             id:uid(),
             code:pa.code || 'OUT',
@@ -5252,33 +5477,34 @@ bg2: {
         }
 
         currentRecord.cpblGameSummary = {
-          runs:Math.max(0,Number(hitter.runs)||0),
-          hits:Math.max(0,Number(hitter.hits)||0),
-          errors:Math.max(0,Number(hitter.errors)||0),
+          runs:Math.max(0,Number(hitter?.runs)||0),
+          hits:Math.max(0,Number(hitter?.hits)||0),
+          errors:Math.max(0,Number(hitter?.errors)||0),
           official:true
         };
       } else {
         const p=daily.pitcher;
-        if (!p) throw new Error('當天沒有此投手的投球紀錄。');
         const g=currentRecord.pitcherGame;
-        g.innings=p.innings || outsToIP(Number(p.outs)||0) || '0.0';
-        g.k=Number(p.k)||0;
-        g.bb=Number(p.bb)||0;
-        g.h=Number(p.h)||0;
-        g.hbp=Number(p.hbp)||0;
-        g.r=Number(p.r)||0;
-        g.er=Math.min(g.r,Number(p.er)||0);
-        const pitchCount=Math.max(0,Math.min(150,Number(p.pitchCount)||0));
-        g.pitchTens=Math.floor(pitchCount/10);
-        g.pitchOnes=pitchCount>=150?0:pitchCount%10;
-        currentRecord.externalWalksCombined=Boolean(p.walksCombined);
-        g.cg=Boolean(Number(p.cg)||p.cg);
-        g.sho=Boolean(Number(p.sho)||p.sho);
-        g.hld=Boolean(Number(p.hld)||p.hld);
-        g.sv=Boolean(Number(p.sv)||p.sv);
-        g.bsv=Boolean(Number(p.bsv)||p.bsv);
-        g.decision=Number(p.w)>0?'W':Number(p.l)>0?'L':'ND';
-        g.result=g.sv?'SV':g.hld?'HLD':g.decision;
+        if (p) g.innings=p.innings || outsToIP(Number(p.outs)||0) || '0.0';
+        if (p) {
+          g.k=Number(p.k)||0;
+          g.bb=Number(p.bb)||0;
+          g.h=Number(p.h)||0;
+          g.hbp=Number(p.hbp)||0;
+          g.r=Number(p.r)||0;
+          g.er=Math.min(g.r,Number(p.er)||0);
+          const pitchCount=Math.max(0,Math.min(150,Number(p.pitchCount)||0));
+          g.pitchTens=Math.floor(pitchCount/10);
+          g.pitchOnes=pitchCount>=150?0:pitchCount%10;
+          currentRecord.externalWalksCombined=Boolean(p.walksCombined);
+          g.cg=Boolean(Number(p.cg)||p.cg);
+          g.sho=Boolean(Number(p.sho)||p.sho);
+          g.hld=Boolean(Number(p.hld)||p.hld);
+          g.sv=Boolean(Number(p.sv)||p.sv);
+          g.bsv=Boolean(Number(p.bsv)||p.bsv);
+          g.decision=Number(p.w)>0?'W':Number(p.l)>0?'L':'ND';
+          g.result=g.sv?'SV':g.hld?'HLD':g.decision;
+        }
       }
 
       currentRecord.externalReadOnlyImport = true;
@@ -5686,6 +5912,7 @@ bg2: {
         externalSource: '',
         externalLeagueLevel: '',
         externalWalksCombined: false,
+        externalRoleDaily: null,
         updatedAt: Date.now()
       };
     }
@@ -5744,6 +5971,7 @@ bg2: {
       };
       currentRecord.externalLeagueLevel = String(currentRecord.externalLeagueLevel || '');
       currentRecord.externalWalksCombined = Boolean(currentRecord.externalWalksCombined);
+      currentRecord.externalRoleDaily = currentRecord.externalRoleDaily || null;
       if (!['SV','HLD','W','L','ND'].includes(currentRecord.pitcherGame.result)) {
         currentRecord.pitcherGame.result = currentRecord.pitcherGame.sv ? 'SV'
           : currentRecord.pitcherGame.hld ? 'HLD'
@@ -6538,6 +6766,21 @@ bg2: {
       const player = selectedPlayer();
       if (!player || !supportsLeagueLevelTabs(player) || playerScope(player) !== 'overseas') return;
       level = level === 'D' ? 'D' : 'A';
+
+      let historyOverlayOpen = false;
+      const provider = String(player.externalProvider || '').toUpperCase();
+      const lastChecked = Number(player?.externalLevelYearsCheckedAt?.[level] || 0);
+      const historyStale = !lastChecked || (Date.now() - lastChecked > 24 * 60 * 60 * 1000);
+      if (level === 'D' && provider === 'NPB' && historyStale) {
+        setSyncProgress(0, '準備搜尋 NPB 二軍歷年出賽資料…');
+        historyOverlayOpen = true;
+        try {
+          await syncExternalLevelYears(player, 'D', (percent,status)=>setSyncProgress(percent,status));
+        } catch (error) {
+          console.warn('NPB 二軍歷年年份搜尋失敗', error);
+        }
+      }
+
       if (selectedLevel !== level) persistActiveStatsProfile(player);
       selectedLevel = level;
 
@@ -6548,12 +6791,20 @@ bg2: {
         activatePlayerStatsProfile(player, selectedSeason, level);
         await loadRecord();
         renderAll();
+        if (historyOverlayOpen) await finishSyncProgress(`二軍歷年資料已更新｜${years.length} 個賽季`);
+        return;
+      }
+
+      if (level === 'D' && provider === 'NPB' && !years.length) {
+        activatePlayerStatsProfile(player, selectedSeason, level);
+        renderAll();
+        await finishSyncProgress('NPB 官網未找到這位球員的二軍出賽賽季');
         return;
       }
 
       activatePlayerStatsProfile(player, selectedSeason, level);
       renderAll();
-      setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} ${selectedSeason} ${level === 'D' ? '二軍' : '一軍'}…`);
+      setSyncProgress(historyOverlayOpen ? 52 : 0, `準備同步 ${overseasProviderLabel(player.externalProvider)} ${selectedSeason} ${level === 'D' ? '二軍' : '一軍'}…`);
       try {
         await syncExternalSeason(
           player,
@@ -7330,7 +7581,7 @@ bg2: {
       }
       return [
         player.type === 'pitcher' ? '投手' : '打者',
-        player.externalTwoWay ? '二刀流' : '',
+        (player.externalTwoWay || player.hasCrossRoleStats) ? '投打皆有紀錄' : '',
         playerSpecialCompetition(player),
         scope === 'international' ? internationalTeam(player) : String(player.externalTeam || '').trim(),
         Number(player.externalYear) || ''
@@ -7733,6 +7984,8 @@ bg2: {
             ${hitterInput('故意四壞球', 'ibb', s.ibb)}
             ${hitterInput('死球', 'hbp', s.hbp)}
           </div>
+          ${secondarySeasonStatsHtml(player)}
+          ${secondarySeasonStatsHtml(player)}
           <div class="section-actions">
             <button id="deletePlayerBtn" class="press-btn danger">刪除球員</button>
             <button id="saveBaseBtn" class="press-btn primary">儲存基礎設定</button>
@@ -8022,6 +8275,8 @@ bg2: {
 
       if (player.type === 'hitter') renderHitterToday();
       else renderPitcherToday();
+      const secondaryDaily = secondaryDailyRoleHtml(player);
+      if (secondaryDaily) document.getElementById('todaySpecific')?.insertAdjacentHTML('beforeend', secondaryDaily);
     }
 
     function renderHitterSubstitutionToday() {
@@ -11216,7 +11471,7 @@ bg2: {
         );
         const officialPosition = official.position || official.jpPosition || picked.position || '';
         const positionType = externalPositionType(officialPosition);
-        let type = isTwoWay ? selectedType : (official.type || positionType || picked.type || selectedType);
+        let type = official.type || positionType || picked.type || selectedType;
         if (type !== 'pitcher' && type !== 'hitter') type = selectedType;
 
         const typedChineseName = /[㐀-鿿]/.test(name) ? name : '';
@@ -11226,6 +11481,7 @@ bg2: {
           name:displayName,
           number:official.number || picked.number || number || '—',
           type,
+          primaryType:type,
           scope:'overseas',
           stats:type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric:type === 'pitcher' ? 'wl' : undefined,
@@ -11250,11 +11506,8 @@ bg2: {
         const sameLinkedPlayers = players.filter(p => playerScope(p) === 'overseas'
           && p.externalProvider === provider
           && String(p.externalPlayerId || '') === String(player.externalPlayerId));
-        if (sameLinkedPlayers.some(p => p.type === player.type)) {
-          throw new Error(`這位球員的${player.type === 'pitcher' ? '投手' : '打者'}版本已經存在。`);
-        }
-        if (sameLinkedPlayers.length && !isTwoWay) {
-          throw new Error('這位球員已經存在於此國外聯盟專區。');
+        if (sameLinkedPlayers.length) {
+          throw new Error('這位球員已經存在；現在同一筆球員資料會自動整合投球與打擊成績，不需要再建立另一個角色版本。');
         }
 
         await savePlayer(player);
