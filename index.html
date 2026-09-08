@@ -3272,6 +3272,40 @@ dialog::backdrop {
   }
 }
 /* ===== v1.67 PRO / INTERNATIONAL HIERARCHY END ===== */
+
+/* ===== v1.68 INTERNATIONAL ACTIONS + COUNTRY ROW START ===== */
+#homePage .home-pro-country-switch{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+#homePage .home-pro-country-switch .home-hierarchy-btn{
+  white-space:nowrap;
+}
+#homePage .home-player-actions.international-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+@media(max-width:640px){
+  #homePage .home-pro-country-switch{
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:4px !important;
+  }
+  #homePage .home-pro-country-switch .home-hierarchy-btn{
+    min-width:0;
+    padding:5px 2px;
+    font-size:9px;
+    letter-spacing:0;
+  }
+  #homePage .home-player-actions.international-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media(max-width:390px){
+  #homePage .home-pro-country-switch .home-hierarchy-btn{
+    font-size:8.5px;
+    padding-left:1px;
+    padding-right:1px;
+  }
+}
+/* ===== v1.68 INTERNATIONAL ACTIONS + COUNTRY ROW END ===== */
 </style>
 </head>
 <body>
@@ -3627,7 +3661,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.67';
+    const APP_VERSION = 'v1.68';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7056,7 +7090,10 @@ bg2: {
       els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
-      document.querySelector('.home-player-actions')?.classList.remove('hidden');
+      const homeActions = document.querySelector('.home-player-actions');
+      homeActions?.classList.remove('hidden');
+      homeActions?.classList.toggle('international-actions', international);
+      document.getElementById('addPlayerBtn')?.classList.toggle('hidden', international);
       els.recent?.classList.toggle('hidden', international);
 
       if (els.homePlayerTitle) {
