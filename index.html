@@ -3784,7 +3784,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.79';
+    const APP_VERSION = 'v1.80';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4658,8 +4658,6 @@ bg2: {
         if (shouldUpgradeName) player.name = localizedName;
       }
 
-      player.externalYear = Number(requestedYear) || player.externalYear || CURRENT_YEAR;
-
       const remoteYears = Array.isArray(profile.years)
         ? profile.years.map(Number).filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100)
         : [];
@@ -4677,6 +4675,8 @@ bg2: {
         Number(requestedYear)
       ].filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100))].sort((a,b)=>b-a);
 
+      player.externalYear = Number(requestedYear) || player.externalYear || CURRENT_YEAR;
+      player.externalLastSyncSource = remote?.sourceMode || '';
       player.externalLastUpdatedAt = Date.now();
       return official;
     }
@@ -6357,7 +6357,17 @@ bg2: {
         }
       }
       selectedLevel = 'A';
-      selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
+      {
+        const years = availableSeasonYears(player, 'A');
+        const linkedYear = Math.floor(Number(player.externalYear) || 0);
+        const provider = String(player.externalProvider || playerSpecialCompetition(player) || '').toUpperCase();
+        const preferCurrentExternalYear = playerScope(player) === 'overseas'
+          && ['NPB','KBO','MLB','MILB'].includes(provider)
+          && (linkedYear === CURRENT_YEAR || years.includes(CURRENT_YEAR));
+        selectedSeason = preferCurrentExternalYear
+          ? CURRENT_YEAR
+          : (linkedYear && years.includes(linkedYear) ? linkedYear : (years[0] || linkedYear || CURRENT_YEAR));
+      }
       internationalSelectedGameKey = '';
 
       if (playerScope(player) === 'cpbl') {
@@ -6406,7 +6416,13 @@ bg2: {
         setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} 資料…`);
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         try {
-          const targetYear = selectedSeason || Number(player.externalYear) || CURRENT_YEAR;
+          const provider = String(player.externalProvider || '').toUpperCase();
+          const linkedYear = Math.floor(Number(player.externalYear) || 0);
+          const currentSeasonCandidate = ['NPB','KBO','MLB','MILB'].includes(provider)
+            && (linkedYear === CURRENT_YEAR || selectedSeason === CURRENT_YEAR);
+          const targetYear = currentSeasonCandidate
+            ? CURRENT_YEAR
+            : (selectedSeason || linkedYear || CURRENT_YEAR);
           selectedLevel = 'A';
           selectedTab = selectedTab === 'minor' && supportsLeagueLevelTabs(player) ? 'base' : selectedTab;
           await syncExternalSeason(
@@ -6528,7 +6544,7 @@ bg2: {
       const years = availableSeasonYears(player, level);
       selectedSeason = years[0] || Number(player.externalYear) || CURRENT_YEAR;
 
-      if (hasStatsProfile(player, selectedSeason, level)) {
+      if (hasStatsProfile(player, selectedSeason, level) && selectedSeason !== CURRENT_YEAR) {
         activatePlayerStatsProfile(player, selectedSeason, level);
         await loadRecord();
         renderAll();
@@ -11630,7 +11646,7 @@ bg2: {
         if (selectedPlayerId) {
           const player = selectedPlayer();
           selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
-          if (playerScope(player) === 'cpbl') {
+          if (playerScope(player) === 'cpbl' || supportsLeagueLevelTabs(player)) {
             activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
           }
           await savePlayer(player);
