@@ -204,7 +204,36 @@ async function official(){
   await browserProbe('https://www.wbsc.org/en/events/2024-premier12/stats?statsSection=batting&teamId=28965','CHEN Chieh-Hsien',{watch:true});
   await browserProbe('https://www.wbscasia.org/en/events/2025-xxx-bfa-asian-baseball-championship/stats','CHINESE TAIPEI',{watch:true});
 }
+
+async function inspectU18Box(){
+  const url='https://www.wbscasia.org/en/events/2026-bfa-xiv-u18-championship/schedule-and-results/box-score/207380';
+  const browser=await chromium.launch({headless:true});
+  try{
+    const context=await browser.newContext({
+      locale:'en-US',
+      ignoreHTTPSErrors:true,
+      userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
+    });
+    const page=await context.newPage();
+    const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:90000});
+    await page.waitForTimeout(8000);
+    console.log('U18_BOX_STATUS',response?.status(),await page.title());
+    const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+    console.log('U18_BOX_BODY',body.slice(0,12000));
+    const tables=await page.locator('table').evaluateAll((els)=>els.map((t,idx)=>({
+      idx,
+      text:(t.innerText||'').replace(/\s+/g,' '),
+      headers:[...t.querySelectorAll('thead th, tr:first-child th, tr:first-child td')].map(x=>(x.textContent||'').trim()),
+      rows:[...t.querySelectorAll('tr')].slice(0,12).map(r=>[...r.querySelectorAll('th,td')].map(x=>(x.textContent||'').trim()))
+    })));
+    console.log('U18_BOX_TABLES',JSON.stringify(tables));
+  } finally {
+    await browser.close();
+  }
+}
+
 async function fallback(){
+  await inspectU18Box();
   await browserProbe('https://www.baseball-reference.com/register/player.fcgi?id=cho---000yak','Chinese Taipei',{watch:true});
   await browserProbe('https://www.baseball-reference.com/register/team.cgi?id=8c67e8cc','Yi Chang',{watch:true});
   await browserProbe('https://www.2026wbc.jp/score/pool-c/','Chang, Yi',{watch:true});
