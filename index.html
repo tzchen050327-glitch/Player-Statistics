@@ -4663,7 +4663,8 @@ bg2: {
         pitcher: pitcherStats ? { ...pitcherStats } : null
       };
       player.hasCrossRoleStats = Boolean(
-        (player.type === 'pitcher' && hitterRoleHasData(hitterStats))
+        player.hasCrossRoleStats
+        || (player.type === 'pitcher' && hitterRoleHasData(hitterStats))
         || (player.type === 'hitter' && pitcherRoleHasData(pitcherStats))
       );
     }
@@ -5806,6 +5807,14 @@ bg2: {
           const remoteByLevel = Array.isArray(player?.externalAvailableYearsByLevel?.[level])
             ? player.externalAvailableYearsByLevel[level].map(Number).filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100)
             : [];
+          const provider = String(player?.externalProvider || '').toUpperCase();
+
+          // Once NPB farm history has been scanned, trust the official D-year list.
+          // Do not let stale local zero profiles re-introduce fake years such as 2026.
+          if (level === 'D' && provider === 'NPB' && player?.externalLevelYearsCheckedAt?.D) {
+            return [...new Set(remoteByLevel)].sort((a,b)=>b-a);
+          }
+
           const localByLevel = profileYearsForLevel(player, level);
           const combined = [...new Set([...remoteByLevel, ...localByLevel])].sort((a,b)=>b-a);
           if (combined.length) return combined;
