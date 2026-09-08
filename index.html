@@ -2852,6 +2852,66 @@ dialog::backdrop {
 .intl-game-card.is-selected{border-color:#b98a27;background:#fffaf0}
 @media(max-width:620px){.intl-games-tab-head,.intl-game-detail-nav{align-items:stretch;flex-direction:column}}
 /* ===== v1.52 INTERNATIONAL SELECT FLOW END ===== */
+
+/* ===== v1.64 HEADER DATE MOVE START ===== */
+.title-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:18px;
+}
+.title-row-main{
+  min-width:0;
+}
+.title-row-right{
+  min-width:0;
+  max-width:min(48vw,520px);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:7px;
+  text-align:right;
+}
+.title-row-right #selectedPlayerText{
+  max-width:100%;
+  line-height:1.35;
+}
+.title-row-date{
+  min-height:18px;
+  color:#ffffff;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:900;
+  letter-spacing:.045em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+.title-row-date:empty{
+  display:none;
+}
+@media(max-width:640px){
+  .title-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:10px;
+  }
+  .title-row-right{
+    max-width:48vw;
+    align-self:center;
+  }
+  .title-row-right #selectedPlayerText{
+    font-size:10px;
+    overflow-wrap:anywhere;
+  }
+  .title-row-date{
+    font-size:11px;
+    letter-spacing:.02em;
+  }
+}
+/* ===== v1.64 HEADER DATE MOVE END ===== */
 </style>
 </head>
 <body>
@@ -2880,11 +2940,14 @@ dialog::backdrop {
 
   <main class="app">
     <div class="title-row">
-      <div>
+      <div class="title-row-main">
         <h1>球員戰績圖片</h1>
         <div id="pageSubtitle" class="subtle">首頁</div>
       </div>
-      <div id="selectedPlayerText" class="subtle"></div>
+      <div class="title-row-right">
+        <div id="selectedPlayerText" class="subtle"></div>
+        <div id="playerPageDate" class="title-row-date"></div>
+      </div>
     </div>
 
     <section id="homePage">
@@ -2976,7 +3039,6 @@ dialog::backdrop {
           <label class="season-field">賽季
             <select id="seasonSelect" aria-label="賽季"></select>
           </label>
-          <div id="playerPageDate" class="player-page-date"></div>
         </div>
       </div>
 
@@ -3194,7 +3256,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.63';
+    const APP_VERSION = 'v1.64';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
