@@ -998,6 +998,13 @@ def main():
                 parsed_nos=sorted(int(str(g.get("gameId","")).split("-")[-1]) for g in event["games"] if str(g.get("gameId","")).split("-")[-1].isdigit())
                 print("ASIAN_GAMES_PARSED_GAMES",parsed_nos)
                 print("ASIAN_GAMES_MISSING_GAMES",[n for n in range(1,23) if n not in parsed_nos])
+                raw_lines=text.splitlines()
+                for ri,raw_line in enumerate(raw_lines):
+                    if re.search(r"Game\s+(?:13|15|17|19)\b",raw_line,re.I):
+                        print("ASIAN_GAMES_EXACT_HEADER_BEGIN",ri+1)
+                        for rr in raw_lines[max(0,ri-6):min(len(raw_lines),ri+18)]:
+                            print(rr)
+                        print("ASIAN_GAMES_EXACT_HEADER_END",ri+1)
         except Exception as e:
             errors.append({"event":key,"error":str(e),"sourceUrl":meta["url"]})
             print(f'ERROR {key}: {e}')
