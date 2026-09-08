@@ -3197,6 +3197,81 @@ dialog::backdrop {
   }
 }
 /* ===== v1.66 HOME FILTERS + SCROLL FIX END ===== */
+
+/* ===== v1.67 PRO / INTERNATIONAL HIERARCHY START ===== */
+#homePage .home-root-switch{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  margin-bottom:10px;
+}
+.home-pro-country-switch,
+.home-us-league-switch{
+  display:grid;
+  gap:7px;
+  margin:0 0 10px;
+}
+.home-pro-country-switch{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.home-us-league-switch{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.home-hierarchy-btn{
+  min-width:0;
+  min-height:36px;
+  padding:7px 8px;
+  border:1px solid #d4dde7;
+  border-radius:10px;
+  background:#f7f9fc;
+  color:#536477;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.home-hierarchy-btn.active{
+  border-color:#174f86;
+  background:linear-gradient(145deg,#174f86,#0c3156);
+  color:#fff;
+  box-shadow:0 5px 13px rgba(18,63,109,.18);
+}
+#homePage .home-player-actions{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  width:100%;
+  gap:7px !important;
+  margin:10px 0 12px;
+}
+#homePage .home-player-actions .press-btn{
+  width:100%;
+  min-width:0 !important;
+  white-space:nowrap;
+  padding-left:7px;
+  padding-right:7px;
+}
+@media(max-width:640px){
+  .home-pro-country-switch{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px;
+  }
+  .home-us-league-switch{
+    gap:5px;
+  }
+  .home-hierarchy-btn{
+    min-height:32px;
+    padding:5px 4px;
+    font-size:10px;
+  }
+  #homePage .home-player-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:4px !important;
+  }
+  #homePage .home-player-actions .press-btn{
+    min-height:34px;
+    padding:5px 2px;
+    font-size:9px;
+    letter-spacing:0;
+  }
+}
+/* ===== v1.67 PRO / INTERNATIONAL HIERARCHY END ===== */
 </style>
 </head>
 <body>
@@ -3252,10 +3327,19 @@ dialog::backdrop {
         </aside>
 
         <section class="panel home-main-panel">
-          <div id="homeZoneSwitch" class="home-zone-switch" aria-label="球員資料專區">
-            <button class="home-zone-btn active" type="button" data-home-zone="cpbl">中職</button>
-            <button class="home-zone-btn" type="button" data-home-zone="international">國際賽</button>
-            <button class="home-zone-btn" type="button" data-home-zone="overseas">國外聯盟</button>
+          <div id="homeZoneSwitch" class="home-zone-switch home-root-switch" aria-label="資料分類">
+            <button class="home-zone-btn active" type="button" data-home-root="pro">各國職棒</button>
+            <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
+          </div>
+          <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
+            <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
+            <button class="home-hierarchy-btn" type="button" data-pro-country="US">美國</button>
+            <button class="home-hierarchy-btn" type="button" data-pro-country="JP">日本</button>
+            <button class="home-hierarchy-btn" type="button" data-pro-country="KR">韓國</button>
+          </div>
+          <div id="homeUsLeagueSwitch" class="home-us-league-switch hidden" aria-label="美國職棒聯盟">
+            <button class="home-hierarchy-btn active" type="button" data-us-league="MLB">大聯盟 MLB</button>
+            <button class="home-hierarchy-btn" type="button" data-us-league="MiLB">小聯盟 MiLB</button>
           </div>
           <div id="homeZoneNote" class="home-zone-note hidden"></div>
           <div class="home-player-head">
@@ -3543,7 +3627,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.66';
+    const APP_VERSION = 'v1.67';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3567,6 +3651,8 @@ dialog::backdrop {
       homePlayerCount: document.getElementById('homePlayerCount'),
       homePlayerTitle: document.getElementById('homePlayerTitle'),
       homeZoneSwitch: document.getElementById('homeZoneSwitch'),
+      homeProCountrySwitch: document.getElementById('homeProCountrySwitch'),
+      homeUsLeagueSwitch: document.getElementById('homeUsLeagueSwitch'),
       homeZoneNote: document.getElementById('homeZoneNote'),
       homeLevelFilters: document.getElementById('homeLevelFilters'),
       homeTeamFilters: document.getElementById('homeTeamFilters'),
@@ -3642,6 +3728,9 @@ dialog::backdrop {
     let homeLevelFilter = 'A';
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
+    let homeRootSection = 'pro';
+    let homeProCountry = 'TW';
+    let homeUsLeague = 'MLB';
     let homeSpecialFilter = '';
     let homeInternationalEditionFilter = '';
     let homeInternationalTeamFilter = '';
@@ -5916,6 +6005,23 @@ bg2: {
       homeSpecialFilter = playerScope(player) === 'cpbl' ? '' : playerSpecialCompetition(player);
       homeInternationalEditionFilter = playerScope(player) === 'international' ? internationalEdition(player) : '';
       homeInternationalTeamFilter = playerScope(player) === 'international' ? internationalTeam(player) : '';
+
+      if (homeZone === 'international') {
+        homeRootSection = 'international';
+      } else {
+        homeRootSection = 'pro';
+        if (homeZone === 'cpbl') {
+          homeProCountry = 'TW';
+        } else {
+          const provider = String(playerSpecialCompetition(player) || player.externalProvider || '').toUpperCase();
+          if (provider === 'NPB') homeProCountry = 'JP';
+          else if (provider === 'KBO') homeProCountry = 'KR';
+          else {
+            homeProCountry = 'US';
+            homeUsLeague = provider === 'MILB' ? 'MiLB' : 'MLB';
+          }
+        }
+      }
       selectedLevel = 'A';
       selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
       internationalSelectedGameKey = '';
@@ -6883,33 +6989,92 @@ bg2: {
       return /二軍/.test(String(player?.cpblTeam || '')) ? 'D' : 'A';
     }
 
+    function currentProLeague() {
+      if (homeProCountry === 'TW') return 'CPBL';
+      if (homeProCountry === 'US') return homeUsLeague === 'MiLB' ? 'MiLB' : 'MLB';
+      if (homeProCountry === 'JP') return 'NPB';
+      if (homeProCountry === 'KR') return 'KBO';
+      return 'CPBL';
+    }
+
+    function applyHomeProSelection() {
+      homeRootSection = 'pro';
+      if (homeProCountry === 'TW') {
+        homeZone = 'cpbl';
+        homeSpecialFilter = '';
+        return;
+      }
+      homeZone = 'overseas';
+      homeSpecialFilter = currentProLeague();
+    }
+
+    function homeContextPlayers() {
+      if (homeRootSection === 'international' || homeZone === 'international') {
+        return players.filter(player => playerScope(player) === 'international');
+      }
+      if (homeProCountry === 'TW') {
+        return players.filter(player => playerScope(player) === 'cpbl');
+      }
+      const league = currentProLeague();
+      return players.filter(player =>
+        playerScope(player) === 'overseas'
+        && String(playerSpecialCompetition(player) || player.externalProvider || '').toUpperCase() === league.toUpperCase()
+      );
+    }
+
+    function homePageBreadcrumb() {
+      if (homeRootSection === 'international') return '首頁｜國際賽';
+      if (homeProCountry === 'TW') return '首頁｜各國職棒｜台灣';
+      if (homeProCountry === 'US') return `首頁｜各國職棒｜美國｜${currentProLeague()}`;
+      if (homeProCountry === 'JP') return '首頁｜各國職棒｜日本｜NPB';
+      if (homeProCountry === 'KR') return '首頁｜各國職棒｜韓國｜KBO';
+      return '首頁｜各國職棒';
+    }
+
     function renderHomePlayerFilters() {
-      els.homeZoneSwitch?.querySelectorAll('[data-home-zone]').forEach(button => {
-        button.classList.toggle('active', button.dataset.homeZone === homeZone);
+      const international = homeRootSection === 'international';
+      if (international) homeZone = 'international';
+      else applyHomeProSelection();
+
+      els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
+        button.classList.toggle('active', button.dataset.homeRoot === homeRootSection);
       });
 
-      const cpbl = homeZone === 'cpbl';
-      const international = homeZone === 'international';
+      els.homeProCountrySwitch?.classList.toggle('hidden', international);
+      els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
+        button.classList.toggle('active', button.dataset.proCountry === homeProCountry);
+      });
+
+      const showUsLeagues = !international && homeProCountry === 'US';
+      els.homeUsLeagueSwitch?.classList.toggle('hidden', !showUsLeagues);
+      els.homeUsLeagueSwitch?.querySelectorAll('[data-us-league]').forEach(button => {
+        button.classList.toggle('active', button.dataset.usLeague === homeUsLeague);
+      });
+
+      const cpbl = !international && homeProCountry === 'TW';
       els.homeCpblFilters?.classList.toggle('hidden', !cpbl);
-      els.homeSpecialFilters?.classList.toggle('hidden', cpbl || international);
+      els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
-      document.querySelector('.home-player-actions')?.classList.toggle('hidden', international);
+      document.querySelector('.home-player-actions')?.classList.remove('hidden');
       els.recent?.classList.toggle('hidden', international);
 
       if (els.homePlayerTitle) {
-        els.homePlayerTitle.textContent = cpbl ? '中職球員' : homeZone === 'international' ? '國際賽資料庫' : '國外聯盟球員';
+        if (international) els.homePlayerTitle.textContent = '國際賽';
+        else if (homeProCountry === 'TW') els.homePlayerTitle.textContent = '台灣｜中華職棒';
+        else if (homeProCountry === 'US') els.homePlayerTitle.textContent = `美國｜${currentProLeague()}`;
+        else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
+        else if (homeProCountry === 'KR') els.homePlayerTitle.textContent = '韓國｜KBO';
+        else els.homePlayerTitle.textContent = '各國職棒';
       }
 
       if (els.homeZoneNote) {
-        if (cpbl) {
+        if (international) {
+          els.homeZoneNote.classList.remove('hidden');
+          els.homeZoneNote.textContent = '請依序選擇「賽事 → 年份 → 球隊 → 球員」。';
+        } else {
           els.homeZoneNote.classList.add('hidden');
           els.homeZoneNote.textContent = '';
-        } else {
-          els.homeZoneNote.classList.remove('hidden');
-          els.homeZoneNote.textContent = homeZone === 'international'
-            ? '請依序選擇「賽事 → 年份 → 球隊 → 球員」。選到球員後會直接進入該屆總成績與每場比賽戰績。'
-            : '國外聯盟資料獨立保存，可分 MLB、MiLB、NPB、KBO 等聯盟建立球員紀錄。';
         }
       }
 
@@ -6920,50 +7085,28 @@ bg2: {
         els.homeTeamFilters.disabled = homeLevelFilter === 'OTHER';
       }
 
-      if (!cpbl && homeZone === 'overseas' && els.homeSpecialFilters) {
-        const options = specialOptionsForScope(homeZone);
-        els.homeSpecialFilters.innerHTML = [
-          `<button class="home-special-filter-btn ${homeSpecialFilter ? '' : 'active'}" type="button" data-home-special-filter="">全部</button>`,
-          ...options.map(option =>
-            `<button class="home-special-filter-btn ${homeSpecialFilter === option ? 'active' : ''}" type="button" data-home-special-filter="${escapeHtml(option)}">${escapeHtml(option)}</button>`
-          )
-        ].join('');
-
-        els.homeSpecialFilters.querySelectorAll('[data-home-special-filter]').forEach(button => {
-          button.addEventListener('click', () => {
-            homeSpecialFilter = button.dataset.homeSpecialFilter || '';
-            renderRecentPlayers();
-          });
-        });
-      }
       renderInternationalExplorer();
     }
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
 
-      if (homeZone === 'international') {
+      if (homeRootSection === 'international') {
         if (els.homePlayerCount) els.homePlayerCount.textContent = '';
         if (els.recent) els.recent.innerHTML = '';
         return;
       }
 
-      const zonePlayers = players.filter(player => playerScope(player) === homeZone);
+      const zonePlayers = homeContextPlayers();
       let list = [...zonePlayers];
 
-      if (homeZone === 'cpbl') {
+      if (homeProCountry === 'TW') {
         list = list
           .filter(player => homePlayerLevel(player) === homeLevelFilter)
           .filter(player => {
             if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
             return homePlayerTeam(player) === homeTeamFilter;
           });
-      } else if (homeZone === 'international') {
-        if (homeSpecialFilter) list = list.filter(player => playerSpecialCompetition(player) === homeSpecialFilter);
-        if (homeInternationalEditionFilter) list = list.filter(player => internationalEdition(player) === homeInternationalEditionFilter);
-        if (homeInternationalTeamFilter) list = list.filter(player => internationalTeam(player) === homeInternationalTeamFilter);
-      } else if (homeSpecialFilter) {
-        list = list.filter(player => playerSpecialCompetition(player) === homeSpecialFilter);
       }
 
       list.sort((a, b) => {
@@ -6986,7 +7129,7 @@ bg2: {
               <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
             </span>
           </button>`;
-      }).join('') : '<div class="empty" style="grid-column:1/-1">這個專區目前沒有符合條件的球員。</div>';
+      }).join('') : '<div class="empty" style="grid-column:1/-1">這個分類目前沒有符合條件的球員。</div>';
 
       els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
         btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
@@ -6994,7 +7137,7 @@ bg2: {
     }
 
     function renderAllPlayersDialog() {
-      const zonePlayers = players.filter(p => playerScope(p) === homeZone);
+      const zonePlayers = homeContextPlayers();
       const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
       const hitters = zonePlayers.filter(p => p.type === 'hitter');
       const make = list => list.length ? list.map(p =>
@@ -8311,7 +8454,7 @@ bg2: {
           ? (playerScope(player) === 'international'
               ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
               : `球員設定｜${scopeLabel(playerScope(player))}`)
-          : homeZone === 'cpbl' ? '首頁｜中職' : homeZone === 'international' ? '首頁｜國際賽專區' : '首頁｜國外聯盟專區';
+          : homePageBreadcrumb();
       }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
@@ -10146,10 +10289,23 @@ bg2: {
     function prepareAddPlayerDialog() {
       clearNewPlayerForm();
       updateAddPlayerScopeUI(homeZone);
+
       if (homeZone === 'international') {
-        if (homeSpecialFilter && els.newPlayerCompetition) els.newPlayerCompetition.value = homeSpecialFilter;
+        if (homeSpecialFilter && els.newPlayerCompetition) {
+          els.newPlayerCompetition.value = homeSpecialFilter;
+          updateAddPlayerScopeUI('international');
+        }
         if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = homeInternationalEditionFilter || String(CURRENT_YEAR);
         if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = homeInternationalTeamFilter || '';
+      } else if (homeZone === 'overseas') {
+        if (els.newPlayerCompetition && homeSpecialFilter) {
+          els.newPlayerCompetition.value = homeSpecialFilter;
+          updateAddPlayerScopeUI('overseas');
+          els.newPlayerCompetition.value = homeSpecialFilter;
+          updateAddPlayerScopeUI('overseas');
+        }
+        if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
+        if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
       } else {
         if (els.newPlayerExternalTeam) els.newPlayerExternalTeam.value = '';
         if (els.newPlayerExternalYear) els.newPlayerExternalYear.value = String(CURRENT_YEAR);
@@ -10159,14 +10315,39 @@ bg2: {
 
     document.getElementById('addPlayerBtn').addEventListener('click', prepareAddPlayerDialog);
 
-    els.homeZoneSwitch?.querySelectorAll('[data-home-zone]').forEach(button => {
+    els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
       button.addEventListener('click', () => {
-        const zone = button.dataset.homeZone;
-        homeZone = zone === 'international' || zone === 'overseas' ? zone : 'cpbl';
-        homeSpecialFilter = '';
-        homeInternationalEditionFilter = '';
-        homeInternationalTeamFilter = '';
+        homeRootSection = button.dataset.homeRoot === 'international' ? 'international' : 'pro';
+        if (homeRootSection === 'international') {
+          homeZone = 'international';
+          homeSpecialFilter = '';
+          homeInternationalEditionFilter = '';
+          homeInternationalTeamFilter = '';
+        } else {
+          applyHomeProSelection();
+        }
         homeTeamFilter = '';
+        renderRecentPlayers();
+      });
+    });
+
+    els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
+      button.addEventListener('click', () => {
+        const country = button.dataset.proCountry;
+        homeProCountry = ['TW','US','JP','KR'].includes(country) ? country : 'TW';
+        homeRootSection = 'pro';
+        homeTeamFilter = '';
+        applyHomeProSelection();
+        renderRecentPlayers();
+      });
+    });
+
+    els.homeUsLeagueSwitch?.querySelectorAll('[data-us-league]').forEach(button => {
+      button.addEventListener('click', () => {
+        homeUsLeague = button.dataset.usLeague === 'MiLB' ? 'MiLB' : 'MLB';
+        homeRootSection = 'pro';
+        homeProCountry = 'US';
+        applyHomeProSelection();
         renderRecentPlayers();
       });
     });
