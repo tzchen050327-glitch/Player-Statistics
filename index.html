@@ -3954,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.89';
+    const APP_VERSION = 'v1.90';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4060,6 +4060,7 @@ dialog::backdrop {
     let selectedSeason = CURRENT_YEAR;
     let selectedLevel = 'A';
     let selectedRoleView = 'primary';
+    let todayRoleView = '';
     let homeLevelFilter = 'ALL';
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
@@ -5771,6 +5772,131 @@ bg2: {
       player.cpblLastUpdatedAt = Date.now();
     }
 
+    function currentOfficialDailyRolePair() {
+      const pair = currentRecord?.externalRoleDaily;
+      return pair && typeof pair === 'object'
+        ? { hitter: pair.hitter || null, pitcher: pair.pitcher || null }
+        : { hitter:null, pitcher:null };
+    }
+
+    function todayAvailableRoles(player) {
+      const pair = currentOfficialDailyRolePair();
+      const roles = [];
+      if (dailyHitterRoleHasData(pair.hitter)) roles.push('hitter');
+      if (dailyPitcherRoleHasData(pair.pitcher)) roles.push('pitcher');
+      return roles.length ? roles : [player?.type === 'pitcher' ? 'pitcher' : 'hitter'];
+    }
+
+    function activeTodayRole(player) {
+      const roles = todayAvailableRoles(player);
+      if (roles.includes(todayRoleView)) return todayRoleView;
+      if (roles.includes(player?.type)) return player.type;
+      return roles[0] || (player?.type === 'pitcher' ? 'pitcher' : 'hitter');
+    }
+
+    function projectedPlayerStatsForRole(player, role) {
+      if (!player) return {};
+      role = role === 'pitcher' ? 'pitcher' : 'hitter';
+
+      const pair = currentOfficialDailyRolePair();
+      const hasOfficialDailyRole = role === 'pitcher'
+        ? dailyPitcherRoleHasData(pair.pitcher)
+        : dailyHitterRoleHasData(pair.hitter);
+
+      // Official daily imports are already included in the synced season totals.
+      // When viewing the player's secondary role, use that role's season profile
+      // instead of treating the primary-role stats object as the wrong shape.
+      if (hasOfficialDailyRole) {
+        return seasonStatsForOutputRole(player, role);
+      }
+
+      if (role === player.type) return projectedPlayerStats(player);
+
+      const originalType = player.type;
+      const originalStats = player.stats;
+      try {
+        player.type = role;
+        player.stats = seasonStatsForOutputRole(player, role);
+        return projectedPlayerStats(player);
+      } finally {
+        player.type = originalType;
+        player.stats = originalStats;
+      }
+    }
+
+    async function applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite = true } = {}) {
+      const hitter = daily?.hitter || null;
+      const pitcher = daily?.pitcher || null;
+
+      currentRecord.externalRoleDaily = {
+        hitter: hitter ? { ...hitter } : null,
+        pitcher: pitcher ? { ...pitcher } : null
+      };
+
+      if (hitter) {
+        const list = Array.isArray(hitter.plateAppearances) ? hitter.plateAppearances : [];
+        if (confirmHitterOverwrite && list.length && currentRecord.hitterPAs.length) {
+          const overwrite = await showAppConfirm(
+            '目前已有逐打席紀錄。\n要用官方資料覆蓋目前紀錄嗎？',
+            {
+              title:'覆蓋逐打席紀錄',
+              confirmText:'覆蓋資料',
+              cancelText:'保留目前資料',
+              tone:'warning'
+            }
+          );
+          if (!overwrite) return false;
+        }
+
+        currentRecord.hitterAppearance.mode = 'bat';
+        if (list.length) {
+          currentRecord.hitterPAs = list.map(pa => ({
+            id:uid(),
+            code:pa.code || 'OUT',
+            position:pa.position || '',
+            rbi:Number(pa.rbi) || 0,
+            cpblOfficialAction:pa.officialAction || ''
+          }));
+        }
+
+        currentRecord.cpblGameSummary = {
+          runs:Math.max(0,Number(hitter.runs)||0),
+          hits:Math.max(0,Number(hitter.hits)||0),
+          errors:Math.max(0,Number(hitter.errors)||0),
+          official:true
+        };
+
+        // Keep the official aggregate as a fallback when the source has no
+        // verifiable plate-appearance sequence.
+        currentRecord.internationalHitterGame = { ...hitter };
+      }
+
+      if (pitcher) {
+        const g = currentRecord.pitcherGame;
+        g.innings = pitcher.innings || outsToIP(Number(pitcher.outs)||0) || '0.0';
+        g.k = Number(pitcher.k)||0;
+        g.bb = Number(pitcher.bb)||0;
+        g.h = Number(pitcher.h)||0;
+        g.hbp = Number(pitcher.hbp)||0;
+        g.r = Number(pitcher.r)||0;
+        g.er = Math.min(g.r,Math.max(0,Number(pitcher.er)||0));
+        const pitchCount = Math.max(0,Math.min(150,Number(pitcher.pitchCount)||0));
+        g.pitchTens = Math.floor(pitchCount/10);
+        g.pitchOnes = pitchCount>=150 ? 0 : pitchCount%10;
+        g.cg = Boolean(Number(pitcher.cg)||pitcher.cg);
+        g.sho = Boolean(Number(pitcher.sho)||pitcher.sho);
+        g.hld = Boolean(Number(pitcher.hld)||pitcher.hld);
+        g.sv = Boolean(Number(pitcher.sv)||pitcher.sv);
+        g.bsv = Boolean(Number(pitcher.bsv)||pitcher.bsv);
+        g.decision = Number(pitcher.w)>0 ? 'W' : Number(pitcher.l)>0 ? 'L'
+          : (['W','L'].includes(pitcher.decision) ? pitcher.decision : 'ND');
+        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
+        currentRecord.externalWalksCombined = Boolean(pitcher.walksCombined);
+      }
+
+      return true;
+    }
+
     async function importExternalDaily(player) {
       if (playerScope(player) !== 'overseas' || !player?.externalProvider || !player?.externalPlayerId) {
         throw new Error('此球員尚未連結國外聯盟資料。');
@@ -5826,64 +5952,8 @@ bg2: {
 
       if (daily.opponent) currentRecord.opponent = String(daily.opponent).trim();
 
-      if (player.type === 'hitter') {
-        const hitter = daily.hitter;
-        const list = Array.isArray(hitter?.plateAppearances) ? hitter.plateAppearances : [];
-
-        if (list.length && currentRecord.hitterPAs.length) {
-          const overwrite = await showAppConfirm(
-            '目前已有逐打席紀錄。\n要用國外聯盟資料覆蓋目前紀錄嗎？',
-            {
-              title:'覆蓋逐打席紀錄',
-              confirmText:'覆蓋資料',
-              cancelText:'保留目前資料',
-              tone:'warning'
-            }
-          );
-          if (!overwrite) return false;
-        }
-
-        currentRecord.hitterAppearance.mode = 'bat';
-        if (hitter && list.length) {
-          currentRecord.hitterPAs = list.map(pa => ({
-            id:uid(),
-            code:pa.code || 'OUT',
-            position:pa.position || '',
-            rbi:Number(pa.rbi) || 0,
-            cpblOfficialAction:pa.officialAction || ''
-          }));
-        }
-
-        currentRecord.cpblGameSummary = {
-          runs:Math.max(0,Number(hitter?.runs)||0),
-          hits:Math.max(0,Number(hitter?.hits)||0),
-          errors:Math.max(0,Number(hitter?.errors)||0),
-          official:true
-        };
-      } else {
-        const p=daily.pitcher;
-        const g=currentRecord.pitcherGame;
-        if (p) g.innings=p.innings || outsToIP(Number(p.outs)||0) || '0.0';
-        if (p) {
-          g.k=Number(p.k)||0;
-          g.bb=Number(p.bb)||0;
-          g.h=Number(p.h)||0;
-          g.hbp=Number(p.hbp)||0;
-          g.r=Number(p.r)||0;
-          g.er=Math.min(g.r,Number(p.er)||0);
-          const pitchCount=Math.max(0,Math.min(150,Number(p.pitchCount)||0));
-          g.pitchTens=Math.floor(pitchCount/10);
-          g.pitchOnes=pitchCount>=150?0:pitchCount%10;
-          currentRecord.externalWalksCombined=Boolean(p.walksCombined);
-          g.cg=Boolean(Number(p.cg)||p.cg);
-          g.sho=Boolean(Number(p.sho)||p.sho);
-          g.hld=Boolean(Number(p.hld)||p.hld);
-          g.sv=Boolean(Number(p.sv)||p.sv);
-          g.bsv=Boolean(Number(p.bsv)||p.bsv);
-          g.decision=Number(p.w)>0?'W':Number(p.l)>0?'L':'ND';
-          g.result=g.sv?'SV':g.hld?'HLD':g.decision;
-        }
-      }
+      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
+      if (!appliedRoles) return false;
 
       currentRecord.externalReadOnlyImport = true;
       currentRecord.cpblReadOnlyImport = false;
@@ -5965,57 +6035,9 @@ bg2: {
       currentRecord.level = kindCode;
 
       if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
-      if (player.type === 'hitter') {
-        const list = daily.hitter?.plateAppearances || [];
-        if (!list.length) throw new Error('官網當天沒有可匯入的逐打席資料。');
-        if (currentRecord.hitterPAs.length) {
-          const overwrite = await showAppConfirm(
-            '目前已有逐打席紀錄。\n要用中職官網資料覆蓋目前紀錄嗎？',
-            {
-              title: '覆蓋逐打席紀錄',
-              confirmText: '覆蓋資料',
-              cancelText: '保留目前資料',
-              tone: 'warning'
-            }
-          );
-          if (!overwrite) return false;
-        }
-        currentRecord.hitterAppearance.mode = 'bat';
-        currentRecord.hitterPAs = list.map(pa => ({
-          id: uid(),
-          code: pa.code,
-          position: pa.position || '',
-          rbi: Number(pa.rbi) || 0,
-          cpblOfficialAction: pa.officialAction || ''
-        }));
-        currentRecord.cpblGameSummary = {
-          runs: Math.max(0, Number(daily.hitter?.runs) || 0),
-          hits: Math.max(0, Number(daily.hitter?.hits) || 0),
-          errors: Math.max(0, Number(daily.hitter?.errors) || 0),
-          official: true
-        };
-      } else {
-        const p = daily.pitcher;
-        if (!p) throw new Error('官網當天沒有此投手的投球紀錄。');
-        const g = currentRecord.pitcherGame;
-        g.innings = p.innings || '0.0';
-        g.k = Number(p.k) || 0;
-        g.bb = Number(p.bb) || 0;
-        g.h = Number(p.h) || 0;
-        g.hbp = Number(p.hbp) || 0;
-        g.r = Number(p.r) || 0;
-        g.er = Number(p.er) || 0;
-        const pitchCount = Number(p.pitchCount) || 0;
-        g.pitchTens = Math.floor(pitchCount / 10);
-        g.pitchOnes = pitchCount % 10;
-        g.cg = Boolean(p.cg);
-        g.sho = Boolean(p.sho);
-        g.hld = Boolean(p.hld);
-        g.sv = Boolean(p.sv);
-        g.bsv = Boolean(p.bsv);
-        g.decision = ['W','L'].includes(p.decision) ? p.decision : 'ND';
-        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
-      }
+
+      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
+      if (!appliedRoles) return false;
 
       const isToday = els.gameDate.value === localISODate();
       currentRecord.cpblReadOnlyImport = !isToday;
@@ -6980,6 +7002,7 @@ bg2: {
       }
       selectedLevel = 'A';
       selectedRoleView = 'primary';
+      todayRoleView = '';
       {
         const years = availableSeasonYears(player, 'A');
         const linkedYear = Math.floor(Number(player.externalYear) || 0);
@@ -8733,18 +8756,21 @@ bg2: {
     }
 
     function renderToday(player) {
-      const projected = projectedPlayerStats(player);
-      const stats = player.type === 'hitter' ? hitterDerived(projected) : pitcherDerived(projected);
-      const metricHtml = player.type === 'hitter'
+      const todayRole = activeTodayRole(player);
+      todayRoleView = todayRole;
+
+      const projected = projectedPlayerStatsForRole(player, todayRole);
+      const stats = todayRole === 'hitter' ? hitterDerived(projected) : pitcherDerived(projected);
+      const metricHtml = todayRole === 'hitter'
         ? `<div class="metric"><span>打擊率</span><strong>${fmtBatRate(stats.avg)}</strong></div>
            <div class="metric"><span>上壘率</span><strong>${fmtBatRate(stats.obp)}</strong></div>
            <div class="metric"><span>長打率</span><strong>${fmtBatRate(stats.slg)}</strong></div>`
         : `<div class="metric"><span>WHIP</span><strong>${fmtTwo(stats.whip)}</strong></div>
            <div class="metric"><span>防禦率</span><strong>${fmtTwo(stats.era)}</strong></div>
-           <div class="metric"><span>勝／敗</span><strong>${projected.w}／${projected.l}</strong></div>`;
+           <div class="metric"><span>勝／敗</span><strong>${projected.w || 0}／${projected.l || 0}</strong></div>`;
 
-      const appearance = player.type === 'hitter' ? ensureHitterAppearance() : null;
-      const appearanceHtml = player.type === 'hitter'
+      const appearance = todayRole === 'hitter' ? ensureHitterAppearance() : null;
+      const appearanceHtml = todayRole === 'hitter'
         ? `<label class="field" style="margin-top:10px">出賽方式
              <select id="hitterAppearanceMode">
                <option value="bat" ${appearance.mode === 'bat' ? 'selected' : ''}>先發／代打</option>
@@ -8766,16 +8792,29 @@ bg2: {
 
       const importButton = player.cpblAcnt
         ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職資料</button></div>
-           <div class="small" style="margin-top:6px">會先查一軍，當日一軍無出賽再自動查二軍。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
+           <div class="small" style="margin-top:6px">會先查一軍，當日一軍無出賽再自動查二軍；若同場有打擊與投球，兩邊會一次匯入。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
         : linkedOverseas
           ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
-             <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 官方／聯盟來源的當日資料只用來產生該場戰報，不會重複累加到已同步的賽季成績。</div>`
+             <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 若同場同時有打擊與投球，兩邊會一次匯入；單場資料不會重複累加到已同步的賽季成績。</div>`
           : '';
+
+      const roles = todayAvailableRoles(player);
+      const roleSwitchHtml = roles.length > 1
+        ? `<div class="level-role-switch" style="margin-top:14px" aria-label="當日成績類型">
+             ${roles.map(role => `
+               <button type="button"
+                 class="level-role-btn ${role === todayRole ? 'active' : ''}"
+                 data-today-role="${role}">
+                 ${role === 'pitcher' ? '投球成績' : '打擊成績'}
+               </button>`).join('')}
+           </div>`
+        : '';
 
       els.content.innerHTML = `
         <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜今日狀況</h2>
         ${opponentField}
         ${importButton}
+        ${roleSwitchHtml}
         ${appearanceHtml}
         <div class="metrics">${metricHtml}</div>
         <div id="todaySpecific"></div>`;
@@ -8794,6 +8833,16 @@ bg2: {
           renderCanvas();
         });
       }
+
+      document.querySelectorAll('[data-today-role]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const nextRole = button.dataset.todayRole === 'pitcher' ? 'pitcher' : 'hitter';
+          if (nextRole === todayRoleView) return;
+          todayRoleView = nextRole;
+          renderToday(player);
+          await renderCanvas();
+        });
+      });
 
       document.getElementById('importCpblDailyBtn')?.addEventListener('click', async () => {
         try {
@@ -8829,10 +8878,8 @@ bg2: {
         });
       }
 
-      if (player.type === 'hitter') renderHitterToday();
+      if (todayRole === 'hitter') renderHitterToday();
       else renderPitcherToday();
-      const secondaryDaily = secondaryDailyRoleHtml(player);
-      if (secondaryDaily) document.getElementById('todaySpecific')?.insertAdjacentHTML('beforeend', secondaryDaily);
     }
 
     function renderHitterSubstitutionToday() {
@@ -9904,6 +9951,7 @@ bg2: {
       const token = ++renderToken;
       const ctx = els.canvas.getContext('2d');
       const player = selectedPlayer();
+      const effectiveType = player && selectedTab === 'today' ? activeTodayRole(player) : player?.type;
       const W = els.canvas.width;
       const H = els.canvas.height;
 
@@ -9927,7 +9975,7 @@ bg2: {
 
       if (!player || !currentRecord) return;
 
-      const projected = projectedPlayerStats(player);
+      const projected = projectedPlayerStatsForRole(player, effectiveType);
       const opponent = currentRecord.opponent || '今日對手';
       const dateText = currentRecord.date.replaceAll('-', '.');
 
@@ -9973,7 +10021,7 @@ bg2: {
       }
 
       // 區塊 2：三圍
-      const metrics = player.type === 'hitter'
+      const metrics = effectiveType === 'hitter'
         ? (() => { const d = hitterDerived(projected); return [['打擊率', fmtBatRate(d.avg)], ['上壘率', fmtBatRate(d.obp)], ['長打率', fmtBatRate(d.slg)]]; })()
         : (() => {
             const d = pitcherDerived(projected);
@@ -10030,7 +10078,7 @@ bg2: {
 
       const detail = layout.detail;
       if (positioned) {
-        const detailHeading = player.type === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績';
+        const detailHeading = effectiveType === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績';
         if (isBg2) drawBg2DetailHeading(ctx, detailHeading, detail);
         else drawStyledDetailHeading(ctx, detailHeading, detail);
       }
@@ -10038,7 +10086,7 @@ bg2: {
       ctx.textAlign = 'left';
       ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
 
-      if (player.type === 'hitter') {
+      if (effectiveType === 'hitter') {
         const appearance = ensureHitterAppearance();
         if (appearance.mode === 'bat') {
           const officialBox = currentRecord?.internationalHitterGame;
@@ -10226,10 +10274,10 @@ bg2: {
 
       ctx.fillStyle = layout.name.typeColor || '#94a3b8';
       ctx.font = `700 ${layout.fonts.playerType}px Arial, sans-serif`;
-      ctx.fillText(player.type === 'pitcher' ? 'PITCHER' : 'HITTER', layout.name.typeX, layout.name.typeY);
+      ctx.fillText(effectiveType === 'pitcher' ? 'PITCHER' : 'HITTER', layout.name.typeX, layout.name.typeY);
 
       if (layout.style === 'scoreboard-tech') {
-        drawScoreboardPlayerFooter(ctx, player, currentRecord);
+        drawScoreboardPlayerFooter(ctx, { ...player, type:effectiveType }, currentRecord);
       }
     }
 
