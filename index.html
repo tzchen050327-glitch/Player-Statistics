@@ -3194,7 +3194,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.60';
+    const APP_VERSION = 'v1.61';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -6222,13 +6222,57 @@ bg2: {
       }
     }
 
+    async function syncStoredInternationalRosterMetadata(competition, year, team, entries = []) {
+      const normalizedTeam = normalizeInternationalTeamName(team);
+      for (const entry of entries || []) {
+        const officialId = String(entry?.id || '');
+        const officialName = String(entry?.name || '');
+        const player = players.find(p =>
+          playerScope(p) === 'international'
+          && playerSpecialCompetition(p) === competition
+          && internationalEdition(p) === String(year)
+          && internationalTeam(p) === normalizedTeam
+          && (
+            (officialId && String(p.externalPlayerId || '') === officialId)
+            || (officialName && String(p.externalOfficialName || '') === officialName)
+          )
+        );
+        if (!player) continue;
+
+        let changed = false;
+        const number = String(entry?.number || '').trim();
+        if (number && number !== '—' && String(player.number || '') !== number) {
+          player.number = number;
+          changed = true;
+        }
+        if (entry?.zhName && player.name !== entry.zhName) {
+          player.name = entry.zhName;
+          changed = true;
+        }
+        if (officialName && player.externalOfficialName !== officialName) {
+          player.externalOfficialName = officialName;
+          changed = true;
+        }
+        if (entry?.position && player.externalPosition !== entry.position) {
+          player.externalPosition = entry.position;
+          changed = true;
+        }
+        if (changed) {
+          player.updatedAt = Date.now();
+          await savePlayer(player);
+        }
+      }
+    }
+
     async function loadInternationalRoster(competition, year, team) {
       const key=internationalRosterKey(competition,year,team);
       if (!competition || !year || !team || internationalRosterCache.has(key) || internationalRosterLoading.has(key)) return;
       internationalRosterLoading.add(key);
       try {
         const data=await baseballRequest('international-roster',{competition,year:Number(year),team});
-        internationalRosterCache.set(key,data.roster||{players:[]});
+        const roster=data.roster||{players:[]};
+        internationalRosterCache.set(key,roster);
+        await syncStoredInternationalRosterMetadata(competition,year,team,roster.players||[]);
       } catch (error) {
         console.error('國際賽 roster 載入失敗',error);
         internationalRosterCache.set(key,{players:[],error:error?.message||'球員名單載入失敗'});
