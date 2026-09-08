@@ -3695,6 +3695,218 @@ dialog::backdrop {
 }
 /* ===== v1.92 CUSTOM FILTER + AUTO CLOSE FEEDBACK END ===== */
 
+
+/* ===== v1.98 CUSTOM DATE + SEASON PICKERS START ===== */
+.app-picker-native{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  overflow:hidden !important;
+}
+.app-picker-trigger{
+  min-width:0;
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:9px;
+  padding:7px 10px 7px 12px;
+  border:1px solid #d5dee8;
+  border-radius:11px;
+  background:linear-gradient(180deg,#ffffff,#f7f9fc);
+  color:#18344f;
+  font:900 13px/1.2 "Microsoft JhengHei",system-ui,sans-serif;
+  text-align:left;
+  box-shadow:0 4px 12px rgba(17,38,66,.08);
+  cursor:pointer;
+}
+.app-picker-trigger:hover{border-color:#b9c9d9;background:#fff;}
+.app-picker-trigger:focus-visible{
+  outline:3px solid rgba(199,154,57,.22);
+  border-color:#123f6d;
+}
+.app-picker-trigger:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+  background:#eef2f6;
+}
+.app-picker-trigger svg{
+  width:19px;
+  height:19px;
+  flex:0 0 auto;
+  color:#a0782a;
+}
+.app-picker-trigger-label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.title-date-control .date-picker-trigger{
+  min-width:145px;
+  min-height:30px;
+  padding:4px 8px 4px 10px;
+  border-color:rgba(255,255,255,.30);
+  background:rgba(255,255,255,.96);
+  box-shadow:none;
+  color:#18324d;
+  font-size:13px;
+}
+.title-date-control .date-picker-trigger svg{width:17px;height:17px;}
+.season-field{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.season-picker-trigger{
+  width:auto;
+  min-width:108px;
+  max-width:min(46vw,370px);
+}
+.app-season-list .filter-choice-option{
+  align-items:start;
+}
+.app-season-list .filter-choice-option > span:first-child{
+  min-width:0;
+  overflow-wrap:anywhere;
+  line-height:1.38;
+}
+.app-date-dialog{
+  width:min(420px,calc(100% - 20px));
+}
+.app-date-picker-body{
+  padding:12px 14px 14px;
+}
+.app-date-monthbar{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 42px;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+.app-date-nav{
+  width:42px;
+  height:42px;
+  border:1px solid #d6e0e9;
+  border-radius:12px;
+  background:#fff;
+  color:#153b62;
+  font-size:27px;
+  line-height:1;
+  font-weight:900;
+  box-shadow:0 3px 9px rgba(17,38,66,.06);
+}
+.app-date-month-label{
+  color:#173754;
+  font-size:17px;
+  font-weight:950;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.03em;
+}
+.app-date-weekdays,
+.app-date-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:5px;
+}
+.app-date-weekdays{
+  margin-bottom:5px;
+}
+.app-date-weekdays span{
+  min-height:26px;
+  display:grid;
+  place-items:center;
+  color:#7a8796;
+  font-size:11px;
+  font-weight:900;
+}
+.app-date-grid{
+  min-height:282px;
+}
+.app-date-empty{
+  min-height:38px;
+}
+.app-date-day{
+  position:relative;
+  min-width:0;
+  min-height:38px;
+  padding:0;
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  color:#263c53;
+  font-size:13px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.app-date-day:hover{
+  border-color:#d9e2eb;
+  background:#f3f7fb;
+}
+.app-date-day.is-today{
+  border-color:#d8bb73;
+  color:#8a641f;
+}
+.app-date-day.is-selected{
+  border-color:#123f6d;
+  background:linear-gradient(145deg,#174f86,#0c3156);
+  color:#fff;
+  box-shadow:0 5px 13px rgba(18,63,109,.20),inset 0 -3px #c79a39;
+}
+.app-date-day.is-selected.is-today{color:#fff;}
+.app-date-footer{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:12px;
+  padding-top:11px;
+  border-top:1px solid #e4e9ef;
+}
+.app-date-today{
+  min-width:88px;
+  border-color:#dac38e;
+  color:#173754;
+  background:#fffaf0;
+}
+@media(max-width:640px){
+  .title-date-control .date-picker-trigger{
+    min-width:112px;
+    max-width:128px;
+    min-height:28px;
+    padding:3px 6px 3px 8px;
+    border-radius:8px;
+    font-size:11px;
+  }
+  .title-date-control .date-picker-trigger svg{width:15px;height:15px;}
+  .season-picker-trigger{
+    min-width:100px;
+    max-width:min(58vw,280px);
+    min-height:36px;
+    padding:6px 8px 6px 10px;
+    font-size:11px;
+  }
+  .app-date-picker-body{padding:10px 10px 12px;}
+  .app-date-monthbar{grid-template-columns:38px minmax(0,1fr) 38px;gap:6px;}
+  .app-date-nav{width:38px;height:38px;border-radius:10px;}
+  .app-date-month-label{font-size:16px;}
+  .app-date-weekdays,.app-date-grid{gap:3px;}
+  .app-date-grid{min-height:258px;}
+  .app-date-day{min-height:35px;border-radius:9px;font-size:12px;}
+}
+@media(max-width:390px){
+  .title-date-control .date-picker-trigger{min-width:108px;max-width:116px;}
+  .season-picker-trigger{max-width:62vw;}
+}
+/* ===== v1.98 CUSTOM DATE + SEASON PICKERS END ===== */
+
 </style>
 </head>
 <body>
@@ -3729,10 +3941,17 @@ dialog::backdrop {
       </div>
       <div class="title-row-right">
         <div id="selectedPlayerText" class="subtle"></div>
-        <label id="homeHeaderDateControl" class="title-date-control" aria-label="日期">
+        <div id="homeHeaderDateControl" class="title-date-control" aria-label="日期">
           <span>日期</span>
-          <input id="gameDate" type="date" />
-        </label>
+          <button id="gameDateButton" class="app-picker-trigger date-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="datePickerDialog">
+            <span id="gameDateButtonText" class="app-picker-trigger-label">選擇日期</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="4" y="5.5" width="16" height="14.5" rx="2.5" stroke="currentColor" stroke-width="1.9"/>
+              <path d="M8 3.5v4M16 3.5v4M4 9.5h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <input id="gameDate" class="app-picker-native" type="date" tabindex="-1" aria-hidden="true" />
+        </div>
         <div id="playerPageDate" class="title-row-date"></div>
       </div>
     </div>
@@ -3807,9 +4026,16 @@ dialog::backdrop {
           <div id="externalScopeBadge" class="external-scope-badge hidden"></div>
         </div>
         <div class="player-page-right">
-          <label class="season-field">賽季
-            <select id="seasonSelect" aria-label="賽季"></select>
-          </label>
+          <div class="season-field">
+            <span>賽季</span>
+            <button id="seasonSelectButton" class="app-picker-trigger season-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="seasonPickerDialog">
+              <span id="seasonSelectButtonText" class="app-picker-trigger-label">選擇賽季</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <select id="seasonSelect" class="app-picker-native" aria-label="賽季" tabindex="-1"></select>
+          </div>
         </div>
       </div>
 
@@ -3835,7 +4061,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.97</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.98</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4002,6 +4228,45 @@ dialog::backdrop {
     </div>
   </dialog>
 
+  <dialog id="seasonPickerDialog" class="filter-choice-dialog app-season-dialog" aria-labelledby="seasonPickerTitle">
+    <div class="filter-choice-shell">
+      <div class="filter-choice-head">
+        <div>
+          <span class="filter-choice-kicker">SEASON</span>
+          <h2 id="seasonPickerTitle">選擇賽季</h2>
+        </div>
+        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
+      </div>
+      <div id="seasonPickerList" class="filter-choice-list app-season-list" role="listbox"></div>
+    </div>
+  </dialog>
+
+  <dialog id="datePickerDialog" class="filter-choice-dialog app-date-dialog" aria-labelledby="datePickerTitle">
+    <div class="filter-choice-shell">
+      <div class="filter-choice-head">
+        <div>
+          <span class="filter-choice-kicker">DATE</span>
+          <h2 id="datePickerTitle">選擇日期</h2>
+        </div>
+        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
+      </div>
+      <div class="app-date-picker-body">
+        <div class="app-date-monthbar">
+          <button id="datePickerPrev" class="app-date-nav" type="button" aria-label="上個月">‹</button>
+          <div id="datePickerMonthLabel" class="app-date-month-label"></div>
+          <button id="datePickerNext" class="app-date-nav" type="button" aria-label="下個月">›</button>
+        </div>
+        <div class="app-date-weekdays" aria-hidden="true">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div id="datePickerGrid" class="app-date-grid" role="grid" aria-label="日期"></div>
+        <div class="app-date-footer">
+          <button id="datePickerToday" class="press-btn app-date-today" type="button">今天</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <div id="appToast" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
     <span class="app-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none"><path d="m6.5 12.5 3.4 3.4 7.6-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -4080,7 +4345,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.97';
+    const APP_VERSION = 'v1.98';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4094,6 +4359,14 @@ dialog::backdrop {
 
     const els = {
       gameDate: document.getElementById('gameDate'),
+      gameDateButton: document.getElementById('gameDateButton'),
+      gameDateButtonText: document.getElementById('gameDateButtonText'),
+      datePickerDialog: document.getElementById('datePickerDialog'),
+      datePickerGrid: document.getElementById('datePickerGrid'),
+      datePickerMonthLabel: document.getElementById('datePickerMonthLabel'),
+      datePickerPrev: document.getElementById('datePickerPrev'),
+      datePickerNext: document.getElementById('datePickerNext'),
+      datePickerToday: document.getElementById('datePickerToday'),
       content: document.getElementById('contentPanel'),
       recent: document.getElementById('recentPlayers'),
       selectedPlayerText: document.getElementById('selectedPlayerText'),
@@ -4123,6 +4396,10 @@ dialog::backdrop {
       majorLevelBtn: document.getElementById('majorLevelBtn'),
       minorLevelBtn: document.getElementById('minorLevelBtn'),
       seasonSelect: document.getElementById('seasonSelect'),
+      seasonSelectButton: document.getElementById('seasonSelectButton'),
+      seasonSelectButtonText: document.getElementById('seasonSelectButtonText'),
+      seasonPickerDialog: document.getElementById('seasonPickerDialog'),
+      seasonPickerList: document.getElementById('seasonPickerList'),
       syncProgressOverlay: document.getElementById('syncProgressOverlay'),
       syncProgressCard: document.getElementById('syncProgressCard'),
       syncProgressTitle: document.getElementById('syncProgressTitle'),
@@ -10255,6 +10532,8 @@ bg2: {
         }
       }
 
+      syncAppPickerLabels();
+
       const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
       const minorTab = document.querySelector('.tab-btn[data-tab="minor"]');
       const secondaryTab = document.querySelector('.tab-btn[data-tab="secondary"]');
@@ -12024,7 +12303,10 @@ bg2: {
     });
     els.majorLevelBtn?.addEventListener('click', () => switchPlayerLevel('A'));
     els.minorLevelBtn?.addEventListener('click', () => switchPlayerLevel('D'));
-    els.seasonSelect?.addEventListener('change', () => switchPlayerSeason(els.seasonSelect.value));
+    els.seasonSelect?.addEventListener('change', () => {
+      syncAppPickerLabels();
+      switchPlayerSeason(els.seasonSelect.value);
+    });
 
     function competitionOptionsHtml(scope, selected = '') {
       const options = specialOptionsForScope(scope);
@@ -12174,6 +12456,120 @@ bg2: {
 
     let activeAllFilterSelect = null;
     let appToastTimer = null;
+    let datePickerView = null;
+
+    function formatPickerDate(value) {
+      const raw = String(value || '');
+      const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return match ? `${match[1]}/${match[2]}/${match[3]}` : '選擇日期';
+    }
+
+    function syncAppPickerLabels() {
+      if (els.gameDateButtonText) {
+        els.gameDateButtonText.textContent = formatPickerDate(els.gameDate?.value);
+      }
+      if (els.seasonSelectButtonText) {
+        els.seasonSelectButtonText.textContent = selectedOptionLabel(els.seasonSelect) || '選擇賽季';
+      }
+      if (els.seasonSelectButton) {
+        els.seasonSelectButton.disabled = Boolean(els.seasonSelect?.disabled || !els.seasonSelect?.options?.length);
+      }
+    }
+
+    function localCalendarDate(value = '') {
+      const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return null;
+      const year = Number(match[1]);
+      const month = Number(match[2]) - 1;
+      const day = Number(match[3]);
+      const date = new Date(year, month, day);
+      return Number.isFinite(date.getTime()) ? date : null;
+    }
+
+    function calendarIso(year, month, day) {
+      return [
+        String(year).padStart(4,'0'),
+        String(month + 1).padStart(2,'0'),
+        String(day).padStart(2,'0')
+      ].join('-');
+    }
+
+    function renderDatePicker() {
+      if (!els.datePickerGrid || !els.datePickerMonthLabel) return;
+      const selected = localCalendarDate(els.gameDate?.value) || new Date();
+      if (!(datePickerView instanceof Date) || !Number.isFinite(datePickerView.getTime())) {
+        datePickerView = new Date(selected.getFullYear(), selected.getMonth(), 1);
+      }
+
+      const year = datePickerView.getFullYear();
+      const month = datePickerView.getMonth();
+      els.datePickerMonthLabel.textContent = `${year} 年 ${month + 1} 月`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const days = new Date(year, month + 1, 0).getDate();
+      const selectedIso = String(els.gameDate?.value || '');
+      const todayIso = localISODate();
+      const cells = [];
+
+      for (let i = 0; i < firstDay; i++) {
+        cells.push('<span class="app-date-empty" aria-hidden="true"></span>');
+      }
+      for (let day = 1; day <= days; day++) {
+        const iso = calendarIso(year, month, day);
+        const classes = [
+          'app-date-day',
+          iso === todayIso ? 'is-today' : '',
+          iso === selectedIso ? 'is-selected' : ''
+        ].filter(Boolean).join(' ');
+        cells.push(`<button class="${classes}" type="button" role="gridcell" data-picker-date="${iso}" aria-selected="${iso === selectedIso}">${day}</button>`);
+      }
+
+      els.datePickerGrid.innerHTML = cells.join('');
+      els.datePickerGrid.querySelectorAll('[data-picker-date]').forEach(button => {
+        button.addEventListener('click', () => {
+          const value = String(button.dataset.pickerDate || '');
+          if (!value || !els.gameDate) return;
+          els.gameDate.value = value;
+          syncAppPickerLabels();
+          els.datePickerDialog?.close();
+          els.gameDate.dispatchEvent(new Event('change', { bubbles:true }));
+        });
+      });
+    }
+
+    function openDatePicker() {
+      const selected = localCalendarDate(els.gameDate?.value) || new Date();
+      datePickerView = new Date(selected.getFullYear(), selected.getMonth(), 1);
+      renderDatePicker();
+      if (els.datePickerDialog && !els.datePickerDialog.open) els.datePickerDialog.showModal();
+    }
+
+    function openSeasonPicker() {
+      if (!els.seasonSelect || !els.seasonPickerDialog || !els.seasonPickerList || els.seasonSelect.disabled) return;
+      const options = Array.from(els.seasonSelect.options);
+      els.seasonPickerList.innerHTML = options.length ? options.map((option,index) => {
+        const active = option.value === els.seasonSelect.value;
+        return `
+          <button class="filter-choice-option ${active ? 'active' : ''}" type="button"
+                  data-season-option-index="${index}" role="option" aria-selected="${active}">
+            <span>${escapeHtml(option.textContent || '')}</span>
+            <span class="filter-choice-radio" aria-hidden="true"></span>
+          </button>`;
+      }).join('') : '<div class="empty">目前沒有可選賽季。</div>';
+
+      els.seasonPickerList.querySelectorAll('[data-season-option-index]').forEach(button => {
+        button.addEventListener('click', () => {
+          const option = els.seasonSelect?.options?.[Number(button.dataset.seasonOptionIndex)];
+          if (!option || !els.seasonSelect) return;
+          els.seasonSelect.value = option.value;
+          syncAppPickerLabels();
+          els.seasonPickerDialog.close();
+          els.seasonSelect.dispatchEvent(new Event('change', { bubbles:true }));
+        });
+      });
+
+      if (!els.seasonPickerDialog.open) els.seasonPickerDialog.showModal();
+    }
 
     function selectedOptionLabel(select) {
       return String(select?.selectedOptions?.[0]?.textContent || '').trim();
@@ -12246,7 +12642,36 @@ bg2: {
     els.filterChoiceDialog?.addEventListener('click', event => {
       if (event.target === els.filterChoiceDialog) els.filterChoiceDialog.close();
     });
+
+    els.gameDateButton?.addEventListener('click', openDatePicker);
+    els.datePickerPrev?.addEventListener('click', () => {
+      if (!(datePickerView instanceof Date)) return openDatePicker();
+      datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() - 1, 1);
+      renderDatePicker();
+    });
+    els.datePickerNext?.addEventListener('click', () => {
+      if (!(datePickerView instanceof Date)) return openDatePicker();
+      datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() + 1, 1);
+      renderDatePicker();
+    });
+    els.datePickerToday?.addEventListener('click', () => {
+      if (!els.gameDate) return;
+      els.gameDate.value = localISODate();
+      syncAppPickerLabels();
+      els.datePickerDialog?.close();
+      els.gameDate.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+    els.datePickerDialog?.addEventListener('click', event => {
+      if (event.target === els.datePickerDialog) els.datePickerDialog.close();
+    });
+
+    els.seasonSelectButton?.addEventListener('click', openSeasonPicker);
+    els.seasonPickerDialog?.addEventListener('click', event => {
+      if (event.target === els.seasonPickerDialog) els.seasonPickerDialog.close();
+    });
+
     syncAllFilterTriggerLabels();
+    syncAppPickerLabels();
 
     document.getElementById('allPlayersBtn').addEventListener('click', () => {
       renderAllPlayersDialog();
@@ -12839,6 +13264,7 @@ bg2: {
     });
 
     els.gameDate.addEventListener('change', async () => {
+      syncAppPickerLabels();
       const player=selectedPlayer();
       if (playerScope(player) === 'international' && !internationalSelectedGameKey) {
         renderAll();
@@ -13279,6 +13705,7 @@ bg2: {
           }
         }
         els.gameDate.value = localISODate();
+        syncAppPickerLabels();
         selectedTab = localStorage.getItem('baseballSelectedTab') || 'base';
         if (!['base', 'minor', 'secondary', 'today', 'photos'].includes(selectedTab)) selectedTab = 'base';
         currentPage = 'home';
