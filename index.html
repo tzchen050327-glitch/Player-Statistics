@@ -3319,8 +3319,11 @@ dialog::backdrop {
 /* ===== v1.75 UNIFIED TW/JP/KR PLAYER TABS START ===== */
 .player-page-tabs{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
+}
+.player-page-tabs.league-level-tabs{
+  grid-template-columns:repeat(4,minmax(0,1fr));
 }
 .player-page-tabs .tab-btn{
   min-width:0;
@@ -3328,8 +3331,11 @@ dialog::backdrop {
 }
 @media(max-width:640px){
   .player-page-tabs{
-    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:4px;
+  }
+  .player-page-tabs.league-level-tabs{
+    grid-template-columns:repeat(4,minmax(0,1fr));
   }
   .player-page-tabs .tab-btn{
     min-height:36px;
@@ -8755,6 +8761,7 @@ bg2: {
       const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
       const photosTab = document.querySelector('.tab-btn[data-tab="photos"]');
       const levelTabs = supportsLeagueLevelTabs(player);
+      document.querySelector('.player-page-tabs')?.classList.toggle('league-level-tabs', levelTabs);
 
       if (baseTab) baseTab.textContent = playerScopeCode === 'international' ? '賽事總成績' : (levelTabs ? '一軍' : '球員基礎設定');
       minorTab?.classList.toggle('hidden', !levelTabs);
