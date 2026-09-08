@@ -3300,6 +3300,12 @@ dialog::backdrop {
   }
 }
 /* ===== v1.68 INTERNATIONAL ACTIONS + COUNTRY ROW END ===== */
+
+/* ===== v1.70 INTERNATIONAL ACTION HIDE FIX START ===== */
+#homePage .home-player-actions.hidden{
+  display:none !important;
+}
+/* ===== v1.70 INTERNATIONAL ACTION HIDE FIX END ===== */
 </style>
 </head>
 <body>
@@ -3655,7 +3661,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.69';
+    const APP_VERSION = 'v1.70';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
