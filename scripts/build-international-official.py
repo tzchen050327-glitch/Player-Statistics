@@ -564,6 +564,30 @@ def build_wbc_event_2026():
         "teams":{team:list(pmap.values()) for team,pmap in players_by_team.items()}
     }
 
+
+def debug_asian_games_text(text):
+    lines=text.splitlines()
+    pats=[
+        r"Chinese Taipei",r"Korea",r"Japan",r"China",
+        r"BOX SCORE",r"Box Score",r"Batting",r"Pitching",
+        r"Game No",r"Match No",r"RESULT",r"AB\s+R\s+H"
+    ]
+    hits=[]
+    for i,line in enumerate(lines):
+        if any(re.search(p,line,re.I) for p in pats):
+            hits.append(i)
+    seen=set()
+    print("ASIAN_GAMES_DIAG line_count=",len(lines),"hit_count=",len(hits))
+    for i in hits[:120]:
+        start=max(0,i-3); end=min(len(lines),i+8)
+        key=(start,end)
+        if key in seen: continue
+        seen.add(key)
+        print("ASIAN_GAMES_SNIP",i+1)
+        for j in range(start,end):
+            print(f"{j+1:05d}: {lines[j]}")
+        print("ASIAN_GAMES_SNIP_END")
+
 def fetch_pdf_text(url):
     req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 InternationalStatsBot/1.0"})
     with tempfile.TemporaryDirectory() as td:
@@ -596,6 +620,8 @@ def main():
             text=fetch_pdf_text(meta["url"])
             event=build_event(meta,text)
             if not event["games"]:
+                if meta["competition"]=="亞洲運動會":
+                    debug_asian_games_text(text)
                 raise RuntimeError("no game summaries parsed")
             events[key]=event
             print(f'OK {key}: {len(event["games"])} games, {len(event["teams"])} teams')
