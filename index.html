@@ -3954,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.90';
+    const APP_VERSION = 'v1.91';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -12439,51 +12439,69 @@ bg2: {
       const pair = baseRecord?.externalRoleDaily || null;
       if (!pair) return next;
 
+      // v1.91: prepared/download output must match the visible preview exactly.
+      // Never overwrite an already-populated currentRecord with a thinner raw
+      // provider payload, because some providers omit derived/manual flags such
+      // as CG/SHO and express decisions as "decision:L" instead of w/l.
       if (role === 'hitter' && pair.hitter) {
-        const h = pair.hitter;
-        const list = Array.isArray(h.plateAppearances) ? h.plateAppearances : [];
-        next.hitterAppearance.mode = 'bat';
-        next.hitterPAs = list.map(pa => ({
-          id: uid(),
-          code: pa.code || 'OUT',
-          position: pa.position || '',
-          rbi: Number(pa.rbi) || 0,
-          cpblOfficialAction: pa.officialAction || ''
-        }));
-        next.cpblGameSummary = {
-          runs: Math.max(0, Number(h.runs) || 0),
-          hits: Math.max(0, Number(h.hits) || 0),
-          errors: Math.max(0, Number(h.errors) || 0),
-          official: true
-        };
-        next.internationalHitterGame = { ...h };
+        const existingHitter = dailyHitterRoleHasData({
+          ...(next.internationalHitterGame || {}),
+          plateAppearances: next.hitterPAs
+        });
+
+        if (!existingHitter) {
+          const h = pair.hitter;
+          const list = Array.isArray(h.plateAppearances) ? h.plateAppearances : [];
+          next.hitterAppearance.mode = 'bat';
+          next.hitterPAs = list.map(pa => ({
+            id: uid(),
+            code: pa.code || 'OUT',
+            position: pa.position || '',
+            rbi: Number(pa.rbi) || 0,
+            cpblOfficialAction: pa.officialAction || ''
+          }));
+          next.cpblGameSummary = {
+            runs: Math.max(0, Number(h.runs) || 0),
+            hits: Math.max(0, Number(h.hits) || 0),
+            errors: Math.max(0, Number(h.errors) || 0),
+            official: true
+          };
+          next.internationalHitterGame = { ...h };
+        }
       }
 
       if (role === 'pitcher' && pair.pitcher) {
-        const p = pair.pitcher;
-        const pitchCount = Math.max(0, Math.min(150, Number(p.pitchCount) || 0));
-        next.pitcherGame = {
-          ...next.pitcherGame,
-          innings: p.innings || outsToIP(Number(p.outs) || 0) || '0.0',
-          k: Number(p.k) || 0,
-          bb: Number(p.bb) || 0,
-          h: Number(p.h) || 0,
-          hbp: Number(p.hbp) || 0,
-          r: Number(p.r) || 0,
-          er: Math.min(Math.max(0, Number(p.r) || 0), Math.max(0, Number(p.er) || 0)),
-          pitchTens: Math.floor(pitchCount / 10),
-          pitchOnes: pitchCount >= 150 ? 0 : pitchCount % 10,
-          cg: Boolean(Number(p.cg) || p.cg),
-          sho: Boolean(Number(p.sho) || p.sho),
-          hld: Boolean(Number(p.hld) || p.hld),
-          sv: Boolean(Number(p.sv) || p.sv),
-          bsv: Boolean(Number(p.bsv) || p.bsv),
-          decision: Number(p.w) > 0 ? 'W' : Number(p.l) > 0 ? 'L' : 'ND',
-          result: Boolean(Number(p.sv) || p.sv) ? 'SV'
-            : Boolean(Number(p.hld) || p.hld) ? 'HLD'
-            : (Number(p.w) > 0 ? 'W' : Number(p.l) > 0 ? 'L' : 'ND')
-        };
-        next.externalWalksCombined = Boolean(p.walksCombined);
+        const existingPitcher = dailyPitcherRoleHasData(next.pitcherGame);
+        if (!existingPitcher) {
+          const p = pair.pitcher;
+          const pitchCount = Math.max(0, Math.min(150, Number(p.pitchCount) || 0));
+          const decision = ['W','L'].includes(String(p.decision || '').toUpperCase())
+            ? String(p.decision).toUpperCase()
+            : (Number(p.w) > 0 ? 'W' : Number(p.l) > 0 ? 'L' : (next.pitcherGame.decision || 'ND'));
+
+          next.pitcherGame = {
+            ...next.pitcherGame,
+            innings: p.innings || outsToIP(Number(p.outs) || 0) || next.pitcherGame.innings || '0.0',
+            k: Number(p.k) || 0,
+            bb: Number(p.bb) || 0,
+            h: Number(p.h) || 0,
+            hbp: Number(p.hbp) || 0,
+            r: Number(p.r) || 0,
+            er: Math.min(Math.max(0, Number(p.r) || 0), Math.max(0, Number(p.er) || 0)),
+            pitchTens: Math.floor(pitchCount / 10),
+            pitchOnes: pitchCount >= 150 ? 0 : pitchCount % 10,
+            cg: p.cg === undefined ? Boolean(next.pitcherGame.cg) : Boolean(Number(p.cg) || p.cg),
+            sho: p.sho === undefined ? Boolean(next.pitcherGame.sho) : Boolean(Number(p.sho) || p.sho),
+            hld: p.hld === undefined ? Boolean(next.pitcherGame.hld) : Boolean(Number(p.hld) || p.hld),
+            sv: p.sv === undefined ? Boolean(next.pitcherGame.sv) : Boolean(Number(p.sv) || p.sv),
+            bsv: p.bsv === undefined ? Boolean(next.pitcherGame.bsv) : Boolean(Number(p.bsv) || p.bsv),
+            decision,
+            result: Boolean(Number(p.sv) || p.sv) ? 'SV'
+              : Boolean(Number(p.hld) || p.hld) ? 'HLD'
+              : decision
+          };
+          next.externalWalksCombined = Boolean(p.walksCombined);
+        }
       }
 
       return next;
@@ -12496,10 +12514,12 @@ bg2: {
       const originalType = player.type;
       const originalStats = player.stats;
       const originalRecord = currentRecord;
+      const originalTodayRoleView = todayRoleView;
       try {
         player.type = role;
         player.stats = seasonStatsForOutputRole(player, role);
         currentRecord = outputRecordForRole(originalRecord, role);
+        todayRoleView = role;
 
         await renderCanvas();
         const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
@@ -12516,6 +12536,7 @@ bg2: {
         player.type = originalType;
         player.stats = originalStats;
         currentRecord = originalRecord;
+        todayRoleView = originalTodayRoleView;
       }
     }
 
@@ -12530,8 +12551,10 @@ bg2: {
       const player = selectedPlayer();
       if (!player || !currentRecord) throw new Error('請先選擇球員。');
 
-      const dualRoles = currentDualDailyRoles();
-      const roles = dualRoles.length === 2 ? ['hitter','pitcher'] : [player.type];
+      const officialRoles = currentDualDailyRoles();
+      const roles = officialRoles.length
+        ? ['hitter','pitcher'].filter(role => officialRoles.includes(role))
+        : [player.type];
       const outputs = [];
 
       for (const role of roles) {
