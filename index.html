@@ -3597,6 +3597,104 @@ dialog::backdrop {
 /* ===== v1.86 DIALOG WRAP + INTERNATIONAL HOME HEIGHT END ===== */
 
 
+
+/* ===== v1.92 CUSTOM FILTER + AUTO CLOSE FEEDBACK START ===== */
+.custom-filter-native{display:none !important;}
+.all-filter-trigger{
+  width:100%;min-width:0;min-height:46px;margin:0;padding:9px 12px 9px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid #d3dde7;border-radius:12px;
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fc 100%);
+  color:#20344d;font-size:13px;font-weight:900;text-align:left;
+  box-shadow:0 4px 12px rgba(17,38,66,.06);
+  transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease;
+}
+.all-filter-trigger:hover{border-color:#b8c7d7;box-shadow:0 7px 16px rgba(17,38,66,.09);}
+.all-filter-trigger:active{transform:translateY(1px);}
+.all-filter-trigger svg{flex:0 0 auto;width:20px;height:20px;color:#8f6a22;}
+.filter-choice-dialog{
+  width:min(430px,calc(100% - 22px));max-height:min(78dvh,680px);padding:0;border:0;
+  border-radius:23px;overflow:hidden;background:transparent;
+  box-shadow:0 30px 90px rgba(7,24,42,.36);
+}
+.filter-choice-dialog::backdrop{
+  background:rgba(7,20,34,.60);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.filter-choice-shell{
+  position:relative;overflow:hidden;border:1px solid rgba(216,225,234,.96);border-radius:23px;
+  background:radial-gradient(circle at 96% -10%,rgba(199,154,57,.13),transparent 34%),
+             linear-gradient(180deg,#ffffff 0%,#f7f9fc 100%);
+}
+.filter-choice-shell::before{
+  content:"";position:absolute;inset:0 0 auto;height:5px;
+  background:linear-gradient(90deg,#123f6d 0 76%,#c79a39 76% 100%);
+}
+.filter-choice-head{
+  min-height:78px;padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between;
+  gap:14px;border-bottom:1px solid #e3e8ef;
+}
+.filter-choice-kicker{
+  display:block;margin-bottom:3px;color:#a0782a;font-size:9px;font-weight:1000;letter-spacing:.18em;
+}
+.filter-choice-head h2{margin:0;color:#16324f;font-size:20px;font-weight:950;letter-spacing:.03em;}
+.filter-choice-close{
+  width:38px;height:38px;min-height:38px;padding:0;display:grid;place-items:center;border-radius:50%;font-size:22px;
+}
+.filter-choice-list{
+  display:grid;gap:6px;max-height:min(58dvh,500px);overflow:auto;padding:10px;overscroll-behavior:contain;
+}
+.filter-choice-option{
+  width:100%;min-height:52px;padding:10px 12px 10px 14px;display:grid;
+  grid-template-columns:minmax(0,1fr) 30px;gap:10px;align-items:center;
+  border:1px solid transparent;border-radius:13px;background:transparent;color:#2a3b50;
+  font-size:15px;font-weight:900;text-align:left;
+}
+.filter-choice-option:hover{background:#f1f5f9;}
+.filter-choice-option .filter-choice-radio{
+  width:24px;height:24px;display:grid;place-items:center;justify-self:end;
+  border:2px solid #9aa9ba;border-radius:50%;background:#fff;
+}
+.filter-choice-option .filter-choice-radio::after{
+  content:"";width:12px;height:12px;border-radius:50%;background:transparent;
+}
+.filter-choice-option.active{
+  border-color:#d3dfeb;background:linear-gradient(90deg,#edf4fb,#fffaf0);color:#123f6d;
+  box-shadow:inset 4px 0 #c79a39;
+}
+.filter-choice-option.active .filter-choice-radio{
+  border-color:#123f6d;box-shadow:0 0 0 3px rgba(199,154,57,.18);
+}
+.filter-choice-option.active .filter-choice-radio::after{background:#123f6d;}
+.app-toast{
+  position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));z-index:10050;
+  min-width:138px;max-width:calc(100% - 28px);min-height:52px;padding:10px 16px 10px 11px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  border:1px solid rgba(211,221,231,.96);border-radius:999px;background:rgba(255,255,255,.97);
+  color:#18334f;font-size:14px;font-weight:950;box-shadow:0 16px 42px rgba(7,24,42,.22);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;transform:translate(-50%,18px) scale(.96);pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+}
+.app-toast.show{opacity:1;transform:translate(-50%,0) scale(1);}
+.app-toast-icon{
+  width:30px;height:30px;flex:0 0 auto;display:grid;place-items:center;border-radius:50%;
+  background:linear-gradient(145deg,#f5e7bf,#d7aa4b);color:#123f6d;
+  box-shadow:inset 0 0 0 1px rgba(139,99,22,.15);
+}
+.app-toast-icon svg{width:18px;height:18px;}
+@media(max-width:640px){
+  .all-filter-trigger{min-height:38px;padding:6px 9px 6px 10px;border-radius:10px;font-size:11px;}
+  .all-filter-trigger svg{width:17px;height:17px;}
+  .filter-choice-dialog{width:calc(100% - 16px);border-radius:20px;}
+  .filter-choice-shell{border-radius:20px;}
+  .filter-choice-head{min-height:68px;padding:17px 16px 12px;}
+  .filter-choice-head h2{font-size:18px;}
+  .filter-choice-list{gap:5px;padding:8px;}
+  .filter-choice-option{min-height:50px;padding:9px 10px 9px 12px;font-size:14px;}
+  .app-toast{bottom:calc(18px + env(safe-area-inset-bottom));min-height:50px;font-size:13px;}
+}
+/* ===== v1.92 CUSTOM FILTER + AUTO CLOSE FEEDBACK END ===== */
+
 </style>
 </head>
 <body>
@@ -3737,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.60</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.92</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3850,18 +3948,26 @@ dialog::backdrop {
         <button id="allDeletePlayerBtn" class="press-btn danger">刪除球員</button>
       </div>
       <div id="allCpblFilters" class="home-cpbl-filter-grid all-cpbl-filter-grid hidden" aria-label="中職球員篩選">
-        <label class="home-filter-field">
+        <div class="home-filter-field">
           <span>類別</span>
-          <select id="allLevelFilters" aria-label="類別">
+          <button id="allLevelFilterButton" class="all-filter-trigger" type="button" aria-haspopup="dialog" aria-controls="filterChoiceDialog">
+            <span data-filter-label>全部</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <select id="allLevelFilters" class="custom-filter-native" aria-label="類別" tabindex="-1">
             <option value="ALL">全部</option>
             <option value="A">一軍</option>
             <option value="D">二軍</option>
             <option value="OTHER">其他</option>
           </select>
-        </label>
-        <label class="home-filter-field">
+        </div>
+        <div class="home-filter-field">
           <span>球隊</span>
-          <select id="allTeamFilters" aria-label="球隊">
+          <button id="allTeamFilterButton" class="all-filter-trigger" type="button" aria-haspopup="dialog" aria-controls="filterChoiceDialog">
+            <span data-filter-label>全部球隊</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <select id="allTeamFilters" class="custom-filter-native" aria-label="球隊" tabindex="-1">
             <option value="">全部球隊</option>
             <option value="富邦悍將">富邦悍將</option>
             <option value="台鋼雄鷹">台鋼雄鷹</option>
@@ -3870,7 +3976,7 @@ dialog::backdrop {
             <option value="統一7-ELEVEn獅">統一7-ELEVEn獅</option>
             <option value="味全龍">味全龍</option>
           </select>
-        </label>
+        </div>
       </div>
       <div class="player-group">
         <h3>投手</h3>
@@ -3882,6 +3988,26 @@ dialog::backdrop {
       </div>
     </div>
   </dialog>
+
+  <dialog id="filterChoiceDialog" class="filter-choice-dialog" aria-labelledby="filterChoiceTitle">
+    <div class="filter-choice-shell">
+      <div class="filter-choice-head">
+        <div>
+          <span class="filter-choice-kicker">FILTER</span>
+          <h2 id="filterChoiceTitle">選擇條件</h2>
+        </div>
+        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
+      </div>
+      <div id="filterChoiceList" class="filter-choice-list" role="listbox"></div>
+    </div>
+  </dialog>
+
+  <div id="appToast" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
+    <span class="app-toast-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="m6.5 12.5 3.4 3.4 7.6-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span id="appToastText">已完成</span>
+  </div>
 
   <dialog id="deletePlayerDialog">
     <div class="dialog-body">
@@ -3954,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.91';
+    const APP_VERSION = 'v1.92';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4034,6 +4160,13 @@ dialog::backdrop {
       allCpblFilters: document.getElementById('allCpblFilters'),
       allLevelFilters: document.getElementById('allLevelFilters'),
       allTeamFilters: document.getElementById('allTeamFilters'),
+      allLevelFilterButton: document.getElementById('allLevelFilterButton'),
+      allTeamFilterButton: document.getElementById('allTeamFilterButton'),
+      filterChoiceDialog: document.getElementById('filterChoiceDialog'),
+      filterChoiceTitle: document.getElementById('filterChoiceTitle'),
+      filterChoiceList: document.getElementById('filterChoiceList'),
+      appToast: document.getElementById('appToast'),
+      appToastText: document.getElementById('appToastText'),
       allPitchers: document.getElementById('allPitchers'),
       allHitters: document.getElementById('allHitters'),
       deletePlayerDialog: document.getElementById('deletePlayerDialog'),
@@ -8217,6 +8350,7 @@ bg2: {
       if (cpblDialog) {
         if (els.allLevelFilters) els.allLevelFilters.value = homeLevelFilter;
         if (els.allTeamFilters) els.allTeamFilters.value = homeTeamFilter;
+        syncAllFilterTriggerLabels();
 
         zonePlayers = zonePlayers.filter(player => {
           const levelOk = homeLevelFilter === 'ALL' || homePlayerLevel(player) === homeLevelFilter;
@@ -9541,7 +9675,7 @@ bg2: {
             try {
               await refreshPreparedOutputFromCanvas();
               els.quickTemplateDialog?.close();
-              if (!els.outputDialog?.open) els.outputDialog?.showModal();
+              showAppToast('背景已更換');
             } catch (error) {
               setStatus(error?.message || '背景切換失敗。', true);
             }
@@ -11668,16 +11802,81 @@ bg2: {
     els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
 
+    let activeAllFilterSelect = null;
+    let appToastTimer = null;
+
+    function selectedOptionLabel(select) {
+      return String(select?.selectedOptions?.[0]?.textContent || '').trim();
+    }
+
+    function syncAllFilterTriggerLabels() {
+      const levelLabel = els.allLevelFilterButton?.querySelector('[data-filter-label]');
+      const teamLabel = els.allTeamFilterButton?.querySelector('[data-filter-label]');
+      if (levelLabel) levelLabel.textContent = selectedOptionLabel(els.allLevelFilters) || '全部';
+      if (teamLabel) teamLabel.textContent = selectedOptionLabel(els.allTeamFilters) || '全部球隊';
+    }
+
+    function openAllFilterChoice(select, title) {
+      if (!select || !els.filterChoiceDialog || !els.filterChoiceList) return;
+      activeAllFilterSelect = select;
+      if (els.filterChoiceTitle) els.filterChoiceTitle.textContent = title;
+
+      els.filterChoiceList.innerHTML = Array.from(select.options).map((option, index) => {
+        const active = option.value === select.value;
+        return `
+          <button class="filter-choice-option ${active ? 'active' : ''}" type="button"
+                  data-filter-option-index="${index}" role="option" aria-selected="${active}">
+            <span>${escapeHtml(option.textContent || '')}</span>
+            <span class="filter-choice-radio" aria-hidden="true"></span>
+          </button>`;
+      }).join('');
+
+      els.filterChoiceList.querySelectorAll('[data-filter-option-index]').forEach(button => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.filterOptionIndex);
+          const option = activeAllFilterSelect?.options?.[index];
+          if (!option || !activeAllFilterSelect) return;
+          activeAllFilterSelect.value = option.value;
+          activeAllFilterSelect.dispatchEvent(new Event('change', { bubbles:true }));
+          els.filterChoiceDialog.close();
+        });
+      });
+
+      if (!els.filterChoiceDialog.open) els.filterChoiceDialog.showModal();
+    }
+
+    function showAppToast(message, duration = 1800) {
+      if (!els.appToast || !els.appToastText) return;
+      clearTimeout(appToastTimer);
+      els.appToastText.textContent = String(message || '已完成');
+      els.appToast.classList.remove('show');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => els.appToast.classList.add('show'));
+      });
+      appToastTimer = setTimeout(() => {
+        els.appToast?.classList.remove('show');
+      }, Math.max(900, Number(duration) || 1800));
+    }
+
     els.allLevelFilters?.addEventListener('change', () => {
       const value = String(els.allLevelFilters.value || 'ALL');
       homeLevelFilter = ['A','D','OTHER'].includes(value) ? value : 'ALL';
+      syncAllFilterTriggerLabels();
       renderAllPlayersDialog();
     });
 
     els.allTeamFilters?.addEventListener('change', () => {
       homeTeamFilter = String(els.allTeamFilters.value || '');
+      syncAllFilterTriggerLabels();
       renderAllPlayersDialog();
     });
+
+    els.allLevelFilterButton?.addEventListener('click', () => openAllFilterChoice(els.allLevelFilters, '選擇類別'));
+    els.allTeamFilterButton?.addEventListener('click', () => openAllFilterChoice(els.allTeamFilters, '選擇球隊'));
+    els.filterChoiceDialog?.addEventListener('click', event => {
+      if (event.target === els.filterChoiceDialog) els.filterChoiceDialog.close();
+    });
+    syncAllFilterTriggerLabels();
 
     document.getElementById('allPlayersBtn').addEventListener('click', () => {
       renderAllPlayersDialog();
@@ -12656,6 +12855,8 @@ bg2: {
       try {
         const count = preparedOutputs.length || (preparedOutput ? 1 : 0);
         await downloadPreparedOutput();
+        els.outputDialog?.close();
+        showAppToast(count > 1 ? `已下載 ${count} 張圖片` : '已下載');
         setStatus(count > 1 ? `已下載 ${count} 張圖片。` : '圖片已下載。');
       } catch (error) {
         setStatus(error?.message || '下載失敗。', true);
