@@ -511,15 +511,55 @@ def build_asian_games_event(meta,text):
         if date:
             dates[game_no]=date
 
+    # OCA's 5th-8th placement games do not use the same "Men's ... - Game N"
+    # report heading as the main bracket. Discover any detailed box score that the
+    # heading-based pass missed by looking for a score line followed by the two-team
+    # AB/R/H table. Synthetic keys are internal only; the public gameId uses date+teams.
+    known_signatures=set()
+    for gno,glines in groups.items():
+        gdate=dates.get(gno,"")
+        for line in glines:
+            sm=re.search(r"\b([A-Z]{3})\s+(\d+)\s*-\s*(\d+)\s+([A-Z]{3})\b",line)
+            if sm:
+                known_signatures.add((gdate,sm.group(1),int(sm.group(2)),int(sm.group(3)),sm.group(4)))
+                break
+
+    global_scores=[]
+    for i,line in enumerate(lines):
+        sm=re.search(r"\b([A-Z]{3})\s+(\d+)\s*-\s*(\d+)\s+([A-Z]{3})\b",line)
+        if not sm:
+            continue
+        c1,c2=sm.group(1),sm.group(4)
+        if c1 not in rosters or c2 not in rosters:
+            continue
+        # Require the actual detailed batting table immediately after the score.
+        look="\n".join(lines[i:min(len(lines),i+35)])
+        if f"({c1})" not in look or f"({c2})" not in look or "RBI" not in look or "Pos." not in look:
+            continue
+        date=""
+        for back in range(i,max(-1,i-45),-1):
+            date=oca_date(lines[back])
+            if date:
+                break
+        if not date:
+            continue
+        global_scores.append((i,date,c1,int(sm.group(2)),int(sm.group(3)),c2))
+
+    synthetic=900
+    for idx,(pos,date,c1,s1,s2,c2) in enumerate(global_scores):
+        sig=(date,c1,s1,s2,c2)
+        if sig in known_signatures:
+            continue
+        next_pos=global_scores[idx+1][0] if idx+1<len(global_scores) else len(lines)
+        start=max(0,pos-35)
+        groups[synthetic]=lines[start:next_pos]
+        dates[synthetic]=date
+        known_signatures.add(sig)
+        synthetic+=1
+
     games=[]
     for game_no in sorted(groups):
         glines=groups[game_no]
-        if game_no in (13,15,17,19):
-            print("ASIAN_GAMES_MISSING_RAW_BEGIN",game_no)
-            for raw_line in glines[:90]:
-                if clean(raw_line):
-                    print(raw_line)
-            print("ASIAN_GAMES_MISSING_RAW_END",game_no)
         score=None
         for line in glines:
             m=re.search(r"\b([A-Z]{3})\s+(\d+)\s*-\s*(\d+)\s+([A-Z]{3})\b",line)
@@ -596,9 +636,12 @@ def build_asian_games_event(meta,text):
         if not any(players_by_team[t] for t in players_by_team):
             continue
 
+        game_date=dates.get(game_no,"")
+        public_game_id=(f"AG-2023-{game_no}" if game_no<900
+                        else f"AG-2023-{game_date}-{code1}-{code2}")
         game={
-            "gameId":f"AG-2023-{game_no}",
-            "date":dates.get(game_no,""),
+            "gameId":public_game_id,
+            "date":game_date,
             "away":team1,"home":team2,
             "score":{"away":score1,"home":score2},
             "source":meta["source"],"sourceUrl":meta["url"],
@@ -995,9 +1038,8 @@ def main():
             events[key]=event
             print(f'OK {key}: {len(event["games"])} games, {len(event["teams"])} teams')
             if meta["competition"]=="亞洲運動會":
-                parsed_nos=sorted(int(str(g.get("gameId","")).split("-")[-1]) for g in event["games"] if str(g.get("gameId","")).split("-")[-1].isdigit())
-                print("ASIAN_GAMES_PARSED_GAMES",parsed_nos)
-                print("ASIAN_GAMES_MISSING_GAMES",[n for n in range(1,23) if n not in parsed_nos])
+                print("ASIAN_GAMES_GAME_IDS",[g.get("gameId") for g in event["games"]])
+                print("ASIAN_GAMES_DATES",sorted(set(g.get("date") for g in event["games"] if g.get("date"))))
                 raw_lines=text.splitlines()
                 for ri,raw_line in enumerate(raw_lines):
                     if re.search(r"Game\s+(?:13|15|17|19)\b",raw_line,re.I):
