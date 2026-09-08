@@ -247,6 +247,28 @@ async function inspectU18Box(){
     console.log('U18_BOX_STATUS',response?.status(),await page.title());
     const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
     console.log('U18_BOX_BODY',body.slice(0,12000));
+
+    const inertiaRaw=await page.locator('[data-page]').first().getAttribute('data-page').catch(()=>null);
+    if(inertiaRaw){
+      try{
+        const inertia=JSON.parse(inertiaRaw);
+        const original=inertia?.props?.viewData?.original || inertia?.props?.viewData || {};
+        const gamePlays=original?.gamePlays;
+        console.log('U18_INERTIA_COMPONENT',inertia?.component||'');
+        console.log('U18_INERTIA_ORIGINAL_KEYS',JSON.stringify(Object.keys(original||{})));
+        console.log('U18_GAMEPLAYS_TYPE',Array.isArray(gamePlays)?'array':typeof gamePlays);
+        console.log('U18_GAMEPLAYS_LEN',Array.isArray(gamePlays)?gamePlays.length:Object.keys(gamePlays||{}).length);
+        const sample=Array.isArray(gamePlays)
+          ? gamePlays.slice(0,30)
+          : Object.fromEntries(Object.entries(gamePlays||{}).slice(0,30));
+        console.log('U18_GAMEPLAYS_SAMPLE',JSON.stringify(sample).slice(0,30000));
+      }catch(e){
+        console.log('U18_INERTIA_PARSE_ERR',String(e),'rawLen=',inertiaRaw.length);
+      }
+    }else{
+      console.log('U18_INERTIA_MISSING');
+    }
+
     const tables=await page.locator('table').evaluateAll((els)=>els.map((t,idx)=>({
       idx,
       text:(t.innerText||'').replace(/\s+/g,' '),
