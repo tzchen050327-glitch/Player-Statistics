@@ -514,6 +514,12 @@ def build_asian_games_event(meta,text):
     games=[]
     for game_no in sorted(groups):
         glines=groups[game_no]
+        if game_no in (13,15,17,19):
+            print("ASIAN_GAMES_MISSING_RAW_BEGIN",game_no)
+            for raw_line in glines[:90]:
+                if clean(raw_line):
+                    print(raw_line)
+            print("ASIAN_GAMES_MISSING_RAW_END",game_no)
         score=None
         for line in glines:
             m=re.search(r"\b([A-Z]{3})\s+(\d+)\s*-\s*(\d+)\s+([A-Z]{3})\b",line)
