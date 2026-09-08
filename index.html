@@ -3344,6 +3344,58 @@ dialog::backdrop {
   }
 }
 /* ===== v1.75 UNIFIED TW/JP/KR PLAYER TABS END ===== */
+
+/* ===== v1.76 HOME PLAYER LIST INNER SCROLL START ===== */
+#homePage .home-main-panel{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding-bottom:20px;
+}
+#homePage #recentPlayers,
+#homePage #homeInternationalExplorer{
+  min-height:0;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#homePage #recentPlayers{
+  flex:1 1 0;
+  overflow-y:auto;
+  align-content:start;
+  padding-right:2px;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+#homePage #recentPlayers:empty{
+  display:none;
+}
+#homePage #homeInternationalExplorer:not(.hidden){
+  flex:1 1 0;
+  overflow-y:auto;
+  padding-right:2px;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+#homePage #recentPlayers::-webkit-scrollbar,
+#homePage #homeInternationalExplorer::-webkit-scrollbar{
+  width:8px;
+}
+#homePage #recentPlayers::-webkit-scrollbar-thumb,
+#homePage #homeInternationalExplorer::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:999px;
+  background:#9cabb9;
+  background-clip:padding-box;
+}
+@media(max-width:640px){
+  #homePage .home-main-panel{
+    padding-bottom:11px;
+  }
+  #homePage #recentPlayers,
+  #homePage #homeInternationalExplorer:not(.hidden){
+    padding-bottom:calc(104px + env(safe-area-inset-bottom));
+  }
+}
+/* ===== v1.76 HOME PLAYER LIST INNER SCROLL END ===== */
+
 </style>
 </head>
 <body>
@@ -3700,7 +3752,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.75';
+    const APP_VERSION = 'v1.76';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
