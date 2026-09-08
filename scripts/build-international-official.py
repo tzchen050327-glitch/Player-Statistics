@@ -988,6 +988,10 @@ def main():
                 raise RuntimeError("no game summaries parsed")
             events[key]=event
             print(f'OK {key}: {len(event["games"])} games, {len(event["teams"])} teams')
+            if meta["competition"]=="亞洲運動會":
+                parsed_nos=sorted(int(str(g.get("gameId","")).split("-")[-1]) for g in event["games"] if str(g.get("gameId","")).split("-")[-1].isdigit())
+                print("ASIAN_GAMES_PARSED_GAMES",parsed_nos)
+                print("ASIAN_GAMES_MISSING_GAMES",[n for n in range(1,23) if n not in parsed_nos])
         except Exception as e:
             errors.append({"event":key,"error":str(e),"sourceUrl":meta["url"]})
             print(f'ERROR {key}: {e}')
