@@ -3835,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.93</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.94</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4080,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.93';
+    const APP_VERSION = 'v1.94';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -5210,13 +5210,13 @@ bg2: {
       };
       const provider = String(player.externalProvider || '').toUpperCase();
 
-      if (provider === 'NPB') {
+      if (['NPB','KBO'].includes(provider)) {
         const lastChecked = Number(player?.externalLevelYearsCheckedAt?.D || 0);
         const historyStale = !lastChecked || (Date.now() - lastChecked > 24 * 60 * 60 * 1000);
         if (historyStale) {
-          report(8, '正在確認 NPB 二軍歷年出賽…');
+          report(8, `正在確認 ${provider} 二軍歷年出賽…`);
           try { await syncExternalLevelYears(player, 'D', (p,s)=>report(Math.min(35, Math.round(p * .7)), s)); }
-          catch (error) { console.warn('跨角色頁二軍年份同步失敗', error); }
+          catch (error) { console.warn(`${provider} 跨角色頁二軍年份同步失敗`, error); }
         }
       }
 
@@ -5356,7 +5356,10 @@ bg2: {
       ].filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100))].sort((a,b)=>b-a);
 
       player.externalAvailableYearsByLevel ||= { A: [], D: [] };
-      const levelYears = level === 'A' ? remoteYears : [Number(requestedYear)];
+      const providerCode = String(player.externalProvider || '').toUpperCase();
+      const levelYears = (level === 'A' || (level === 'D' && providerCode === 'KBO'))
+        ? remoteYears
+        : [Number(requestedYear)];
       player.externalAvailableYearsByLevel[level] = [...new Set([
         ...(Array.isArray(player.externalAvailableYearsByLevel[level]) ? player.externalAvailableYearsByLevel[level].map(Number) : []),
         ...levelYears,
@@ -6351,7 +6354,7 @@ bg2: {
 
           // Once NPB farm history has been scanned, trust the official D-year list.
           // Do not let stale local zero profiles re-introduce fake years such as 2026.
-          if (level === 'D' && provider === 'NPB' && player?.externalLevelYearsCheckedAt?.D) {
+          if (level === 'D' && ['NPB','KBO'].includes(provider) && player?.externalLevelYearsCheckedAt?.D) {
             return [...new Set(remoteByLevel)].sort((a,b)=>b-a);
           }
 
@@ -7340,13 +7343,13 @@ bg2: {
       const provider = String(player.externalProvider || '').toUpperCase();
       const lastChecked = Number(player?.externalLevelYearsCheckedAt?.[level] || 0);
       const historyStale = !lastChecked || (Date.now() - lastChecked > 24 * 60 * 60 * 1000);
-      if (level === 'D' && provider === 'NPB' && historyStale) {
-        setSyncProgress(0, '準備搜尋 NPB 二軍歷年出賽資料…');
+      if (level === 'D' && ['NPB','KBO'].includes(provider) && historyStale) {
+        setSyncProgress(0, `準備搜尋 ${provider} 二軍歷年出賽資料…`);
         historyOverlayOpen = true;
         try {
           await syncExternalLevelYears(player, 'D', (percent,status)=>setSyncProgress(percent,status));
         } catch (error) {
-          console.warn('NPB 二軍歷年年份搜尋失敗', error);
+          console.warn(`${provider} 二軍歷年年份搜尋失敗`, error);
         }
       }
 
@@ -7365,10 +7368,10 @@ bg2: {
         return;
       }
 
-      if (level === 'D' && provider === 'NPB' && !years.length) {
+      if (level === 'D' && ['NPB','KBO'].includes(provider) && !years.length) {
         activatePlayerStatsProfile(player, selectedSeason, level);
         renderAll();
-        await finishSyncProgress('NPB 官網未找到這位球員的二軍出賽賽季');
+        await finishSyncProgress(`${provider} 官網未找到這位球員的二軍出賽賽季`);
         return;
       }
 
@@ -9258,6 +9261,24 @@ bg2: {
       }
     }
 
+    function officialHitterRbiSummary(record = currentRecord) {
+      const official = Math.max(0, Number(record?.internationalHitterGame?.rbi) || 0);
+      const attributed = (Array.isArray(record?.hitterPAs) ? record.hitterPAs : [])
+        .reduce((sum, pa) => sum + Math.max(0, Number(pa?.rbi) || 0), 0);
+      return {
+        official,
+        attributed,
+        unattributed: Math.max(0, official - attributed)
+      };
+    }
+
+    function kboHitterRbiNeedsAggregateFallback(player, record = currentRecord) {
+      if (!player || playerScope(player) !== 'overseas') return false;
+      if (String(player.externalProvider || '').toUpperCase() !== 'KBO') return false;
+      const summary = officialHitterRbiSummary(record);
+      return summary.official > 0 && summary.unattributed > 0;
+    }
+
     function renderHitterToday() {
       const appearance = ensureHitterAppearance();
       if (appearance.mode !== 'bat') {
@@ -9289,9 +9310,15 @@ bg2: {
           <button class="press-btn danger" data-delete-pa="${index}">刪除</button>
         </div>`).join('');
 
+      const rbiSummary = officialHitterRbiSummary(currentRecord);
+      const kboRbiNote = kboHitterRbiNeedsAggregateFallback(player, currentRecord)
+        ? `<div class="small" style="margin:-2px 2px 12px;color:#8b651f;font-weight:800">KBO 官方 Box：本場共 ${rbiSummary.official} 打點；其中 ${rbiSummary.attributed} 打點可對應到特定打席，其餘以官方總打點顯示。</div>`
+        : '';
+
       host.innerHTML = `
         <h3>逐打席紀錄</h3>
         <div class="pa-list">${rows}</div>
+        ${kboRbiNote}
         <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
           <h3 style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
           <div class="grid four">
@@ -10422,9 +10449,14 @@ bg2: {
 
           const paCodes = currentRecord.hitterPAs.map(pa => pa.code);
           const cycle = paCodes.includes('1B') && paCodes.includes('2B') && paCodes.includes('3B') && paCodes.includes('HR');
-          if (cycle) {
-            if (positioned) drawTags(ctx, ['完全打擊'], detail.tagsX, detail.tagsBottom, detail.tagsW, detail.accentColor || '#d4af37');
-            else drawTags(ctx, ['完全打擊'], 72, 1008, 418, '#d4af37');
+          const hitterTags = [];
+          if (cycle) hitterTags.push('完全打擊');
+          if (kboHitterRbiNeedsAggregateFallback(player, currentRecord)) {
+            hitterTags.push(`打點 ${officialHitterRbiSummary(currentRecord).official}`);
+          }
+          if (hitterTags.length) {
+            if (positioned) drawTags(ctx, hitterTags, detail.tagsX, detail.tagsBottom, detail.tagsW, detail.accentColor || '#d4af37');
+            else drawTags(ctx, hitterTags, 72, 1008, 418, '#d4af37');
           }
           }
         } else {
