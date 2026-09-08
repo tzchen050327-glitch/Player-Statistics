@@ -3367,9 +3367,9 @@ dialog::backdrop {
           </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
-            <button class="home-hierarchy-btn" type="button" data-pro-country="US">美國</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="JP">日本</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="KR">韓國</button>
+            <button class="home-hierarchy-btn" type="button" data-pro-country="US">美國</button>
           </div>
           <div id="homeUsLeagueSwitch" class="home-us-league-switch hidden" aria-label="美國職棒聯盟">
             <button class="home-hierarchy-btn active" type="button" data-us-league="MLB">大聯盟 MLB</button>
@@ -3661,7 +3661,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.70';
+    const APP_VERSION = 'v1.71';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
