@@ -3516,6 +3516,16 @@ dialog::backdrop {
   .level-role-btn{min-height:35px;font-size:11px;}
 }
 /* ===== v1.84 LEVEL-FIRST ROLE SWITCH END ===== */
+/* ===== v1.85 MLB TWO-WAY TOP TABS START ===== */
+.player-page-tabs.us-dual-role-tabs{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+@media(max-width:640px){
+  .player-page-tabs.us-dual-role-tabs{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+/* ===== v1.85 MLB TWO-WAY TOP TABS END ===== */
 
 
 </style>
@@ -3639,6 +3649,7 @@ dialog::backdrop {
       <div class="toolbar player-page-tabs" aria-label="球員功能列">
         <button class="press-btn tab-btn active" data-tab="base">球員基礎設定</button>
         <button class="press-btn tab-btn hidden" data-tab="minor">二軍</button>
+        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>
         <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>
         <button class="press-btn tab-btn" data-tab="photos">照片</button>
       </div>
@@ -3874,7 +3885,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.84';
+    const APP_VERSION = 'v1.85';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -5958,6 +5969,14 @@ bg2: {
       if (playerScope(player) !== 'overseas') return false;
       const provider = String(player.externalProvider || '').toUpperCase();
       return provider === 'NPB' || provider === 'KBO';
+    }
+
+    function supportsUsDualRoleTabs(player, year = selectedSeason) {
+      if (!player || playerScope(player) !== 'overseas') return false;
+      const provider = String(player.externalProvider || '').toUpperCase();
+      if (!['MLB','MILB'].includes(provider)) return false;
+      const pair = roleStatsPair(player, year, 'A');
+      return hitterRoleHasData(pair?.hitter) && pitcherRoleHasData(pair?.pitcher);
     }
 
     function selectedStatsTabLevel() {
@@ -8183,8 +8202,9 @@ bg2: {
       });
     }
     function selectedLevelSecondaryStats(player) {
-      if (!player || !supportsLeagueLevelTabs(player)) return null;
-      const pair = roleStatsPair(player, selectedSeason, selectedLevel);
+      if (!player) return null;
+      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+      const pair = roleStatsPair(player, selectedSeason, level);
       return player.type === 'pitcher' ? pair?.hitter || null : pair?.pitcher || null;
     }
 
@@ -8196,11 +8216,14 @@ bg2: {
     function renderSelectedLevelSecondaryRole(player) {
       const stats = selectedLevelSecondaryStats(player);
       const levelLabel = selectedLevel === 'D' ? '二軍' : '一軍';
+      const roleHeadingPrefix = supportsLeagueLevelTabs(player)
+        ? `${selectedSeason} ${levelLabel}`
+        : `${selectedSeason} `;
 
       if (player.type === 'pitcher') {
         const d = hitterDerived(stats || hitterDefaults());
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${selectedSeason} ${levelLabel}打擊成績</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${roleHeadingPrefix}打擊成績</h2>
           <div class="metrics">
             <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
             <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
@@ -8229,7 +8252,7 @@ bg2: {
 
       const d = pitcherDerived(stats || pitcherDefaults());
       els.content.innerHTML = `
-        <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${selectedSeason} ${levelLabel}投球成績</h2>
+        <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${roleHeadingPrefix}投球成績</h2>
         <div class="metrics">
           <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
           <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
@@ -8294,11 +8317,14 @@ bg2: {
       const levelHeading = supportsLeagueLevelTabs(player)
         ? `${selectedSeason} ${selectedLevel === 'D' ? '二軍' : '一軍'}總成績`
         : '';
+      const usDualHeading = supportsUsDualRoleTabs(player)
+        ? `${selectedSeason} ${player.type === 'pitcher' ? '投球成績' : '打擊成績'}`
+        : '';
       if (player.type === 'hitter') {
         const s = mergeStats(player.stats, hitterDefaults);
         const d = hitterDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || '打者基礎設定')}</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usDualHeading || '打者基礎設定')}</h2>
           <div class="metrics">
             <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
             <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
@@ -8330,7 +8356,7 @@ bg2: {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || '投手基礎設定')}</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usDualHeading || '投手基礎設定')}</h2>
           <div class="metrics">
             <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
             <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
@@ -9412,6 +9438,7 @@ bg2: {
         return;
       }
       if (selectedTab === 'base' || selectedTab === 'minor') renderLeagueLevelStatsPage(player);
+      if (selectedTab === 'secondary' && supportsUsDualRoleTabs(player)) renderSelectedLevelSecondaryRole(player);
       if (selectedTab === 'today') {
         if (playerScope(player) === 'international') {
           els.content.innerHTML = '<div class="intl-flow-empty">正在讀取本屆逐場比賽…</div>';
@@ -9489,22 +9516,40 @@ bg2: {
 
       const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
       const minorTab = document.querySelector('.tab-btn[data-tab="minor"]');
+      const secondaryTab = document.querySelector('.tab-btn[data-tab="secondary"]');
       const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
       const photosTab = document.querySelector('.tab-btn[data-tab="photos"]');
       const levelTabs = supportsLeagueLevelTabs(player);
-      document.querySelector('.player-page-tabs')?.classList.toggle('league-level-tabs', levelTabs);
+      const usDualTabs = supportsUsDualRoleTabs(player);
+      const tabsHost = document.querySelector('.player-page-tabs');
+      tabsHost?.classList.toggle('league-level-tabs', levelTabs);
+      tabsHost?.classList.toggle('us-dual-role-tabs', usDualTabs);
 
-      if (baseTab) baseTab.textContent = playerScopeCode === 'international' ? '賽事總成績' : (levelTabs ? '一軍' : '球員基礎設定');
+      if (baseTab) {
+        baseTab.textContent = playerScopeCode === 'international'
+          ? '賽事總成績'
+          : (levelTabs
+              ? '一軍'
+              : (usDualTabs ? (player.type === 'pitcher' ? '投球成績' : '打擊成績') : '球員基礎設定'));
+      }
       minorTab?.classList.toggle('hidden', !levelTabs);
       if (minorTab) minorTab.textContent = '二軍';
-      if (todayTab) todayTab.textContent = playerScopeCode === 'international' ? '逐場比賽' : (levelTabs ? '今日戰績' : '球員今日狀況');
+      secondaryTab?.classList.toggle('hidden', !usDualTabs);
+      if (secondaryTab && usDualTabs) secondaryTab.textContent = player.type === 'pitcher' ? '打擊成績' : '投球成績';
+      if (todayTab) {
+        todayTab.textContent = playerScopeCode === 'international'
+          ? '逐場比賽'
+          : (levelTabs ? '今日戰績' : (usDualTabs ? '今日狀況' : '球員今日狀況'));
+      }
       if (photosTab) photosTab.textContent = '照片';
 
       if (levelTabs && selectedTab === 'base') selectedLevel = 'A';
       if (levelTabs && selectedTab === 'minor') selectedLevel = 'D';
       if (!levelTabs && selectedTab === 'minor') selectedTab = 'base';
+      if (!usDualTabs && selectedTab === 'secondary') selectedTab = 'base';
+      if (usDualTabs && selectedTab === 'secondary') selectedLevel = 'A';
 
-      const statsTabActive = selectedTab === 'base' || selectedTab === 'minor';
+      const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
       els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
@@ -11940,6 +11985,14 @@ bg2: {
         const player = selectedPlayer();
         let nextTab = btn.dataset.tab;
 
+        if (nextTab === 'secondary' && supportsUsDualRoleTabs(player)) {
+          selectedLevel = 'A';
+          selectedTab = 'secondary';
+          localStorage.setItem('baseballSelectedTab', selectedTab);
+          renderAll();
+          return;
+        }
+
         if (supportsLeagueLevelTabs(player) && (nextTab === 'base' || nextTab === 'minor')) {
           const level = nextTab === 'minor' ? 'D' : 'A';
           selectedRoleView = 'primary';
@@ -12225,7 +12278,7 @@ bg2: {
         }
         els.gameDate.value = localISODate();
         selectedTab = localStorage.getItem('baseballSelectedTab') || 'base';
-        if (!['base', 'minor', 'today', 'photos'].includes(selectedTab)) selectedTab = 'base';
+        if (!['base', 'minor', 'secondary', 'today', 'photos'].includes(selectedTab)) selectedTab = 'base';
         currentPage = 'home';
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
