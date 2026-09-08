@@ -41,6 +41,8 @@ TEAM_ZH = {
     "PHILIPPINES":"菲律賓","PAKISTAN":"巴基斯坦","PALESTINE":"巴勒斯坦",
     "HONG KONG":"香港","HONG KONG, CHINA":"香港","HONG KONG SAR":"香港",
     "THAILAND":"泰國","SINGAPORE":"新加坡",
+    "REPUBLIC OF KOREA":"韓國","PEOPLE'S REPUBLIC OF CHINA":"中國",
+    "LAO PEOPLE'S DEMOCRATIC REPUBLIC":"寮國","HONG KONG, CHINA":"香港",
     "CZECHIA":"捷克","CZECH REPUBLIC":"捷克","ITALY":"義大利",
     "GREAT BRITAIN":"英國","BRAZIL":"巴西","COLOMBIA":"哥倫比亞",
     "ISRAEL":"以色列","NICARAGUA":"尼加拉瓜"
@@ -289,6 +291,367 @@ def build_event(meta,text):
         "competition":meta["competition"],"year":meta["year"],
         "source":meta["source"],"sourceUrl":meta["url"],
         "games":games,
+        "teams":{team:list(pmap.values()) for team,pmap in aggregate.items()}
+    }
+
+
+
+OCA_MONTHS = {
+    "JAN":1,"FEB":2,"MAR":3,"APR":4,"MAY":5,"JUN":6,
+    "JUL":7,"AUG":8,"SEP":9,"OCT":10,"NOV":11,"DEC":12
+}
+
+def oca_value(v):
+    t=clean(v)
+    if t in ("","-","x","X"):
+        return 0
+    try:
+        return int(t)
+    except Exception:
+        return 0
+
+def oca_date(line):
+    m=re.search(r"\b(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+(\d{1,2})\s+([A-Z]{3})\s+(\d{4})\b",line,re.I)
+    if not m:
+        return ""
+    month=OCA_MONTHS.get(m.group(2).upper(),0)
+    return f"{int(m.group(3)):04d}-{month:02d}-{int(m.group(1)):02d}" if month else ""
+
+def oca_player_abbr(full_name):
+    name=clean(re.sub(r"\s*\(C\)\s*$","",full_name))
+    parts=name.split()
+    if not parts:
+        return ""
+    surname=re.sub(r"[^A-Za-z]","",parts[0]).upper()
+    initials=[]
+    for p in parts[1:]:
+        for q in re.split(r"[-']",p):
+            q=re.sub(r"[^A-Za-z]","",q)
+            if q:
+                initials.append(q[0].upper())
+    return clean(surname+" "+"".join(initials))
+
+def parse_oca_rosters(text):
+    lines=text.splitlines()
+    rosters={}
+    displays={}
+    i=0
+    while i<len(lines):
+        m=re.match(r"^\s*([A-Z]{3})\s*-\s*(.+?)\s*$",lines[i])
+        if not m:
+            i+=1
+            continue
+        code=m.group(1).upper()
+        display=clean(m.group(2))
+        look="\n".join(lines[i:i+8])
+        if "No. Name" not in look or "Date of Birth" not in look:
+            i+=1
+            continue
+        displays[code]=display
+        team=team_zh(display)
+        roster=[]
+        for j in range(i+1,min(len(lines),i+120)):
+            line=lines[j]
+            if re.search(r"Team Manager:|Coaches:|Pitching Coach:|Bench Coach:",line,re.I):
+                break
+            rm=re.match(
+                r"^\s*(\d{1,3})\s+(.+?)\s{2,}(\d{1,2}\s+[A-Z]{3}\s+\d{4})\s+(.+)$",
+                line
+            )
+            if not rm:
+                continue
+            number=rm.group(1)
+            name=clean(re.sub(r"\s*\(C\)\s*$","",rm.group(2)))
+            rest=rm.group(4)
+            pm=re.search(r"\d+\.\d+\s*/\s*\S+\s+([A-Z]{1,3})\s+[LRS]\s+[LRS]\b",rest)
+            pos=pm.group(1) if pm else ""
+            if not name or len(name)<2:
+                continue
+            roster.append({
+                "number":number,
+                "name":name,
+                "position":pos,
+                "abbr":oca_player_abbr(name)
+            })
+        if roster:
+            rosters[code]={"team":team,"display":display,"players":roster}
+        i+=1
+    return rosters,displays
+
+def resolve_oca_player(rosters,code,abbr):
+    raw=clean(abbr).lstrip("*")
+    raw=re.sub(r"\s*\(C\)\s*$","",raw)
+    key=norm(raw)
+    roster=(rosters.get(code) or {}).get("players") or []
+    exact=[p for p in roster if norm(p.get("abbr"))==key]
+    if len(exact)==1:
+        return exact[0]
+    if exact:
+        return exact[0]
+    # Secondary match: surname + initials contained in the roster-generated abbreviation.
+    for p in roster:
+        pab=norm(p.get("abbr"))
+        if key and pab and (key==pab or key in pab or pab in key):
+            return p
+    return {"number":"","name":raw,"position":""}
+
+def parse_oca_batter_segment(segment,rosters,code):
+    tokens=clean(segment).split()
+    if len(tokens)<11:
+        return None
+    stat_tokens=tokens[-9:]
+    if not all(re.fullmatch(r"(?:\d+|-|x)",x,re.I) for x in stat_tokens):
+        return None
+    pos=tokens[-10]
+    if not re.fullmatch(r"[A-Z0-9/.-]+",pos):
+        return None
+    abbr=clean(" ".join(tokens[:-10])).lstrip("*")
+    if not abbr:
+        return None
+    vals=[oca_value(x) for x in stat_tokens]
+    ab,runs,hits,rbi,bb,so,po,a,errors=vals
+    resolved=resolve_oca_player(rosters,code,abbr)
+    hitter={
+        "pa":ab+bb,
+        "ab":ab,"runs":runs,"hits":hits,
+        "single":hits,"double":0,"triple":0,"hr":0,
+        "rbi":rbi,"bb":bb,"ibb":0,"hbp":0,
+        "sacBunt":0,"sacFly":0,"k":so,"errors":errors
+    }
+    return {
+        "name":resolved.get("name") or abbr,
+        "number":resolved.get("number") or "",
+        "position":pos or resolved.get("position") or "",
+        "hitter":hitter
+    }
+
+def parse_oca_pitcher_row(line,rosters,code):
+    tokens=clean(line).split()
+    if len(tokens)<13:
+        return None
+    tail=tokens[-12:]
+    if not all(re.fullmatch(r"(?:\d+(?:\.[012])?|-)",x) for x in tail):
+        return None
+    prefix=tokens[:-12]
+    if not prefix:
+        return None
+    decision=""
+    if len(prefix)>=2 and re.fullmatch(r"[WLS]",prefix[-2],re.I) and re.fullmatch(r"\(\d+,\d+,\d+\)",prefix[-1]):
+        decision=prefix[-2].upper()
+        prefix=prefix[:-2]
+    elif prefix and re.fullmatch(r"[WLS]",prefix[-1],re.I):
+        decision=prefix[-1].upper()
+        prefix=prefix[:-1]
+    abbr=clean(" ".join(prefix)).lstrip("*")
+    if not abbr or abbr.lower()=="totals:":
+        return None
+    ip,h,r,er,bb,so,hr,wp,bk,ab,bf,np=tail
+    ip=clean(ip)
+    if re.fullmatch(r"\d+",ip):
+        outs=int(ip)*3
+    else:
+        m=re.fullmatch(r"(\d+)\.([012])",ip)
+        outs=int(m.group(1))*3+int(m.group(2)) if m else 0
+    resolved=resolve_oca_player(rosters,code,abbr)
+    hh=oca_value(h); bbb=oca_value(bb); e=oca_value(er)
+    pitcher={
+        "outs":outs,"innings":f"{outs//3}.{outs%3}",
+        "h":hh,"r":oca_value(r),"er":e,"bb":bbb,"hbp":0,
+        "k":oca_value(so),
+        "w":1 if decision=="W" else 0,
+        "l":1 if decision=="L" else 0,
+        "sv":1 if decision=="S" else 0,
+        "hld":0,"bsv":0,
+        "cg":1 if outs>=27 else 0,
+        "sho":1 if outs>=27 and oca_value(r)==0 else 0,
+        "pitchCount":oca_value(np),
+        "era":round(e*27/outs,2) if outs else 0,
+        "whip":round((hh+bbb)*3/outs,2) if outs else 0
+    }
+    return {
+        "name":resolved.get("name") or abbr,
+        "number":resolved.get("number") or "",
+        "position":"P",
+        "pitcher":pitcher
+    }
+
+def merge_oca_game_player(target,src):
+    if not target.get("number") and src.get("number"):
+        target["number"]=src["number"]
+    if not target.get("position") and src.get("position"):
+        target["position"]=src["position"]
+    if src.get("hitter"):
+        if target.get("hitter") is None:
+            target["hitter"]={}
+        h=target["hitter"]
+        for k,v in src["hitter"].items():
+            if isinstance(v,(int,float)):
+                h[k]=h.get(k,0)+v
+    if src.get("pitcher"):
+        target["pitcher"]=src["pitcher"]
+
+def build_asian_games_event(meta,text):
+    lines=text.splitlines()
+    rosters,displays=parse_oca_rosters(text)
+
+    # Group all repeated report pages for the same Game N.
+    headers=[]
+    for i,line in enumerate(lines):
+        m=re.search(r"Men's .+? - Game\s+(\d+)\b",line,re.I)
+        if m:
+            headers.append((i,int(m.group(1)),oca_date(line)))
+    if not headers:
+        raise RuntimeError("OCA game headers not found")
+
+    groups=defaultdict(list)
+    dates={}
+    for idx,(start,game_no,date) in enumerate(headers):
+        end=headers[idx+1][0] if idx+1<len(headers) else len(lines)
+        groups[game_no].extend(lines[start:end])
+        if date:
+            dates[game_no]=date
+
+    games=[]
+    for game_no in sorted(groups):
+        glines=groups[game_no]
+        score=None
+        for line in glines:
+            m=re.search(r"\b([A-Z]{3})\s+(\d+)\s*-\s*(\d+)\s+([A-Z]{3})\b",line)
+            if m:
+                score=(m.group(1),int(m.group(2)),int(m.group(3)),m.group(4))
+                break
+        if not score:
+            continue
+        code1,score1,score2,code2=score
+        team1=team_zh((rosters.get(code1) or {}).get("display") or displays.get(code1) or code1)
+        team2=team_zh((rosters.get(code2) or {}).get("display") or displays.get(code2) or code2)
+        players_by_team={team1:{},team2:{}}
+
+        # Batting: OCA puts both teams side by side on the same fixed-width row.
+        for i,line in enumerate(glines):
+            if not ("Pos." in line and "AB" in line and "RBI" in line and f"({code1})" in line and f"({code2})" in line):
+                continue
+            right_display=(rosters.get(code2) or {}).get("display") or displays.get(code2) or ""
+            right_start=line.find(right_display) if right_display else -1
+            if right_start<0:
+                code_at=line.rfind(f"({code2})")
+                if code_at>0:
+                    # Walk left to the previous large whitespace gap.
+                    right_start=code_at
+                    while right_start>0 and line[right_start-1]!=" ":
+                        right_start-=1
+                    while right_start>1 and not (line[right_start-2:right_start]=="  "):
+                        right_start-=1
+            if right_start<=0:
+                continue
+            for row in glines[i+1:i+35]:
+                if "W/L/S" in row or "Timing and Results" in row:
+                    break
+                if "Totals:" in row:
+                    break
+                left=row[:right_start]
+                right=row[right_start:]
+                for code,team,seg in [(code1,team1,left),(code2,team2,right)]:
+                    parsed=parse_oca_batter_segment(seg,rosters,code)
+                    if not parsed:
+                        continue
+                    key=norm(parsed["name"])
+                    obj=players_by_team[team].setdefault(key,{
+                        "name":parsed["name"],"number":parsed.get("number",""),
+                        "position":parsed.get("position",""),"hitter":None,"pitcher":None
+                    })
+                    merge_oca_game_player(obj,parsed)
+            break
+
+        # Pitching: each team gets its own single-column table.
+        for i,line in enumerate(glines):
+            if not ("W/L/S" in line and "IP" in line and "ER" in line and "NP" in line):
+                continue
+            hm=re.match(r"^\s*(.+?)\s+\(([A-Z]{3})\)\s+W/L/S\b",line)
+            if not hm:
+                continue
+            code=hm.group(2)
+            if code not in (code1,code2):
+                continue
+            team=team1 if code==code1 else team2
+            for row in glines[i+1:i+15]:
+                if "Totals:" in row:
+                    break
+                parsed=parse_oca_pitcher_row(row,rosters,code)
+                if not parsed:
+                    continue
+                key=norm(parsed["name"])
+                obj=players_by_team[team].setdefault(key,{
+                    "name":parsed["name"],"number":parsed.get("number",""),
+                    "position":"P","hitter":None,"pitcher":None
+                })
+                merge_oca_game_player(obj,parsed)
+
+        if not any(players_by_team[t] for t in players_by_team):
+            continue
+
+        game={
+            "gameId":f"AG-2023-{game_no}",
+            "date":dates.get(game_no,""),
+            "away":team1,"home":team2,
+            "score":{"away":score1,"home":score2},
+            "source":meta["source"],"sourceUrl":meta["url"],
+            "teams":{team:list(pmap.values()) for team,pmap in players_by_team.items()}
+        }
+        if game["date"]:
+            games.append(game)
+
+    # Start with the official full roster, then add/merge game stats.
+    aggregate=defaultdict(dict)
+    for code,rinfo in rosters.items():
+        team=rinfo["team"]
+        for p in rinfo["players"]:
+            aggregate[team][norm(p["name"])]={
+                "name":p["name"],"number":p.get("number",""),
+                "position":p.get("position",""),
+                "hitter":None,"pitcher":None,"games":[]
+            }
+
+    for game in games:
+        for team,plist in game["teams"].items():
+            for p in plist:
+                key=norm(p["name"])
+                obj=aggregate[team].setdefault(key,{
+                    "name":p["name"],"number":p.get("number",""),
+                    "position":p.get("position",""),
+                    "hitter":None,"pitcher":None,"games":[]
+                })
+                if p.get("hitter"):
+                    if obj["hitter"] is None:
+                        obj["hitter"]={}
+                    h=obj["hitter"]
+                    for k,v in p["hitter"].items():
+                        if isinstance(v,(int,float)):
+                            h[k]=h.get(k,0)+v
+                if p.get("pitcher"):
+                    if obj["pitcher"] is None:
+                        obj["pitcher"]={}
+                    pit=obj["pitcher"]
+                    for k,v in p["pitcher"].items():
+                        if k in ("innings","era","whip"):
+                            continue
+                        if isinstance(v,(int,float)):
+                            pit[k]=pit.get(k,0)+v
+                    outs=pit.get("outs",0)
+                    pit["innings"]=f"{outs//3}.{outs%3}"
+                    pit["era"]=round(pit.get("er",0)*27/outs,2) if outs else 0
+                    pit["whip"]=round((pit.get("h",0)+pit.get("bb",0))*3/outs,2) if outs else 0
+                opponent=game["home"] if team==game["away"] else game["away"]
+                obj["games"].append({
+                    "gameId":game["gameId"],"date":game["date"],"opponent":opponent,
+                    "hitter":p.get("hitter"),"pitcher":p.get("pitcher"),
+                    "source":meta["source"],"sourceUrl":meta["url"]
+                })
+
+    return {
+        "competition":"亞洲運動會","year":2023,
+        "source":meta["source"],"sourceUrl":meta["url"],
+        "games":sorted(games,key=lambda g:(g.get("date",""),g.get("gameId",""))),
         "teams":{team:list(pmap.values()) for team,pmap in aggregate.items()}
     }
 
@@ -618,7 +981,7 @@ def main():
         key=f'{meta["competition"]}:{meta["year"]}'
         try:
             text=fetch_pdf_text(meta["url"])
-            event=build_event(meta,text)
+            event=build_asian_games_event(meta,text) if meta["competition"]=="亞洲運動會" else build_event(meta,text)
             if not event["games"]:
                 if meta["competition"]=="亞洲運動會":
                     debug_asian_games_text(text)
