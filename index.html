@@ -3835,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.95</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.96</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4080,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.95';
+    const APP_VERSION = 'v1.96';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4256,10 +4256,12 @@ dialog::backdrop {
       '亞錦賽:2025': ['日本','中國','菲律賓','巴基斯坦','中華台北','韓國','香港','巴勒斯坦'],
       '亞錦賽:2023': ['日本','韓國','中華台北','泰國','菲律賓','巴基斯坦','巴勒斯坦','香港']
     };
-    const OVERSEAS_LEAGUES = ['MLB', 'MiLB', 'NPB', 'KBO', '其他海外聯盟'];    const PREFERRED_EXTERNAL_NAME_FIXES = {
+    const OVERSEAS_LEAGUES = ['美國職棒', 'NPB', 'KBO', '其他海外聯盟'];    const PREFERRED_EXTERNAL_NAME_FIXES = {
       'KBO:52605': { name: '金倒永', aliases: ['金道英'] },
       'MLB:660271': { name: '大谷翔平', aliases: ['大谷'] },
-      'MLB:808967': { name: '山本由伸', aliases: ['山本'] }
+      'MLB:808967': { name: '山本由伸', aliases: ['山本'] },
+      'US:660271': { name: '大谷翔平', aliases: ['大谷'] },
+      'US:808967': { name: '山本由伸', aliases: ['山本'] }
     };
     const PREFERRED_EXTERNAL_TEAM_FIXES = {
       'NPB:21925136': 'Fukuoka SoftBank Hawks',
@@ -4857,6 +4859,7 @@ bg2: {
 
     function overseasProvider(competition = '') {
       const value = String(competition || '').trim();
+      if (value === '美國職棒') return 'US';
       if (value === 'MLB') return 'MLB';
       if (value === 'MiLB') return 'MILB';
       if (value === 'NPB') return 'NPB';
@@ -4866,7 +4869,113 @@ bg2: {
 
     function overseasProviderLabel(provider = '') {
       const value = String(provider || '').toUpperCase();
+      if (value === 'US') return 'MLB / MiLB';
       return value === 'MILB' ? 'MiLB' : value;
+    }
+
+    function isUsPlayer(player) {
+      if (!player || playerScope(player) !== 'overseas') return false;
+      const provider = String(player.externalProvider || '').toUpperCase();
+      const competition = String(player.externalCompetition || '').trim();
+      return ['US','MLB','MILB'].includes(provider)
+        || ['美國職棒','MLB','MiLB'].includes(competition);
+    }
+
+    function usCareerEntries(player) {
+      return Array.isArray(player?.usCareerEntries) ? player.usCareerEntries : [];
+    }
+
+    function currentUsCareerEntry(player) {
+      const entries = usCareerEntries(player);
+      if (!entries.length) return null;
+      const selectedKey = String(player?.usSelectedCareerKey || '');
+      return entries.find(entry => String(entry.key) === selectedKey) || entries[0] || null;
+    }
+
+    function usCareerOptionLabel(entry) {
+      if (!entry) return '';
+      return [
+        Number(entry.year) || '',
+        String(entry.teamName || '').trim() || '球隊未提供',
+        String(entry.level || '').trim() || 'MiLB'
+      ].filter(Boolean).join('｜');
+    }
+
+    function applyUsCareerEntry(player, entry) {
+      if (!player || !entry) return null;
+      const year = Number(entry.year) || CURRENT_YEAR;
+      const hitterLocal = entry.hitter ? externalHitterStatsToLocal(entry.hitter) : null;
+      const pitcherLocal = entry.pitcher ? externalPitcherStatsToLocal(entry.pitcher) : null;
+
+      player.usSelectedCareerKey = String(entry.key || '');
+      player.externalYear = year;
+      selectedSeason = year;
+      selectedLevel = 'A';
+
+      storeRoleStatsProfile(player, year, 'A', hitterLocal, pitcherLocal);
+      const nextStats = player.type === 'pitcher'
+        ? (pitcherLocal || pitcherDefaults())
+        : (hitterLocal || hitterDefaults());
+      ensureStatsProfiles(player)[statsProfileKey(year, 'A')] = { ...nextStats };
+      player.stats = { ...nextStats };
+      return entry;
+    }
+
+    async function syncUsCareer(player, onProgress = null, preferredYear = null) {
+      if (!isUsPlayer(player) || !player?.externalPlayerId) return null;
+      const report = (percent, status) => {
+        try { onProgress?.(percent, status); } catch {}
+      };
+      report(12, '正在同步 MLB / MiLB 生涯球隊與層級…');
+      const data = await baseballRequest('career-stats', {
+        provider:'US',
+        id:player.externalPlayerId
+      });
+      const career = data?.career || {};
+      const profile = career.profile || {};
+      const current = career.current || {};
+      const entries = Array.isArray(career.entries) ? career.entries : [];
+
+      player.externalCompetition = '美國職棒';
+      player.externalCurrentTeam = String(current.team || profile.team || player.externalCurrentTeam || player.externalTeam || '').trim();
+      player.externalCurrentLevel = String(current.level || profile.currentLevel || player.externalCurrentLevel || '').trim();
+      player.externalCurrentSportId = Number(current.sportId || profile.sportId || player.externalCurrentSportId || 0) || 0;
+      player.externalTeam = player.externalCurrentTeam || player.externalTeam || '';
+      player.externalPosition = profile.position || player.externalPosition || '';
+      player.externalOfficialName = profile.name || player.externalOfficialName || '';
+      if (profile.number) player.number = String(profile.number);
+
+      player.usCareerEntries = entries.map(entry => ({
+        ...entry,
+        key:String(entry.key || [entry.year,entry.sportId,entry.teamId||entry.teamName||''].join('|')),
+        year:Number(entry.year)||0,
+        sportId:Number(entry.sportId)||0,
+        level:String(entry.level||''),
+        teamId:String(entry.teamId||''),
+        teamName:String(entry.teamName||'')
+      })).filter(entry => entry.year && (entry.hitter || entry.pitcher));
+
+      player.externalAvailableYears = [...new Set(
+        player.usCareerEntries.map(entry => Number(entry.year)).filter(Number.isInteger)
+      )].sort((a,b)=>b-a);
+
+      const oldKey = String(player.usSelectedCareerKey || '');
+      let active = player.usCareerEntries.find(entry => entry.key === oldKey) || null;
+      const targetYear = Number(preferredYear) || 0;
+      if (!active && targetYear) {
+        active = player.usCareerEntries.find(entry => Number(entry.year) === targetYear) || null;
+      }
+      if (!active) {
+        active = player.usCareerEntries.find(entry => Number(entry.year) === CURRENT_YEAR)
+          || player.usCareerEntries[0]
+          || null;
+      }
+      if (active) applyUsCareerEntry(player, active);
+
+      player.externalLastUpdatedAt = Date.now();
+      await savePlayer(player);
+      report(94, `已整理 ${player.usCareerEntries.length} 筆年份／球隊／層級成績…`);
+      return career;
     }
 
     function externalHitterStatsToLocal(stats = {}) {
@@ -5398,6 +5507,9 @@ bg2: {
 
     async function syncExternalSeason(player, requestedYear = selectedSeason, onProgress = null, level = selectedLevel) {
       if (playerScope(player) !== 'overseas' || !player?.externalProvider || !player?.externalPlayerId) return null;
+      if (isUsPlayer(player)) {
+        return await syncUsCareer(player, onProgress, requestedYear);
+      }
       level = level === 'D' ? 'D' : 'A';
       const report = (percent, status) => {
         try { onProgress?.(percent, status); } catch {}
@@ -6039,7 +6151,7 @@ bg2: {
       }
 
       const data = await baseballRequest('daily', {
-        provider:player.externalProvider,
+        provider:isUsPlayer(player) ? 'US' : player.externalProvider,
         id:player.externalPlayerId,
         date:els.gameDate.value
       });
@@ -6283,9 +6395,7 @@ bg2: {
     }
 
     function supportsUsDualRoleTabs(player, year = selectedSeason) {
-      if (!player || playerScope(player) !== 'overseas') return false;
-      const provider = String(player.externalProvider || '').toUpperCase();
-      if (!['MLB','MILB'].includes(provider)) return false;
+      if (!player || playerScope(player) !== 'overseas' || !isUsPlayer(player)) return false;
       const pair = roleStatsPair(player, year, 'A');
       return hitterRoleHasData(pair?.hitter) && pitcherRoleHasData(pair?.pitcher);
     }
@@ -6345,6 +6455,13 @@ bg2: {
     }
 
     function availableSeasonYears(player, level = selectedLevel) {
+      if (isUsPlayer(player)) {
+        const years = usCareerEntries(player)
+          .map(entry => Number(entry.year))
+          .filter(y => Number.isInteger(y) && y >= 1900 && y <= 2100);
+        if (years.length) return [...new Set(years)].sort((a,b)=>b-a);
+      }
+
       if (playerScope(player) !== 'cpbl') {
         if (supportsLeagueLevelTabs(player)) {
           const remoteByLevel = Array.isArray(player?.externalAvailableYearsByLevel?.[level])
@@ -6352,8 +6469,6 @@ bg2: {
             : [];
           const provider = String(player?.externalProvider || '').toUpperCase();
 
-          // Once NPB farm history has been scanned, trust the official D-year list.
-          // Do not let stale local zero profiles re-introduce fake years such as 2026.
           if (level === 'D' && ['NPB','KBO'].includes(provider) && player?.externalLevelYearsCheckedAt?.D) {
             return [...new Set(remoteByLevel)].sort((a,b)=>b-a);
           }
@@ -6385,6 +6500,14 @@ bg2: {
     }
 
     function seasonOptionsHtml(player) {
+      if (isUsPlayer(player)) {
+        const entries = usCareerEntries(player);
+        if (!entries.length) return '<option value="">同步後顯示年份／球隊／層級</option>';
+        const activeKey = String(player.usSelectedCareerKey || entries[0]?.key || '');
+        return entries.map(entry =>
+          `<option value="${escapeAttr(entry.key)}" ${String(entry.key) === activeKey ? 'selected' : ''}>${escapeHtml(usCareerOptionLabel(entry))}</option>`
+        ).join('');
+      }
       const years = availableSeasonYears(player, selectedLevel);
       if (!years.length) return '<option value="">無出賽資料</option>';
       return years.map(year =>
@@ -7046,6 +7169,8 @@ bg2: {
         player?.cpblPosition,
         player?.externalCompetition,
         player?.externalTeam,
+        player?.externalCurrentTeam,
+        player?.externalCurrentLevel,
         player?.externalYear,
         scopeLabel(playerScope(player)),
         typeLabel
@@ -7130,10 +7255,7 @@ bg2: {
           const provider = String(playerSpecialCompetition(player) || player.externalProvider || '').toUpperCase();
           if (provider === 'NPB') homeProCountry = 'JP';
           else if (provider === 'KBO') homeProCountry = 'KR';
-          else {
-            homeProCountry = 'US';
-            homeUsLeague = provider === 'MILB' ? 'MiLB' : 'MLB';
-          }
+          else homeProCountry = 'US';
         }
       }
       selectedLevel = 'A';
@@ -7144,7 +7266,7 @@ bg2: {
         const linkedYear = Math.floor(Number(player.externalYear) || 0);
         const provider = String(player.externalProvider || playerSpecialCompetition(player) || '').toUpperCase();
         const preferCurrentExternalYear = playerScope(player) === 'overseas'
-          && ['NPB','KBO','MLB','MILB'].includes(provider)
+          && ['NPB','KBO','US','MLB','MILB'].includes(provider)
           && (linkedYear === CURRENT_YEAR || years.includes(CURRENT_YEAR));
         selectedSeason = preferCurrentExternalYear
           ? CURRENT_YEAR
@@ -7195,30 +7317,46 @@ bg2: {
       }
 
       if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
-        setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} 資料…`);
+        setSyncProgress(0, `準備同步 ${isUsPlayer(player) ? 'MLB / MiLB' : overseasProviderLabel(player.externalProvider)} 資料…`);
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         try {
           const provider = String(player.externalProvider || '').toUpperCase();
           const linkedYear = Math.floor(Number(player.externalYear) || 0);
-          const currentSeasonCandidate = ['NPB','KBO','MLB','MILB'].includes(provider)
+          const currentSeasonCandidate = ['NPB','KBO','US','MLB','MILB'].includes(provider)
             && (linkedYear === CURRENT_YEAR || selectedSeason === CURRENT_YEAR);
           const targetYear = currentSeasonCandidate
             ? CURRENT_YEAR
             : (selectedSeason || linkedYear || CURRENT_YEAR);
           selectedLevel = 'A';
-          if (selectedTab === 'minor' || selectedTab === 'secondary') selectedTab = 'base';
+          if (selectedTab === 'minor') selectedTab = 'base';
+          if (!supportsUsDualRoleTabs(player) && selectedTab === 'secondary') selectedTab = 'base';
           selectedRoleView = 'primary';
-          await syncExternalSeason(
-            player,
-            targetYear,
-            (percent,status) => setSyncProgress(percent,status),
-            'A'
-          );
-          activatePlayerStatsProfile(player, targetYear, 'A');
-          selectedSeason = targetYear;
+
+          if (isUsPlayer(player)) {
+            await syncUsCareer(
+              player,
+              (percent,status) => setSyncProgress(percent,status),
+              targetYear
+            );
+            const active = currentUsCareerEntry(player);
+            if (active) selectedSeason = Number(active.year) || targetYear;
+          } else {
+            await syncExternalSeason(
+              player,
+              targetYear,
+              (percent,status) => setSyncProgress(percent,status),
+              'A'
+            );
+            activatePlayerStatsProfile(player, targetYear, 'A');
+            selectedSeason = targetYear;
+          }
+
           await loadRecord();
           renderAll();
-          await finishSyncProgress(`同步完成｜${overseasProviderLabel(player.externalProvider)} ${targetYear}`);
+          const active = isUsPlayer(player) ? currentUsCareerEntry(player) : null;
+          await finishSyncProgress(isUsPlayer(player)
+            ? `同步完成｜${active ? usCareerOptionLabel(active) : 'MLB / MiLB'}`
+            : `同步完成｜${overseasProviderLabel(player.externalProvider)} ${targetYear}`);
         } catch (error) {
           console.warn('國外聯盟賽季同步失敗', error);
           setSyncProgress(100, error?.message || '國外聯盟資料同步失敗', { error:true });
@@ -7397,12 +7535,22 @@ bg2: {
       }
     }
 
-    async function switchPlayerSeason(year) {
+    async function switchPlayerSeason(value) {
       const player = selectedPlayer();
       if (!player) return;
 
+      if (isUsPlayer(player)) {
+        const entry = usCareerEntries(player).find(item => String(item.key) === String(value));
+        if (!entry || String(entry.key) === String(player.usSelectedCareerKey || '')) return;
+        selectedRoleView = 'primary';
+        applyUsCareerEntry(player, entry);
+        await savePlayer(player);
+        renderAll();
+        return;
+      }
+
       const allowedYears = availableSeasonYears(player, selectedLevel);
-      year = Math.floor(Number(year));
+      const year = Math.floor(Number(value));
       if (!allowedYears.includes(year) || year === selectedSeason) return;
       selectedRoleView = 'primary';
 
@@ -7992,6 +8140,7 @@ bg2: {
     }
 
     function playerSpecialCompetition(player) {
+      if (isUsPlayer(player)) return '美國職棒';
       return String(player?.externalCompetition || '').trim();
     }
 
@@ -8275,9 +8424,9 @@ bg2: {
       });
     }
     function playerDisplayTeam(player) {
-      return playerScope(player) === 'cpbl'
-        ? normalizeTeamName(player?.cpblTeam || '')
-        : String(player?.externalTeam || '').trim();
+      if (playerScope(player) === 'cpbl') return normalizeTeamName(player?.cpblTeam || '');
+      if (isUsPlayer(player)) return String(player?.externalCurrentTeam || player?.externalTeam || '').trim();
+      return String(player?.externalTeam || '').trim();
     }
 
     function playerSourceMeta(player) {
@@ -8288,6 +8437,14 @@ bg2: {
           player.cpblDualRole ? '雙角色' : '',
           normalizeTeamName(player.cpblTeam || '')
         ].filter(Boolean).join('｜');
+      }
+      if (isUsPlayer(player)) {
+        const team = String(player.externalCurrentTeam || player.externalTeam || '').trim();
+        const level = String(player.externalCurrentLevel || (
+          String(player.externalProvider || '').toUpperCase() === 'MLB' ? 'MLB'
+            : String(player.externalProvider || '').toUpperCase() === 'MILB' ? 'MiLB' : ''
+        )).trim();
+        return [team || '目前球隊未同步', level || 'MLB / MiLB'].filter(Boolean).join('｜');
       }
       return [
         player.type === 'pitcher' ? '投手' : '打者',
@@ -8305,6 +8462,22 @@ bg2: {
           ? `<div class="small" style="margin-top:8px">中職：${escapeHtml(player.cpblTeam || '')}｜${selectedSeason} ${cpblLevelLabel(selectedLevel)}｜自動同步｜CPBL ID ${escapeHtml(player.cpblAcnt)}${(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt) ? `｜上次更新 ${new Date(player.cpblLastUpdatedByProfile?.[statsProfileKey()] || player.cpblLastUpdatedAt).toLocaleString('zh-TW')}` : ''}</div>`
           : '';
       }
+
+      if (isUsPlayer(player) && player.externalPlayerId) {
+        const entry = currentUsCareerEntry(player);
+        const selected = entry
+          ? [entry.year, entry.teamName || '球隊未提供', entry.level || 'MiLB'].filter(Boolean).join('｜')
+          : '年份／球隊／層級尚未同步';
+        const current = [
+          player.externalCurrentTeam || player.externalTeam || '',
+          player.externalCurrentLevel || ''
+        ].filter(Boolean).join('｜');
+        const synced = player.externalLastUpdatedAt
+          ? `｜上次更新 ${new Date(player.externalLastUpdatedAt).toLocaleString('zh-TW')}`
+          : '';
+        return `<div class="small" style="margin-top:8px">美國職棒｜目前 ${escapeHtml(current || '未同步')}｜查看 ${escapeHtml(selected)}｜MLB ID ${escapeHtml(player.externalPlayerId)}${synced}</div>`;
+      }
+
       const detail = [
         scopeLabel(scope),
         playerSpecialCompetition(player),
@@ -8348,7 +8521,7 @@ bg2: {
 
     function currentProLeague() {
       if (homeProCountry === 'TW') return 'CPBL';
-      if (homeProCountry === 'US') return homeUsLeague === 'MiLB' ? 'MiLB' : 'MLB';
+      if (homeProCountry === 'US') return '美國職棒';
       if (homeProCountry === 'JP') return 'NPB';
       if (homeProCountry === 'KR') return 'KBO';
       return 'CPBL';
@@ -8372,6 +8545,16 @@ bg2: {
       if (homeProCountry === 'TW') {
         return players.filter(player => playerScope(player) === 'cpbl');
       }
+      if (homeProCountry === 'US') {
+        const list = players.filter(player => isUsPlayer(player));
+        const seen = new Set();
+        return list.filter(player => {
+          const key = String(player.externalPlayerId || player.id || '');
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
       const league = currentProLeague();
       return players.filter(player =>
         playerScope(player) === 'overseas'
@@ -8382,7 +8565,7 @@ bg2: {
     function homePageBreadcrumb() {
       if (homeRootSection === 'international') return '首頁｜國際賽';
       if (homeProCountry === 'TW') return '首頁｜各國職棒｜台灣';
-      if (homeProCountry === 'US') return `首頁｜各國職棒｜美國｜${currentProLeague()}`;
+      if (homeProCountry === 'US') return '首頁｜各國職棒｜美國';
       if (homeProCountry === 'JP') return '首頁｜各國職棒｜日本｜NPB';
       if (homeProCountry === 'KR') return '首頁｜各國職棒｜韓國｜KBO';
       return '首頁｜各國職棒';
@@ -8402,11 +8585,7 @@ bg2: {
         button.classList.toggle('active', button.dataset.proCountry === homeProCountry);
       });
 
-      const showUsLeagues = !international && homeProCountry === 'US';
-      els.homeUsLeagueSwitch?.classList.toggle('hidden', !showUsLeagues);
-      els.homeUsLeagueSwitch?.querySelectorAll('[data-us-league]').forEach(button => {
-        button.classList.toggle('active', button.dataset.usLeague === homeUsLeague);
-      });
+      els.homeUsLeagueSwitch?.classList.add('hidden');
 
       const cpbl = !international && homeProCountry === 'TW';
       els.homeSpecialFilters?.classList.add('hidden');
@@ -8421,7 +8600,7 @@ bg2: {
       if (els.homePlayerTitle) {
         if (international) els.homePlayerTitle.textContent = '國際賽';
         else if (homeProCountry === 'TW') els.homePlayerTitle.textContent = '台灣｜中華職棒';
-        else if (homeProCountry === 'US') els.homePlayerTitle.textContent = `美國｜${currentProLeague()}`;
+        else if (homeProCountry === 'US') els.homePlayerTitle.textContent = '美國｜MLB / MiLB';
         else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
         else if (homeProCountry === 'KR') els.homePlayerTitle.textContent = '韓國｜KBO';
         else els.homePlayerTitle.textContent = '各國職棒';
@@ -8506,7 +8685,11 @@ bg2: {
         const competition = scope === 'cpbl' ? '中職' : playerSpecialCompetition(p);
         const team = scope === 'international'
           ? internationalTeam(p)
-          : (scope === 'cpbl' ? normalizeTeamName(p.cpblTeam || '') : String(p.externalTeam || '').trim());
+          : (scope === 'cpbl'
+              ? normalizeTeamName(p.cpblTeam || '')
+              : (isUsPlayer(p)
+                  ? String(p.externalCurrentTeam || p.externalTeam || '').trim()
+                  : String(p.externalTeam || '').trim()));
         const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
         const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
         const cpblLevel = scope === 'cpbl'
@@ -8515,7 +8698,7 @@ bg2: {
         return {
           first: `#${p.number || '—'} ${p.name || '未命名球員'}`,
           second: [role, competition, team].filter(Boolean).join('｜'),
-          third: [crossRole, year || cpblLevel].filter(Boolean).join('｜') || ' '
+          third: [crossRole, isUsPlayer(p) ? (p.externalCurrentLevel || '') : (year || cpblLevel)].filter(Boolean).join('｜') || ' '
         };
       };
 
@@ -8807,6 +8990,10 @@ bg2: {
       const levelHeading = supportsLeagueLevelTabs(player)
         ? `${selectedSeason} ${selectedLevel === 'D' ? '二軍' : '一軍'}總成績`
         : '';
+      const usEntry = isUsPlayer(player) ? currentUsCareerEntry(player) : null;
+      const usCareerHeading = usEntry
+        ? `${usEntry.year} ${usEntry.teamName || '球隊未提供'} ${usEntry.level || 'MiLB'} 總成績`
+        : '';
       const usDualHeading = supportsUsDualRoleTabs(player)
         ? `${selectedSeason} ${player.type === 'pitcher' ? '投球成績' : '打擊成績'}`
         : '';
@@ -8814,7 +9001,7 @@ bg2: {
         const s = mergeStats(player.stats, hitterDefaults);
         const d = hitterDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usDualHeading || '打者基礎設定')}</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usCareerHeading || usDualHeading || '打者基礎設定')}</h2>
           <div class="metrics">
             <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
             <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
@@ -8846,7 +9033,7 @@ bg2: {
         const s = mergeStats(player.stats, pitcherDefaults);
         const d = pitcherDerived(s);
         els.content.innerHTML = `
-          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usDualHeading || '投手基礎設定')}</h2>
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${playerScope(player) === 'international' ? `${escapeHtml(playerSpecialCompetition(player))} ${escapeHtml(internationalEdition(player))} 總成績` : (levelHeading || usCareerHeading || usDualHeading || '投手基礎設定')}</h2>
           <div class="metrics">
             <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
             <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
@@ -10034,22 +10221,34 @@ bg2: {
       els.externalScopeBadge?.classList.toggle('hidden', !externalPlayer);
       if (els.externalScopeBadge && externalPlayer && player) {
         els.externalScopeBadge.className = `external-scope-badge ${playerScopeCode}`;
-        els.externalScopeBadge.textContent = [
-          scopeLabel(playerScopeCode),
-          playerSpecialCompetition(player),
-          playerScopeCode === 'international' ? internationalTeam(player) : (player.externalTeam || ''),
-          Number(selectedSeason || player.externalYear) || ''
-        ].filter(Boolean).join('｜');
+        const usEntry = isUsPlayer(player) ? currentUsCareerEntry(player) : null;
+        els.externalScopeBadge.textContent = usEntry
+          ? ['美國職棒', usEntry.year, usEntry.teamName, usEntry.level].filter(Boolean).join('｜')
+          : [
+              scopeLabel(playerScopeCode),
+              playerSpecialCompetition(player),
+              playerScopeCode === 'international' ? internationalTeam(player) : (player.externalTeam || ''),
+              Number(selectedSeason || player.externalYear) || ''
+            ].filter(Boolean).join('｜');
       }
       els.majorLevelBtn?.classList.toggle('active', selectedLevel === 'A');
       els.minorLevelBtn?.classList.toggle('active', selectedLevel === 'D');
       if (els.seasonSelect && player) {
-        const years = availableSeasonYears(player, selectedLevel);
-        if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
-        els.seasonSelect.innerHTML = seasonOptionsHtml(player);
         const linkedOverseas = playerScopeCode === 'overseas' && Boolean(player.externalProvider && player.externalPlayerId);
-        els.seasonSelect.disabled = years.length === 0 || (externalPlayer && !linkedOverseas);
-        els.seasonSelect.value = years.length ? String(selectedSeason) : '';
+        if (isUsPlayer(player)) {
+          const entries = usCareerEntries(player);
+          const active = currentUsCareerEntry(player);
+          if (active) selectedSeason = Number(active.year) || selectedSeason;
+          els.seasonSelect.innerHTML = seasonOptionsHtml(player);
+          els.seasonSelect.disabled = !linkedOverseas || entries.length === 0;
+          els.seasonSelect.value = active ? String(active.key) : '';
+        } else {
+          const years = availableSeasonYears(player, selectedLevel);
+          if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
+          els.seasonSelect.innerHTML = seasonOptionsHtml(player);
+          els.seasonSelect.disabled = years.length === 0 || (externalPlayer && !linkedOverseas);
+          els.seasonSelect.value = years.length ? String(selectedSeason) : '';
+        }
       }
 
       const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
@@ -12374,7 +12573,7 @@ bg2: {
       const { name, number, selectedType, scope, competition, externalYear } = newPlayerFormValues();
       const provider = overseasProvider(competition);
       if (scope !== 'overseas' || !provider) {
-        setStatus('請先選擇 MLB、MiLB、NPB 或 KBO。', true);
+        setStatus('請先選擇美國職棒、NPB 或 KBO。', true);
         return;
       }
       if (!validateNewPlayer(name, number, scope, competition, true)) return;
@@ -12483,6 +12682,9 @@ bg2: {
           externalOfficialName:official.name || picked.officialName || picked.name || '',
           externalPosition:official.position || official.jpPosition || picked.position || '',
           externalTeam:official.team || picked.team || '',
+          externalCurrentTeam:official.team || picked.team || '',
+          externalCurrentLevel:official.currentLevel || (provider === 'MLB' ? 'MLB' : provider === 'MILB' ? 'MiLB' : ''),
+          externalCurrentSportId:Number(official.sportId)||0,
           externalYear,
           externalAvailableYears:[],
           externalSeasonSyncPending:Boolean(provider === 'MILB' && seasonSyncError),
@@ -12493,8 +12695,8 @@ bg2: {
 
         if (remote) applyExternalSeasonStats(player, remote, externalYear);
         const sameLinkedPlayers = players.filter(p => playerScope(p) === 'overseas'
-          && p.externalProvider === provider
-          && String(p.externalPlayerId || '') === String(player.externalPlayerId));
+          && String(p.externalPlayerId || '') === String(player.externalPlayerId)
+          && (provider === 'US' ? isUsPlayer(p) : p.externalProvider === provider));
         if (sameLinkedPlayers.length) {
           throw new Error('這位球員已經存在；現在同一筆球員資料會自動整合投球與打擊成績，不需要再建立另一個角色版本。');
         }
