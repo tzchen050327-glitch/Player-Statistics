@@ -72,9 +72,15 @@ jobs:
               try:
                   with open('data/international-stats.json',encoding='utf-8') as f: old=json.load(f)
               except Exception: old={}
+          events=dict(official.get('events',{}))
+          for key,event in (fallback.get('events',{}) or {}).items():
+              # Official structured data always wins. Fallback only fills an event
+              # that the official parser could not currently provide.
+              if key not in events:
+                  events[key]=event
           comparable={
               'schemaVersion':1,
-              'events':official.get('events',{}),
+              'events':events,
               'officialErrors':official.get('errors',[]),
               'fallbackChecks':fallback.get('checks',[])
           }
