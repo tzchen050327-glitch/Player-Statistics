@@ -3484,6 +3484,38 @@ dialog::backdrop {
   .cross-role-page-head{flex-direction:column;}
 }
 /* ===== v1.83 CROSS ROLE PAGE END ===== */
+/* ===== v1.84 LEVEL-FIRST ROLE SWITCH START ===== */
+.player-page-tabs.league-level-tabs{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.level-role-switch{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:0 0 16px;
+}
+.level-role-btn{
+  min-height:38px;
+  border:1px solid #cfd8e3;
+  border-radius:11px;
+  background:#f7f9fc;
+  color:#526579;
+  font-weight:900;
+  cursor:pointer;
+}
+.level-role-btn.active{
+  border-color:#174f86;
+  background:#174f86;
+  color:#fff;
+}
+@media(max-width:640px){
+  .player-page-tabs.league-level-tabs{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .level-role-switch{gap:5px;margin-bottom:12px;}
+  .level-role-btn{min-height:35px;font-size:11px;}
+}
+/* ===== v1.84 LEVEL-FIRST ROLE SWITCH END ===== */
 
 
 </style>
@@ -3607,7 +3639,6 @@ dialog::backdrop {
       <div class="toolbar player-page-tabs" aria-label="球員功能列">
         <button class="press-btn tab-btn active" data-tab="base">球員基礎設定</button>
         <button class="press-btn tab-btn hidden" data-tab="minor">二軍</button>
-        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>
         <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>
         <button class="press-btn tab-btn" data-tab="photos">照片</button>
       </div>
@@ -3843,7 +3874,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.83';
+    const APP_VERSION = 'v1.84';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3945,6 +3976,7 @@ dialog::backdrop {
     const CURRENT_YEAR = new Date().getFullYear();
     let selectedSeason = CURRENT_YEAR;
     let selectedLevel = 'A';
+    let selectedRoleView = 'primary';
     let homeLevelFilter = 'ALL';
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
@@ -6775,6 +6807,7 @@ bg2: {
         }
       }
       selectedLevel = 'A';
+      selectedRoleView = 'primary';
       {
         const years = availableSeasonYears(player, 'A');
         const linkedYear = Math.floor(Number(player.externalYear) || 0);
@@ -6842,7 +6875,8 @@ bg2: {
             ? CURRENT_YEAR
             : (selectedSeason || linkedYear || CURRENT_YEAR);
           selectedLevel = 'A';
-          selectedTab = selectedTab === 'minor' && supportsLeagueLevelTabs(player) ? 'base' : selectedTab;
+          if (selectedTab === 'minor' || selectedTab === 'secondary') selectedTab = 'base';
+          selectedRoleView = 'primary';
           await syncExternalSeason(
             player,
             targetYear,
@@ -6896,6 +6930,7 @@ bg2: {
 
     function switchPlayerLevel(level) {
       level = level === 'D' ? 'D' : 'A';
+      selectedRoleView = 'primary';
       if (level === selectedLevel) return;
       const player = selectedPlayer();
       if (!player) return;
@@ -6956,6 +6991,7 @@ bg2: {
       const player = selectedPlayer();
       if (!player || !supportsLeagueLevelTabs(player) || playerScope(player) !== 'overseas') return;
       level = level === 'D' ? 'D' : 'A';
+      selectedRoleView = 'primary';
 
       let historyOverlayOpen = false;
       const provider = String(player.externalProvider || '').toUpperCase();
@@ -6977,7 +7013,8 @@ bg2: {
       const years = availableSeasonYears(player, level);
       selectedSeason = years[0] || Number(player.externalYear) || CURRENT_YEAR;
 
-      if (hasStatsProfile(player, selectedSeason, level) && selectedSeason !== CURRENT_YEAR) {
+      const hasRolePair = Boolean(ensureRoleStatsProfiles(player)[statsProfileKey(selectedSeason, level)]);
+      if (hasStatsProfile(player, selectedSeason, level) && selectedSeason !== CURRENT_YEAR && hasRolePair) {
         activatePlayerStatsProfile(player, selectedSeason, level);
         await loadRecord();
         renderAll();
@@ -7018,32 +7055,10 @@ bg2: {
       const player = selectedPlayer();
       if (!player) return;
 
-      const allowedYears = selectedTab === 'secondary'
-        ? secondaryRoleAvailableYears(player)
-        : availableSeasonYears(player, selectedLevel);
+      const allowedYears = availableSeasonYears(player, selectedLevel);
       year = Math.floor(Number(year));
       if (!allowedYears.includes(year) || year === selectedSeason) return;
-
-      if (selectedTab === 'secondary') {
-        selectedSeason = year;
-        if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
-          player.externalYear = year;
-          setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} ${year} 投打資料…`);
-          try {
-            await syncSecondaryRoleSeason(player, year, (percent,status)=>setSyncProgress(percent,status));
-            renderAll();
-            await finishSyncProgress(`同步完成｜${overseasProviderLabel(player.externalProvider)} ${year} ${player.type === 'pitcher' ? '打擊' : '投球'}成績`);
-          } catch (error) {
-            setSyncProgress(100, error?.message || '其他成績同步失敗', { error:true });
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            hideSyncProgress();
-            renderAll();
-          }
-        } else {
-          renderAll();
-        }
-        return;
-      }
+      selectedRoleView = 'primary';
 
       if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
         selectedSeason = year;
@@ -7058,6 +7073,7 @@ bg2: {
           setSyncProgress(100, error?.message || '賽季同步失敗', { error:true });
           await new Promise(resolve => setTimeout(resolve, 1200));
           hideSyncProgress();
+          renderAll();
         }
         return;
       }
@@ -8166,6 +8182,114 @@ bg2: {
         });
       });
     }
+    function selectedLevelSecondaryStats(player) {
+      if (!player || !supportsLeagueLevelTabs(player)) return null;
+      const pair = roleStatsPair(player, selectedSeason, selectedLevel);
+      return player.type === 'pitcher' ? pair?.hitter || null : pair?.pitcher || null;
+    }
+
+    function selectedLevelHasSecondaryRole(player) {
+      const stats = selectedLevelSecondaryStats(player);
+      return player?.type === 'pitcher' ? hitterRoleHasData(stats) : pitcherRoleHasData(stats);
+    }
+
+    function renderSelectedLevelSecondaryRole(player) {
+      const stats = selectedLevelSecondaryStats(player);
+      const levelLabel = selectedLevel === 'D' ? '二軍' : '一軍';
+
+      if (player.type === 'pitcher') {
+        const d = hitterDerived(stats || hitterDefaults());
+        els.content.innerHTML = `
+          <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${selectedSeason} ${levelLabel}打擊成績</h2>
+          <div class="metrics">
+            <div class="metric"><span>打擊率</span><strong>${fmtBatRate(d.avg)}</strong></div>
+            <div class="metric"><span>上壘率</span><strong>${fmtBatRate(d.obp)}</strong></div>
+            <div class="metric"><span>長打率</span><strong>${fmtBatRate(d.slg)}</strong></div>
+          </div>
+          <div class="grid four">
+            ${readonlyStatField('打席', stats?.pa || 0)}
+            ${readonlyStatField('打數', stats?.ab || 0)}
+            ${readonlyStatField('安打', d.hits || 0)}
+            ${readonlyStatField('得分', stats?.runs || 0)}
+            ${readonlyStatField('打點', stats?.rbi || 0)}
+            ${readonlyStatField('一安', stats?.single || 0)}
+            ${readonlyStatField('二安', stats?.double || 0)}
+            ${readonlyStatField('三安', stats?.triple || 0)}
+            ${readonlyStatField('全壘打', stats?.hr || 0)}
+            ${readonlyStatField('四壞球', stats?.bb || 0)}
+            ${readonlyStatField('故意四壞', stats?.ibb || 0)}
+            ${readonlyStatField('死球', stats?.hbp || 0)}
+            ${readonlyStatField('三振', stats?.k || 0)}
+            ${readonlyStatField('犧牲短打', stats?.sacBunt || 0)}
+            ${readonlyStatField('犧牲高飛', stats?.sacFly || 0)}
+          </div>
+          ${playerSourceInfoHtml(player)}`;
+        return;
+      }
+
+      const d = pitcherDerived(stats || pitcherDefaults());
+      els.content.innerHTML = `
+        <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜${selectedSeason} ${levelLabel}投球成績</h2>
+        <div class="metrics">
+          <div class="metric"><span>WHIP</span><strong>${fmtTwo(d.whip)}</strong></div>
+          <div class="metric"><span>防禦率</span><strong>${fmtTwo(d.era)}</strong></div>
+          <div class="metric"><span>勝／敗</span><strong>${stats?.w || 0}／${stats?.l || 0}</strong></div>
+        </div>
+        <div class="grid four">
+          ${readonlyStatField('投球局數', outsToIP(stats?.outs || 0))}
+          ${readonlyStatField('被安打', stats?.h || 0)}
+          ${readonlyStatField('保送', stats?.bb || 0)}
+          ${readonlyStatField('死球', stats?.hbp || 0)}
+          ${readonlyStatField('三振', stats?.k || 0)}
+          ${readonlyStatField('自責分', stats?.er || 0)}
+          ${readonlyStatField('勝場', stats?.w || 0)}
+          ${readonlyStatField('敗場', stats?.l || 0)}
+          ${readonlyStatField('完投', stats?.cg || 0)}
+          ${readonlyStatField('完封', stats?.sho || 0)}
+          ${readonlyStatField('救援成功', stats?.sv || 0)}
+          ${readonlyStatField('中繼成功', stats?.hld || 0)}
+        </div>
+        ${playerSourceInfoHtml(player)}`;
+    }
+
+    function injectSelectedLevelRoleSwitch(player) {
+      if (!selectedLevelHasSecondaryRole(player)) {
+        selectedRoleView = 'primary';
+        return;
+      }
+
+      const primaryLabel = player.type === 'pitcher' ? '投球成績' : '打擊成績';
+      const secondaryLabel = player.type === 'pitcher' ? '打擊成績' : '投球成績';
+      els.content.insertAdjacentHTML('afterbegin', `
+        <div class="level-role-switch" aria-label="成績類型">
+          <button type="button" class="level-role-btn ${selectedRoleView === 'primary' ? 'active' : ''}" data-role-view="primary">${primaryLabel}</button>
+          <button type="button" class="level-role-btn ${selectedRoleView === 'secondary' ? 'active' : ''}" data-role-view="secondary">${secondaryLabel}</button>
+        </div>`);
+
+      els.content.querySelectorAll('[data-role-view]').forEach(button => {
+        button.addEventListener('click', () => {
+          const next = button.dataset.roleView === 'secondary' ? 'secondary' : 'primary';
+          if (next === selectedRoleView) return;
+          selectedRoleView = next;
+          renderLeagueLevelStatsPage(player);
+        });
+      });
+    }
+
+    function renderLeagueLevelStatsPage(player) {
+      if (!supportsLeagueLevelTabs(player)) {
+        renderBaseSettings(player);
+        return;
+      }
+
+      if (!selectedLevelHasSecondaryRole(player)) selectedRoleView = 'primary';
+
+      if (selectedRoleView === 'secondary') renderSelectedLevelSecondaryRole(player);
+      else renderBaseSettings(player);
+
+      injectSelectedLevelRoleSwitch(player);
+    }
+
     function renderBaseSettings(player) {
       const levelHeading = supportsLeagueLevelTabs(player)
         ? `${selectedSeason} ${selectedLevel === 'D' ? '二軍' : '一軍'}總成績`
@@ -9287,8 +9411,7 @@ bg2: {
         els.content.innerHTML = '';
         return;
       }
-      if (selectedTab === 'base' || selectedTab === 'minor') renderBaseSettings(player);
-      if (selectedTab === 'secondary') renderSecondaryRolePage(player);
+      if (selectedTab === 'base' || selectedTab === 'minor') renderLeagueLevelStatsPage(player);
       if (selectedTab === 'today') {
         if (playerScope(player) === 'international') {
           els.content.innerHTML = '<div class="intl-flow-empty">正在讀取本屆逐場比賽…</div>';
@@ -9356,15 +9479,9 @@ bg2: {
       els.majorLevelBtn?.classList.toggle('active', selectedLevel === 'A');
       els.minorLevelBtn?.classList.toggle('active', selectedLevel === 'D');
       if (els.seasonSelect && player) {
-        const years = selectedTab === 'secondary'
-          ? secondaryRoleAvailableYears(player)
-          : availableSeasonYears(player, selectedLevel);
+        const years = availableSeasonYears(player, selectedLevel);
         if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
-        els.seasonSelect.innerHTML = selectedTab === 'secondary'
-          ? (years.length
-              ? years.map(year => `<option value="${year}" ${year === selectedSeason ? 'selected' : ''}>${year}</option>`).join('')
-              : '<option value="">無出賽資料</option>')
-          : seasonOptionsHtml(player);
+        els.seasonSelect.innerHTML = seasonOptionsHtml(player);
         const linkedOverseas = playerScopeCode === 'overseas' && Boolean(player.externalProvider && player.externalPlayerId);
         els.seasonSelect.disabled = years.length === 0 || (externalPlayer && !linkedOverseas);
         els.seasonSelect.value = years.length ? String(selectedSeason) : '';
@@ -9372,7 +9489,6 @@ bg2: {
 
       const baseTab = document.querySelector('.tab-btn[data-tab="base"]');
       const minorTab = document.querySelector('.tab-btn[data-tab="minor"]');
-      const secondaryTab = document.querySelector('.tab-btn[data-tab="secondary"]');
       const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
       const photosTab = document.querySelector('.tab-btn[data-tab="photos"]');
       const levelTabs = supportsLeagueLevelTabs(player);
@@ -9381,16 +9497,14 @@ bg2: {
       if (baseTab) baseTab.textContent = playerScopeCode === 'international' ? '賽事總成績' : (levelTabs ? '一軍' : '球員基礎設定');
       minorTab?.classList.toggle('hidden', !levelTabs);
       if (minorTab) minorTab.textContent = '二軍';
-      secondaryTab?.classList.toggle('hidden', !levelTabs);
-      if (secondaryTab) secondaryTab.textContent = player?.type === 'pitcher' ? '打擊成績' : '投球成績';
       if (todayTab) todayTab.textContent = playerScopeCode === 'international' ? '逐場比賽' : (levelTabs ? '今日戰績' : '球員今日狀況');
       if (photosTab) photosTab.textContent = '照片';
 
       if (levelTabs && selectedTab === 'base') selectedLevel = 'A';
       if (levelTabs && selectedTab === 'minor') selectedLevel = 'D';
-      if (!levelTabs && (selectedTab === 'minor' || selectedTab === 'secondary')) selectedTab = 'base';
+      if (!levelTabs && selectedTab === 'minor') selectedTab = 'base';
 
-      const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
+      const statsTabActive = selectedTab === 'base' || selectedTab === 'minor';
       els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
       if (els.downloadBtn) {
@@ -11826,34 +11940,9 @@ bg2: {
         const player = selectedPlayer();
         let nextTab = btn.dataset.tab;
 
-        if (supportsLeagueLevelTabs(player) && nextTab === 'secondary') {
-          selectedTab = 'secondary';
-          localStorage.setItem('baseballSelectedTab', selectedTab);
-
-          const years = secondaryRoleAvailableYears(player);
-          if (years.length && !years.includes(selectedSeason)) selectedSeason = years[0];
-          if (!years.length) selectedSeason = Number(player.externalYear) || CURRENT_YEAR;
-
-          if (playerScope(player) === 'overseas' && player.externalProvider && player.externalPlayerId) {
-            setSyncProgress(0, `準備同步 ${overseasProviderLabel(player.externalProvider)} ${selectedSeason} 投打資料…`);
-            try {
-              await syncSecondaryRoleSeason(player, selectedSeason, (percent,status)=>setSyncProgress(percent,status));
-              renderAll();
-              await finishSyncProgress(`同步完成｜${selectedSeason} ${player.type === 'pitcher' ? '打擊' : '投球'}成績`);
-            } catch (error) {
-              setSyncProgress(100, error?.message || '其他成績同步失敗', { error:true });
-              await new Promise(resolve => setTimeout(resolve, 900));
-              hideSyncProgress();
-              renderAll();
-            }
-          } else {
-            renderAll();
-          }
-          return;
-        }
-
         if (supportsLeagueLevelTabs(player) && (nextTab === 'base' || nextTab === 'minor')) {
           const level = nextTab === 'minor' ? 'D' : 'A';
+          selectedRoleView = 'primary';
           selectedTab = nextTab;
           localStorage.setItem('baseballSelectedTab', selectedTab);
 
