@@ -1,0 +1,22 @@
+name: Asian Games international E2E
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/asian-games-e2e.mjs'
+      - '.github/workflows/asian-games-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  asian-games-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/asian-games-e2e.mjs
