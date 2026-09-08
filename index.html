@@ -3306,6 +3306,15 @@ dialog::backdrop {
   display:none !important;
 }
 /* ===== v1.70 INTERNATIONAL ACTION HIDE FIX END ===== */
+
+/* ===== v1.73 CPBL AUTO LEVEL + ALL DIALOG FILTERS START ===== */
+#allPlayersDialog .all-cpbl-filter-grid{
+  margin:12px 0 16px;
+}
+#allPlayersDialog .all-cpbl-filter-grid.hidden{
+  display:none !important;
+}
+/* ===== v1.73 CPBL AUTO LEVEL + ALL DIALOG FILTERS END ===== */
 </style>
 </head>
 <body>
@@ -3384,29 +3393,6 @@ dialog::backdrop {
             <button id="addPlayerBtn" class="press-btn primary">新增球員</button>
             <button id="homeSearchPlayerBtn" class="press-btn">搜尋球員</button>
             <button id="allPlayersBtn" class="press-btn">展開全部</button>
-          </div>
-
-          <div id="homeCpblFilters" class="home-cpbl-filter-grid" aria-label="中職球員篩選">
-            <label class="home-filter-field">
-              <span>軍別</span>
-              <select id="homeLevelFilters" aria-label="軍別">
-                <option value="A">一軍</option>
-                <option value="D">二軍</option>
-                <option value="OTHER">其他</option>
-              </select>
-            </label>
-            <label class="home-filter-field">
-              <span>球隊</span>
-              <select id="homeTeamFilters" aria-label="球隊">
-                <option value="">全部球隊</option>
-                <option value="富邦悍將">富邦悍將</option>
-                <option value="台鋼雄鷹">台鋼雄鷹</option>
-                <option value="中信兄弟">中信兄弟</option>
-                <option value="樂天桃猿">樂天桃猿</option>
-                <option value="統一7-ELEVEn獅">統一7-ELEVEn獅</option>
-                <option value="味全龍">味全龍</option>
-              </select>
-            </label>
           </div>
 
           <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國外聯盟篩選"></div>
@@ -3564,7 +3550,7 @@ dialog::backdrop {
         <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
         <button id="createExternalPlayerBtn" class="press-btn primary hidden">搜尋國外聯盟資料</button>
       </div>
-      <div id="newPlayerScopeHelp" class="small new-player-scope-help">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後可在球員頁切換一軍／二軍與賽季。</div>
+      <div id="newPlayerScopeHelp" class="small new-player-scope-help">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後抓取單場資料會自動先查一軍，再查二軍。</div>
     </div>
   </dialog>
 
@@ -3578,6 +3564,29 @@ dialog::backdrop {
         <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
         <button id="batchReportBtn" class="press-btn primary">批量生成戰報</button>
         <button id="allDeletePlayerBtn" class="press-btn danger">刪除球員</button>
+      </div>
+      <div id="allCpblFilters" class="home-cpbl-filter-grid all-cpbl-filter-grid hidden" aria-label="中職球員篩選">
+        <label class="home-filter-field">
+          <span>類別</span>
+          <select id="allLevelFilters" aria-label="類別">
+            <option value="ALL">全部</option>
+            <option value="A">一軍</option>
+            <option value="D">二軍</option>
+            <option value="OTHER">其他</option>
+          </select>
+        </label>
+        <label class="home-filter-field">
+          <span>球隊</span>
+          <select id="allTeamFilters" aria-label="球隊">
+            <option value="">全部球隊</option>
+            <option value="富邦悍將">富邦悍將</option>
+            <option value="台鋼雄鷹">台鋼雄鷹</option>
+            <option value="中信兄弟">中信兄弟</option>
+            <option value="樂天桃猿">樂天桃猿</option>
+            <option value="統一7-ELEVEn獅">統一7-ELEVEn獅</option>
+            <option value="味全龍">味全龍</option>
+          </select>
+        </label>
       </div>
       <div class="player-group">
         <h3>投手</h3>
@@ -3661,7 +3670,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.72';
+    const APP_VERSION = 'v1.73';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3734,6 +3743,9 @@ dialog::backdrop {
       newPlayerScopeHelp: document.getElementById('newPlayerScopeHelp'),
       newPlayerSuggestions: document.getElementById('newPlayerSuggestions'),
       allDialog: document.getElementById('allPlayersDialog'),
+      allCpblFilters: document.getElementById('allCpblFilters'),
+      allLevelFilters: document.getElementById('allLevelFilters'),
+      allTeamFilters: document.getElementById('allTeamFilters'),
       allPitchers: document.getElementById('allPitchers'),
       allHitters: document.getElementById('allHitters'),
       deletePlayerDialog: document.getElementById('deletePlayerDialog'),
@@ -3759,7 +3771,7 @@ dialog::backdrop {
     const CURRENT_YEAR = new Date().getFullYear();
     let selectedSeason = CURRENT_YEAR;
     let selectedLevel = 'A';
-    let homeLevelFilter = 'A';
+    let homeLevelFilter = 'ALL';
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
     let homeRootSection = 'pro';
@@ -5127,15 +5139,55 @@ bg2: {
 
     async function importCpblDaily(player) {
       if (!player?.cpblAcnt || !player?.cpblTeamCode) throw new Error('此球員尚未連結中職官網。');
-      const kindCode = selectedLevel;
-      const data = await cpblRequest('daily', {
-        acnt: player.cpblAcnt,
-        date: els.gameDate.value,
-        teamCode: player.cpblTeamCode,
-        kindCode
-      });
-      const daily = data.daily;
-      if (!daily?.found) throw new Error(daily?.reason || '當天找不到此球員的出賽資料。');
+
+      const gameYear = Number(els.gameDate.value?.slice(0, 4)) || CURRENT_YEAR;
+      const levels = ['A','D'];
+      let daily = null;
+      let kindCode = 'A';
+      let lastReason = '';
+
+      for (const level of levels) {
+        const knownYears = player?.cpblAvailableYears?.[level];
+        if (Array.isArray(knownYears) && knownYears.length && !knownYears.includes(gameYear)) continue;
+
+        try {
+          const data = await cpblRequest('daily', {
+            acnt: player.cpblAcnt,
+            date: els.gameDate.value,
+            teamCode: player.cpblTeamCode,
+            kindCode: level
+          });
+          if (data?.daily?.found) {
+            daily = data.daily;
+            kindCode = level;
+            break;
+          }
+          lastReason = data?.daily?.reason || lastReason;
+        } catch (error) {
+          lastReason = error?.message || lastReason;
+        }
+      }
+
+      if (!daily?.found) {
+        await showAppAlert(
+          `${els.gameDate.value.replaceAll('-', '/')} 一軍、二軍都找不到此球員的出賽資料。`,
+          { title:'當日無出賽', tone:'warning' }
+        );
+        setStatus(lastReason || '當日一軍、二軍皆無出賽資料。');
+        return false;
+      }
+
+      // 找到哪個軍別就自動切到該軍別的本機紀錄，不需使用者手動選。
+      if (selectedLevel !== kindCode) {
+        persistActiveStatsProfile(player);
+        selectedLevel = kindCode;
+        const years = availableSeasonYears(player, kindCode);
+        selectedSeason = years.includes(gameYear) ? gameYear : (years[0] || gameYear);
+        activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+        await loadRecord();
+      }
+      currentRecord.level = kindCode;
+
       if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
       if (player.type === 'hitter') {
         const list = daily.hitter?.plateAppearances || [];
@@ -5180,19 +5232,22 @@ bg2: {
         const pitchCount = Number(p.pitchCount) || 0;
         g.pitchTens = Math.floor(pitchCount / 10);
         g.pitchOnes = pitchCount % 10;
+        g.cg = Boolean(p.cg);
+        g.sho = Boolean(p.sho);
+        g.cg = Boolean(p.cg);
+        g.sho = Boolean(p.sho);
         g.hld = Boolean(p.hld);
         g.sv = Boolean(p.sv);
         g.bsv = Boolean(p.bsv);
         g.decision = ['W','L'].includes(p.decision) ? p.decision : 'ND';
         g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
       }
+
       const isToday = els.gameDate.value === localISODate();
       currentRecord.cpblReadOnlyImport = !isToday;
 
       if (isToday) {
-        // 今天：同步官網目前累積，並把本場標記成已計入，避免圖片下載時重複累加。
         try {
-          const gameYear = Number(els.gameDate.value?.slice(0, 4)) || CURRENT_YEAR;
           await updatePlayerFromCpbl(player, true, gameYear, kindCode);
           currentRecord.committedStats = player.type === 'hitter'
             ? deriveHitterGame(currentRecord.hitterPAs)
@@ -5202,7 +5257,6 @@ bg2: {
           console.warn('CPBL cumulative sync after daily import failed', error);
         }
       } else {
-        // 非今日：只保存該場逐打席／投球內容，不寫入球員基礎累積資料。
         currentRecord.committedStats = player.type === 'hitter'
           ? deriveHitterGame(currentRecord.hitterPAs)
           : derivePitcherGame(currentRecord.pitcherGame);
@@ -5212,9 +5266,11 @@ bg2: {
       currentRecord.cpblImportedAt = Date.now();
       await saveRecord();
       renderAll();
+
+      const levelLabel = kindCode === 'D' ? '二軍' : '一軍';
       setStatus(isToday
-        ? `已匯入 ${els.gameDate.value} 的中職官網資料並同步今日累積數據。`
-        : `已匯入 ${els.gameDate.value} 的中職官網資料；歷史日期不會寫入球員累積數據。`);
+        ? `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料並同步今日累積數據。`
+        : `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；歷史日期不會寫入球員累積數據。`);
       return true;
     }
 
@@ -5369,7 +5425,7 @@ bg2: {
         return currentRecord?.externalLeagueLevel === '二軍' ? `${base}(二軍)` : base;
       }
       if (scope !== 'cpbl') return base;
-      return selectedLevel === 'D' ? `${base}(二軍)` : base;
+      return (currentRecord?.level || selectedLevel) === 'D' ? `${base}(二軍)` : base;
     }
 
     function ensurePhotoTransforms(player) {
@@ -5451,6 +5507,15 @@ bg2: {
       let stored = await idbGet(STORES.games, gameKey());
       // 一軍相容舊版未帶層級的日期紀錄；讀到後會在下次儲存轉成新 key。
       if (!stored && selectedLevel === 'A') stored = await idbGet(STORES.games, legacyGameKey());
+
+      // CPBL 軍別不再由使用者手動切換：目前軍別沒紀錄時，自動讀另一軍別。
+      if (!stored && playerScope(player) === 'cpbl') {
+        const otherLevel = selectedLevel === 'D' ? 'A' : 'D';
+        stored = await idbGet(STORES.games, `${els.gameDate.value}:${selectedPlayerId}:${otherLevel}`);
+        if (!stored && otherLevel === 'A') stored = await idbGet(STORES.games, legacyGameKey());
+        if (stored) selectedLevel = otherLevel;
+      }
+
       currentRecord = stored || defaultGameRecord(player);
       currentRecord.key = gameKey();
       currentRecord.playerId = player.id;
@@ -6169,10 +6234,11 @@ bg2: {
           (percent, status) => setSyncProgress(percent, status)
         );
 
-        selectedLevel = 'A';
         const majorYears = result?.majorYears?.length ? result.majorYears : availableSeasonYears(player, 'A');
         const minorYears = result?.minorYears?.length ? result.minorYears : availableSeasonYears(player, 'D');
-        selectedSeason = majorYears[0] || CURRENT_YEAR;
+        selectedLevel = majorYears.length ? 'A' : (minorYears.length ? 'D' : 'A');
+        const preferredYears = selectedLevel === 'D' ? minorYears : majorYears;
+        selectedSeason = preferredYears[0] || CURRENT_YEAR;
         activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
         await loadRecord();
         renderAll();
@@ -7119,7 +7185,6 @@ bg2: {
       });
 
       const cpbl = !international && homeProCountry === 'TW';
-      els.homeCpblFilters?.classList.toggle('hidden', !cpbl);
       els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
@@ -7148,13 +7213,6 @@ bg2: {
         }
       }
 
-      if (els.homeLevelFilters) els.homeLevelFilters.value = homeLevelFilter;
-      if (els.homeTeamFilters) {
-        if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
-        els.homeTeamFilters.value = homeTeamFilter;
-        els.homeTeamFilters.disabled = homeLevelFilter === 'OTHER';
-      }
-
       renderInternationalExplorer();
     }
 
@@ -7169,15 +7227,6 @@ bg2: {
 
       const zonePlayers = homeContextPlayers();
       let list = [...zonePlayers];
-
-      if (homeProCountry === 'TW') {
-        list = list
-          .filter(player => homePlayerLevel(player) === homeLevelFilter)
-          .filter(player => {
-            if (homeLevelFilter === 'OTHER' || !homeTeamFilter) return true;
-            return homePlayerTeam(player) === homeTeamFilter;
-          });
-      }
 
       list.sort((a, b) => {
         const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
@@ -7207,12 +7256,27 @@ bg2: {
     }
 
     function renderAllPlayersDialog() {
-      const zonePlayers = homeContextPlayers();
+      let zonePlayers = homeContextPlayers();
+      const cpblDialog = homeRootSection !== 'international' && homeProCountry === 'TW';
+
+      els.allCpblFilters?.classList.toggle('hidden', !cpblDialog);
+      if (cpblDialog) {
+        if (els.allLevelFilters) els.allLevelFilters.value = homeLevelFilter;
+        if (els.allTeamFilters) els.allTeamFilters.value = homeTeamFilter;
+
+        zonePlayers = zonePlayers.filter(player => {
+          const levelOk = homeLevelFilter === 'ALL' || homePlayerLevel(player) === homeLevelFilter;
+          const teamOk = !homeTeamFilter || homePlayerTeam(player) === homeTeamFilter;
+          return levelOk && teamOk;
+        });
+      }
+
       const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
       const hitters = zonePlayers.filter(p => p.type === 'hitter');
       const make = list => list.length ? list.map(p =>
         `<button class="player-btn ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">#${escapeHtml(p.number)} ${escapeHtml(p.name)}<span class="small">${escapeHtml(playerSourceMeta(p))}</span></button>`
-      ).join('') : '';
+      ).join('') : '<div class="empty">目前沒有符合篩選條件的球員。</div>';
+
       els.allPitchers.innerHTML = make(pitchers);
       els.allHitters.innerHTML = make(hitters);
       els.allDialog.querySelectorAll('[data-player-id]').forEach(btn => {
@@ -7626,8 +7690,8 @@ bg2: {
            </label>`;
 
       const importButton = player.cpblAcnt
-        ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職${selectedLevel === 'D' ? '二軍' : '一軍'}資料</button></div>
-           ${els.gameDate.value !== localISODate() ? '<div class="small" style="margin-top:6px">歷史日期只匯入該場資料，不會寫入球員累積數據。</div>' : ''}`
+        ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職資料</button></div>
+           <div class="small" style="margin-top:6px">會先查一軍，當日一軍無出賽再自動查二軍。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
         : linkedOverseas
           ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
              <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 官方／聯盟來源的當日資料只用來產生該場戰報，不會重複累加到已同步的賽季成績。</div>`
@@ -8545,7 +8609,7 @@ bg2: {
         }
       }
       const externalPlayer = playerScopeCode !== 'cpbl';
-      els.playerLevelSwitch?.classList.toggle('hidden', externalPlayer);
+      els.playerLevelSwitch?.classList.add('hidden');
       els.externalScopeBadge?.classList.toggle('hidden', !externalPlayer);
       if (els.externalScopeBadge && externalPlayer && player) {
         els.externalScopeBadge.className = `external-scope-badge ${playerScopeCode}`;
@@ -10445,16 +10509,15 @@ bg2: {
     els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
 
-    els.homeLevelFilters?.addEventListener('change', () => {
-      const value = els.homeLevelFilters.value;
-      homeLevelFilter = value === 'D' ? 'D' : value === 'OTHER' ? 'OTHER' : 'A';
-      if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
-      renderRecentPlayers();
+    els.allLevelFilters?.addEventListener('change', () => {
+      const value = String(els.allLevelFilters.value || 'ALL');
+      homeLevelFilter = ['A','D','OTHER'].includes(value) ? value : 'ALL';
+      renderAllPlayersDialog();
     });
 
-    els.homeTeamFilters?.addEventListener('change', () => {
-      homeTeamFilter = String(els.homeTeamFilters.value || '');
-      renderRecentPlayers();
+    els.allTeamFilters?.addEventListener('change', () => {
+      homeTeamFilter = String(els.allTeamFilters.value || '');
+      renderAllPlayersDialog();
     });
 
     document.getElementById('allPlayersBtn').addEventListener('click', () => {
