@@ -3526,6 +3526,75 @@ dialog::backdrop {
   }
 }
 /* ===== v1.85 MLB TWO-WAY TOP TABS END ===== */
+/* ===== v1.86 DIALOG WRAP + INTERNATIONAL HOME HEIGHT START ===== */
+#allPlayersDialog .player-list{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:9px;
+}
+#allPlayersDialog .all-player-card{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:82px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:3px;
+  align-content:center;
+  padding:10px 13px;
+  text-align:left;
+  white-space:normal;
+  overflow:hidden;
+}
+#allPlayersDialog .all-player-line{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+#allPlayersDialog .all-player-line-main{
+  color:#1f344c;
+  font-size:15px;
+  font-weight:950;
+}
+#allPlayersDialog .all-player-line-meta{
+  color:#526579;
+  font-size:11px;
+  font-weight:850;
+}
+#allPlayersDialog .all-player-line-extra{
+  min-height:15px;
+  color:#8a6821;
+  font-size:10px;
+  font-weight:850;
+}
+#homePage.international-home-mode .home-main-panel{
+  height:auto;
+  max-height:100%;
+  align-self:start;
+  overflow-y:auto;
+}
+#homePage.international-home-mode #homeInternationalExplorer:not(.hidden){
+  flex:0 0 auto;
+  min-height:auto;
+  max-height:none;
+  overflow:visible;
+  padding-bottom:0;
+  scrollbar-gutter:auto;
+}
+#homePage.international-home-mode #recentPlayers{
+  display:none;
+}
+@media(max-width:640px){
+  #allPlayersDialog .all-player-card{
+    min-height:78px;
+    padding:9px 11px;
+  }
+  #allPlayersDialog .all-player-line-main{font-size:14px;}
+}
+/* ===== v1.86 DIALOG WRAP + INTERNATIONAL HOME HEIGHT END ===== */
 
 
 </style>
@@ -3885,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.85';
+    const APP_VERSION = 'v1.86';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7980,6 +8049,7 @@ bg2: {
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
+      els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
 
       if (homeRootSection === 'international') {
         if (els.homePlayerCount) els.homePlayerCount.textContent = '';
@@ -8035,9 +8105,35 @@ bg2: {
 
       const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
       const hitters = zonePlayers.filter(p => p.type === 'hitter');
-      const make = list => list.length ? list.map(p =>
-        `<button class="player-btn ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">#${escapeHtml(p.number)} ${escapeHtml(p.name)}<span class="small">${escapeHtml(playerSourceMeta(p))}</span></button>`
-      ).join('') : '<div class="empty">目前沒有符合篩選條件的球員。</div>';
+
+      const allPlayerDialogLines = p => {
+        const scope = playerScope(p);
+        const role = p.type === 'pitcher' ? '投手' : '打者';
+        const competition = scope === 'cpbl' ? '中職' : playerSpecialCompetition(p);
+        const team = scope === 'international'
+          ? internationalTeam(p)
+          : (scope === 'cpbl' ? normalizeTeamName(p.cpblTeam || '') : String(p.externalTeam || '').trim());
+        const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
+        const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
+        const cpblLevel = scope === 'cpbl'
+          ? (String(p.cpblCurrentLevel || '').toUpperCase() === 'D' ? '二軍' : (p.cpblCurrentLevel ? '一軍' : ''))
+          : '';
+        return {
+          first: `#${p.number || '—'} ${p.name || '未命名球員'}`,
+          second: [role, competition, team].filter(Boolean).join('｜'),
+          third: [crossRole, year || cpblLevel].filter(Boolean).join('｜') || ' '
+        };
+      };
+
+      const make = list => list.length ? list.map(p => {
+        const lines = allPlayerDialogLines(p);
+        return `
+          <button class="player-btn all-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
+            <span class="all-player-line all-player-line-main">${escapeHtml(lines.first)}</span>
+            <span class="all-player-line all-player-line-meta">${escapeHtml(lines.second)}</span>
+            <span class="all-player-line all-player-line-extra">${escapeHtml(lines.third)}</span>
+          </button>`;
+      }).join('') : '<div class="empty">目前沒有符合篩選條件的球員。</div>';
 
       els.allPitchers.innerHTML = make(pitchers);
       els.allHitters.innerHTML = make(hitters);
