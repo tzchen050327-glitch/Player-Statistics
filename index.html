@@ -3954,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.87';
+    const APP_VERSION = 'v1.88';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4743,6 +4743,71 @@ bg2: {
       return next;
     }
 
+    function cpblOfficialTypeFromPosition(position = '') {
+      const value = String(position || '').trim();
+      if (/投手/.test(value)) return 'pitcher';
+      if (/捕手|內野|内野|外野|指定打擊|DH/.test(value)) return 'hitter';
+      return '';
+    }
+
+    function rebuildCpblPrimaryProfilesFromRoles(player, officialType) {
+      const roleProfiles = ensureRoleStatsProfiles(player);
+      const profiles = ensureStatsProfiles(player);
+      let wrote = false;
+
+      for (const [key, pair] of Object.entries(roleProfiles)) {
+        const roleStats = officialType === 'pitcher' ? pair?.pitcher : pair?.hitter;
+        const hasData = officialType === 'pitcher'
+          ? pitcherRoleHasData(roleStats)
+          : hitterRoleHasData(roleStats);
+        if (!hasData) continue;
+        profiles[key] = { ...roleStats };
+        wrote = true;
+      }
+
+      const activeKey = statsProfileKey(selectedSeason, selectedLevel);
+      if (profiles[activeKey]) {
+        player.stats = { ...profiles[activeKey] };
+      } else if (wrote) {
+        const first = Object.keys(profiles)
+          .sort((a,b) => String(b).localeCompare(String(a)))
+          .find(key => profiles[key]);
+        player.stats = first ? { ...profiles[first] } : (officialType === 'pitcher' ? pitcherDefaults() : hitterDefaults());
+      } else {
+        player.stats = officialType === 'pitcher' ? pitcherDefaults() : hitterDefaults();
+      }
+    }
+
+    function repairStoredCpblPlayerType(player, officialPosition = '') {
+      if (!player || playerScope(player) !== 'cpbl' || !player.cpblAcnt) return false;
+
+      const position = String(officialPosition || player.cpblPosition || '').trim();
+      const officialType = cpblOfficialTypeFromPosition(position);
+      let changed = false;
+
+      if (position && player.cpblPosition !== position) {
+        player.cpblPosition = position;
+        changed = true;
+      }
+      if (!officialType) return changed;
+
+      if (player.primaryType !== officialType) {
+        player.primaryType = officialType;
+        changed = true;
+      }
+
+      if (player.type !== officialType) {
+        player.type = officialType;
+        rebuildCpblPrimaryProfilesFromRoles(player, officialType);
+        if (officialType === 'pitcher') {
+          player.pitcherLastMetric = normalizePitcherLastMetric(player.pitcherLastMetric);
+        }
+        player.cpblRoleCorrectedAt = Date.now();
+        changed = true;
+      }
+      return changed;
+    }
+
     function externalPositionType(position = '') {
       const value = String(position || '').trim();
       if (/投手|pitcher|투수/i.test(value)) return 'pitcher';
@@ -5505,9 +5570,18 @@ bg2: {
         for (const player of linked) {
           const current = byAcnt.get(String(player.cpblAcnt));
           if (!current?.team) continue;
+
           player.cpblTeam = normalizeTeamName(current.team);
+          if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
+          if (current.number) player.number = String(current.number);
           player.cpblCurrentLevel = current.level === 'D' ? 'D' : 'A';
+
+          const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
           player.cpblRosterUpdatedAt = Date.now();
+
+          if (roleChanged && player.id === selectedPlayerId) {
+            activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          }
           await idbPut(STORES.players, player);
         }
       } catch (error) {
@@ -6990,6 +7064,21 @@ bg2: {
       }
 
       if (playerScope(player) !== 'cpbl' || !player.cpblAcnt) return;
+
+      try {
+        const profileData = await cpblRequest('player-profile', { acnt: player.cpblAcnt });
+        const official = profileData?.player || null;
+        if (official) {
+          if (official.name) player.name = official.name;
+          if (official.number) player.number = String(official.number);
+          if (official.team) player.cpblTeam = normalizeTeamName(official.team);
+          if (official.teamCode) player.cpblTeamCode = String(official.teamCode);
+          repairStoredCpblPlayerType(player, official.position || '');
+          await savePlayer(player);
+        }
+      } catch (error) {
+        console.warn('中職官方守位確認失敗，沿用目前分類', error);
+      }
 
       setSyncProgress(0, `準備同步 #${player.number} ${player.name}…`);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -11439,7 +11528,7 @@ bg2: {
             ? '國際賽以「賽事 → 屆別 → 代表隊」獨立保存；同一位球員可以在不同屆賽事各自建立紀錄。'
             : external
               ? '此球員會建立在獨立專區，成績、戰報與中職資料分開保存。'
-              : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。一般情況會依官網守位判斷打者／投手；若手動切換球員類型，可為同一位球員建立另一個角色。';
+              : '純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。連結官網後會以官方守位決定主要分類；若球員實際有投打兩種紀錄，會自動整合在同一位球員內。';
       }
 
       if (scope === 'international' || (scope === 'overseas' && !provider)) {
@@ -12020,21 +12109,19 @@ bg2: {
         const official = found.player;
         if (!official) throw new Error(`中職官網找不到「${searchName} #${number}」。`);
 
-        let type = selectedType;
-        if (!newPlayerTypeTouched && official.position) {
-          type = official.position.includes('投手') ? 'pitcher' : 'hitter';
-        }
+        let type = cpblOfficialTypeFromPosition(official.position) || selectedType;
 
         const sameLinkedPlayers = players.filter(p =>
           playerScope(p) === 'cpbl'
           && String(p.cpblAcnt || '') === String(official.acnt || '')
         );
-        if (sameLinkedPlayers.some(p => p.type === type)) {
-          throw new Error(`這位球員的${type === 'pitcher' ? '投手' : '打者'}版本已經存在。`);
+        if (sameLinkedPlayers.length) {
+          throw new Error('這位球員已經存在；現在同一筆球員資料會依官方守位分類，投打紀錄會自動整合，不需要再建立另一個角色版本。');
         }
 
         const player = {
           id: uid(), name: official.name || name, number: official.number || number, type,
+          primaryType:type,
           scope: 'cpbl',
           stats: type === 'hitter' ? hitterDefaults() : pitcherDefaults(),
           pitcherLastMetric: type === 'pitcher' ? 'wl' : undefined,
@@ -12046,14 +12133,6 @@ bg2: {
           cpblDualRole: sameLinkedPlayers.length > 0,
           createdAt: Date.now(), updatedAt: Date.now(), lastUsedAt: Date.now()
         };
-        if (sameLinkedPlayers.length) {
-          for (const linked of sameLinkedPlayers) {
-            if (!linked.cpblDualRole) {
-              linked.cpblDualRole = true;
-              await savePlayer(linked);
-            }
-          }
-        }
         ensureStatsProfiles(player);
         try { await syncPlayerCpblHistory(player); }
         catch (error) { console.warn('CPBL season history import failed', error); }
@@ -12061,7 +12140,10 @@ bg2: {
           const roster = await cpblRequest('current-roster', { acnt: player.cpblAcnt });
           if (roster?.player?.team) {
             player.cpblTeam = normalizeTeamName(roster.player.team);
+            if (roster.player.teamCode) player.cpblTeamCode = String(roster.player.teamCode);
+            if (roster.player.number) player.number = String(roster.player.number);
             player.cpblCurrentLevel = roster.player.level === 'D' ? 'D' : 'A';
+            repairStoredCpblPlayerType(player, roster.player.position || official.position || '');
             player.cpblRosterUpdatedAt = Date.now();
             await savePlayer(player);
           }
@@ -12531,8 +12613,9 @@ bg2: {
           ensurePhotoTransforms(player);
           const fixedName = applyStoredPreferredExternalName(player);
           const fixedTeam = applyStoredPreferredExternalTeam(player);
-          const fixedRole = repairStoredExternalPlayerType(player);
-          if (fixedName || fixedTeam || fixedRole) await idbPut(STORES.players, player);
+          const fixedExternalRole = repairStoredExternalPlayerType(player);
+          const fixedCpblRole = repairStoredCpblPlayerType(player);
+          if (fixedName || fixedTeam || fixedExternalRole || fixedCpblRole) await idbPut(STORES.players, player);
         }
         for (const photo of photos) {
           if (!photo.playerId) {
