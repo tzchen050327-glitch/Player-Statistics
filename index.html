@@ -3748,14 +3748,14 @@ dialog::backdrop {
             <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2h14v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <h2>圖片已準備完成</h2>
+        <h2 id="outputDialogTitle">圖片已準備完成</h2>
       </div>
       <div class="output-actions">
         <button id="downloadPreparedBtn" class="press-btn output-choice primary" type="button">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18v2h14v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>下載圖片</span>
+          <span id="downloadPreparedLabel">下載圖片</span>
         </button>
         <button id="sharePreparedBtn" class="press-btn output-choice" type="button">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -3764,7 +3764,7 @@ dialog::backdrop {
             <circle cx="18" cy="19" r="2.5" stroke="currentColor" stroke-width="2"/>
             <path d="M8.2 10.8 15.8 6.4M8.2 13.2l7.6 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span>分享圖片</span>
+          <span id="sharePreparedLabel">分享圖片</span>
         </button>
         <button id="outputBackgroundBtn" class="press-btn output-choice" type="button">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -3784,7 +3784,7 @@ dialog::backdrop {
         <h2>背景選擇</h2>
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="subtle" style="margin-bottom:12px">選擇後會直接重新產生目前這張戰報。</div>
+      <div class="subtle" style="margin-bottom:12px">選擇後會用同一背景重新產生目前戰報；若當天同時有投打紀錄，兩張都會一起更新。</div>
       <div id="quickTemplateGrid" class="template-grid quick-template-grid"></div>
     </div>
   </dialog>
@@ -3954,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.86';
+    const APP_VERSION = 'v1.87';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4006,8 +4006,11 @@ dialog::backdrop {
       canvas: document.getElementById('cardCanvas'),
       downloadBtn: document.getElementById('downloadBtn'),
       outputDialog: document.getElementById('outputDialog'),
+      outputDialogTitle: document.getElementById('outputDialogTitle'),
       downloadPreparedBtn: document.getElementById('downloadPreparedBtn'),
+      downloadPreparedLabel: document.getElementById('downloadPreparedLabel'),
       sharePreparedBtn: document.getElementById('sharePreparedBtn'),
+      sharePreparedLabel: document.getElementById('sharePreparedLabel'),
       outputBackgroundBtn: document.getElementById('outputBackgroundBtn'),
       quickTemplateDialog: document.getElementById('quickTemplateDialog'),
       quickTemplateGrid: document.getElementById('quickTemplateGrid'),
@@ -4150,6 +4153,7 @@ dialog::backdrop {
     let photoDrag = null;
     let photoZoomSaveTimer = null;
     let preparedOutput = null;
+    let preparedOutputs = [];
     let batchReportOutputs = [];
     let batchReportPreferences = {};
     let newPlayerSuggestTimer = null;
@@ -12232,29 +12236,183 @@ bg2: {
       }
     }, { passive: false });
 
-    function currentOutputFileName() {
+    function currentOutputFileName(roleOverride = '') {
       const player = selectedPlayer();
       if (!player || !currentRecord) return 'player-stat.png';
-      const hitterAppearance = player.type === 'hitter' ? ensureHitterAppearance() : null;
+      const role = roleOverride === 'pitcher' || roleOverride === 'hitter' ? roleOverride : player.type;
+      const hitterAppearance = role === 'hitter' ? ensureHitterAppearance() : null;
       const hitterFileType = hitterAppearance?.mode === 'runner'
         ? (hitterAppearance.continueDefense ? '代跑後接替守備' : '純代跑')
-        : hitterAppearance?.mode === 'defense' ? '純代守' : '逐打席紀錄';
-      return `${currentRecord.date}_${reportPlayerName(player)}_${player.type === 'pitcher' ? '投球戰績' : hitterFileType}.png`;
+        : hitterAppearance?.mode === 'defense' ? '純代守' : '打擊戰績';
+      return `${currentRecord.date}_${reportPlayerName(player)}_${role === 'pitcher' ? '投球戰績' : hitterFileType}.png`;
+    }
+
+    function dailyHitterRoleHasData(hitter) {
+      if (!hitter) return false;
+      if (Array.isArray(hitter.plateAppearances) && hitter.plateAppearances.length) return true;
+      return ['pa','ab','hits','runs','rbi','bb','hbp','hr','k']
+        .some(key => Number(hitter?.[key]) > 0);
+    }
+
+    function dailyPitcherRoleHasData(pitcher) {
+      if (!pitcher) return false;
+      const innings = String(pitcher.innings || '');
+      if (innings && innings !== '0' && innings !== '0.0') return true;
+      return ['outs','h','bb','hbp','k','r','er','pitchCount','w','l','sv','hld']
+        .some(key => Number(pitcher?.[key]) > 0);
+    }
+
+    function currentDualDailyRoles() {
+      const pair = currentRecord?.externalRoleDaily;
+      if (!pair) return [];
+      const roles = [];
+      if (dailyHitterRoleHasData(pair.hitter)) roles.push('hitter');
+      if (dailyPitcherRoleHasData(pair.pitcher)) roles.push('pitcher');
+      return roles;
+    }
+
+    function seasonStatsForOutputRole(player, role) {
+      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+      const pair = roleStatsPair(player, selectedSeason, level);
+      if (role === 'hitter') {
+        if (hitterRoleHasData(pair?.hitter)) return { ...pair.hitter };
+        return player.type === 'hitter' ? { ...mergeStats(player.stats, hitterDefaults) } : hitterDefaults();
+      }
+      if (pitcherRoleHasData(pair?.pitcher)) return { ...pair.pitcher };
+      return player.type === 'pitcher' ? { ...mergeStats(player.stats, pitcherDefaults) } : pitcherDefaults();
+    }
+
+    function outputRecordForRole(baseRecord, role) {
+      const next = {
+        ...baseRecord,
+        hitterPAs: Array.isArray(baseRecord?.hitterPAs) ? baseRecord.hitterPAs.map(pa => ({ ...pa })) : [],
+        hitterAppearance: {
+          ...defaultGameRecord(selectedPlayer()).hitterAppearance,
+          ...(baseRecord?.hitterAppearance || {})
+        },
+        pitcherGame: {
+          ...defaultGameRecord(selectedPlayer()).pitcherGame,
+          ...(baseRecord?.pitcherGame || {})
+        },
+        cpblGameSummary: {
+          ...defaultGameRecord(selectedPlayer()).cpblGameSummary,
+          ...(baseRecord?.cpblGameSummary || {})
+        }
+      };
+
+      const pair = baseRecord?.externalRoleDaily || null;
+      if (!pair) return next;
+
+      if (role === 'hitter' && pair.hitter) {
+        const h = pair.hitter;
+        const list = Array.isArray(h.plateAppearances) ? h.plateAppearances : [];
+        next.hitterAppearance.mode = 'bat';
+        next.hitterPAs = list.map(pa => ({
+          id: uid(),
+          code: pa.code || 'OUT',
+          position: pa.position || '',
+          rbi: Number(pa.rbi) || 0,
+          cpblOfficialAction: pa.officialAction || ''
+        }));
+        next.cpblGameSummary = {
+          runs: Math.max(0, Number(h.runs) || 0),
+          hits: Math.max(0, Number(h.hits) || 0),
+          errors: Math.max(0, Number(h.errors) || 0),
+          official: true
+        };
+        next.internationalHitterGame = { ...h };
+      }
+
+      if (role === 'pitcher' && pair.pitcher) {
+        const p = pair.pitcher;
+        const pitchCount = Math.max(0, Math.min(150, Number(p.pitchCount) || 0));
+        next.pitcherGame = {
+          ...next.pitcherGame,
+          innings: p.innings || outsToIP(Number(p.outs) || 0) || '0.0',
+          k: Number(p.k) || 0,
+          bb: Number(p.bb) || 0,
+          h: Number(p.h) || 0,
+          hbp: Number(p.hbp) || 0,
+          r: Number(p.r) || 0,
+          er: Math.min(Math.max(0, Number(p.r) || 0), Math.max(0, Number(p.er) || 0)),
+          pitchTens: Math.floor(pitchCount / 10),
+          pitchOnes: pitchCount >= 150 ? 0 : pitchCount % 10,
+          cg: Boolean(Number(p.cg) || p.cg),
+          sho: Boolean(Number(p.sho) || p.sho),
+          hld: Boolean(Number(p.hld) || p.hld),
+          sv: Boolean(Number(p.sv) || p.sv),
+          bsv: Boolean(Number(p.bsv) || p.bsv),
+          decision: Number(p.w) > 0 ? 'W' : Number(p.l) > 0 ? 'L' : 'ND',
+          result: Boolean(Number(p.sv) || p.sv) ? 'SV'
+            : Boolean(Number(p.hld) || p.hld) ? 'HLD'
+            : (Number(p.w) > 0 ? 'W' : Number(p.l) > 0 ? 'L' : 'ND')
+        };
+        next.externalWalksCombined = Boolean(p.walksCombined);
+      }
+
+      return next;
+    }
+
+    async function capturePreparedOutputForRole(role) {
+      const player = selectedPlayer();
+      if (!player || !currentRecord) throw new Error('請先選擇球員與戰報日期。');
+
+      const originalType = player.type;
+      const originalStats = player.stats;
+      const originalRecord = currentRecord;
+      try {
+        player.type = role;
+        player.stats = seasonStatsForOutputRole(player, role);
+        currentRecord = outputRecordForRole(originalRecord, role);
+
+        await renderCanvas();
+        const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('圖片產生失敗。');
+
+        const fileName = currentOutputFileName(role);
+        return {
+          role,
+          blob,
+          fileName,
+          file: new File([blob], fileName, { type:'image/png' })
+        };
+      } finally {
+        player.type = originalType;
+        player.stats = originalStats;
+        currentRecord = originalRecord;
+      }
+    }
+
+    function updatePreparedOutputDialog() {
+      const count = preparedOutputs.length || (preparedOutput ? 1 : 0);
+      if (els.outputDialogTitle) els.outputDialogTitle.textContent = count > 1 ? `${count} 張圖片已準備完成` : '圖片已準備完成';
+      if (els.downloadPreparedLabel) els.downloadPreparedLabel.textContent = count > 1 ? `下載 ${count} 張圖片` : '下載圖片';
+      if (els.sharePreparedLabel) els.sharePreparedLabel.textContent = count > 1 ? `分享 ${count} 張圖片` : '分享圖片';
+    }
+
+    async function generatePreparedOutputsFromCanvas() {
+      const player = selectedPlayer();
+      if (!player || !currentRecord) throw new Error('請先選擇球員。');
+
+      const dualRoles = currentDualDailyRoles();
+      const roles = dualRoles.length === 2 ? ['hitter','pitcher'] : [player.type];
+      const outputs = [];
+
+      for (const role of roles) {
+        outputs.push(await capturePreparedOutputForRole(role));
+      }
+
+      preparedOutputs = outputs;
+      preparedOutput = outputs[0] || null;
+      updatePreparedOutputDialog();
+
+      // 輸出完成後把右側預覽還原成球員目前主要角色。
+      await renderCanvas();
+      return outputs;
     }
 
     async function refreshPreparedOutputFromCanvas() {
-      await renderCanvas();
-
-      const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('圖片產生失敗。');
-
-      const fileName = currentOutputFileName();
-      preparedOutput = {
-        blob,
-        fileName,
-        file: new File([blob], fileName, { type: 'image/png' })
-      };
-      return preparedOutput;
+      return await generatePreparedOutputsFromCanvas();
     }
 
     async function prepareOutputImage() {
@@ -12276,57 +12434,70 @@ bg2: {
         }
       }
       await commitCurrentGame();
-      return await refreshPreparedOutputFromCanvas();
+      return await generatePreparedOutputsFromCanvas();
     }
 
-    function downloadPreparedOutput() {
-      if (!preparedOutput) throw new Error('請先產生圖片。');
-      const url = URL.createObjectURL(preparedOutput.blob);
-      const link = document.createElement('a');
-      link.download = preparedOutput.fileName;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    async function downloadPreparedOutput() {
+      const outputs = preparedOutputs.length ? preparedOutputs : (preparedOutput ? [preparedOutput] : []);
+      if (!outputs.length) throw new Error('請先產生圖片。');
+
+      for (let i = 0; i < outputs.length; i++) {
+        const output = outputs[i];
+        const url = URL.createObjectURL(output.blob);
+        const link = document.createElement('a');
+        link.download = output.fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1200);
+        if (i < outputs.length - 1) await new Promise(resolve => setTimeout(resolve, 260));
+      }
     }
 
     async function sharePreparedOutput() {
-      if (!preparedOutput) throw new Error('請先產生圖片。');
+      const outputs = preparedOutputs.length ? preparedOutputs : (preparedOutput ? [preparedOutput] : []);
+      if (!outputs.length) throw new Error('請先產生圖片。');
+
+      const files = outputs.map(output => output.file);
       const canShareFiles = Boolean(
         navigator.share
         && typeof navigator.canShare === 'function'
-        && navigator.canShare({ files: [preparedOutput.file] })
+        && navigator.canShare({ files })
       );
 
       if (!canShareFiles) {
-        throw new Error('這台裝置／瀏覽器不支援圖片分享器，請改用「下載圖片」。');
+        throw new Error('這台裝置／瀏覽器不支援一次分享這些圖片，請改用「下載圖片」。');
       }
 
       await navigator.share({
-        files: [preparedOutput.file],
-        title: '球員戰績圖片'
+        files,
+        title: outputs.length > 1 ? '球員投打戰績圖片' : '球員戰績圖片'
       });
     }
 
     els.downloadBtn.addEventListener('click', async () => {
       try {
         setStatus('正在更新數據並產生圖片…');
-        await prepareOutputImage();
+        const outputs = await prepareOutputImage();
         els.outputDialog?.showModal();
-        setStatus((currentRecord.cpblReadOnlyImport || currentRecord.externalReadOnlyImport)
-          ? '圖片已準備完成；官方單場資料不會重複更新球員累積數據。'
-          : '圖片已準備完成，球員基礎數據已同步更新。');
+        const count = outputs.length;
+        setStatus(count > 1
+          ? `投球與打擊戰報已分開產生，共 ${count} 張圖片。`
+          : ((currentRecord.cpblReadOnlyImport || currentRecord.externalReadOnlyImport)
+              ? '圖片已準備完成；官方單場資料不會重複更新球員累積數據。'
+              : '圖片已準備完成，球員基礎數據已同步更新。'));
         renderAll();
       } catch (error) {
         setStatus(error?.message || '圖片產生失敗。', true);
       }
     });
 
-    els.downloadPreparedBtn?.addEventListener('click', () => {
+    els.downloadPreparedBtn?.addEventListener('click', async () => {
       try {
-        downloadPreparedOutput();
-        setStatus('圖片已下載。');
+        const count = preparedOutputs.length || (preparedOutput ? 1 : 0);
+        await downloadPreparedOutput();
+        setStatus(count > 1 ? `已下載 ${count} 張圖片。` : '圖片已下載。');
       } catch (error) {
         setStatus(error?.message || '下載失敗。', true);
       }
