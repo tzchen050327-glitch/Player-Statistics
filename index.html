@@ -3954,7 +3954,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.88';
+    const APP_VERSION = 'v1.89';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4746,7 +4746,12 @@ bg2: {
     function cpblOfficialTypeFromPosition(position = '') {
       const value = String(position || '').trim();
       if (/投手/.test(value)) return 'pitcher';
-      if (/捕手|內野|内野|外野|指定打擊|DH/.test(value)) return 'hitter';
+
+      // CPBL 官方球員頁常回傳實際守位名稱，而不一定是「內野手／外野手」大分類。
+      // 所有非投手守備位置都應歸為 hitter 主分類。
+      if (/(?:捕手|一壘手|二壘手|三壘手|游擊手|左外野手|中外野手|右外野手|內野手|内野手|外野手|指定打擊|DH|工具人)/i.test(value)) {
+        return 'hitter';
+      }
       return '';
     }
 
@@ -4789,6 +4794,7 @@ bg2: {
         player.cpblPosition = position;
         changed = true;
       }
+      if (position) player.cpblPositionSource = 'CPBL 官方球員頁';
       if (!officialType) return changed;
 
       if (player.primaryType !== officialType) {
