@@ -3114,6 +3114,89 @@ dialog::backdrop {
   }
 }
 /* ===== v1.65 SPLIT HOME LAYOUT END ===== */
+
+/* ===== v1.66 HOME FILTERS + SCROLL FIX START ===== */
+#homePage .home-main-panel,
+#homePage .home-sidebar{
+  scroll-padding-bottom:96px;
+}
+#homePage .home-main-panel{
+  padding-bottom:calc(104px + env(safe-area-inset-bottom));
+}
+#homePage .home-background-panel{
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+.home-cpbl-filter-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  width:100%;
+  margin:10px 0 12px;
+}
+.home-filter-field{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  color:#68768a;
+  font-size:11px;
+  font-weight:900;
+}
+.home-filter-field select,
+#homePage #homeLevelFilters,
+#homePage #homeTeamFilters{
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  margin:0;
+  padding:7px 30px 7px 10px;
+  border:1px solid #d5dee8;
+  border-radius:10px;
+  background:#ffffff;
+  color:#20344d;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 3px 10px rgba(17,38,66,.05);
+}
+#homePage #homeTeamFilters:disabled{
+  opacity:.48;
+  background:#f1f4f7;
+}
+@media(max-width:640px){
+  #homePage .home-main-panel{
+    padding-bottom:calc(118px + env(safe-area-inset-bottom));
+  }
+  #homePage .home-background-panel{
+    padding-bottom:calc(96px + env(safe-area-inset-bottom));
+  }
+  .home-cpbl-filter-grid{
+    gap:6px;
+    margin:7px 0 9px;
+  }
+  .home-filter-field{
+    gap:3px;
+    font-size:9px;
+  }
+  .home-filter-field select,
+  #homePage #homeLevelFilters,
+  #homePage #homeTeamFilters{
+    min-height:35px;
+    padding:5px 24px 5px 7px;
+    border-radius:9px;
+    font-size:10px;
+  }
+}
+@media(max-width:390px){
+  .home-cpbl-filter-grid{gap:5px}
+  .home-filter-field select,
+  #homePage #homeLevelFilters,
+  #homePage #homeTeamFilters{
+    font-size:9px;
+    padding-left:5px;
+  }
+}
+/* ===== v1.66 HOME FILTERS + SCROLL FIX END ===== */
 </style>
 </head>
 <body>
@@ -3185,19 +3268,27 @@ dialog::backdrop {
             <button id="allPlayersBtn" class="press-btn">展開全部</button>
           </div>
 
-          <div id="homeLevelFilters" class="home-player-filter-row" aria-label="球員分類篩選">
-            <button class="home-level-filter-btn active" type="button" data-home-level-filter="A">一軍</button>
-            <button class="home-level-filter-btn" type="button" data-home-level-filter="D">二軍</button>
-            <button class="home-level-filter-btn" type="button" data-home-level-filter="OTHER">其他</button>
-          </div>
-
-          <div id="homeTeamFilters" class="home-player-filter-row" aria-label="球隊篩選">
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="富邦悍將" style="color:#005BAC">富邦悍將</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="台鋼雄鷹" style="color:#008C4A">台鋼雄鷹</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="中信兄弟" style="color:#F2C500">中信兄弟</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="樂天桃猿" style="color:#8B1E3F">樂天桃猿</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="統一7-ELEVEn獅" style="color:#F58220">統一7-ELEVEn獅</button>
-            <button class="home-team-filter-btn" type="button" data-home-team-filter="味全龍" style="color:#D71920">味全龍</button>
+          <div id="homeCpblFilters" class="home-cpbl-filter-grid" aria-label="中職球員篩選">
+            <label class="home-filter-field">
+              <span>軍別</span>
+              <select id="homeLevelFilters" aria-label="軍別">
+                <option value="A">一軍</option>
+                <option value="D">二軍</option>
+                <option value="OTHER">其他</option>
+              </select>
+            </label>
+            <label class="home-filter-field">
+              <span>球隊</span>
+              <select id="homeTeamFilters" aria-label="球隊">
+                <option value="">全部球隊</option>
+                <option value="富邦悍將">富邦悍將</option>
+                <option value="台鋼雄鷹">台鋼雄鷹</option>
+                <option value="中信兄弟">中信兄弟</option>
+                <option value="樂天桃猿">樂天桃猿</option>
+                <option value="統一7-ELEVEn獅">統一7-ELEVEn獅</option>
+                <option value="味全龍">味全龍</option>
+              </select>
+            </label>
           </div>
 
           <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國外聯盟篩選"></div>
@@ -3452,7 +3543,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.65';
+    const APP_VERSION = 'v1.66';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3479,6 +3570,7 @@ dialog::backdrop {
       homeZoneNote: document.getElementById('homeZoneNote'),
       homeLevelFilters: document.getElementById('homeLevelFilters'),
       homeTeamFilters: document.getElementById('homeTeamFilters'),
+      homeCpblFilters: document.getElementById('homeCpblFilters'),
       homeSpecialFilters: document.getElementById('homeSpecialFilters'),
       homeInternationalExplorer: document.getElementById('homeInternationalExplorer'),
       newPlayerCompetitionLabel: document.getElementById('newPlayerCompetitionLabel'),
@@ -6798,8 +6890,7 @@ bg2: {
 
       const cpbl = homeZone === 'cpbl';
       const international = homeZone === 'international';
-      els.homeLevelFilters?.classList.toggle('hidden', !cpbl);
-      els.homeTeamFilters?.classList.toggle('hidden', !cpbl);
+      els.homeCpblFilters?.classList.toggle('hidden', !cpbl);
       els.homeSpecialFilters?.classList.toggle('hidden', cpbl || international);
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
@@ -6822,13 +6913,12 @@ bg2: {
         }
       }
 
-      els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
-        button.classList.toggle('active', button.dataset.homeLevelFilter === homeLevelFilter);
-      });
-      els.homeTeamFilters?.querySelectorAll('[data-home-team-filter]').forEach(button => {
-        button.classList.toggle('active', button.dataset.homeTeamFilter === homeTeamFilter);
-        button.disabled = homeLevelFilter === 'OTHER';
-      });
+      if (els.homeLevelFilters) els.homeLevelFilters.value = homeLevelFilter;
+      if (els.homeTeamFilters) {
+        if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
+        els.homeTeamFilters.value = homeTeamFilter;
+        els.homeTeamFilters.disabled = homeLevelFilter === 'OTHER';
+      }
 
       if (!cpbl && homeZone === 'overseas' && els.homeSpecialFilters) {
         const options = specialOptionsForScope(homeZone);
@@ -8199,6 +8289,17 @@ bg2: {
       if (selectedTab === 'photos') renderPhotos(player);
     }
 
+    function updateHomePaneHeight() {
+      const layout = document.querySelector('#homePage .home-layout');
+      if (!layout || currentPage !== 'home') return;
+      const viewportHeight = Number(window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 0);
+      if (!viewportHeight) return;
+      const top = layout.getBoundingClientRect().top;
+      const safeBottom = 8;
+      const height = Math.max(320, Math.floor(viewportHeight - top - safeBottom));
+      layout.style.height = `${height}px`;
+    }
+
     function renderAll() {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
@@ -8267,6 +8368,7 @@ bg2: {
       renderRecentPlayers();
       renderAllPlayersDialog();
       renderHomeTemplates();
+      if (!playerPageActive) requestAnimationFrame(updateHomePaneHeight);
 
       if (playerPageActive) {
         const internationalOverview = playerScopeCode === 'international'
@@ -10081,21 +10183,16 @@ bg2: {
     els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
 
-    els.homeLevelFilters?.querySelectorAll('[data-home-level-filter]').forEach(button => {
-      button.addEventListener('click', () => {
-        const value = button.dataset.homeLevelFilter;
-        homeLevelFilter = value === 'D' ? 'D' : value === 'OTHER' ? 'OTHER' : 'A';
-        if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
-        renderRecentPlayers();
-      });
+    els.homeLevelFilters?.addEventListener('change', () => {
+      const value = els.homeLevelFilters.value;
+      homeLevelFilter = value === 'D' ? 'D' : value === 'OTHER' ? 'OTHER' : 'A';
+      if (homeLevelFilter === 'OTHER') homeTeamFilter = '';
+      renderRecentPlayers();
     });
 
-    els.homeTeamFilters?.querySelectorAll('[data-home-team-filter]').forEach(button => {
-      button.addEventListener('click', () => {
-        const value = button.dataset.homeTeamFilter || '';
-        homeTeamFilter = homeTeamFilter === value ? '' : value;
-        renderRecentPlayers();
-      });
+    els.homeTeamFilters?.addEventListener('change', () => {
+      homeTeamFilter = String(els.homeTeamFilters.value || '');
+      renderRecentPlayers();
     });
 
     document.getElementById('allPlayersBtn').addEventListener('click', () => {
@@ -10666,6 +10763,9 @@ bg2: {
       await loadRecord();
       renderAll();
     });
+
+    window.addEventListener('resize', () => requestAnimationFrame(updateHomePaneHeight));
+    window.visualViewport?.addEventListener('resize', () => requestAnimationFrame(updateHomePaneHeight));
 
     els.canvas.addEventListener('pointerdown', async event => {
       const player = selectedPlayer();
