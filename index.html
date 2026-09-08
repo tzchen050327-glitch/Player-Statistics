@@ -3835,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.94</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.95</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4080,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.94';
+    const APP_VERSION = 'v1.95';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -9280,6 +9280,7 @@ bg2: {
     }
 
     function renderHitterToday() {
+      const player = selectedPlayer();
       const appearance = ensureHitterAppearance();
       if (appearance.mode !== 'bat') {
         renderHitterSubstitutionToday();
@@ -9287,20 +9288,18 @@ bg2: {
       }
       const host = document.getElementById('todaySpecific');
       const officialBox = currentRecord?.internationalHitterGame;
-      if (currentRecord?.externalReadOnlyImport && officialBox && !currentRecord.hitterPAs.length) {
-        const fields = [
-          ['打席', officialBox.pa], ['打數', officialBox.ab], ['安打', officialBox.hits], ['打點', officialBox.rbi],
-          ['得分', officialBox.runs], ['全壘打', officialBox.hr], ['保送', officialBox.bb], ['死球', officialBox.hbp],
-          ['三振', officialBox.k], ['二安', officialBox.double], ['三安', officialBox.triple], ['失誤', officialBox.errors]
-        ];
-        host.innerHTML = `
-          <h3>官方單場打擊成績</h3>
-          <div class="small" style="margin-bottom:10px">此來源提供 Box Score 彙總，未提供可驗證的逐打席順序，因此不會生成假的逐打席。</div>
-          <div class="grid four">
-            ${fields.map(([label,value]) => `<label class="field">${escapeHtml(label)}<input type="text" value="${escapeAttr(String(Number(value)||0))}" readonly /></label>`).join('')}
-          </div>`;
-        return;
-      }
+      const aggregateOnly = Boolean(currentRecord?.externalReadOnlyImport && officialBox && !currentRecord.hitterPAs.length);
+      const aggregateFields = aggregateOnly ? [
+        ['打席', officialBox.pa], ['打數', officialBox.ab], ['安打', officialBox.hits], ['打點', officialBox.rbi],
+        ['得分', officialBox.runs], ['全壘打', officialBox.hr], ['保送', officialBox.bb], ['死球', officialBox.hbp],
+        ['三振', officialBox.k], ['二安', officialBox.double], ['三安', officialBox.triple], ['失誤', officialBox.errors]
+      ] : [];
+      const officialAggregateHtml = aggregateOnly ? `
+        <h3>官方單場打擊成績</h3>
+        <div class="small" style="margin-bottom:10px">目前來源只確認到 Box Score 彙總；你仍可在下方手動補逐打席，補完後戰報會改用逐打席顯示。</div>
+        <div class="grid four" style="margin-bottom:14px">
+          ${aggregateFields.map(([label,value]) => `<label class="field">${escapeHtml(label)}<input type="text" value="${escapeAttr(String(Number(value)||0))}" readonly /></label>`).join('')}
+        </div>` : '';
       const rows = currentRecord.hitterPAs.map((pa, index) => `
         <div class="pa-row">
           <div class="pa-no">${index + 1}</div>
@@ -9316,8 +9315,9 @@ bg2: {
         : '';
 
       host.innerHTML = `
-        <h3>逐打席紀錄</h3>
-        <div class="pa-list">${rows}</div>
+        ${officialAggregateHtml}
+        <h3>${aggregateOnly ? '手動補逐打席' : '逐打席紀錄'}</h3>
+        <div class="pa-list">${rows || '<div class="small" style="padding:8px 2px 12px">目前沒有逐打席，可直接在下方新增。</div>'}</div>
         ${kboRbiNote}
         <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
           <h3 style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
