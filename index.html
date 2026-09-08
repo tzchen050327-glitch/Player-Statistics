@@ -3835,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.92</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.93</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4044,7 +4044,7 @@ dialog::backdrop {
       </div>
       <div class="small" style="line-height:1.65">
         日期：<strong id="batchReportDate"></strong><br>
-        會先使用這一天已儲存的戰報資料；本機沒有時會自動查中職官網。優先一軍，若只有二軍出賽就生成二軍戰報。
+        生成時會同步球員累積成績；按「下載」或「全部下載」前會再同步一次最新數據並重新產圖。本機沒有單場戰報時會自動查中職官網，優先一軍，若只有二軍出賽就生成二軍戰報。
       </div>
       <div class="section-actions" style="margin-top:12px">
         <button id="batchReportSelectAllBtn" class="press-btn">全選</button>
@@ -4080,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.92';
+    const APP_VERSION = 'v1.93';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7600,7 +7600,43 @@ bg2: {
       return { record:null, level:'A', reason:lastReason || '官網查不到當天出賽資料' };
     }
 
-    async function generateBatchReports() {
+    async function refreshBatchSeasonStats(player, year, level) {
+      const scope = playerScope(player);
+      try {
+        if (scope === 'cpbl') {
+          if (!player?.cpblAcnt) {
+            return { ok:false, skipped:true, reason:'尚未連結中職官網' };
+          }
+          await updatePlayerFromCpbl(player, true, year, level);
+          activatePlayerStatsProfile(player, year, level);
+          return { ok:true };
+        }
+
+        if (scope === 'overseas') {
+          if (!player?.externalProvider || !player?.externalPlayerId) {
+            return { ok:false, skipped:true, reason:'尚未連結國外聯盟資料' };
+          }
+          await syncExternalSeason(player, year, null, level);
+          activatePlayerStatsProfile(player, year, level);
+          return { ok:true };
+        }
+
+        if (scope === 'international') {
+          if (!playerSpecialCompetition(player)) {
+            return { ok:false, skipped:true, reason:'尚未連結國際賽資料' };
+          }
+          await syncInternationalTournamentStats(player);
+          return { ok:true };
+        }
+
+        return { ok:false, skipped:true, reason:'此球員沒有可同步的官方來源' };
+      } catch (error) {
+        console.warn('批次戰報累積數據更新失敗', player?.name, error);
+        return { ok:false, skipped:false, reason:error?.message || '累積數據更新失敗' };
+      }
+    }
+
+    async function generateBatchReports({ refreshStats = true, refreshDaily = false } = {}) {
       const ids = batchReportSelectedIds();
       if (!ids.length) {
         setStatus('請至少勾選一名球員。', true);
@@ -7632,8 +7668,23 @@ bg2: {
           let savedGame = await readSavedGameForBatch(player.id);
           let record = savedGame.record;
           let reportLevel = savedGame.level;
+          let dailyRefreshWarning = '';
 
-          if (!hasUsableBatchRecord(record, player)) {
+          if (refreshDaily && playerScope(player) === 'cpbl') {
+            if (els.batchReportProgress) {
+              els.batchReportProgress.textContent = `正在更新單場資料 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
+            }
+            const fetched = await fetchBatchGameFromCpbl(player);
+            if (hasUsableBatchRecord(fetched.record, player)) {
+              record = fetched.record;
+              reportLevel = fetched.level;
+            } else if (hasUsableBatchRecord(record, player)) {
+              dailyRefreshWarning = fetched.reason || '單場資料更新失敗，已使用本機快取';
+            } else {
+              results.push({ player, ok:false, reason:fetched.reason || '這一天查不到出賽資料' });
+              continue;
+            }
+          } else if (!hasUsableBatchRecord(record, player)) {
             if (els.batchReportProgress) {
               els.batchReportProgress.textContent = `正在查官網 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
             }
@@ -7653,10 +7704,25 @@ bg2: {
           currentTemplate = preferredTemplate && TEMPLATES[preferredTemplate]?.enabled
             ? preferredTemplate
             : savedState.currentTemplate;
+
           const reportYear = Number(els.gameDate.value.slice(0,4)) || CURRENT_YEAR;
+          const scope = playerScope(player);
           const years = availableSeasonYears(player, reportLevel);
-          selectedSeason = years.includes(reportYear) ? reportYear : (years[0] || reportYear);
-          activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          selectedSeason = scope === 'international'
+            ? (Number(player.externalYear) || reportYear)
+            : (years.includes(reportYear) ? reportYear : (years[0] || reportYear));
+
+          let statsRefresh = { ok:false, skipped:true, reason:'' };
+          if (refreshStats) {
+            if (els.batchReportProgress) {
+              els.batchReportProgress.textContent = `正在更新累積數據 ${index + 1}／${ids.length}：#${player.number} ${player.name}`;
+            }
+            statsRefresh = await refreshBatchSeasonStats(player, selectedSeason, selectedLevel);
+          }
+
+          if (scope !== 'international') {
+            activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          }
 
           currentRecord = {
             ...defaultGameRecord(player),
@@ -7689,7 +7755,20 @@ bg2: {
 
           const fileName = currentOutputFileName();
           const url = URL.createObjectURL(blob);
-          const output = { playerId:player.id, player, blob, fileName, url, templateKey:currentTemplate };
+          const refreshWarning = [
+            dailyRefreshWarning,
+            (!statsRefresh.ok && !statsRefresh.skipped ? statsRefresh.reason : '')
+          ].filter(Boolean).join('；');
+          const output = {
+            playerId:player.id,
+            player,
+            blob,
+            fileName,
+            url,
+            templateKey:currentTemplate,
+            refreshWarning,
+            statsRefreshed:Boolean(statsRefresh.ok)
+          };
           batchReportOutputs.push(output);
           results.push({ player, ok:true, output });
 
@@ -7740,10 +7819,12 @@ bg2: {
               <div class="batch-result-main">
                 <div class="result-text">
                   <strong>#${escapeHtml(item.player.number)} ${escapeHtml(item.player.name)}</strong>
-                  已生成
+                  ${item.output.refreshWarning
+                    ? `已生成｜更新提醒：${escapeHtml(item.output.refreshWarning)}`
+                    : (item.output.statsRefreshed ? '已生成｜最新累積數據已同步' : '已生成')}
                 </div>
                 <div class="batch-result-controls">
-                  <a class="press-btn" href="${item.output.url}" download="${escapeHtml(item.output.fileName)}">下載</a>
+                  <button class="press-btn" type="button" data-batch-download="${item.player.id}">下載</button>
                   <button class="press-btn" type="button" data-batch-bg-toggle="${item.player.id}">背景選擇</button>
                   <button class="press-btn" type="button" data-batch-photo-trigger="${item.player.id}">圖片上傳</button>
                   <input class="hidden" type="file" accept="image/*" data-batch-photo-input="${item.player.id}" />
@@ -7754,6 +7835,35 @@ bg2: {
               </div>
             </div>`;
         }).join('');
+
+        els.batchReportResults.querySelectorAll('[data-batch-download]').forEach(button => {
+          button.addEventListener('click', async () => {
+            const playerId = button.dataset.batchDownload;
+            button.disabled = true;
+            try {
+              if (els.batchReportProgress) {
+                els.batchReportProgress.textContent = '下載前正在同步最新數據並重新產圖…';
+              }
+              const outputs = await generateBatchReports({ refreshStats:true, refreshDaily:true });
+              const output = outputs.find(item => item.playerId === playerId);
+              if (!output) throw new Error('找不到這名球員可下載的戰報。');
+
+              const link = document.createElement('a');
+              link.href = output.url;
+              link.download = output.fileName;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+
+              if (els.batchReportProgress) {
+                els.batchReportProgress.textContent = `已更新最新數據並下載：#${output.player.number} ${output.player.name}`;
+              }
+              showAppToast('已下載');
+            } catch (error) {
+              setStatus(error?.message || '批次戰報下載失敗。', true);
+            }
+          });
+        });
 
         els.batchReportResults.querySelectorAll('[data-batch-bg-toggle]').forEach(button => {
           button.addEventListener('click', () => {
@@ -7772,7 +7882,7 @@ bg2: {
               ...(batchReportPreferences[playerId] || {}),
               templateKey
             };
-            await generateBatchReports();
+            await generateBatchReports({ refreshStats:false, refreshDaily:false });
           });
         });
 
@@ -7809,7 +7919,7 @@ bg2: {
               player.selectedPhotoId = photo.id;
               ensurePhotoTransforms(player)[photo.id] = { x: 0, y: 0, scale: 1 };
               await savePlayer(player);
-              await generateBatchReports();
+              await generateBatchReports({ refreshStats:false, refreshDaily:false });
             } catch (error) {
               setStatus(error?.message || '圖片上傳失敗。', true);
             }
@@ -7819,18 +7929,43 @@ bg2: {
 
       const hasOutputs = batchReportOutputs.length > 0;
       els.batchReportDownloadAllBtn?.classList.toggle('hidden', !hasOutputs);
+      return batchReportOutputs.slice();
     }
 
     async function downloadAllBatchReports() {
-      for (let i = 0; i < batchReportOutputs.length; i++) {
-        const output = batchReportOutputs[i];
-        const link = document.createElement('a');
-        link.href = output.url;
-        link.download = output.fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        if (i < batchReportOutputs.length - 1) await new Promise(resolve => setTimeout(resolve, 250));
+      if (!batchReportOutputs.length) {
+        setStatus('目前沒有可下載的批次戰報。', true);
+        return;
+      }
+
+      els.batchReportDownloadAllBtn.disabled = true;
+      try {
+        if (els.batchReportProgress) {
+          els.batchReportProgress.textContent = '全部下載前正在同步最新數據並重新產圖…';
+        }
+
+        const outputs = await generateBatchReports({ refreshStats:true, refreshDaily:true });
+        if (!outputs.length) throw new Error('更新後沒有可下載的戰報。');
+
+        for (let i = 0; i < outputs.length; i++) {
+          const output = outputs[i];
+          const link = document.createElement('a');
+          link.href = output.url;
+          link.download = output.fileName;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          if (i < outputs.length - 1) await new Promise(resolve => setTimeout(resolve, 250));
+        }
+
+        if (els.batchReportProgress) {
+          els.batchReportProgress.textContent = `已同步最新數據並下載 ${outputs.length} 張戰報。`;
+        }
+        showAppToast(`已下載 ${outputs.length} 張圖片`);
+      } catch (error) {
+        setStatus(error?.message || '批次下載失敗。', true);
+      } finally {
+        els.batchReportDownloadAllBtn.disabled = false;
       }
     }
 
@@ -11799,7 +11934,7 @@ bg2: {
     document.getElementById('batchReportClearBtn').addEventListener('click', () => {
       document.querySelectorAll('[data-batch-report-player]').forEach(input => input.checked = false);
     });
-    els.batchReportGenerateBtn?.addEventListener('click', generateBatchReports);
+    els.batchReportGenerateBtn?.addEventListener('click', () => generateBatchReports({ refreshStats:true, refreshDaily:true }));
     els.batchReportDownloadAllBtn?.addEventListener('click', downloadAllBatchReports);
 
     let activeAllFilterSelect = null;
