@@ -2912,6 +2912,208 @@ dialog::backdrop {
   }
 }
 /* ===== v1.64 HEADER DATE MOVE END ===== */
+
+/* ===== v1.65 SPLIT HOME LAYOUT START ===== */
+.title-date-control{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+  padding:6px 8px 6px 11px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:rgba(255,255,255,.82);
+  font-size:12px;
+  font-weight:800;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.title-date-control input{
+  width:auto;
+  min-width:132px;
+  min-height:30px;
+  padding:3px 6px;
+  border:0;
+  border-radius:7px;
+  outline:0;
+  background:rgba(255,255,255,.94);
+  color:#18324d;
+  font-size:13px;
+  font-weight:900;
+}
+#homePage{
+  overflow:hidden;
+}
+#homePage .home-layout{
+  display:grid;
+  grid-template-columns:minmax(150px,1fr) minmax(0,3fr);
+  align-items:stretch;
+  gap:14px;
+  height:calc(100dvh - 150px);
+  min-height:420px;
+  overflow:hidden;
+}
+#homePage .home-sidebar,
+#homePage .home-main-panel{
+  min-width:0;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#homePage .home-sidebar{
+  display:block;
+}
+#homePage .home-background-panel{
+  min-height:100%;
+  padding:14px 12px;
+}
+#homePage .home-main-panel{
+  height:100%;
+}
+#homePage .home-template-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  margin:0;
+}
+#homePage .home-template-grid .template-card{
+  padding:6px;
+  border-radius:12px;
+}
+#homePage .home-template-grid .template-preview{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:9px;
+}
+#homePage .home-template-grid .template-card-title{
+  display:block;
+  margin-top:5px;
+  font-size:11px;
+  line-height:1.25;
+}
+#homePage .home-template-grid .template-card-status{
+  display:block;
+  margin-top:2px;
+  font-size:9px;
+}
+#homePage .home-sidebar::-webkit-scrollbar,
+#homePage .home-main-panel::-webkit-scrollbar{
+  width:8px;
+}
+#homePage .home-sidebar::-webkit-scrollbar-thumb,
+#homePage .home-main-panel::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:999px;
+  background:#9cabb9;
+  background-clip:padding-box;
+}
+@media(max-width:900px){
+  #homePage .home-layout{
+    grid-template-columns:minmax(132px,25%) minmax(0,75%);
+    gap:10px;
+    height:calc(100dvh - 128px);
+  }
+}
+@media(max-width:640px){
+  .title-row{
+    min-height:92px;
+  }
+  .title-row-right{
+    max-width:52vw;
+    gap:5px;
+  }
+  .title-date-control{
+    gap:4px;
+    padding:4px 5px 4px 7px;
+    border-radius:9px;
+    font-size:10px;
+  }
+  .title-date-control input{
+    min-width:112px;
+    max-width:128px;
+    min-height:27px;
+    padding:2px 4px;
+    font-size:11px;
+  }
+  #homePage .home-layout{
+    grid-template-columns:minmax(104px,26%) minmax(0,74%);
+    gap:8px;
+    height:calc(100dvh - 122px);
+    min-height:360px;
+  }
+  #homePage .home-background-panel{
+    padding:10px 7px;
+    border-radius:14px;
+  }
+  #homePage .home-background-panel .home-card-title{
+    display:block;
+    margin-bottom:9px;
+  }
+  #homePage .home-background-panel .home-card-title h2{
+    margin:0;
+    padding-bottom:7px;
+    font-size:14px;
+  }
+  #homePage .home-background-panel .home-card-title span{
+    display:none;
+  }
+  #homePage .home-main-panel{
+    padding:11px 9px;
+    border-radius:14px;
+  }
+  #homePage .home-template-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  #homePage .home-template-grid .template-card{
+    padding:4px;
+  }
+  #homePage .home-template-grid .template-card-title{
+    font-size:9px;
+  }
+  #homePage .home-template-grid .template-card-status{
+    font-size:8px;
+  }
+  #homePage .home-zone-switch{
+    gap:4px;
+    padding:4px;
+    margin-bottom:10px;
+  }
+  #homePage .home-zone-btn{
+    min-height:34px;
+    font-size:11px;
+  }
+  #homePage .home-player-actions{
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+  #homePage .home-player-actions .press-btn{
+    min-height:36px;
+    font-size:11px;
+  }
+  #homePage #homeTeamFilters{
+    grid-template-columns:1fr;
+    gap:5px;
+  }
+  #homePage .home-player-grid{
+    grid-template-columns:1fr !important;
+    gap:7px !important;
+  }
+}
+@media(max-width:390px){
+  #homePage .home-layout{
+    grid-template-columns:minmax(96px,27%) minmax(0,73%);
+    gap:6px;
+  }
+  .title-date-control span{display:none}
+  .title-date-control input{
+    min-width:108px;
+    max-width:116px;
+  }
+}
+/* ===== v1.65 SPLIT HOME LAYOUT END ===== */
 </style>
 </head>
 <body>
@@ -2946,33 +3148,27 @@ dialog::backdrop {
       </div>
       <div class="title-row-right">
         <div id="selectedPlayerText" class="subtle"></div>
+        <label id="homeHeaderDateControl" class="title-date-control" aria-label="日期">
+          <span>日期</span>
+          <input id="gameDate" type="date" />
+        </label>
         <div id="playerPageDate" class="title-row-date"></div>
       </div>
     </div>
 
     <section id="homePage">
       <div class="home-layout">
-        <div class="home-sidebar">
-          <section class="panel">
+        <aside class="home-sidebar">
+          <section class="panel home-background-panel">
             <div class="home-card-title">
-              <h2>本日設定</h2>
-              <span>共用設定</span>
-            </div>
-            <label class="date-wrap" style="width:100%;justify-content:space-between">日期
-              <input id="gameDate" type="date" />
-            </label>
-          </section>
-
-          <section class="panel">
-            <div class="home-card-title">
-              <h2>背景設定</h2>
+              <h2>背景</h2>
               <span>點選切換</span>
             </div>
             <div id="homeTemplateGrid" class="template-grid home-template-grid"></div>
           </section>
-        </div>
+        </aside>
 
-        <section class="panel">
+        <section class="panel home-main-panel">
           <div id="homeZoneSwitch" class="home-zone-switch" aria-label="球員資料專區">
             <button class="home-zone-btn active" type="button" data-home-zone="cpbl">中職</button>
             <button class="home-zone-btn" type="button" data-home-zone="international">國際賽</button>
@@ -3256,7 +3452,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.64';
+    const APP_VERSION = 'v1.65';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -3288,6 +3484,7 @@ dialog::backdrop {
       newPlayerCompetitionLabel: document.getElementById('newPlayerCompetitionLabel'),
       newPlayerTeamLabel: document.getElementById('newPlayerTeamLabel'),
       newPlayerYearLabel: document.getElementById('newPlayerYearLabel'),
+      homeHeaderDateControl: document.getElementById('homeHeaderDateControl'),
       playerPageDate: document.getElementById('playerPageDate'),
       backHomeBtn: document.getElementById('backHomeBtn'),
       playerLevelSwitch: document.getElementById('playerLevelSwitch'),
@@ -8020,6 +8217,7 @@ bg2: {
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (playerScopeCode === 'international') {
