@@ -3661,7 +3661,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.71';
+    const APP_VERSION = 'v1.72';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4998,7 +4998,25 @@ bg2: {
         date:els.gameDate.value
       });
       const daily = data.daily;
-      if (!daily?.found) throw new Error(daily?.reason || '當天找不到此球員的出賽資料。');
+      if (!daily?.found) {
+        const requestedDate = String(els.gameDate.value || '').replaceAll('-', '/');
+        const last = daily?.lastAppearance;
+        if (last?.date) {
+          const lastDate = String(last.date).replaceAll('-', '/');
+          const lastLevel = String(last.leagueLevel || '');
+          const message = `${requestedDate} 一軍、二軍都沒有此球員的出賽紀錄。\n\n上一次出賽：${lastDate}${lastLevel ? `（${lastLevel}）` : ''}`;
+          await showAppAlert(message, { title:'當日無出賽', tone:'warning' });
+          setStatus(`當日無出賽；上一次出賽為 ${lastDate}${lastLevel ? `（${lastLevel}）` : ''}。`);
+          return false;
+        }
+        const message = `${requestedDate} 一軍、二軍都沒有此球員的出賽紀錄，近期也找不到可確認的上一次出賽資料。`;
+        await showAppAlert(message, { title:'當日無出賽', tone:'warning' });
+        setStatus('當日一軍、二軍皆無出賽資料。');
+        return false;
+      }
+
+      currentRecord.externalLeagueLevel = String(daily.leagueLevel || '一軍');
+      currentRecord.externalWalksCombined = false;
 
       const localizedDailyName = String(daily.profile?.zhName || '').replace(/\s+/g, '');
       if (localizedDailyName && /[\u3400-\u9fff]/.test(localizedDailyName)) {
@@ -5066,8 +5084,10 @@ bg2: {
         g.hbp=Number(p.hbp)||0;
         g.r=Number(p.r)||0;
         g.er=Math.min(g.r,Number(p.er)||0);
-        g.pitchTens=0;
-        g.pitchOnes=0;
+        const pitchCount=Math.max(0,Math.min(150,Number(p.pitchCount)||0));
+        g.pitchTens=Math.floor(pitchCount/10);
+        g.pitchOnes=pitchCount>=150?0:pitchCount%10;
+        currentRecord.externalWalksCombined=Boolean(p.walksCombined);
         g.cg=Boolean(Number(p.cg)||p.cg);
         g.sho=Boolean(Number(p.sho)||p.sho);
         g.hld=Boolean(Number(p.hld)||p.hld);
@@ -5092,11 +5112,16 @@ bg2: {
       const noPa = player.type === 'hitter'
         && !(Array.isArray(daily.hitter?.plateAppearances) && daily.hitter.plateAppearances.length);
       const sourceMode = String(daily.sourceMode || '');
+      const levelLabel = String(daily.leagueLevel || '');
+      const sourceLabel = `${overseasProviderLabel(player.externalProvider)}${levelLabel ? ` ${levelLabel}` : ''}`;
+      const combinedNote = currentRecord.externalWalksCombined
+        ? ' KBO Futures 官方 Box 僅提供四死球合計，戰報會以「四死球」標示。'
+        : '';
       setStatus(noPa
         ? sourceMode === 'eng-box'
-          ? `已確認 ${els.gameDate.value} 有出賽並匯入 NPB 官方英文 Box 彙總；日文詳細 Box 暫時無法讀取，所以逐打席未自動帶入。`
-          : `已匯入 ${els.gameDate.value} 的 ${overseasProviderLabel(player.externalProvider)} 當日彙總；該來源未提供可解析的逐打席順序，可手動補逐打席。`
-        : `已匯入 ${els.gameDate.value} 的 ${overseasProviderLabel(player.externalProvider)} 當日資料。`);
+          ? `已確認 ${els.gameDate.value} 有出賽並匯入 NPB 一軍官方英文 Box 彙總；日文詳細 Box 暫時無法讀取，所以逐打席未自動帶入。`
+          : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日彙總；該來源未提供可解析的逐打席順序，可手動補逐打席。`
+        : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日資料。${combinedNote}`);
       return true;
     }
 
@@ -5339,7 +5364,11 @@ bg2: {
 
     function reportPlayerName(player) {
       const base = String(player?.name || '').trim();
-      if (playerScope(player) !== 'cpbl') return base;
+      const scope = playerScope(player);
+      if (scope === 'overseas') {
+        return currentRecord?.externalLeagueLevel === '二軍' ? `${base}(二軍)` : base;
+      }
+      if (scope !== 'cpbl') return base;
       return selectedLevel === 'D' ? `${base}(二軍)` : base;
     }
 
@@ -5403,6 +5432,8 @@ bg2: {
         cpblReadOnlyImport: false,
         externalReadOnlyImport: false,
         externalSource: '',
+        externalLeagueLevel: '',
+        externalWalksCombined: false,
         updatedAt: Date.now()
       };
     }
@@ -5444,6 +5475,8 @@ bg2: {
         ...defaultGameRecord(player).cpblGameSummary,
         ...(currentRecord.cpblGameSummary || {})
       };
+      currentRecord.externalLeagueLevel = String(currentRecord.externalLeagueLevel || '');
+      currentRecord.externalWalksCombined = Boolean(currentRecord.externalWalksCombined);
       if (!['SV','HLD','W','L','ND'].includes(currentRecord.pitcherGame.result)) {
         currentRecord.pitcherGame.result = currentRecord.pitcherGame.sv ? 'SV'
           : currentRecord.pitcherGame.hld ? 'HLD'
@@ -7597,7 +7630,7 @@ bg2: {
            ${els.gameDate.value !== localISODate() ? '<div class="small" style="margin-top:6px">歷史日期只匯入該場資料，不會寫入球員累積數據。</div>' : ''}`
         : linkedOverseas
           ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
-             <div class="small" style="margin-top:6px">官方／聯盟來源的當日資料只用來產生該場戰報，不會重複累加到已同步的賽季成績。</div>`
+             <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 官方／聯盟來源的當日資料只用來產生該場戰報，不會重複累加到已同步的賽季成績。</div>`
           : '';
 
       els.content.innerHTML = `
@@ -7962,6 +7995,7 @@ bg2: {
       const player = selectedPlayer();
       const g = currentRecord.pitcherGame;
       const result = pitcherResult(g);
+      const combinedFreePasses = Boolean(currentRecord?.externalWalksCombined);
       const host = document.getElementById('todaySpecific');
       host.innerHTML = `
         <h3>投球戰績</h3>
@@ -7973,9 +8007,9 @@ bg2: {
             <input id="pInningsOther" type="text" inputmode="decimal" placeholder="例如 0.2、13.1" value="${isPresetPitcherInnings(g.innings) ? '' : escapeAttr(g.innings)}" />
           </label>
           <label class="field">三振<select id="pK">${numberOptions(36, g.k)}</select></label>
-          <label class="field">保送(故意四壞球)<select id="pBB">${numberOptions(36, g.bb)}</select></label>
+          <label class="field">${combinedFreePasses ? '四死球合計（KBO二軍）' : '保送(故意四壞球)'}<select id="pBB">${numberOptions(36, g.bb)}</select></label>
           <label class="field">被安打<select id="pH">${numberOptions(36, g.h)}</select></label>
-          <label class="field">死球<select id="pHBP">${numberOptions(10, g.hbp)}</select></label>
+          <label class="field">${combinedFreePasses ? '死球（已含於四死球合計）' : '死球'}<select id="pHBP" ${combinedFreePasses ? 'disabled' : ''}>${numberOptions(10, g.hbp)}</select></label>
           <label class="field">其他上壘(判斷完全比賽用)<select id="pOtherReach">${numberOptions(10, g.otherReach || 0)}</select></label>
           <label class="field">失分<select id="pR">${numberOptions(15, g.r)}</select></label>
           <label class="field">自責分<select id="pER">${numberOptions(Math.min(15, Number(g.r) || 0), Math.min(Number(g.er) || 0, Number(g.r) || 0))}</select></label>
@@ -8914,15 +8948,25 @@ bg2: {
           ctx.fillText('投球戰績', 88, 430);
         }
 
-        const lines = [
-          ['投球局數', g.innings],
-          ['三振', g.k],
-          ['保送', g.bb],
-          ['被安打', g.h],
-          ['死球', g.hbp],
-          ['自責分', g.er],
-          ['用球數', pitches]
-        ];
+        const lines = currentRecord?.externalWalksCombined
+          ? [
+              ['投球局數', g.innings],
+              ['三振', g.k],
+              ['四死球', g.bb],
+              ['被安打', g.h],
+              ['失分', g.r],
+              ['自責分', g.er],
+              ['用球數', pitches]
+            ]
+          : [
+              ['投球局數', g.innings],
+              ['三振', g.k],
+              ['保送', g.bb],
+              ['被安打', g.h],
+              ['死球', g.hbp],
+              ['自責分', g.er],
+              ['用球數', pitches]
+            ];
         lines.forEach((line, index) => {
           const y = positioned ? detail.pitcherStartY + index * detail.pitcherStep : 492 + index * 52;
           ctx.fillStyle = positioned ? (detail.mutedColor || '#52657d') : '#6d7688';
