@@ -3396,6 +3396,38 @@ dialog::backdrop {
 }
 /* ===== v1.76 HOME PLAYER LIST INNER SCROLL END ===== */
 
+/* ===== v1.77 HOME LIST + OFFICIAL ROLE FIX START ===== */
+#homePage #recentPlayers{
+  grid-auto-rows:max-content;
+  align-items:stretch;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom));
+}
+#homePage #recentPlayers .home-player-card{
+  height:auto !important;
+  min-height:118px;
+  overflow:visible;
+  align-self:start;
+}
+#homePage #recentPlayers .home-player-card > span:last-child{
+  width:100%;
+  min-width:0;
+}
+#homePage #recentPlayers .home-player-meta{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+#homePage #homeInternationalExplorer:not(.hidden){
+  padding-bottom:calc(18px + env(safe-area-inset-bottom));
+}
+@media(max-width:640px){
+  #homePage #recentPlayers,
+  #homePage #homeInternationalExplorer:not(.hidden){
+    padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  }
+}
+/* ===== v1.77 HOME LIST + OFFICIAL ROLE FIX END ===== */
+
+
 </style>
 </head>
 <body>
@@ -3752,7 +3784,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.76';
+    const APP_VERSION = 'v1.77';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4535,10 +4567,35 @@ bg2: {
       return next;
     }
 
+    function externalPositionType(position = '') {
+      const value = String(position || '').trim();
+      if (/投手|pitcher|투수/i.test(value)) return 'pitcher';
+      if (/捕手|内野手|外野手|catcher|infielder|outfielder|포수|내야수|외야수/i.test(value)) return 'hitter';
+      return '';
+    }
+
+    function officialExternalPlayerType(player, profile = {}) {
+      if (player?.externalTwoWay || profile?.twoWay) return '';
+      const explicit = ['pitcher','hitter'].includes(profile?.type) ? profile.type : '';
+      return explicit || externalPositionType(
+        profile?.position || profile?.jpPosition || player?.externalPosition || ''
+      );
+    }
+
+    function repairStoredExternalPlayerType(player) {
+      if (!player || playerScope(player) !== 'overseas' || player.externalTwoWay) return false;
+      const officialType = externalPositionType(player.externalPosition || '');
+      if (!officialType || officialType === player.type) return false;
+      player.type = officialType;
+      player.stats = officialType === 'pitcher' ? pitcherDefaults() : hitterDefaults();
+      if (officialType === 'pitcher') player.pitcherLastMetric = normalizePitcherLastMetric(player.pitcherLastMetric);
+      return true;
+    }
+
     function externalPitcherStatsToLocal(stats = {}) {
       const next = pitcherDefaults();
       for (const key of ['cg','sho','w','l','sv','bsv','hld','outs','h','bb','hbp','k','er']) {
-        next[key] = Math.max(0, Number(stats?.[key]) || 0);
+        next[key] = Math.max(0, Math.round(Number(stats?.[key]) || 0));
       }
       const era = Number(stats?.era);
       const whip = Number(stats?.whip);
@@ -4560,8 +4617,9 @@ bg2: {
 
       player.externalTwoWay = Boolean(player.externalTwoWay || profile.twoWay);
 
-      if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
-      if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
+      // 球員角色以官方守位／profile 為準，不能因為投手曾經有打席就改成打者。
+      const officialType = officialExternalPlayerType(player, profile);
+      if (officialType) player.type = officialType;
 
       const official = player.type === 'pitcher' ? pitcher : hitter;
       if (!official) {
@@ -11125,12 +11183,10 @@ bg2: {
           || picked.twoWay
           || remote?.profile?.twoWay
         );
-        let type = isTwoWay ? selectedType : (official.type || picked.type || selectedType);
+        const officialPosition = official.position || official.jpPosition || picked.position || '';
+        const positionType = externalPositionType(officialPosition);
+        let type = isTwoWay ? selectedType : (official.type || positionType || picked.type || selectedType);
         if (type !== 'pitcher' && type !== 'hitter') type = selectedType;
-        if (remote) {
-          if (type === 'pitcher' && !remote.pitcher && remote.hitter) type = 'hitter';
-          if (type === 'hitter' && !remote.hitter && remote.pitcher) type = 'pitcher';
-        }
 
         const typedChineseName = /[㐀-鿿]/.test(name) ? name : '';
         const displayName = picked.zhName || typedChineseName || picked.name || official.name || name;
@@ -11149,7 +11205,7 @@ bg2: {
           externalPlayerId:String(picked.id),
           externalTwoWay:isTwoWay,
           externalOfficialName:official.name || picked.officialName || picked.name || '',
-          externalPosition:official.position || picked.position || '',
+          externalPosition:official.position || official.jpPosition || picked.position || '',
           externalTeam:official.team || picked.team || '',
           externalYear,
           externalAvailableYears:[],
@@ -11535,7 +11591,8 @@ bg2: {
           ensurePhotoTransforms(player);
           const fixedName = applyStoredPreferredExternalName(player);
           const fixedTeam = applyStoredPreferredExternalTeam(player);
-          if (fixedName || fixedTeam) await idbPut(STORES.players, player);
+          const fixedRole = repairStoredExternalPlayerType(player);
+          if (fixedName || fixedTeam || fixedRole) await idbPut(STORES.players, player);
         }
         for (const photo of photos) {
           if (!photo.playerId) {
