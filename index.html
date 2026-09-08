@@ -3280,9 +3280,6 @@ dialog::backdrop {
 #homePage .home-pro-country-switch .home-hierarchy-btn{
   white-space:nowrap;
 }
-#homePage .home-player-actions.international-actions{
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-}
 @media(max-width:640px){
   #homePage .home-pro-country-switch{
     grid-template-columns:repeat(4,minmax(0,1fr)) !important;
@@ -3294,10 +3291,7 @@ dialog::backdrop {
     font-size:9px;
     letter-spacing:0;
   }
-  #homePage .home-player-actions.international-actions{
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }
-}
 @media(max-width:390px){
   #homePage .home-pro-country-switch .home-hierarchy-btn{
     font-size:8.5px;
@@ -3661,7 +3655,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.68';
+    const APP_VERSION = 'v1.69';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7091,9 +7085,9 @@ bg2: {
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
       const homeActions = document.querySelector('.home-player-actions');
-      homeActions?.classList.remove('hidden');
-      homeActions?.classList.toggle('international-actions', international);
-      document.getElementById('addPlayerBtn')?.classList.toggle('hidden', international);
+      homeActions?.classList.toggle('hidden', international);
+      homeActions?.classList.remove('international-actions');
+      document.getElementById('addPlayerBtn')?.classList.remove('hidden');
       els.recent?.classList.toggle('hidden', international);
 
       if (els.homePlayerTitle) {
