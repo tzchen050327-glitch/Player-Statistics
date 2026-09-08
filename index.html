@@ -3670,7 +3670,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.73';
+    const APP_VERSION = 'v1.74';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -5234,8 +5234,6 @@ bg2: {
         g.pitchOnes = pitchCount % 10;
         g.cg = Boolean(p.cg);
         g.sho = Boolean(p.sho);
-        g.cg = Boolean(p.cg);
-        g.sho = Boolean(p.sho);
         g.hld = Boolean(p.hld);
         g.sv = Boolean(p.sv);
         g.bsv = Boolean(p.bsv);
@@ -5513,7 +5511,13 @@ bg2: {
         const otherLevel = selectedLevel === 'D' ? 'A' : 'D';
         stored = await idbGet(STORES.games, `${els.gameDate.value}:${selectedPlayerId}:${otherLevel}`);
         if (!stored && otherLevel === 'A') stored = await idbGet(STORES.games, legacyGameKey());
-        if (stored) selectedLevel = otherLevel;
+        if (stored) {
+          selectedLevel = otherLevel;
+          const gameYear = Number(els.gameDate.value?.slice(0,4)) || CURRENT_YEAR;
+          const years = availableSeasonYears(player, selectedLevel);
+          selectedSeason = years.includes(gameYear) ? gameYear : (years[0] || gameYear);
+          activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+        }
       }
 
       currentRecord = stored || defaultGameRecord(player);
@@ -6456,6 +6460,8 @@ bg2: {
         const pitchCount = Number(p.pitchCount) || 0;
         g.pitchTens = Math.floor(pitchCount / 10);
         g.pitchOnes = pitchCount % 10;
+        g.cg = Boolean(p.cg);
+        g.sho = Boolean(p.sho);
         g.hld = Boolean(p.hld);
         g.sv = Boolean(p.sv);
         g.bsv = Boolean(p.bsv);
