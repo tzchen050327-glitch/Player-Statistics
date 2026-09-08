@@ -1,0 +1,22 @@
+name: U18 international E2E
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/u18-e2e.mjs'
+      - '.github/workflows/u18-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  u18-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/u18-e2e.mjs
