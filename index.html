@@ -3000,7 +3000,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.59</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.60</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -3194,7 +3194,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.59';
+    const APP_VERSION = 'v1.60';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4177,6 +4177,9 @@ bg2: {
         externalReadOnlyImport: true,
         internationalOfficialImport: true,
         internationalGameId: String(game?.gameId || ''),
+        internationalPartialGame: Boolean(game?.partial),
+        internationalHasVerifiedStats: Boolean(game?.hitter || game?.pitcher),
+        internationalSources: Array.isArray(game?.sources) ? game.sources : [],
         externalSource: `INT:${game?.source || player.internationalSource || 'international'}`,
         externalImportedAt: Date.now(),
         updatedAt: Date.now()
@@ -4294,10 +4297,12 @@ bg2: {
         saved += 1;
       }
 
-      // 若累積統計來源暫時沒有資料，至少可用官方逐場 Box 合計回填賽事總成績。
-      if (!player.internationalStatsFound && games.length) {
-        const hitterGames = games.filter(game => game?.hitter);
-        const pitcherGames = games.filter(game => game?.pitcher);
+      // 只有完整官方逐場 Box 才可拿來回填整屆總成績。
+      // 新聞交叉驗證 fallback 只顯示單場，不參與賽事總成績加總。
+      const completeGames = games.filter(game => !game?.partial);
+      if (!player.internationalStatsFound && completeGames.length) {
+        const hitterGames = completeGames.filter(game => game?.hitter);
+        const pitcherGames = completeGames.filter(game => game?.pitcher);
         if (player.type === 'pitcher' && pitcherGames.length) {
           player.stats = internationalPitcherTotalsFromGames(pitcherGames);
           player.internationalStatsFound = true;
@@ -6613,19 +6618,23 @@ bg2: {
     }
 
     function internationalGameSummaryText(player, record) {
+      const partialSuffix = record?.internationalPartialGame ? '｜部分資料' : '';
+      if (record?.internationalPartialGame && !record?.internationalHasVerifiedStats) {
+        return '有出賽｜詳細 Box 待補';
+      }
       if (player.type === 'hitter') {
         const official=record?.internationalHitterGame;
         if (official && !(record?.hitterPAs || []).length) {
-          return `${Number(official.hits)||0}安／${Number(official.ab)||0}打數｜${Number(official.rbi)||0}打點｜${Number(official.runs)||0}得分`;
+          return `${Number(official.hits)||0}安／${Number(official.ab)||0}打數｜${Number(official.rbi)||0}打點｜${Number(official.runs)||0}得分${partialSuffix}`;
         }
         const game=deriveHitterGame(record?.hitterPAs || []);
         const hits=(Number(game.single)||0)+(Number(game.double)||0)+(Number(game.triple)||0)+(Number(game.hr)||0);
         const runs=Math.max(0,Number(record?.cpblGameSummary?.runs)||0);
-        return `${hits}安／${game.ab||0}打數｜${game.rbi||0}打點｜${runs}得分`;
+        return `${hits}安／${game.ab||0}打數｜${game.rbi||0}打點｜${runs}得分${partialSuffix}`;
       }
       const game=derivePitcherGame(record?.pitcherGame || defaultGameRecord(player).pitcherGame);
       const innings=record?.pitcherGame?.innings || outsToIP(game.outs||0);
-      return `${innings}局｜${game.k||0}K｜${game.h||0}H｜${game.bb||0}BB｜${game.er||0}ER`;
+      return `${innings}局｜${game.k||0}K｜${game.h||0}H｜${game.bb||0}BB｜${game.er||0}ER${partialSuffix}`;
     }
 
     async function internationalPlayerGameRecords(player) {
@@ -6680,7 +6689,15 @@ bg2: {
         if (selected?.playerId === player.id && selected?.internationalOfficialImport) {
           els.gameDate.value = selected.date;
           currentRecord = selected;
-          renderToday(player);
+          if (selected.internationalPartialGame && !selected.internationalHasVerifiedStats) {
+            els.content.innerHTML =
+              '<div class="intl-flow-empty">' +
+                '<strong>這場已確認有出賽，但完整個人 Box Score 還在等待官方來源。</strong><br>' +
+                '目前不會把未知欄位顯示成 0，也不會拿來計算整屆總成績。' +
+              '</div>';
+          } else {
+            renderToday(player);
+          }
           const opponent = normalizeInternationalTeamName(selected.opponent || '') || '對手未提供';
           const nav =
             '<div class="intl-game-detail-nav">' +
@@ -6690,6 +6707,7 @@ bg2: {
                 escapeHtml(internationalEdition(player)) + '｜' +
                 escapeHtml(String(selected.date || '').replaceAll('-', '/')) + '｜VS ' +
                 escapeHtml(opponent) +
+                (selected.internationalPartialGame ? '｜部分資料' : '') +
               '</div>' +
             '</div>';
           els.content.insertAdjacentHTML('afterbegin', nav);
@@ -6738,7 +6756,7 @@ bg2: {
         const selectedClass=record.key===internationalSelectedGameKey?' is-selected':'';
         return '<div class="intl-game-card'+selectedClass+'">' +
           '<div class="intl-game-date">'+escapeHtml(String(record.date||'').replaceAll('-', '/'))+'</div>' +
-          '<div class="intl-game-main"><strong>VS '+escapeHtml(opponent)+'</strong><span>'+escapeHtml(summary)+'</span></div>' +
+          '<div class="intl-game-main"><strong>VS '+escapeHtml(opponent)+(record.internationalPartialGame?' <small>（部分資料）</small>':'')+'</strong><span>'+escapeHtml(summary)+'</span></div>' +
           '<button class="press-btn" type="button" data-intl-game-key="'+encodeURIComponent(record.key||'')+'">查看／輸出</button>' +
         '</div>';
       }).join('');
