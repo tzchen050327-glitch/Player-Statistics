@@ -3835,7 +3835,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.96</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.97</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4080,7 +4080,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.96';
+    const APP_VERSION = 'v1.97';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4896,7 +4896,7 @@ bg2: {
       if (!entry) return '';
       return [
         Number(entry.year) || '',
-        String(entry.teamName || '').trim() || '球隊未提供',
+        String(entry.organizationName || entry.teamName || '').trim() || '球隊未提供',
         String(entry.level || '').trim() || 'MiLB'
       ].filter(Boolean).join('｜');
     }
@@ -4938,6 +4938,7 @@ bg2: {
 
       player.externalCompetition = '美國職棒';
       player.externalCurrentTeam = String(current.team || profile.team || player.externalCurrentTeam || player.externalTeam || '').trim();
+      player.externalCurrentOrganization = String(current.organization || profile.currentOrganization || profile.organization || player.externalCurrentOrganization || '').trim();
       player.externalCurrentLevel = String(current.level || profile.currentLevel || player.externalCurrentLevel || '').trim();
       player.externalCurrentSportId = Number(current.sportId || profile.sportId || player.externalCurrentSportId || 0) || 0;
       player.externalTeam = player.externalCurrentTeam || player.externalTeam || '';
@@ -4952,7 +4953,8 @@ bg2: {
         sportId:Number(entry.sportId)||0,
         level:String(entry.level||''),
         teamId:String(entry.teamId||''),
-        teamName:String(entry.teamName||'')
+        teamName:String(entry.teamName||''),
+        organizationName:String(entry.organizationName||'')
       })).filter(entry => entry.year && (entry.hitter || entry.pitcher));
 
       player.externalAvailableYears = [...new Set(
@@ -7179,7 +7181,9 @@ bg2: {
 
     function searchPlayers(query) {
       const q = String(query || '').trim().toLowerCase();
-      const zonePlayers = players.filter(player => playerScope(player) === homeZone);
+      const zonePlayers = homeRootSection === 'international'
+        ? players.filter(player => playerScope(player) === 'international')
+        : homeContextPlayers();
       if (!q) return [...zonePlayers].sort((a,b) => String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric:true }));
       const compact = q.replace(/^#/, '');
       return zonePlayers.filter(player => {
@@ -8425,7 +8429,7 @@ bg2: {
     }
     function playerDisplayTeam(player) {
       if (playerScope(player) === 'cpbl') return normalizeTeamName(player?.cpblTeam || '');
-      if (isUsPlayer(player)) return String(player?.externalCurrentTeam || player?.externalTeam || '').trim();
+      if (isUsPlayer(player)) return String(player?.externalCurrentOrganization || player?.externalCurrentTeam || player?.externalTeam || '').trim();
       return String(player?.externalTeam || '').trim();
     }
 
@@ -8439,7 +8443,7 @@ bg2: {
         ].filter(Boolean).join('｜');
       }
       if (isUsPlayer(player)) {
-        const team = String(player.externalCurrentTeam || player.externalTeam || '').trim();
+        const team = String(player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || '').trim();
         const level = String(player.externalCurrentLevel || (
           String(player.externalProvider || '').toUpperCase() === 'MLB' ? 'MLB'
             : String(player.externalProvider || '').toUpperCase() === 'MILB' ? 'MiLB' : ''
@@ -8466,10 +8470,10 @@ bg2: {
       if (isUsPlayer(player) && player.externalPlayerId) {
         const entry = currentUsCareerEntry(player);
         const selected = entry
-          ? [entry.year, entry.teamName || '球隊未提供', entry.level || 'MiLB'].filter(Boolean).join('｜')
+          ? [entry.year, entry.organizationName || entry.teamName || '球隊未提供', entry.level || 'MiLB'].filter(Boolean).join('｜')
           : '年份／球隊／層級尚未同步';
         const current = [
-          player.externalCurrentTeam || player.externalTeam || '',
+          player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || '',
           player.externalCurrentLevel || ''
         ].filter(Boolean).join('｜');
         const synced = player.externalLastUpdatedAt
@@ -8688,7 +8692,7 @@ bg2: {
           : (scope === 'cpbl'
               ? normalizeTeamName(p.cpblTeam || '')
               : (isUsPlayer(p)
-                  ? String(p.externalCurrentTeam || p.externalTeam || '').trim()
+                  ? String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim()
                   : String(p.externalTeam || '').trim()));
         const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
         const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
@@ -8992,7 +8996,7 @@ bg2: {
         : '';
       const usEntry = isUsPlayer(player) ? currentUsCareerEntry(player) : null;
       const usCareerHeading = usEntry
-        ? `${usEntry.year} ${usEntry.teamName || '球隊未提供'} ${usEntry.level || 'MiLB'} 總成績`
+        ? `${usEntry.year} ${usEntry.organizationName || usEntry.teamName || '球隊未提供'} ${usEntry.level || 'MiLB'} 總成績`
         : '';
       const usDualHeading = supportsUsDualRoleTabs(player)
         ? `${selectedSeason} ${player.type === 'pitcher' ? '投球成績' : '打擊成績'}`
@@ -10223,7 +10227,7 @@ bg2: {
         els.externalScopeBadge.className = `external-scope-badge ${playerScopeCode}`;
         const usEntry = isUsPlayer(player) ? currentUsCareerEntry(player) : null;
         els.externalScopeBadge.textContent = usEntry
-          ? ['美國職棒', usEntry.year, usEntry.teamName, usEntry.level].filter(Boolean).join('｜')
+          ? ['美國職棒', usEntry.year, usEntry.organizationName || usEntry.teamName, usEntry.level].filter(Boolean).join('｜')
           : [
               scopeLabel(playerScopeCode),
               playerSpecialCompetition(player),
@@ -12683,6 +12687,7 @@ bg2: {
           externalPosition:official.position || official.jpPosition || picked.position || '',
           externalTeam:official.team || picked.team || '',
           externalCurrentTeam:official.team || picked.team || '',
+          externalCurrentOrganization:official.currentOrganization || official.organization || '',
           externalCurrentLevel:official.currentLevel || (provider === 'MLB' ? 'MLB' : provider === 'MILB' ? 'MiLB' : ''),
           externalCurrentSportId:Number(official.sportId)||0,
           externalYear,
