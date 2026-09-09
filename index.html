@@ -4052,18 +4052,18 @@ dialog::backdrop {
         <section id="contentPanel" class="panel"></section>
 
         <aside class="panel canvas-wrap">
-          <h2>下載圖片預覽</h2>
+          <h2 id="canvasPreviewTitle">戰報預覽</h2>
           <canvas id="cardCanvas" width="1080" height="1080"></canvas>
           <div class="section-actions">
-            <button id="downloadBtn" class="press-btn primary">更新數據並輸出圖片</button>
-            <button id="seasonReportBtn" class="press-btn">輸出單一年度戰報</button>
+            <button id="downloadBtn" class="press-btn primary hidden">生成當天戰報</button>
+            <button id="seasonReportBtn" class="press-btn primary hidden">輸出這個年度成績</button>
           </div>
         </aside>
       </div>
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.00</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.01</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4347,7 +4347,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v2.00';
+    const APP_VERSION = 'v2.01';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -4409,6 +4409,7 @@ dialog::backdrop {
       syncProgressStatus: document.getElementById('syncProgressStatus'),
       syncProgressBar: document.getElementById('syncProgressBar'),
       canvas: document.getElementById('cardCanvas'),
+      canvasPreviewTitle: document.getElementById('canvasPreviewTitle'),
       downloadBtn: document.getElementById('downloadBtn'),
       seasonReportBtn: document.getElementById('seasonReportBtn'),
       outputDialog: document.getElementById('outputDialog'),
@@ -10610,13 +10611,41 @@ bg2: {
       if (usDualTabs && selectedTab === 'secondary') selectedLevel = 'A';
 
       const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
+      const proSeasonStatsActive = statsTabActive && playerScopeCode !== 'international';
+      const dailyReportActive = selectedTab === 'today';
       els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
+
+      els.downloadBtn?.classList.toggle('hidden', !dailyReportActive);
+      els.seasonReportBtn?.classList.toggle('hidden', !proSeasonStatsActive);
+
       if (els.downloadBtn) {
         const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
         els.downloadBtn.textContent = officialReadOnly
-          ? '輸出圖片（官方單場資料不重複更新累積數據）'
-          : '更新數據並輸出圖片';
+          ? '生成當天戰報（官方單場資料）'
+          : '生成當天戰報';
+      }
+      if (els.seasonReportBtn) {
+        const context = proSeasonStatsActive ? annualSeasonContext(player) : null;
+        const levelText = supportsLeagueLevelTabs(player)
+          ? (selectedLevel === 'D' ? '二軍' : '一軍')
+          : (context?.league || '');
+        els.seasonReportBtn.textContent = context
+          ? `輸出 ${context.year} ${levelText}整季戰報`
+          : '輸出這個年度成績';
+      }
+      if (els.canvasPreviewTitle) {
+        if (proSeasonStatsActive) {
+          const context = annualSeasonContext(player);
+          const levelText = supportsLeagueLevelTabs(player)
+            ? (selectedLevel === 'D' ? '二軍' : '一軍')
+            : (context.league || '');
+          els.canvasPreviewTitle.textContent = `${context.year} ${levelText}整季戰報預覽`.trim();
+        } else if (dailyReportActive) {
+          els.canvasPreviewTitle.textContent = '當天戰報預覽';
+        } else {
+          els.canvasPreviewTitle.textContent = '戰報預覽';
+        }
       }
 
       renderRecentPlayers();
@@ -10629,7 +10658,14 @@ bg2: {
           && (selectedTab === 'base' || (selectedTab === 'today' && !internationalSelectedGameKey));
         document.querySelector('#playerPage .workspace')?.classList.toggle('international-overview', internationalOverview);
         renderContent();
-        if (!internationalOverview) renderCanvas();
+
+        if (!internationalOverview) {
+          if (proSeasonStatsActive) {
+            void renderAnnualSeasonCanvas(activeSeasonReportRole(player), player);
+          } else {
+            void renderCanvas();
+          }
+        }
       }
     }
 
@@ -13502,6 +13538,22 @@ bg2: {
       };
     }
 
+    function activeSeasonReportRole(player) {
+      if (!player) return 'hitter';
+
+      if (supportsUsDualRoleTabs(player) && selectedTab === 'secondary') {
+        return player.type === 'pitcher' ? 'hitter' : 'pitcher';
+      }
+
+      if (supportsLeagueLevelTabs(player)
+          && selectedRoleView === 'secondary'
+          && selectedLevelHasSecondaryRole(player)) {
+        return player.type === 'pitcher' ? 'hitter' : 'pitcher';
+      }
+
+      return player.type === 'pitcher' ? 'pitcher' : 'hitter';
+    }
+
     function annualSeasonRoles(player) {
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
       const pair = roleStatsPair(player, selectedSeason, level);
@@ -14049,7 +14101,8 @@ bg2: {
 
     els.downloadBtn.addEventListener('click', async () => {
       try {
-        setStatus('正在更新數據並產生圖片…');
+        if (selectedTab !== 'today') throw new Error('請到「今日戰績」產生當天戰報。');
+        setStatus('正在更新當天數據並產生戰報…');
         const outputs = await prepareOutputImage();
         els.outputDialog?.showModal();
         const count = outputs.length;
@@ -14068,8 +14121,12 @@ bg2: {
       try {
         const player=selectedPlayer();
         if(!player) throw new Error('請先選擇球員。');
+        if (!['base','minor','secondary'].includes(selectedTab) || playerScope(player) === 'international') {
+          throw new Error('請到一軍／二軍整季成績頁輸出年度戰報。');
+        }
         const context=annualSeasonContext(player);
-        setStatus(`正在產生 ${context.year} 單一年度戰報…`);
+        const levelText=supportsLeagueLevelTabs(player) ? (selectedLevel==='D'?'二軍':'一軍') : (context.league||'');
+        setStatus(`正在產生 ${context.year} ${levelText}整季戰報…`);
         const outputs=await prepareAnnualSeasonReports();
         els.outputDialog?.showModal();
         setStatus(outputs.length>1
