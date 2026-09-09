@@ -4063,7 +4063,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.02</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.03</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4347,7 +4347,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v2.02';
+    const APP_VERSION = 'v2.03';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7580,6 +7580,7 @@ bg2: {
           else homeProCountry = 'US';
         }
       }
+      selectedTab = 'base';
       selectedLevel = 'A';
       selectedRoleView = 'primary';
       todayRoleView = '';
