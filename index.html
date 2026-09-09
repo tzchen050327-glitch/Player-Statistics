@@ -4062,7 +4062,7 @@ dialog::backdrop {
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.98</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v1.99</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -4346,7 +4346,7 @@ dialog::backdrop {
   </dialog>
 
   <script>
-    const APP_VERSION = 'v1.98';
+    const APP_VERSION = 'v1.99';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -6480,6 +6480,25 @@ bg2: {
 
       if (daily.opponent) currentRecord.opponent = String(daily.opponent).trim();
 
+      // If this date was already imported from an external provider, the old
+      // record may contain a role that the corrected official parser no longer
+      // reports. Clear only previously imported stale role data; manual records
+      // that have not been imported remain untouched.
+      if (currentRecord.externalReadOnlyImport) {
+        if (!daily.hitter) {
+          currentRecord.hitterPAs = [];
+          currentRecord.internationalHitterGame = null;
+          currentRecord.cpblGameSummary = {
+            runs:0,hits:0,errors:0,official:false
+          };
+        }
+        if (!daily.pitcher) {
+          currentRecord.pitcherGame = {
+            ...defaultGameRecord(player).pitcherGame
+          };
+        }
+      }
+
       const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
       if (!appliedRoles) return false;
 
@@ -6487,15 +6506,25 @@ bg2: {
       currentRecord.cpblReadOnlyImport = false;
       currentRecord.externalSource = player.externalProvider;
       currentRecord.externalImportedAt = Date.now();
-      currentRecord.committedStats = player.type === 'hitter'
-        ? deriveHitterGame(currentRecord.hitterPAs)
-        : derivePitcherGame(currentRecord.pitcherGame);
+
+      const importedHasHitter = dailyHitterRoleHasData(daily.hitter);
+      const importedHasPitcher = dailyPitcherRoleHasData(daily.pitcher);
+      if (importedHasPitcher && !importedHasHitter) todayRoleView = 'pitcher';
+      else if (importedHasHitter && !importedHasPitcher) todayRoleView = 'hitter';
+
+      currentRecord.committedStats = importedHasPitcher && !importedHasHitter
+        ? derivePitcherGame(currentRecord.pitcherGame)
+        : importedHasHitter
+          ? deriveHitterGame(currentRecord.hitterPAs)
+          : (player.type === 'hitter'
+              ? deriveHitterGame(currentRecord.hitterPAs)
+              : derivePitcherGame(currentRecord.pitcherGame));
       currentRecord.committedAt = Date.now();
 
       await saveRecord();
       renderAll();
 
-      const noPa = player.type === 'hitter'
+      const noPa = importedHasHitter
         && !(Array.isArray(daily.hitter?.plateAppearances) && daily.hitter.plateAppearances.length);
       const sourceMode = String(daily.sourceMode || '');
       const levelLabel = String(daily.leagueLevel || '');
@@ -6503,11 +6532,18 @@ bg2: {
       const combinedNote = currentRecord.externalWalksCombined
         ? ' KBO Futures 官方 Box 僅提供四死球合計，戰報會以「四死球」標示。'
         : '';
+      const roleNote = importedHasPitcher && !importedHasHitter
+        ? ' 本場僅以投手身分出賽。'
+        : importedHasHitter && !importedHasPitcher
+          ? ' 本場以打者身分出賽。'
+          : importedHasHitter && importedHasPitcher
+            ? ' 本場同時有打擊與投球紀錄。'
+            : '';
       setStatus(noPa
         ? sourceMode === 'eng-box'
-          ? `已確認 ${els.gameDate.value} 有出賽並匯入 NPB 一軍官方英文 Box 彙總；日文詳細 Box 暫時無法讀取，所以逐打席未自動帶入。`
-          : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日彙總；該來源未提供可解析的逐打席順序，可手動補逐打席。`
-        : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日資料。${combinedNote}`);
+          ? `已確認 ${els.gameDate.value} 有出賽並匯入 NPB 一軍官方英文 Box 彙總；日文詳細 Box 暫時無法讀取，所以逐打席未自動帶入。${roleNote}`
+          : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日彙總；該來源未提供可解析的逐打席順序，可手動補逐打席。${roleNote}`
+        : `已匯入 ${els.gameDate.value} 的 ${sourceLabel} 當日資料。${roleNote}${combinedNote}`);
       return true;
     }
 
