@@ -1,0 +1,51 @@
+name: Patch v2.06 version metadata
+
+on:
+  push:
+    paths:
+      - 'scripts/patch-v206-version-meta.py'
+      - '.github/workflows/patch-v206-version-meta.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch version metadata and update checker
+        run: python3 scripts/patch-v206-version-meta.py
+      - name: Rebuild bundle from modular source
+        run: python3 scripts/build-app.py
+      - name: Syntax check bundle and modules
+        run: |
+          node --check app.js
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+      - name: Validate version metadata
+        run: |
+          grep -Fq '<meta name="app-version" content="v2.06" />' index.html
+          grep -Fq '<meta name="app-version" content="v2.06" />' 'index v2.06.html'
+          grep -Fq 'const metaMatch = remoteHtml.match' js/23-bootstrap.js
+          grep -Fq 'const legacyMatch = remoteHtml.match' js/23-bootstrap.js
+          grep -Fq '<script src="./app.js?v=v2.06"></script>' index.html
+      - name: Chrome smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'name="app-version" content="v2.06"' /tmp/dom.html
+          grep -Fq 'id="homePage"' /tmp/dom.html
+          grep -Fq 'id="cardCanvas"' /tmp/dom.html
+      - name: Commit version metadata fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html 'index v2.06.html' app.js js/23-bootstrap.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'v2.06 fix update detection after modularization'
+          git push
