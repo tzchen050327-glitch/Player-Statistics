@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 path = Path('index.html')
 s = path.read_text(encoding='utf-8')
@@ -13,19 +12,11 @@ def replace_once(old, new, label):
     s = s.replace(old, new, 1)
 
 
-def sub_once(pattern, repl, label, flags=0):
-    global s
-    s2, n = re.subn(pattern, repl, s, count=1, flags=flags)
-    if n != 1:
-        raise RuntimeError(f'{label}: expected 1 match, got {n}')
-    s = s2
-
-
 if 'v2.03' not in s:
     raise RuntimeError('v2.03 not found')
 s = s.replace('v2.03', 'v2.04')
 
-# 1) Sync lock + 2) provenance display styles.
+# 1) During sync, block every normal control until the sync overlay is dismissed.
 css = r'''
 
     /* ===== v2.04 SYNC SAFETY + SOURCE META ===== */
@@ -65,7 +56,6 @@ css = r'''
     }
     .sync-source-meta strong { color: #173c61; font-weight: 900; }
     .sync-source-meta .sync-meta-muted { color: #8793a1; }
-
     @media (max-width:700px) {
       .sync-source-meta { gap: 5px 10px; padding: 9px 10px; }
     }
@@ -140,7 +130,6 @@ helpers = r'''
           || (currentRecord?.internationalOfficialImport ? Number(currentRecord?.updatedAt) : 0);
         return { source: meta?.source || source, updatedAt };
       }
-
       const key = statsProfileKey(selectedSeason, selectedLevel);
       const meta = player?.syncMetaProfiles?.[key] || null;
       const localOnly = playerScope(player) === 'local';
@@ -152,6 +141,7 @@ helpers = r'''
 
     function renderSyncMetaBanner(player) {
       if (!els.content || !player || selectedTab === 'photos') return;
+      if (els.content.querySelector('.sync-source-meta')) return;
       const meta = syncMetaForCurrentView(player);
       const levelText = supportsLeagueLevelTabs(player) && selectedTab !== 'today'
         ? `｜${selectedLevel === 'D' ? '二軍' : '一軍'}`
@@ -163,51 +153,23 @@ helpers = r'''
         </div>`);
     }
 
-    function pitcherSpecialRecordState(game = {}) {
-      const outs = ipToOuts(game.innings) || Math.max(0, Number(game.outs) || 0);
-      const pitches = Math.max(0, (Number(game.pitchTens) || 0) * 10 + (Number(game.pitchOnes) || 0));
-      const result = pitcherResult(game);
+    // All providers end here: normalize CG / SHO / no-walk-HBP with one rule set.
+    function standardizePitcherSpecialRecords(game = {}) {
       let cg = Boolean(Number(game.cg) || game.cg);
       let sho = Boolean(Number(game.sho) || game.sho);
       if (sho) cg = true;
       if (cg && Number(game.r || 0) === 0) sho = true;
       const noWalkHbp = Boolean(Number(game.noWalkHbp) || game.noWalkHbp)
         || (cg && Number(game.bb || 0) === 0 && Number(game.hbp || 0) === 0);
-
-      let featured = '';
-      if (cg && outs >= 27 && Number(game.h) === 0 && Number(game.bb) === 0 && Number(game.hbp) === 0 && Number(game.otherReach || 0) === 0) {
-        featured = '完全比賽';
-      } else if (cg && outs >= 27 && Number(game.h) === 0) {
-        featured = '無安打比賽';
-      } else if (cg && sho && result === 'W' && outs >= 27 && pitches < 100) {
-        featured = 'Maddux 完封勝';
-      }
-
-      const tags = [];
-      if (cg) tags.push('完投');
-      if (sho) tags.push('完封');
-      if (noWalkHbp) tags.push('無四死球');
-      if (result === 'HLD') tags.push('中繼成功');
-      if (result === 'SV') tags.push('救援成功');
-      if (game.bsv) tags.push('救援失敗');
-      if (game.rainCalled) tags.push('因雨提前裁定');
-      if (result === 'W') tags.push('勝');
-      if (result === 'L') tags.push('敗');
-      return { cg, sho, noWalkHbp, featured, tags, outs, pitches, result };
-    }
-
-    function standardizePitcherSpecialRecords(game = {}) {
-      const state = pitcherSpecialRecordState(game);
-      game.cg = state.cg;
-      game.sho = state.sho;
-      game.noWalkHbp = state.noWalkHbp;
-      return state;
+      game.cg = cg;
+      game.sho = sho;
+      game.noWalkHbp = noWalkHbp;
+      return game;
     }
 '''
 needle = "    let currentRecord = null;\n    let internationalSelectedGameKey = '';"
-replace_once(needle, needle + '\n' + helpers, 'state helpers')
+replace_once(needle, needle + '\n' + helpers, 'shared helpers')
 
-# Sync locking lifecycle.
 replace_once(
     "    function setSyncProgress(percent, status, { error = false } = {}) {\n      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));",
     "    function setSyncProgress(percent, status, { error = false } = {}) {\n      setSyncUiLocked(true);\n      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));",
@@ -224,72 +186,51 @@ replace_once(
     'finishSyncProgress'
 )
 
-# Source banner after normal content render.
-sub_once(
-    r"(els\.seasonReportBtn\?\.classList\.toggle\('hidden', !proSeasonStatsActive\);\s*\n\s*)renderContent\(\);",
-    r"\1renderContent();\n      renderSyncMetaBanner(player);",
-    'renderAll metadata banner'
+# 2) Render provenance after the current content renderer has had a chance to write the panel.
+replace_once(
+    "    function renderContent() {\n      const player = selectedPlayer();",
+    "    function renderContent() {\n      const player = selectedPlayer();\n      setTimeout(() => {\n        if (currentPage === 'player' && selectedPlayerId === player?.id) renderSyncMetaBanner(player);\n      }, 0);",
+    'renderContent metadata hook'
 )
 
-# Daily provenance for new imports.
+# Persist precise timestamps for daily official imports.
 replace_once(
     "      currentRecord.externalImportedAt = Date.now();\n\n      const importedHasHitter",
-    "      currentRecord.externalImportedAt = Date.now();\n      currentRecord.syncMeta = {\n        source: officialDataSourceLabel(player),\n        updatedAt: currentRecord.externalImportedAt\n      };\n\n      const importedHasHitter",
+    "      currentRecord.externalImportedAt = Date.now();\n      currentRecord.syncMeta = { source: officialDataSourceLabel(player), updatedAt: currentRecord.externalImportedAt };\n\n      const importedHasHitter",
     'external daily meta'
 )
 replace_once(
     "      currentRecord.cpblImportedAt = Date.now();\n      await saveRecord();",
-    "      currentRecord.cpblImportedAt = Date.now();\n      currentRecord.syncMeta = {\n        source: officialDataSourceLabel(player),\n        updatedAt: currentRecord.cpblImportedAt\n      };\n      await saveRecord();",
+    "      currentRecord.cpblImportedAt = Date.now();\n      currentRecord.syncMeta = { source: officialDataSourceLabel(player), updatedAt: currentRecord.cpblImportedAt };\n      await saveRecord();",
     'CPBL daily meta'
 )
 
-# One canonical special-record pass for all official daily imports.
+# 3) Every official daily provider passes through the same final special-record normalizer.
 replace_once(
     "        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;\n        currentRecord.externalWalksCombined = Boolean(pitcher.walksCombined);",
     "        g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;\n        currentRecord.externalWalksCombined = Boolean(pitcher.walksCombined);\n        standardizePitcherSpecialRecords(g);",
-    'import special normalizer'
+    'official import special normalizer'
 )
 
-# Canvas consumes the canonical state instead of duplicating rules.
-old_feature = r"""        const result = pitcherResult\(g\);
-        const outs = ipToOuts\(g\.innings\) \|\| 0;
-        let specialRecord = '';
+# Manual/legacy records are normalized before the report's special-record logic too.
+replace_once(
+    "        const result = pitcherResult(g);\n        const outs = ipToOuts(g.innings) || 0;",
+    "        standardizePitcherSpecialRecords(g);\n        const result = pitcherResult(g);\n        const outs = ipToOuts(g.innings) || 0;",
+    'report special normalizer'
+)
 
-        if \(g\.cg && outs >= 27 && Number\(g\.h\) === 0 && Number\(g\.bb\) === 0 && Number\(g\.hbp\) === 0 && Number\(g\.otherReach \|\| 0\) === 0\) \{
-          specialRecord = '完全比賽';
-        \} else if \(g\.cg && outs >= 27 && Number\(g\.h\) === 0\) \{
-          specialRecord = '無安打比賽';
-        \} else if \(g\.cg && g\.sho && result === 'W' && outs >= 27 && pitches < 100\) \{
-          specialRecord = 'Maddux 完封勝';
-        \}"""
-sub_once(old_feature, "        const specialState = pitcherSpecialRecordState(g);\n        const result = specialState.result;\n        const specialRecord = specialState.featured;", 'canvas featured special record')
-
-old_tags = r"""          const tags = \[\];
-          if \(g\.cg\) tags\.push\('完投'\);
-          if \(g\.sho\) tags\.push\('完封'\);
-          if \(g\.noWalkHbp\) tags\.push\('無四死球'\);
-          if \(result === 'HLD'\) tags\.push\('中繼成功'\);
-          if \(result === 'SV'\) tags\.push\('救援成功'\);
-          if \(g\.bsv\) tags\.push\('救援失敗'\);
-          if \(g\.rainCalled\) tags\.push\('因雨提前裁定'\);
-          if \(result === 'W'\) tags\.push\('勝'\);
-          if \(result === 'L'\) tags\.push\('敗'\);
-          drawTags\(ctx, tags, tagX, tagBottom, tagW\);"""
-sub_once(old_tags, "          drawTags(ctx, specialState.tags, tagX, tagBottom, tagW);", 'canvas standard tags')
-
+# Preserve v2.03 protection: selecting a player always starts on the base/season page.
 if "      selectedTab = 'base';\n      selectedLevel = 'A';" not in s:
     raise RuntimeError('base-tab safety from v2.03 is missing')
 
-required = [
+for required in [
     "const APP_VERSION = 'v2.04'",
     'setSyncUiLocked(true);',
     'renderSyncMetaBanner(player);',
-    'standardizePitcherSpecialRecords(g);',
-    'pitcherSpecialRecordState(g)'
-]
-for item in required:
-    if item not in s:
-        raise RuntimeError('missing required patch: ' + item)
+    'standardizePitcherSpecialRecords(g);'
+]:
+    if required not in s:
+        raise RuntimeError('missing required patch: ' + required)
 
 path.write_text(s, encoding='utf-8')
 archive = Path('index v2.04.html')
