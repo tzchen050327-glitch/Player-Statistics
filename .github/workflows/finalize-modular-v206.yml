@@ -1,0 +1,74 @@
+name: Finalize modular v2.06
+
+on:
+  push:
+    paths:
+      - 'scripts/finalize-modular-v2.06.py'
+      - '.github/workflows/finalize-modular-v206.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Finalize source modules and bundle
+        run: python3 scripts/finalize-modular-v2.06.py
+      - name: Syntax check generated bundle
+        run: node --check app.js
+      - name: Syntax check every source module
+        run: |
+          for f in js/[0-9][0-9]-*.js; do
+            node --check "$f"
+          done
+      - name: Verify deterministic build
+        run: |
+          cp app.js /tmp/app-before.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-before.js app.js
+      - name: Verify HTML and service worker references
+        run: |
+          grep -Fq '<script src="./app.js?v=v2.06"></script>' index.html
+          grep -Fq '<link rel="stylesheet" href="./styles.css?v=v2.06"' index.html
+          grep -Fq "'./app.js?v=v2.06'" service-worker.js
+          ! grep -Fq './js/core.js?v=v2.06' index.html
+          ! grep -Fq './js/core.js?v=v2.06' service-worker.js
+      - name: Verify key regression guards
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.06';" app.js
+          grep -Fq 'function setSyncUiLocked(locked)' app.js
+          grep -Fq 'function renderSyncMetaBanner(player)' app.js
+          grep -Fq 'function standardizePitcherSpecialRecords(game = {})' app.js
+          grep -Fq "selectedTab = 'base';" app.js
+          grep -Fq 'async function importCpblDaily(player)' app.js
+          grep -Fq 'async function importExternalDaily(player)' app.js
+          grep -Fq 'async function renderAnnualSeasonCanvas(role, player=selectedPlayer())' app.js
+          grep -Fq 'bootApp();' app.js
+      - name: Chrome smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome not preinstalled; static and syntax validation already passed.'
+            exit 0
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html > /tmp/dom.html
+          grep -Fq 'id="homePage"' /tmp/dom.html
+          grep -Fq 'v2.06' /tmp/dom.html
+          grep -Fq 'id="cardCanvas"' /tmp/dom.html
+      - name: Commit finalized v2.06
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git commit -m 'v2.06 finalize modular source with deterministic runtime bundle'
+          git push
