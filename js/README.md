@@ -4,6 +4,8 @@
 
 The live page loads the generated `app.js` bundle instead of executing every source file separately. This is deliberate: it preserves the exact hoisting and global lexical semantics of the original single-script application while still allowing the source to be maintained by feature area.
 
+**Do not edit `app.js` as the primary source.** Edit the appropriate file in `js/`, then run `python3 scripts/build-app.py`. CI verifies that the committed bundle is exactly reproducible from the module source and also runs syntax, version-wiring, regression-guard and browser smoke checks.
+
 ## Source modules
 
 - `00-core-config.js` — version/config, DOM references, global state, sync metadata and special-record normalization.
@@ -33,10 +35,10 @@ The live page loads the generated `app.js` bundle instead of executing every sou
 
 ## Build
 
-Run `python3 scripts/build-app.py`. The build is deterministic and reconstructs `app.js` from the source modules. CI verifies that the committed bundle matches the source.
+Run `python3 scripts/build-app.py`. The build is deterministic and reconstructs `app.js` from the source modules. The live `index.html` carries an `app-version` meta value so the update checker can still detect new versions after the HTML/JavaScript split.
 
 ## Rollback
 
 - Stable pre-deep-split branch: `rollback-v2.05-pre-deep-split`
 - Monolithic preserved file: `index v2.04 monolith.html`
-- Current modularization work branch: `modularize-v2.06`
+- Modularization branch: `modularize-v2.06`
