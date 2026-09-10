@@ -1,9 +1,9 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v123';
+const CACHE_NAME = 'baseball-player-card-pwa-v124';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.06',
-  './app.js?v=v2.06',
+  './styles.css?v=v2.07',
+  './app.js?v=v2.07',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'

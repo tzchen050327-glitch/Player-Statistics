@@ -364,13 +364,27 @@
       const daily = data.daily;
       if (!daily?.found) {
         const requestedDate = String(els.gameDate.value || '').replaceAll('-', '/');
-        const last = daily?.lastAppearance;
+        let last = daily?.lastAppearance || null;
+        if (!last && isUsPlayer(player)) {
+          try {
+            const lastData = await baseballRequest('last-appearance', {
+              provider:'US',
+              id:player.externalPlayerId,
+              date:els.gameDate.value
+            });
+            last = lastData?.lastAppearance || null;
+          } catch (error) {
+            console.warn('MLB / MiLB 上一次出賽查詢失敗', error);
+          }
+        }
         if (last?.date) {
           const lastDate = String(last.date).replaceAll('-', '/');
           const lastLevel = String(last.leagueLevel || '');
-          const message = `${requestedDate} 一軍、二軍都沒有此球員的出賽紀錄。\n\n上一次出賽：${lastDate}${lastLevel ? `（${lastLevel}）` : ''}`;
+          const lastOpponent = String(last.opponent || '').trim();
+          const lastDetail = `${lastLevel ? `（${lastLevel}）` : ''}${lastOpponent ? `｜vs ${lastOpponent}` : ''}`;
+          const message = `${requestedDate} 一軍、二軍都沒有此球員的出賽紀錄。\n\n上一次出賽：${lastDate}${lastDetail}`;
           await showAppAlert(message, { title:'當日無出賽', tone:'warning' });
-          setStatus(`當日無出賽；上一次出賽為 ${lastDate}${lastLevel ? `（${lastLevel}）` : ''}。`);
+          setStatus(`當日無出賽；上一次出賽為 ${lastDate}${lastDetail}。`);
           return false;
         }
         const message = `${requestedDate} 一軍、二軍都沒有此球員的出賽紀錄，近期也找不到可確認的上一次出賽資料。`;
@@ -506,8 +520,34 @@
       }
 
       if (!daily?.found) {
+        let last = null;
+        try {
+          const lastData = await cpblRequest('last-appearance', {
+            acnt:player.cpblAcnt,
+            date:els.gameDate.value,
+            teamCode:player.cpblTeamCode
+          });
+          last = lastData?.lastAppearance || null;
+        } catch (error) {
+          console.warn('中職上一次出賽查詢失敗', error);
+        }
+
+        const requestedDate = els.gameDate.value.replaceAll('-', '/');
+        if (last?.date) {
+          const lastDate = String(last.date).replaceAll('-', '/');
+          const lastLevel = String(last.leagueLevel || '');
+          const lastOpponent = normalizeTeamName(String(last.opponent || '').trim());
+          const lastDetail = `${lastLevel ? `（${lastLevel}）` : ''}${lastOpponent ? `｜vs ${lastOpponent}` : ''}`;
+          await showAppAlert(
+            `${requestedDate} 一軍、二軍都找不到此球員的出賽資料。\n\n上一次出賽：${lastDate}${lastDetail}`,
+            { title:'當日無出賽', tone:'warning' }
+          );
+          setStatus(`當日無出賽；上一次出賽為 ${lastDate}${lastDetail}。`);
+          return false;
+        }
+
         await showAppAlert(
-          `${els.gameDate.value.replaceAll('-', '/')} 一軍、二軍都找不到此球員的出賽資料。`,
+          `${requestedDate} 一軍、二軍都找不到此球員的出賽資料，近期也找不到可確認的上一次出賽資料。`,
           { title:'當日無出賽', tone:'warning' }
         );
         setStatus(lastReason || '當日一軍、二軍皆無出賽資料。');
