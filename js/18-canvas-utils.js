@@ -51,6 +51,42 @@
     }
 
 
+    function effectiveDefaultPhotoRole(player, roleHint = '') {
+      const normalizedHint = String(roleHint || '').trim().toLowerCase();
+      if (normalizedHint === 'pitcher' || normalizedHint === 'hitter') return normalizedHint;
+      if (!player) return 'hitter';
+
+      // The fallback is intentionally scope-agnostic: CPBL, NPB, KBO,
+      // MLB/MiLB and international players all use this exact resolver.
+      const primary = player.type === 'pitcher' ? 'pitcher' : 'hitter';
+      const secondary = primary === 'pitcher' ? 'hitter' : 'pitcher';
+
+      if (selectedTab === 'secondary' && supportsUsDualRoleTabs(player)) return secondary;
+      if ((selectedTab === 'base' || selectedTab === 'minor')
+          && selectedRoleView === 'secondary'
+          && selectedLevelHasSecondaryRole(player)) return secondary;
+      return primary;
+    }
+
+    function selectedStoredPhoto(player) {
+      if (!player) return null;
+      return photos.find(photo => photo.id === player.selectedPhotoId && photo.playerId === player.id) || null;
+    }
+
+    async function resolvePlayerDisplayPhoto(player, roleHint = '') {
+      const role = effectiveDefaultPhotoRole(player, roleHint);
+      const photo = selectedStoredPhoto(player);
+      if (photo) {
+        try {
+          return { image: await getPhotoImage(photo), photo, role, source: 'upload' };
+        } catch {}
+      }
+      try {
+        return { image: await getDefaultRolePhotoImage(role), photo: null, role, source: 'default' };
+      } catch {}
+      return { image: null, photo: null, role, source: 'placeholder' };
+    }
+
     function defaultRolePhotoUrl(role) {
       return role === 'pitcher' ? DEFAULT_PITCHER_PHOTO_URL : DEFAULT_HITTER_PHOTO_URL;
     }

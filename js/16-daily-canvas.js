@@ -95,30 +95,25 @@
         ctx.fillText(metric[1], card.x + card.w / 2, card.y + (card.valueOffset ?? (isBg2 ? 91 : 121)));
       });
 
-      // 區塊 4：照片。未上傳球員照時依目前角色使用預設打者／投手圖。
+      // 區塊 4：照片。所有聯盟與國際賽都走同一套「自訂照優先、無照依角色補預設圖」。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
-      const photo = photos.find(p => p.id === player.selectedPhotoId && p.playerId === player.id);
-      let photoDrawn = false;
-      if (photo) {
-        try {
-          const image = await getPhotoImage(photo);
-          if (token !== renderToken) return;
-          const transform = clampPhotoTransform(image, getPhotoTransform(player, photo.id));
-          player.photoTransforms[photo.id] = transform;
-          drawPhotoImageInFrame(ctx, image, frame, transform);
-          photoDrawn = true;
-        } catch {}
+      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
+      if (token !== renderToken) return;
+      if (resolvedPhoto.image) {
+        if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
+          const transform = clampPhotoTransform(
+            resolvedPhoto.image,
+            getPhotoTransform(player, resolvedPhoto.photo.id)
+          );
+          player.photoTransforms[resolvedPhoto.photo.id] = transform;
+          drawPhotoImageInFrame(ctx, resolvedPhoto.image, frame, transform);
+        } else {
+          drawStaticPhotoImageInFrame(ctx, resolvedPhoto.image, frame);
+        }
+      } else {
+        drawPhotoPlaceholderFrame(ctx, frame);
       }
-      if (!photoDrawn) {
-        try {
-          const image = await getDefaultRolePhotoImage(effectiveType);
-          if (token !== renderToken) return;
-          drawStaticPhotoImageInFrame(ctx, image, frame);
-          photoDrawn = true;
-        } catch {}
-      }
-      if (!photoDrawn) drawPhotoPlaceholderFrame(ctx, frame);
 
       // 區塊 3：逐打席或投球戰績
       if (layout.detail.drawBox !== false) {

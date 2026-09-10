@@ -154,16 +154,9 @@
         fill:'#0a1d2a',border:'rgba(64,149,189,.82)',radius:16,lineWidth:3
       });
 
-      const photo=photos.find(p=>p.id===player.selectedPhotoId && p.playerId===player.id);
-      let photoImage=null;
-      if(photo){
-        try{ photoImage=await getPhotoImage(photo); }catch{}
-      }
-      if(!photoImage){
-        try{ photoImage=await getDefaultRolePhotoImage(role); }catch{}
-      }
-      if(photoImage){
-        drawStaticPhotoImageInFrame(ctx,photoImage,frame);
+      const resolvedPhoto=await resolvePlayerDisplayPhoto(player,role);
+      if(resolvedPhoto.image){
+        drawStaticPhotoImageInFrame(ctx,resolvedPhoto.image,frame);
         ctx.save();
         tracePhotoFramePath(ctx,frame);ctx.clip();
         const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);

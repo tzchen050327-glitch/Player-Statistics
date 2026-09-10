@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.09';
+    const APP_VERSION = 'v2.10';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,8 +7,8 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.09';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.09';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.10';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.10';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6000,15 +6000,22 @@ bg2: {
     }
 
     function renderPhotos(player) {
-      const selectedPhoto = photos.find(photo => photo.id === player.selectedPhotoId && photo.playerId === player.id);
+      const selectedPhoto = selectedStoredPhoto(player);
       const selectedTransform = selectedPhoto ? getPhotoTransform(player, selectedPhoto.id) : null;
       const zoomPercent = selectedTransform ? Math.round(selectedTransform.scale * 100) : 100;
+      const defaultRole = effectiveDefaultPhotoRole(player);
+      const defaultRoleLabel = defaultRole === 'pitcher' ? '預設投手圖' : '預設打者圖';
 
       els.content.innerHTML = `
         <h2>照片</h2>
         <label class="field">上傳照片
           <input id="photoUpload" type="file" accept="image/*" />
         </label>
+        <div class="panel" style="box-shadow:none;padding:14px;margin-top:14px;background:#f8fafc">
+          <div style="font-weight:800;margin-bottom:10px">目前戰報使用圖片</div>
+          <img id="activePlayerPhotoPreview" alt="目前球員照片" style="display:block;width:min(100%,360px);aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:#0a1d2a" />
+          <div id="activePlayerPhotoLabel" class="subtle" style="margin-top:8px">${selectedPhoto ? '自訂照片' : `${defaultRoleLabel}｜尚未上傳照片，自動套用`}</div>
+        </div>
         ${selectedPhoto ? `
           <div class="panel" style="box-shadow:none;padding:14px;margin-top:14px;background:#f8fafc">
             <label class="field">照片縮放
@@ -6022,6 +6029,23 @@ bg2: {
             </div>
           </div>` : ''}
         <div id="photoGrid" class="photo-grid"></div>`;
+
+      const activePreview = document.getElementById('activePlayerPhotoPreview');
+      if (activePreview) {
+        if (selectedPhoto?.blob) {
+          const url = URL.createObjectURL(selectedPhoto.blob);
+          activePreview.src = url;
+          activePreview.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+          activePreview.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            activePreview.src = defaultRolePhotoUrl(defaultRole);
+            const label = document.getElementById('activePlayerPhotoLabel');
+            if (label) label.textContent = `${defaultRoleLabel}｜自訂照片讀取失敗，已自動套用`;
+          }, { once: true });
+        } else {
+          activePreview.src = defaultRolePhotoUrl(defaultRole);
+        }
+      }
 
       document.getElementById('photoUpload').addEventListener('change', async event => {
         const file = event.target.files?.[0];
@@ -6080,7 +6104,14 @@ bg2: {
       if (!grid) return;
       const ownedPhotos = playerPhotos(player).sort((a,b) => b.createdAt - a.createdAt);
       if (!ownedPhotos.length) {
-        grid.innerHTML = '';
+        const role = effectiveDefaultPhotoRole(player);
+        const roleLabel = role === 'pitcher' ? '預設投手圖' : '預設打者圖';
+        grid.innerHTML = `
+          <div class="photo-card selected default-photo-card">
+            <img src="${escapeAttr(defaultRolePhotoUrl(role))}" alt="${roleLabel}" />
+            <div class="subtle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${roleLabel}</div>
+            <div class="subtle">沒有上傳照片時會自動使用這張。</div>
+          </div>`;
         return;
       }
       grid.innerHTML = '';
@@ -6730,30 +6761,25 @@ bg2: {
         ctx.fillText(metric[1], card.x + card.w / 2, card.y + (card.valueOffset ?? (isBg2 ? 91 : 121)));
       });
 
-      // 區塊 4：照片。未上傳球員照時依目前角色使用預設打者／投手圖。
+      // 區塊 4：照片。所有聯盟與國際賽都走同一套「自訂照優先、無照依角色補預設圖」。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
-      const photo = photos.find(p => p.id === player.selectedPhotoId && p.playerId === player.id);
-      let photoDrawn = false;
-      if (photo) {
-        try {
-          const image = await getPhotoImage(photo);
-          if (token !== renderToken) return;
-          const transform = clampPhotoTransform(image, getPhotoTransform(player, photo.id));
-          player.photoTransforms[photo.id] = transform;
-          drawPhotoImageInFrame(ctx, image, frame, transform);
-          photoDrawn = true;
-        } catch {}
+      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
+      if (token !== renderToken) return;
+      if (resolvedPhoto.image) {
+        if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
+          const transform = clampPhotoTransform(
+            resolvedPhoto.image,
+            getPhotoTransform(player, resolvedPhoto.photo.id)
+          );
+          player.photoTransforms[resolvedPhoto.photo.id] = transform;
+          drawPhotoImageInFrame(ctx, resolvedPhoto.image, frame, transform);
+        } else {
+          drawStaticPhotoImageInFrame(ctx, resolvedPhoto.image, frame);
+        }
+      } else {
+        drawPhotoPlaceholderFrame(ctx, frame);
       }
-      if (!photoDrawn) {
-        try {
-          const image = await getDefaultRolePhotoImage(effectiveType);
-          if (token !== renderToken) return;
-          drawStaticPhotoImageInFrame(ctx, image, frame);
-          photoDrawn = true;
-        } catch {}
-      }
-      if (!photoDrawn) drawPhotoPlaceholderFrame(ctx, frame);
 
       // 區塊 3：逐打席或投球戰績
       if (layout.detail.drawBox !== false) {
@@ -8027,6 +8053,42 @@ bg2: {
       }
     }
 
+
+    function effectiveDefaultPhotoRole(player, roleHint = '') {
+      const normalizedHint = String(roleHint || '').trim().toLowerCase();
+      if (normalizedHint === 'pitcher' || normalizedHint === 'hitter') return normalizedHint;
+      if (!player) return 'hitter';
+
+      // The fallback is intentionally scope-agnostic: CPBL, NPB, KBO,
+      // MLB/MiLB and international players all use this exact resolver.
+      const primary = player.type === 'pitcher' ? 'pitcher' : 'hitter';
+      const secondary = primary === 'pitcher' ? 'hitter' : 'pitcher';
+
+      if (selectedTab === 'secondary' && supportsUsDualRoleTabs(player)) return secondary;
+      if ((selectedTab === 'base' || selectedTab === 'minor')
+          && selectedRoleView === 'secondary'
+          && selectedLevelHasSecondaryRole(player)) return secondary;
+      return primary;
+    }
+
+    function selectedStoredPhoto(player) {
+      if (!player) return null;
+      return photos.find(photo => photo.id === player.selectedPhotoId && photo.playerId === player.id) || null;
+    }
+
+    async function resolvePlayerDisplayPhoto(player, roleHint = '') {
+      const role = effectiveDefaultPhotoRole(player, roleHint);
+      const photo = selectedStoredPhoto(player);
+      if (photo) {
+        try {
+          return { image: await getPhotoImage(photo), photo, role, source: 'upload' };
+        } catch {}
+      }
+      try {
+        return { image: await getDefaultRolePhotoImage(role), photo: null, role, source: 'default' };
+      } catch {}
+      return { image: null, photo: null, role, source: 'placeholder' };
+    }
 
     function defaultRolePhotoUrl(role) {
       return role === 'pitcher' ? DEFAULT_PITCHER_PHOTO_URL : DEFAULT_HITTER_PHOTO_URL;
@@ -9596,16 +9658,9 @@ bg2: {
         fill:'#0a1d2a',border:'rgba(64,149,189,.82)',radius:16,lineWidth:3
       });
 
-      const photo=photos.find(p=>p.id===player.selectedPhotoId && p.playerId===player.id);
-      let photoImage=null;
-      if(photo){
-        try{ photoImage=await getPhotoImage(photo); }catch{}
-      }
-      if(!photoImage){
-        try{ photoImage=await getDefaultRolePhotoImage(role); }catch{}
-      }
-      if(photoImage){
-        drawStaticPhotoImageInFrame(ctx,photoImage,frame);
+      const resolvedPhoto=await resolvePlayerDisplayPhoto(player,role);
+      if(resolvedPhoto.image){
+        drawStaticPhotoImageInFrame(ctx,resolvedPhoto.image,frame);
         ctx.save();
         tracePhotoFramePath(ctx,frame);ctx.clip();
         const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);

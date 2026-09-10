@@ -1,13 +1,20 @@
     function renderPhotos(player) {
-      const selectedPhoto = photos.find(photo => photo.id === player.selectedPhotoId && photo.playerId === player.id);
+      const selectedPhoto = selectedStoredPhoto(player);
       const selectedTransform = selectedPhoto ? getPhotoTransform(player, selectedPhoto.id) : null;
       const zoomPercent = selectedTransform ? Math.round(selectedTransform.scale * 100) : 100;
+      const defaultRole = effectiveDefaultPhotoRole(player);
+      const defaultRoleLabel = defaultRole === 'pitcher' ? '預設投手圖' : '預設打者圖';
 
       els.content.innerHTML = `
         <h2>照片</h2>
         <label class="field">上傳照片
           <input id="photoUpload" type="file" accept="image/*" />
         </label>
+        <div class="panel" style="box-shadow:none;padding:14px;margin-top:14px;background:#f8fafc">
+          <div style="font-weight:800;margin-bottom:10px">目前戰報使用圖片</div>
+          <img id="activePlayerPhotoPreview" alt="目前球員照片" style="display:block;width:min(100%,360px);aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:#0a1d2a" />
+          <div id="activePlayerPhotoLabel" class="subtle" style="margin-top:8px">${selectedPhoto ? '自訂照片' : `${defaultRoleLabel}｜尚未上傳照片，自動套用`}</div>
+        </div>
         ${selectedPhoto ? `
           <div class="panel" style="box-shadow:none;padding:14px;margin-top:14px;background:#f8fafc">
             <label class="field">照片縮放
@@ -21,6 +28,23 @@
             </div>
           </div>` : ''}
         <div id="photoGrid" class="photo-grid"></div>`;
+
+      const activePreview = document.getElementById('activePlayerPhotoPreview');
+      if (activePreview) {
+        if (selectedPhoto?.blob) {
+          const url = URL.createObjectURL(selectedPhoto.blob);
+          activePreview.src = url;
+          activePreview.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+          activePreview.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            activePreview.src = defaultRolePhotoUrl(defaultRole);
+            const label = document.getElementById('activePlayerPhotoLabel');
+            if (label) label.textContent = `${defaultRoleLabel}｜自訂照片讀取失敗，已自動套用`;
+          }, { once: true });
+        } else {
+          activePreview.src = defaultRolePhotoUrl(defaultRole);
+        }
+      }
 
       document.getElementById('photoUpload').addEventListener('change', async event => {
         const file = event.target.files?.[0];
@@ -79,7 +103,14 @@
       if (!grid) return;
       const ownedPhotos = playerPhotos(player).sort((a,b) => b.createdAt - a.createdAt);
       if (!ownedPhotos.length) {
-        grid.innerHTML = '';
+        const role = effectiveDefaultPhotoRole(player);
+        const roleLabel = role === 'pitcher' ? '預設投手圖' : '預設打者圖';
+        grid.innerHTML = `
+          <div class="photo-card selected default-photo-card">
+            <img src="${escapeAttr(defaultRolePhotoUrl(role))}" alt="${roleLabel}" />
+            <div class="subtle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${roleLabel}</div>
+            <div class="subtle">沒有上傳照片時會自動使用這張。</div>
+          </div>`;
         return;
       }
       grid.innerHTML = '';
