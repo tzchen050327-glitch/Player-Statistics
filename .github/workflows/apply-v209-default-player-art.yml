@@ -1,0 +1,70 @@
+name: Apply v2.09 default player art
+
+on:
+  push:
+    branches: [feature-v2.09-default-player-art]
+    paths:
+      - 'scripts/patch-v209-default-player-art.py'
+      - '.github/workflows/apply-v209-default-player-art.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v2.09 patch and build
+        run: python3 scripts/patch-v209-default-player-art.py
+      - name: Validate default player artwork wiring
+        run: |
+          test -s assets/default-hitter.jpg
+          test -s assets/default-pitcher.jpg
+          grep -Fq "const APP_VERSION = 'v2.09';" js/00-core-config.js
+          grep -Fq "DEFAULT_HITTER_PHOTO_URL" js/00-core-config.js
+          grep -Fq "DEFAULT_PITCHER_PHOTO_URL" js/00-core-config.js
+          grep -Fq "getDefaultRolePhotoImage(effectiveType)" js/16-daily-canvas.js
+          grep -Fq "getDefaultRolePhotoImage(role)" js/21-annual-report.js
+          grep -Fq "function drawStaticPhotoImageInFrame" js/18-canvas-utils.js
+          grep -Fq "./assets/default-hitter.jpg?v=v2.09" service-worker.js
+          grep -Fq "./assets/default-pitcher.jpg?v=v2.09" service-worker.js
+          test -f 'index v2.08.html'
+          test -f 'index v2.09.html'
+          test ! -e 'index v2.07.html'
+      - name: Syntax check modules and bundle
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+      - name: Verify deterministic bundle
+        run: |
+          cp app.js /tmp/app-v209.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-v209.js app.js
+      - name: Smoke test static assets
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          curl -fsS http://127.0.0.1:8765/assets/default-hitter.jpg >/tmp/hitter.jpg
+          curl -fsS http://127.0.0.1:8765/assets/default-pitcher.jpg >/tmp/pitcher.jpg
+          test -s /tmp/hitter.jpg
+          test -s /tmp/pitcher.jpg
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -n "$CHROME" ]; then
+            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+            grep -Fq 'id="cardCanvas"' /tmp/dom.html
+            grep -Fq 'content="v2.09"' /tmp/dom.html
+          fi
+      - name: Commit v2.09
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'v2.09 use default hitter and pitcher artwork when photo is missing'
+            git push
+          fi
