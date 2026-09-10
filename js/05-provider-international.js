@@ -27,11 +27,15 @@
         if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
         if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
 
+        const hitterLocal = hitter ? externalHitterStatsToLocal(hitter) : null;
+        const pitcherLocal = pitcher ? externalPitcherStatsToLocal(pitcher) : null;
+        storeRoleStatsProfile(player, year, 'A', hitterLocal, pitcherLocal);
+
         const official = player.type === 'pitcher' ? pitcher : hitter;
         if (official) {
           player.stats = player.type === 'pitcher'
-            ? externalPitcherStatsToLocal(official)
-            : externalHitterStatsToLocal(official);
+            ? (pitcherLocal || pitcherDefaults())
+            : (hitterLocal || hitterDefaults());
         }
 
         player.internationalSource = remote.source || player.internationalSource || '';
@@ -240,21 +244,36 @@
       // 只有完整官方逐場 Box 才可拿來回填整屆總成績。
       // 新聞交叉驗證 fallback 只顯示單場，不參與賽事總成績加總。
       const completeGames = games.filter(game => !game?.partial);
-      if (!player.internationalStatsFound && completeGames.length) {
+      if (completeGames.length) {
         const hitterGames = completeGames.filter(game => game?.hitter);
         const pitcherGames = completeGames.filter(game => game?.pitcher);
-        if (player.type === 'pitcher' && pitcherGames.length) {
-          player.stats = internationalPitcherTotalsFromGames(pitcherGames);
-          player.internationalStatsFound = true;
-          player.internationalSource = '官方逐場 Box 合計';
-          player.externalLastUpdatedAt = Date.now();
-          await savePlayer(player);
-        } else if (player.type === 'hitter' && hitterGames.length) {
-          player.stats = internationalHitterTotalsFromGames(hitterGames);
-          player.internationalStatsFound = true;
-          player.internationalSource = '官方逐場 Box 合計';
-          player.externalLastUpdatedAt = Date.now();
-          await savePlayer(player);
+        const hitterTotals = hitterGames.length ? internationalHitterTotalsFromGames(hitterGames) : null;
+        const pitcherTotals = pitcherGames.length ? internationalPitcherTotalsFromGames(pitcherGames) : null;
+
+        // Keep a tournament role pair so two-way players can export separate
+        // total batting and pitching report images using the normal league template.
+        if (!player.internationalStatsFound) {
+          storeRoleStatsProfile(player, year, 'A', hitterTotals, pitcherTotals);
+          if (player.type === 'pitcher' && pitcherTotals) {
+            player.stats = pitcherTotals;
+            player.internationalStatsFound = true;
+          } else if (player.type === 'hitter' && hitterTotals) {
+            player.stats = hitterTotals;
+            player.internationalStatsFound = true;
+          } else if (pitcherTotals) {
+            player.type = 'pitcher';
+            player.stats = pitcherTotals;
+            player.internationalStatsFound = true;
+          } else if (hitterTotals) {
+            player.type = 'hitter';
+            player.stats = hitterTotals;
+            player.internationalStatsFound = true;
+          }
+          if (player.internationalStatsFound) {
+            player.internationalSource = '官方逐場 Box 合計';
+            player.externalLastUpdatedAt = Date.now();
+            await savePlayer(player);
+          }
         }
       }
 

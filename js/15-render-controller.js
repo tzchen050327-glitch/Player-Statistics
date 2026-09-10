@@ -135,13 +135,13 @@
       if (usDualTabs && selectedTab === 'secondary') selectedLevel = 'A';
 
       const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
-      const proSeasonStatsActive = statsTabActive && playerScopeCode !== 'international';
+      const seasonReportActive = statsTabActive && (playerScopeCode !== 'international' || selectedTab === 'base');
       const dailyReportActive = selectedTab === 'today';
       els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
 
       els.downloadBtn?.classList.toggle('hidden', !dailyReportActive);
-      els.seasonReportBtn?.classList.toggle('hidden', !proSeasonStatsActive);
+      els.seasonReportBtn?.classList.toggle('hidden', !seasonReportActive);
 
       if (els.downloadBtn) {
         const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
@@ -150,21 +150,27 @@
           : '生成當天戰報';
       }
       if (els.seasonReportBtn) {
-        const context = proSeasonStatsActive ? annualSeasonContext(player) : null;
+        const context = seasonReportActive ? annualSeasonContext(player) : null;
+        const internationalTotal = playerScopeCode === 'international' && selectedTab === 'base';
         const levelText = supportsLeagueLevelTabs(player)
           ? (selectedLevel === 'D' ? '二軍' : '一軍')
           : (context?.league || '');
         els.seasonReportBtn.textContent = context
-          ? `輸出 ${context.year} ${levelText}整季戰報`
+          ? (internationalTotal
+              ? `輸出 ${context.year} ${context.league || '國際賽'}總戰績圖`
+              : `輸出 ${context.year} ${levelText}整季戰報`)
           : '輸出這個年度成績';
       }
       if (els.canvasPreviewTitle) {
-        if (proSeasonStatsActive) {
+        if (seasonReportActive) {
           const context = annualSeasonContext(player);
+          const internationalTotal = playerScopeCode === 'international' && selectedTab === 'base';
           const levelText = supportsLeagueLevelTabs(player)
             ? (selectedLevel === 'D' ? '二軍' : '一軍')
             : (context.league || '');
-          els.canvasPreviewTitle.textContent = `${context.year} ${levelText}整季戰報預覽`.trim();
+          els.canvasPreviewTitle.textContent = internationalTotal
+            ? `${context.year} ${context.league || '國際賽'}總戰績預覽`
+            : `${context.year} ${levelText}整季戰報預覽`.trim();
         } else if (dailyReportActive) {
           els.canvasPreviewTitle.textContent = '當天戰報預覽';
         } else {
@@ -179,12 +185,12 @@
 
       if (playerPageActive) {
         const internationalOverview = playerScopeCode === 'international'
-          && (selectedTab === 'base' || (selectedTab === 'today' && !internationalSelectedGameKey));
+          && selectedTab === 'today' && !internationalSelectedGameKey;
         document.querySelector('#playerPage .workspace')?.classList.toggle('international-overview', internationalOverview);
         renderContent();
 
         if (!internationalOverview) {
-          if (proSeasonStatsActive) {
+          if (seasonReportActive) {
             void renderAnnualSeasonCanvas(activeSeasonReportRole(player), player);
           } else {
             void renderCanvas();

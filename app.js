@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.07';
+    const APP_VERSION = 'v2.08';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -1597,11 +1597,15 @@ bg2: {
         if (player.type === 'pitcher' && !pitcher && hitter) player.type = 'hitter';
         if (player.type === 'hitter' && !hitter && pitcher) player.type = 'pitcher';
 
+        const hitterLocal = hitter ? externalHitterStatsToLocal(hitter) : null;
+        const pitcherLocal = pitcher ? externalPitcherStatsToLocal(pitcher) : null;
+        storeRoleStatsProfile(player, year, 'A', hitterLocal, pitcherLocal);
+
         const official = player.type === 'pitcher' ? pitcher : hitter;
         if (official) {
           player.stats = player.type === 'pitcher'
-            ? externalPitcherStatsToLocal(official)
-            : externalHitterStatsToLocal(official);
+            ? (pitcherLocal || pitcherDefaults())
+            : (hitterLocal || hitterDefaults());
         }
 
         player.internationalSource = remote.source || player.internationalSource || '';
@@ -1810,21 +1814,36 @@ bg2: {
       // 只有完整官方逐場 Box 才可拿來回填整屆總成績。
       // 新聞交叉驗證 fallback 只顯示單場，不參與賽事總成績加總。
       const completeGames = games.filter(game => !game?.partial);
-      if (!player.internationalStatsFound && completeGames.length) {
+      if (completeGames.length) {
         const hitterGames = completeGames.filter(game => game?.hitter);
         const pitcherGames = completeGames.filter(game => game?.pitcher);
-        if (player.type === 'pitcher' && pitcherGames.length) {
-          player.stats = internationalPitcherTotalsFromGames(pitcherGames);
-          player.internationalStatsFound = true;
-          player.internationalSource = '官方逐場 Box 合計';
-          player.externalLastUpdatedAt = Date.now();
-          await savePlayer(player);
-        } else if (player.type === 'hitter' && hitterGames.length) {
-          player.stats = internationalHitterTotalsFromGames(hitterGames);
-          player.internationalStatsFound = true;
-          player.internationalSource = '官方逐場 Box 合計';
-          player.externalLastUpdatedAt = Date.now();
-          await savePlayer(player);
+        const hitterTotals = hitterGames.length ? internationalHitterTotalsFromGames(hitterGames) : null;
+        const pitcherTotals = pitcherGames.length ? internationalPitcherTotalsFromGames(pitcherGames) : null;
+
+        // Keep a tournament role pair so two-way players can export separate
+        // total batting and pitching report images using the normal league template.
+        if (!player.internationalStatsFound) {
+          storeRoleStatsProfile(player, year, 'A', hitterTotals, pitcherTotals);
+          if (player.type === 'pitcher' && pitcherTotals) {
+            player.stats = pitcherTotals;
+            player.internationalStatsFound = true;
+          } else if (player.type === 'hitter' && hitterTotals) {
+            player.stats = hitterTotals;
+            player.internationalStatsFound = true;
+          } else if (pitcherTotals) {
+            player.type = 'pitcher';
+            player.stats = pitcherTotals;
+            player.internationalStatsFound = true;
+          } else if (hitterTotals) {
+            player.type = 'hitter';
+            player.stats = hitterTotals;
+            player.internationalStatsFound = true;
+          }
+          if (player.internationalStatsFound) {
+            player.internationalSource = '官方逐場 Box 合計';
+            player.externalLastUpdatedAt = Date.now();
+            await savePlayer(player);
+          }
         }
       }
 
@@ -6416,13 +6435,13 @@ bg2: {
       if (usDualTabs && selectedTab === 'secondary') selectedLevel = 'A';
 
       const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
-      const proSeasonStatsActive = statsTabActive && playerScopeCode !== 'international';
+      const seasonReportActive = statsTabActive && (playerScopeCode !== 'international' || selectedTab === 'base');
       const dailyReportActive = selectedTab === 'today';
       els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
 
       els.downloadBtn?.classList.toggle('hidden', !dailyReportActive);
-      els.seasonReportBtn?.classList.toggle('hidden', !proSeasonStatsActive);
+      els.seasonReportBtn?.classList.toggle('hidden', !seasonReportActive);
 
       if (els.downloadBtn) {
         const officialReadOnly = Boolean(currentRecord?.cpblReadOnlyImport || currentRecord?.externalReadOnlyImport);
@@ -6431,21 +6450,27 @@ bg2: {
           : '生成當天戰報';
       }
       if (els.seasonReportBtn) {
-        const context = proSeasonStatsActive ? annualSeasonContext(player) : null;
+        const context = seasonReportActive ? annualSeasonContext(player) : null;
+        const internationalTotal = playerScopeCode === 'international' && selectedTab === 'base';
         const levelText = supportsLeagueLevelTabs(player)
           ? (selectedLevel === 'D' ? '二軍' : '一軍')
           : (context?.league || '');
         els.seasonReportBtn.textContent = context
-          ? `輸出 ${context.year} ${levelText}整季戰報`
+          ? (internationalTotal
+              ? `輸出 ${context.year} ${context.league || '國際賽'}總戰績圖`
+              : `輸出 ${context.year} ${levelText}整季戰報`)
           : '輸出這個年度成績';
       }
       if (els.canvasPreviewTitle) {
-        if (proSeasonStatsActive) {
+        if (seasonReportActive) {
           const context = annualSeasonContext(player);
+          const internationalTotal = playerScopeCode === 'international' && selectedTab === 'base';
           const levelText = supportsLeagueLevelTabs(player)
             ? (selectedLevel === 'D' ? '二軍' : '一軍')
             : (context.league || '');
-          els.canvasPreviewTitle.textContent = `${context.year} ${levelText}整季戰報預覽`.trim();
+          els.canvasPreviewTitle.textContent = internationalTotal
+            ? `${context.year} ${context.league || '國際賽'}總戰績預覽`
+            : `${context.year} ${levelText}整季戰報預覽`.trim();
         } else if (dailyReportActive) {
           els.canvasPreviewTitle.textContent = '當天戰報預覽';
         } else {
@@ -6460,12 +6485,12 @@ bg2: {
 
       if (playerPageActive) {
         const internationalOverview = playerScopeCode === 'international'
-          && (selectedTab === 'base' || (selectedTab === 'today' && !internationalSelectedGameKey));
+          && selectedTab === 'today' && !internationalSelectedGameKey;
         document.querySelector('#playerPage .workspace')?.classList.toggle('international-overview', internationalOverview);
         renderContent();
 
         if (!internationalOverview) {
-          if (proSeasonStatsActive) {
+          if (seasonReportActive) {
             void renderAnnualSeasonCanvas(activeSeasonReportRole(player), player);
           } else {
             void renderCanvas();
@@ -9644,7 +9669,11 @@ bg2: {
     function annualSeasonFileName(player,role,context) {
       const team=String(context?.team||'').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'');
       const league=String(context?.league||'').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'');
-      return `${context?.year || selectedSeason}_${reportPlayerName(player)}_${team}${league ? '_'+league : ''}_${role==='pitcher'?'年度投球戰報':'年度打擊戰報'}.png`;
+      const internationalTotal = playerScope(player) === 'international';
+      const suffix = internationalTotal
+        ? (role === 'pitcher' ? '賽事總投球戰績' : '賽事總打擊戰績')
+        : (role === 'pitcher' ? '年度投球戰報' : '年度打擊戰報');
+      return `${context?.year || selectedSeason}_${reportPlayerName(player)}_${team}${league ? '_'+league : ''}_${suffix}.png`;
     }
 
     async function captureAnnualSeasonOutput(role) {
@@ -9672,7 +9701,7 @@ bg2: {
       for(const role of roles){
         outputs.push(await captureAnnualSeasonOutput(role));
       }
-      preparedOutputKind='season';
+      preparedOutputKind = playerScope(player) === 'international' ? 'international-total' : 'season';
       preparedOutputs=outputs;
       preparedOutput=outputs[0]||null;
       updatePreparedOutputDialog();
@@ -9805,11 +9834,14 @@ bg2: {
 
     function updatePreparedOutputDialog() {
       const count = preparedOutputs.length || (preparedOutput ? 1 : 0);
-      const annual = preparedOutputKind === 'season';
+      const internationalTotal = preparedOutputKind === 'international-total';
+      const annual = preparedOutputKind === 'season' || internationalTotal;
       if (els.outputDialogTitle) {
-        els.outputDialogTitle.textContent = annual
-          ? (count > 1 ? `${count} 張年度戰報已準備完成` : '年度戰報已準備完成')
-          : (count > 1 ? `${count} 張圖片已準備完成` : '圖片已準備完成');
+        els.outputDialogTitle.textContent = internationalTotal
+          ? (count > 1 ? `${count} 張賽事總戰績圖已準備完成` : '賽事總戰績圖已準備完成')
+          : annual
+            ? (count > 1 ? `${count} 張年度戰報已準備完成` : '年度戰報已準備完成')
+            : (count > 1 ? `${count} 張圖片已準備完成` : '圖片已準備完成');
       }
       if (els.downloadPreparedLabel) els.downloadPreparedLabel.textContent = count > 1 ? `下載 ${count} 張圖片` : '下載圖片';
       if (els.sharePreparedLabel) els.sharePreparedLabel.textContent = count > 1 ? `分享 ${count} 張圖片` : '分享圖片';
@@ -9927,17 +9959,21 @@ bg2: {
       try {
         const player=selectedPlayer();
         if(!player) throw new Error('請先選擇球員。');
-        if (!['base','minor','secondary'].includes(selectedTab) || playerScope(player) === 'international') {
-          throw new Error('請到一軍／二軍整季成績頁輸出年度戰報。');
+        const internationalTotal = playerScope(player) === 'international';
+        const allowedTab = internationalTotal ? selectedTab === 'base' : ['base','minor','secondary'].includes(selectedTab);
+        if (!allowedTab) {
+          throw new Error(internationalTotal ? '請到「賽事總成績」頁輸出總戰績圖。' : '請到一軍／二軍整季成績頁輸出年度戰報。');
         }
         const context=annualSeasonContext(player);
         const levelText=supportsLeagueLevelTabs(player) ? (selectedLevel==='D'?'二軍':'一軍') : (context.league||'');
-        setStatus(`正在產生 ${context.year} ${levelText}整季戰報…`);
+        setStatus(internationalTotal
+          ? `正在產生 ${context.year} ${context.league || '國際賽'}總戰績圖…`
+          : `正在產生 ${context.year} ${levelText}整季戰報…`);
         const outputs=await prepareAnnualSeasonReports();
         els.outputDialog?.showModal();
-        setStatus(outputs.length>1
-          ? `已產生 ${outputs.length} 張年度戰報（打擊＋投球）。`
-          : `${context.year} 年度戰報已準備完成。`);
+        setStatus(internationalTotal
+          ? (outputs.length>1 ? `已產生 ${outputs.length} 張賽事總戰績圖（打擊＋投球）。` : `${context.year} 賽事總戰績圖已準備完成。`)
+          : (outputs.length>1 ? `已產生 ${outputs.length} 張年度戰報（打擊＋投球）。` : `${context.year} 年度戰報已準備完成。`));
       } catch (error) {
         setStatus(error?.message || '年度戰報產生失敗。', true);
       }

@@ -122,11 +122,14 @@
 
     function updatePreparedOutputDialog() {
       const count = preparedOutputs.length || (preparedOutput ? 1 : 0);
-      const annual = preparedOutputKind === 'season';
+      const internationalTotal = preparedOutputKind === 'international-total';
+      const annual = preparedOutputKind === 'season' || internationalTotal;
       if (els.outputDialogTitle) {
-        els.outputDialogTitle.textContent = annual
-          ? (count > 1 ? `${count} 張年度戰報已準備完成` : '年度戰報已準備完成')
-          : (count > 1 ? `${count} 張圖片已準備完成` : '圖片已準備完成');
+        els.outputDialogTitle.textContent = internationalTotal
+          ? (count > 1 ? `${count} 張賽事總戰績圖已準備完成` : '賽事總戰績圖已準備完成')
+          : annual
+            ? (count > 1 ? `${count} 張年度戰報已準備完成` : '年度戰報已準備完成')
+            : (count > 1 ? `${count} 張圖片已準備完成` : '圖片已準備完成');
       }
       if (els.downloadPreparedLabel) els.downloadPreparedLabel.textContent = count > 1 ? `下載 ${count} 張圖片` : '下載圖片';
       if (els.sharePreparedLabel) els.sharePreparedLabel.textContent = count > 1 ? `分享 ${count} 張圖片` : '分享圖片';
@@ -244,17 +247,21 @@
       try {
         const player=selectedPlayer();
         if(!player) throw new Error('請先選擇球員。');
-        if (!['base','minor','secondary'].includes(selectedTab) || playerScope(player) === 'international') {
-          throw new Error('請到一軍／二軍整季成績頁輸出年度戰報。');
+        const internationalTotal = playerScope(player) === 'international';
+        const allowedTab = internationalTotal ? selectedTab === 'base' : ['base','minor','secondary'].includes(selectedTab);
+        if (!allowedTab) {
+          throw new Error(internationalTotal ? '請到「賽事總成績」頁輸出總戰績圖。' : '請到一軍／二軍整季成績頁輸出年度戰報。');
         }
         const context=annualSeasonContext(player);
         const levelText=supportsLeagueLevelTabs(player) ? (selectedLevel==='D'?'二軍':'一軍') : (context.league||'');
-        setStatus(`正在產生 ${context.year} ${levelText}整季戰報…`);
+        setStatus(internationalTotal
+          ? `正在產生 ${context.year} ${context.league || '國際賽'}總戰績圖…`
+          : `正在產生 ${context.year} ${levelText}整季戰報…`);
         const outputs=await prepareAnnualSeasonReports();
         els.outputDialog?.showModal();
-        setStatus(outputs.length>1
-          ? `已產生 ${outputs.length} 張年度戰報（打擊＋投球）。`
-          : `${context.year} 年度戰報已準備完成。`);
+        setStatus(internationalTotal
+          ? (outputs.length>1 ? `已產生 ${outputs.length} 張賽事總戰績圖（打擊＋投球）。` : `${context.year} 賽事總戰績圖已準備完成。`)
+          : (outputs.length>1 ? `已產生 ${outputs.length} 張年度戰報（打擊＋投球）。` : `${context.year} 年度戰報已準備完成。`));
       } catch (error) {
         setStatus(error?.message || '年度戰報產生失敗。', true);
       }

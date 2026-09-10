@@ -267,7 +267,11 @@
     function annualSeasonFileName(player,role,context) {
       const team=String(context?.team||'').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'');
       const league=String(context?.league||'').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'');
-      return `${context?.year || selectedSeason}_${reportPlayerName(player)}_${team}${league ? '_'+league : ''}_${role==='pitcher'?'年度投球戰報':'年度打擊戰報'}.png`;
+      const internationalTotal = playerScope(player) === 'international';
+      const suffix = internationalTotal
+        ? (role === 'pitcher' ? '賽事總投球戰績' : '賽事總打擊戰績')
+        : (role === 'pitcher' ? '年度投球戰報' : '年度打擊戰報');
+      return `${context?.year || selectedSeason}_${reportPlayerName(player)}_${team}${league ? '_'+league : ''}_${suffix}.png`;
     }
 
     async function captureAnnualSeasonOutput(role) {
@@ -295,7 +299,7 @@
       for(const role of roles){
         outputs.push(await captureAnnualSeasonOutput(role));
       }
-      preparedOutputKind='season';
+      preparedOutputKind = playerScope(player) === 'international' ? 'international-total' : 'season';
       preparedOutputs=outputs;
       preparedOutput=outputs[0]||null;
       updatePreparedOutputDialog();
