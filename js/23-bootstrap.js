@@ -149,8 +149,9 @@
           const versionResponse = await fetch(versionUrl.href, { cache: 'no-store' });
           if (versionResponse.ok) {
             const remoteHtml = await versionResponse.text();
-            const match = remoteHtml.match(/const APP_VERSION = '([^']+)'/);
-            const remoteVersion = String(match?.[1] || '').trim();
+            const metaMatch = remoteHtml.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
+            const legacyMatch = remoteHtml.match(/const APP_VERSION = '([^']+)'/);
+            const remoteVersion = String(metaMatch?.[1] || legacyMatch?.[1] || '').trim();
             if (remoteVersion && remoteVersion !== APP_VERSION) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
