@@ -1,21 +1,3 @@
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-    }
-
-    function escapeAttr(value) { return escapeHtml(value); }
-
-    els.backHomeBtn?.addEventListener('click', () => {
-      currentPage = 'home';
-      renderAll();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    els.majorLevelBtn?.addEventListener('click', () => switchPlayerLevel('A'));
-    els.minorLevelBtn?.addEventListener('click', () => switchPlayerLevel('D'));
-    els.seasonSelect?.addEventListener('change', () => {
-      syncAppPickerLabels();
-      switchPlayerSeason(els.seasonSelect.value);
-    });
-
     function competitionOptionsHtml(scope, selected = '') {
       const options = specialOptionsForScope(scope);
       return options.map(option =>
