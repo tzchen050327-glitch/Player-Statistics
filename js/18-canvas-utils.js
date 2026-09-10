@@ -50,6 +50,37 @@
       }
     }
 
+
+    function defaultRolePhotoUrl(role) {
+      return role === 'pitcher' ? DEFAULT_PITCHER_PHOTO_URL : DEFAULT_HITTER_PHOTO_URL;
+    }
+
+    function getDefaultRolePhotoImage(role) {
+      return loadEmbeddedImage(defaultRolePhotoUrl(role));
+    }
+
+    function drawStaticPhotoImageInFrame(ctx, img, frame) {
+      const { x, y, w, h } = frame;
+      const scale = Math.max(w / img.width, h / img.height);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = x + (w - drawW) / 2;
+      const drawY = y + (h - drawH) / 2;
+      ctx.save();
+      tracePhotoFramePath(ctx, frame);
+      ctx.clip();
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
+      if (frame.border) {
+        ctx.save();
+        tracePhotoFramePath(ctx, frame);
+        ctx.strokeStyle = frame.border;
+        ctx.lineWidth = frame.borderWidth || 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
     function drawPhotoPlaceholderFrame(ctx, frame) {
       ctx.save();
       tracePhotoFramePath(ctx, frame);

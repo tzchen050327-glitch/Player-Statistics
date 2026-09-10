@@ -155,22 +155,22 @@
       });
 
       const photo=photos.find(p=>p.id===player.selectedPhotoId && p.playerId===player.id);
+      let photoImage=null;
       if(photo){
-        try{
-          const img=await getPhotoImage(photo);
-          const scale=Math.max(frame.w/img.width,frame.h/img.height);
-          const drawW=img.width*scale,drawH=img.height*scale;
-          const drawX=frame.x+(frame.w-drawW)/2;
-          const drawY=frame.y+(frame.h-drawH)/2;
-          ctx.save();
-          ctx.beginPath();ctx.roundRect(frame.x,frame.y,frame.w,frame.h,frame.r);ctx.clip();
-          ctx.drawImage(img,drawX,drawY,drawW,drawH);
-          const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
-          shade.addColorStop(0,'rgba(3,13,21,.02)');
-          shade.addColorStop(1,'rgba(3,13,21,.28)');
-          ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
-          ctx.restore();
-        }catch{}
+        try{ photoImage=await getPhotoImage(photo); }catch{}
+      }
+      if(!photoImage){
+        try{ photoImage=await getDefaultRolePhotoImage(role); }catch{}
+      }
+      if(photoImage){
+        drawStaticPhotoImageInFrame(ctx,photoImage,frame);
+        ctx.save();
+        tracePhotoFramePath(ctx,frame);ctx.clip();
+        const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
+        shade.addColorStop(0,'rgba(3,13,21,.02)');
+        shade.addColorStop(1,'rgba(3,13,21,.28)');
+        ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
+        ctx.restore();
       }
 
       const plate={x:674,y:842,w:368,h:120};

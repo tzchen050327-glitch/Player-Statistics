@@ -95,10 +95,11 @@
         ctx.fillText(metric[1], card.x + card.w / 2, card.y + (card.valueOffset ?? (isBg2 ? 91 : 121)));
       });
 
-      // 區塊 4：照片
+      // 區塊 4：照片。未上傳球員照時依目前角色使用預設打者／投手圖。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
       const photo = photos.find(p => p.id === player.selectedPhotoId && p.playerId === player.id);
+      let photoDrawn = false;
       if (photo) {
         try {
           const image = await getPhotoImage(photo);
@@ -106,12 +107,18 @@
           const transform = clampPhotoTransform(image, getPhotoTransform(player, photo.id));
           player.photoTransforms[photo.id] = transform;
           drawPhotoImageInFrame(ctx, image, frame, transform);
-        } catch {
-          drawPhotoPlaceholderFrame(ctx, frame);
-        }
-      } else {
-        drawPhotoPlaceholderFrame(ctx, frame);
+          photoDrawn = true;
+        } catch {}
       }
+      if (!photoDrawn) {
+        try {
+          const image = await getDefaultRolePhotoImage(effectiveType);
+          if (token !== renderToken) return;
+          drawStaticPhotoImageInFrame(ctx, image, frame);
+          photoDrawn = true;
+        } catch {}
+      }
+      if (!photoDrawn) drawPhotoPlaceholderFrame(ctx, frame);
 
       // 區塊 3：逐打席或投球戰績
       if (layout.detail.drawBox !== false) {

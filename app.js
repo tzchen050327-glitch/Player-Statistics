@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.08';
+    const APP_VERSION = 'v2.09';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,6 +7,8 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.09';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.09';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6728,10 +6730,11 @@ bg2: {
         ctx.fillText(metric[1], card.x + card.w / 2, card.y + (card.valueOffset ?? (isBg2 ? 91 : 121)));
       });
 
-      // 區塊 4：照片
+      // 區塊 4：照片。未上傳球員照時依目前角色使用預設打者／投手圖。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
       const photo = photos.find(p => p.id === player.selectedPhotoId && p.playerId === player.id);
+      let photoDrawn = false;
       if (photo) {
         try {
           const image = await getPhotoImage(photo);
@@ -6739,12 +6742,18 @@ bg2: {
           const transform = clampPhotoTransform(image, getPhotoTransform(player, photo.id));
           player.photoTransforms[photo.id] = transform;
           drawPhotoImageInFrame(ctx, image, frame, transform);
-        } catch {
-          drawPhotoPlaceholderFrame(ctx, frame);
-        }
-      } else {
-        drawPhotoPlaceholderFrame(ctx, frame);
+          photoDrawn = true;
+        } catch {}
       }
+      if (!photoDrawn) {
+        try {
+          const image = await getDefaultRolePhotoImage(effectiveType);
+          if (token !== renderToken) return;
+          drawStaticPhotoImageInFrame(ctx, image, frame);
+          photoDrawn = true;
+        } catch {}
+      }
+      if (!photoDrawn) drawPhotoPlaceholderFrame(ctx, frame);
 
       // 區塊 3：逐打席或投球戰績
       if (layout.detail.drawBox !== false) {
@@ -8003,6 +8012,37 @@ bg2: {
       const drawH = img.height * scale;
       const drawX = x + (w - drawW) / 2 + safeTransform.x;
       const drawY = y + (h - drawH) / 2 + safeTransform.y;
+      ctx.save();
+      tracePhotoFramePath(ctx, frame);
+      ctx.clip();
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
+      if (frame.border) {
+        ctx.save();
+        tracePhotoFramePath(ctx, frame);
+        ctx.strokeStyle = frame.border;
+        ctx.lineWidth = frame.borderWidth || 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+
+    function defaultRolePhotoUrl(role) {
+      return role === 'pitcher' ? DEFAULT_PITCHER_PHOTO_URL : DEFAULT_HITTER_PHOTO_URL;
+    }
+
+    function getDefaultRolePhotoImage(role) {
+      return loadEmbeddedImage(defaultRolePhotoUrl(role));
+    }
+
+    function drawStaticPhotoImageInFrame(ctx, img, frame) {
+      const { x, y, w, h } = frame;
+      const scale = Math.max(w / img.width, h / img.height);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = x + (w - drawW) / 2;
+      const drawY = y + (h - drawH) / 2;
       ctx.save();
       tracePhotoFramePath(ctx, frame);
       ctx.clip();
@@ -9557,22 +9597,22 @@ bg2: {
       });
 
       const photo=photos.find(p=>p.id===player.selectedPhotoId && p.playerId===player.id);
+      let photoImage=null;
       if(photo){
-        try{
-          const img=await getPhotoImage(photo);
-          const scale=Math.max(frame.w/img.width,frame.h/img.height);
-          const drawW=img.width*scale,drawH=img.height*scale;
-          const drawX=frame.x+(frame.w-drawW)/2;
-          const drawY=frame.y+(frame.h-drawH)/2;
-          ctx.save();
-          ctx.beginPath();ctx.roundRect(frame.x,frame.y,frame.w,frame.h,frame.r);ctx.clip();
-          ctx.drawImage(img,drawX,drawY,drawW,drawH);
-          const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
-          shade.addColorStop(0,'rgba(3,13,21,.02)');
-          shade.addColorStop(1,'rgba(3,13,21,.28)');
-          ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
-          ctx.restore();
-        }catch{}
+        try{ photoImage=await getPhotoImage(photo); }catch{}
+      }
+      if(!photoImage){
+        try{ photoImage=await getDefaultRolePhotoImage(role); }catch{}
+      }
+      if(photoImage){
+        drawStaticPhotoImageInFrame(ctx,photoImage,frame);
+        ctx.save();
+        tracePhotoFramePath(ctx,frame);ctx.clip();
+        const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
+        shade.addColorStop(0,'rgba(3,13,21,.02)');
+        shade.addColorStop(1,'rgba(3,13,21,.28)');
+        ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
+        ctx.restore();
       }
 
       const plate={x:674,y:842,w:368,h:120};
