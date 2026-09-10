@@ -1,0 +1,16 @@
+name: Analyze app structure
+
+on:
+  push:
+    branches:
+      - modularize-v2.06
+    paths:
+      - 'scripts/analyze-app-structure.py'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Analyze app.js
+        run: python3 scripts/analyze-app-structure.py
