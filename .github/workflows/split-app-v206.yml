@@ -1,0 +1,56 @@
+name: Split app v2.06
+
+on:
+  push:
+    branches:
+      - modularize-v2.06
+    paths:
+      - 'scripts/split-app-v2.06.py'
+      - '.github/workflows/split-app-v206.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Split monolithic app.js
+        run: python3 scripts/split-app-v2.06.py
+      - name: Syntax check split JavaScript
+        run: |
+          for f in js/core.js js/providers.js js/storage-stats.js js/player-ui.js js/report-canvas.js js/forms.js js/output.js js/bootstrap.js; do
+            node --check "$f"
+          done
+      - name: Validate shell references
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          index=Path('index.html').read_text(encoding='utf-8')
+          scripts=['core','providers','storage-stats','player-ui','report-canvas','forms','output','bootstrap']
+          positions=[]
+          for name in scripts:
+              token=f'./js/{name}.js?v=v2.06'
+              if index.count(token)!=1:
+                  raise SystemExit(f'bad index ref: {token}')
+              positions.append(index.index(token))
+          if positions != sorted(positions):
+              raise SystemExit('script load order is wrong')
+          if './app.js' in index:
+              raise SystemExit('legacy app.js still referenced')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          for name in scripts:
+              if f'./js/{name}.js?v=v2.06' not in sw:
+                  raise SystemExit(f'missing service worker ref: {name}')
+          if "baseball-player-card-pwa-v122" not in sw:
+              raise SystemExit('cache version not bumped')
+          print('shell validation ok')
+          PY
+      - name: Commit split v2.06
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v2.06 split app.js into ordered modules"
+          git push
