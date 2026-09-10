@@ -31,3 +31,5 @@ print('\nTOP_LEVEL_SECTION_COMMENTS')
 for i,line in enumerate(lines,1):
     if re.match(r'^    //', line) and ('====' in line or '---' in line or 'SECTION' in line.upper()):
         print(f'{i}: {line.strip()}')
+
+# trigger analysis workflow
