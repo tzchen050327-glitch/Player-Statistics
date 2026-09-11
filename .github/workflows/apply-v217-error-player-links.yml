@@ -1,0 +1,64 @@
+name: Apply v2.17 CPBL error player links
+
+on:
+  push:
+    branches: [feature-v2.17-error-player-links]
+    paths:
+      - 'scripts/patch-v217-error-player-links.py'
+      - '.github/workflows/apply-v217-error-player-links.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.17 patch
+        run: python3 scripts/patch-v217-error-player-links.py
+      - name: Validate clickable error players
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.17'" js/00-core-config.js
+          grep -Fq "async function openCpblErrorPlayer(item)" js/06-provider-cpbl.js
+          grep -Fq "data-error-player-acnt" js/06-provider-cpbl.js
+          grep -Fq "await selectPlayer(player.id)" js/06-provider-cpbl.js
+          grep -Fq "selectedTab = 'errors'" js/06-provider-cpbl.js
+          grep -Fq ".error-player-name-link{" styles.css
+          grep -Fq "./app.js?v=v2.17" index.html
+          grep -Fq "baseball-player-card-pwa-v134" service-worker.js
+          test -f 'index v2.17.html'
+          test -f 'index v2.16.html'
+          test ! -f 'index v2.15.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome not preinstalled; static checks passed.'
+            exit 0
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'id="homePage"' /tmp/dom.html
+          grep -Fq 'id="cardCanvas"' /tmp/dom.html
+          grep -Fq 'content="v2.17"' /tmp/dom.html
+      - name: Commit v2.17
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.17.html' js/00-core-config.js js/06-provider-cpbl.js styles.css service-worker.js
+          git rm -f 'index v2.15.html'
+          git commit -m 'v2.17 make CPBL error players clickable and auto-add missing players'
+          git push origin HEAD:feature-v2.17-error-player-links
