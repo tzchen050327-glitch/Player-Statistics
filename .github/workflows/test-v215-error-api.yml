@@ -13,7 +13,7 @@ jobs:
       - name: Query player and game errors
         run: |
           python3 - <<'PY'
-          import json, re, urllib.request
+          import json, re, urllib.request, urllib.error
           from pathlib import Path
           cfg=Path('js/00-core-config.js').read_text(encoding='utf-8')
           def grab(name):
@@ -26,8 +26,14 @@ jobs:
           def post(body):
               body={**body,'appKey':app,'anonKey':anon}
               req=urllib.request.Request(url,data=json.dumps(body).encode(),headers={'content-type':'application/json'},method='POST')
-              with urllib.request.urlopen(req,timeout=45) as r:
-                  return json.load(r)
+              try:
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  text=e.read().decode('utf-8','replace')
+                  print('HTTP_ERROR',e.code,text)
+                  try:return json.loads(text)
+                  except: raise
           p=post({'action':'search-player','name':'威能帝','number':'49'})
           print('PLAYER',json.dumps(p,ensure_ascii=False))
           player=p.get('player') or {}
