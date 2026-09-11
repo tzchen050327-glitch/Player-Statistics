@@ -4052,3 +4052,6 @@ dialog::backdrop {
   .error-player-name{font-size:17px}
 }
 
+
+.error-page-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:640px){.error-page-actions{width:100%;justify-content:stretch}.error-page-actions .press-btn{flex:1 1 160px}}

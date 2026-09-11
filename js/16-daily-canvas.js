@@ -3,6 +3,7 @@
       const ctx = els.canvas.getContext('2d');
       const player = selectedPlayer();
       const effectiveType = player && selectedTab === 'today' ? activeTodayRole(player) : player?.type;
+      const errorCardMode = Boolean(currentRecord?.cpblErrorCardMode);
       const W = els.canvas.width;
       const H = els.canvas.height;
 
@@ -131,7 +132,9 @@
 
       const detail = layout.detail;
       if (positioned) {
-        const detailHeading = effectiveType === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績';
+        const detailHeading = errorCardMode
+          ? '失誤紀錄'
+          : (effectiveType === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績');
         if (isBg2) drawBg2DetailHeading(ctx, detailHeading, detail);
         else drawStyledDetailHeading(ctx, detailHeading, detail);
       }
@@ -139,7 +142,28 @@
       ctx.textAlign = 'left';
       ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
 
-      if (effectiveType === 'hitter') {
+      if (errorCardMode) {
+        const ownCount = Math.max(0, Number(currentRecord?.cpblErrorCardCount) || 0);
+        const centerX = detail.x + detail.w / 2;
+        const centerY = detail.y + detail.h / 2;
+        const bigSize = Math.max(104, Math.min(190, Math.round(detail.w * 0.38)));
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = detail.accentColor || '#d7ad52';
+        ctx.font = `900 ${bigSize}px Arial, sans-serif`;
+        ctx.fillText(String(ownCount), centerX, centerY - 28);
+
+        ctx.fillStyle = detail.textColor || '#172033';
+        ctx.font = '900 34px "Microsoft JhengHei", sans-serif';
+        ctx.fillText('本場失誤', centerX, centerY + 82);
+
+        ctx.fillStyle = detail.mutedColor || '#6d7688';
+        ctx.font = '700 22px "Microsoft JhengHei", sans-serif';
+        ctx.fillText(ownCount > 0 ? `CPBL 官方記錄｜${ownCount} 次失誤` : 'CPBL 官方記錄｜本場無失誤', centerX, centerY + 128);
+        ctx.restore();
+      } else if (effectiveType === 'hitter') {
         const appearance = ensureHitterAppearance();
         if (appearance.mode === 'bat') {
           const officialBox = currentRecord?.internationalHitterGame;

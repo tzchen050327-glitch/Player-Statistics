@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.15';
+    const APP_VERSION = 'v2.16';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,8 +7,8 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.15';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.15';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.16';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.16';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -2545,7 +2545,10 @@ bg2: {
         <div class="error-page-shell">
           <div class="error-page-head">
             <button id="backFromErrorsBtn" class="press-btn" type="button">← 返回今日戰績</button>
-            <button id="refreshGameErrorsBtn" class="press-btn primary" type="button">重新抓取官方失誤</button>
+            <div class="error-page-actions">
+              <button id="refreshGameErrorsBtn" class="press-btn" type="button">重新抓取官方失誤</button>
+              <button id="downloadErrorCardBtn" class="press-btn primary" type="button">下載此球員失誤圖</button>
+            </div>
           </div>
           <div class="error-page-title-row">
             <div>
@@ -2566,6 +2569,21 @@ bg2: {
         selectedTab = 'today';
         renderAll();
       });
+      document.getElementById('downloadErrorCardBtn')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = '正在產生…';
+        try {
+          await downloadCpblErrorCard(player);
+        } catch (error) {
+          setStatus(error?.message || '下載失誤圖失敗。', true);
+        } finally {
+          button.disabled = false;
+          button.textContent = original;
+        }
+      });
+
       document.getElementById('refreshGameErrorsBtn')?.addEventListener('click', async event => {
         const button = event.currentTarget;
         const original = button.textContent;
@@ -6825,6 +6843,7 @@ bg2: {
       const ctx = els.canvas.getContext('2d');
       const player = selectedPlayer();
       const effectiveType = player && selectedTab === 'today' ? activeTodayRole(player) : player?.type;
+      const errorCardMode = Boolean(currentRecord?.cpblErrorCardMode);
       const W = els.canvas.width;
       const H = els.canvas.height;
 
@@ -6953,7 +6972,9 @@ bg2: {
 
       const detail = layout.detail;
       if (positioned) {
-        const detailHeading = effectiveType === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績';
+        const detailHeading = errorCardMode
+          ? '失誤紀錄'
+          : (effectiveType === 'hitter' ? hitterAppearanceHeading(ensureHitterAppearance()) : '投球成績');
         if (isBg2) drawBg2DetailHeading(ctx, detailHeading, detail);
         else drawStyledDetailHeading(ctx, detailHeading, detail);
       }
@@ -6961,7 +6982,28 @@ bg2: {
       ctx.textAlign = 'left';
       ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
 
-      if (effectiveType === 'hitter') {
+      if (errorCardMode) {
+        const ownCount = Math.max(0, Number(currentRecord?.cpblErrorCardCount) || 0);
+        const centerX = detail.x + detail.w / 2;
+        const centerY = detail.y + detail.h / 2;
+        const bigSize = Math.max(104, Math.min(190, Math.round(detail.w * 0.38)));
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = detail.accentColor || '#d7ad52';
+        ctx.font = `900 ${bigSize}px Arial, sans-serif`;
+        ctx.fillText(String(ownCount), centerX, centerY - 28);
+
+        ctx.fillStyle = detail.textColor || '#172033';
+        ctx.font = '900 34px "Microsoft JhengHei", sans-serif';
+        ctx.fillText('本場失誤', centerX, centerY + 82);
+
+        ctx.fillStyle = detail.mutedColor || '#6d7688';
+        ctx.font = '700 22px "Microsoft JhengHei", sans-serif';
+        ctx.fillText(ownCount > 0 ? `CPBL 官方記錄｜${ownCount} 次失誤` : 'CPBL 官方記錄｜本場無失誤', centerX, centerY + 128);
+        ctx.restore();
+      } else if (effectiveType === 'hitter') {
         const appearance = ensureHitterAppearance();
         if (appearance.mode === 'bat') {
           const officialBox = currentRecord?.internationalHitterGame;
@@ -10236,6 +10278,58 @@ bg2: {
         files,
         title: outputs.length > 1 ? '球員投打戰績圖片' : '球員戰績圖片'
       });
+    }
+
+    async function downloadCpblErrorCard(player = selectedPlayer()) {
+      if (!player || playerScope(player) !== 'cpbl' || !player.cpblAcnt) {
+        throw new Error('只有已連結 CPBL 官方資料的球員可以產生失誤圖。');
+      }
+      if (!currentRecord) throw new Error('請先選擇比賽日期。');
+
+      if (!Array.isArray(currentRecord.cpblGameErrors)) {
+        await refreshCpblGameErrors(player, { quiet:true });
+      }
+
+      const errors = Array.isArray(currentRecord.cpblGameErrors) ? currentRecord.cpblGameErrors : [];
+      const own = errors.find(item => String(item?.acnt || '') === String(player.cpblAcnt || '')) || null;
+      const ownCount = Math.max(0, Number(own?.count) || 0);
+      const originalRecord = currentRecord;
+      const originalRole = todayRoleView;
+
+      try {
+        currentRecord = {
+          ...originalRecord,
+          cpblErrorCardMode:true,
+          cpblErrorCardCount:ownCount,
+          cpblGameSummary:{
+            ...defaultGameRecord(player).cpblGameSummary,
+            ...(originalRecord.cpblGameSummary || {}),
+            errors:ownCount,
+            official:true
+          }
+        };
+        todayRoleView = player.type === 'pitcher' ? 'pitcher' : 'hitter';
+        await renderCanvas();
+
+        const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('失誤圖產生失敗。');
+        const safeName = String(reportPlayerName(player) || player.name || 'player').replace(/[\\/:*?"<>|]+/g, '_');
+        const dateText = String(originalRecord.date || els.gameDate.value || '').replaceAll('-', '');
+        const fileName = `${dateText}_${safeName}_失誤紀錄.png`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1200);
+        setStatus(`已下載 ${reportPlayerName(player)} 的失誤圖（${ownCount} 次失誤）。`);
+      } finally {
+        currentRecord = originalRecord;
+        todayRoleView = originalRole;
+        await renderCanvas();
+      }
     }
 
     els.downloadBtn.addEventListener('click', async () => {

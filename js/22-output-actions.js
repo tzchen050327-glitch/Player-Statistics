@@ -225,6 +225,58 @@
       });
     }
 
+    async function downloadCpblErrorCard(player = selectedPlayer()) {
+      if (!player || playerScope(player) !== 'cpbl' || !player.cpblAcnt) {
+        throw new Error('只有已連結 CPBL 官方資料的球員可以產生失誤圖。');
+      }
+      if (!currentRecord) throw new Error('請先選擇比賽日期。');
+
+      if (!Array.isArray(currentRecord.cpblGameErrors)) {
+        await refreshCpblGameErrors(player, { quiet:true });
+      }
+
+      const errors = Array.isArray(currentRecord.cpblGameErrors) ? currentRecord.cpblGameErrors : [];
+      const own = errors.find(item => String(item?.acnt || '') === String(player.cpblAcnt || '')) || null;
+      const ownCount = Math.max(0, Number(own?.count) || 0);
+      const originalRecord = currentRecord;
+      const originalRole = todayRoleView;
+
+      try {
+        currentRecord = {
+          ...originalRecord,
+          cpblErrorCardMode:true,
+          cpblErrorCardCount:ownCount,
+          cpblGameSummary:{
+            ...defaultGameRecord(player).cpblGameSummary,
+            ...(originalRecord.cpblGameSummary || {}),
+            errors:ownCount,
+            official:true
+          }
+        };
+        todayRoleView = player.type === 'pitcher' ? 'pitcher' : 'hitter';
+        await renderCanvas();
+
+        const blob = await new Promise(resolve => els.canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('失誤圖產生失敗。');
+        const safeName = String(reportPlayerName(player) || player.name || 'player').replace(/[\\/:*?"<>|]+/g, '_');
+        const dateText = String(originalRecord.date || els.gameDate.value || '').replaceAll('-', '');
+        const fileName = `${dateText}_${safeName}_失誤紀錄.png`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1200);
+        setStatus(`已下載 ${reportPlayerName(player)} 的失誤圖（${ownCount} 次失誤）。`);
+      } finally {
+        currentRecord = originalRecord;
+        todayRoleView = originalRole;
+        await renderCanvas();
+      }
+    }
+
     els.downloadBtn.addEventListener('click', async () => {
       try {
         if (selectedTab !== 'today') throw new Error('請到「今日戰績」產生當天戰報。');

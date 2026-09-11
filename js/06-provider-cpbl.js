@@ -682,7 +682,10 @@
         <div class="error-page-shell">
           <div class="error-page-head">
             <button id="backFromErrorsBtn" class="press-btn" type="button">← 返回今日戰績</button>
-            <button id="refreshGameErrorsBtn" class="press-btn primary" type="button">重新抓取官方失誤</button>
+            <div class="error-page-actions">
+              <button id="refreshGameErrorsBtn" class="press-btn" type="button">重新抓取官方失誤</button>
+              <button id="downloadErrorCardBtn" class="press-btn primary" type="button">下載此球員失誤圖</button>
+            </div>
           </div>
           <div class="error-page-title-row">
             <div>
@@ -703,6 +706,21 @@
         selectedTab = 'today';
         renderAll();
       });
+      document.getElementById('downloadErrorCardBtn')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = '正在產生…';
+        try {
+          await downloadCpblErrorCard(player);
+        } catch (error) {
+          setStatus(error?.message || '下載失誤圖失敗。', true);
+        } finally {
+          button.disabled = false;
+          button.textContent = original;
+        }
+      });
+
       document.getElementById('refreshGameErrorsBtn')?.addEventListener('click', async event => {
         const button = event.currentTarget;
         const original = button.textContent;
