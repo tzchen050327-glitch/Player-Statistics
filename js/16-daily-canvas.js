@@ -229,13 +229,14 @@
           ctx.fillText('投球戰績', 88, 430);
         }
 
+        const showRuns = Boolean(g.showRuns);
         const lines = currentRecord?.externalWalksCombined
           ? [
               ['投球局數', g.innings],
               ['三振', g.k],
               ['四死球', g.bb],
               ['被安打', g.h],
-              ['失分', g.r],
+              ...(showRuns ? [['失分', g.r]] : []),
               ['自責分', g.er],
               ['用球數', pitches]
             ]
@@ -245,6 +246,7 @@
               ['保送', g.bb],
               ['被安打', g.h],
               ['死球', g.hbp],
+              ...(showRuns ? [['失分', g.r]] : []),
               ['自責分', g.er],
               ['用球數', pitches]
             ];

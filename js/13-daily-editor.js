@@ -473,6 +473,12 @@
           <label class="field">最後一格顯示
             <select id="pLastMetric">${pitcherLastMetricOptions(player?.pitcherLastMetric)}</select>
           </label>
+          <label class="field">戰報顯示失分
+            <select id="pShowRuns">
+              <option value="0" ${g.showRuns ? '' : 'selected'}>否</option>
+              <option value="1" ${g.showRuns ? 'selected' : ''}>是</option>
+            </select>
+          </label>
         </div>
 
         <h3>特殊紀錄</h3>
@@ -526,7 +532,7 @@
         await renderCanvas();
       });
 
-      const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
+      const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes','pShowRuns'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
       ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
         syncPitcherDependencies(id);
@@ -615,6 +621,7 @@
       g.otherReach = Number(document.getElementById('pOtherReach').value);
       g.r = Number(document.getElementById('pR').value);
       g.er = Math.min(g.r, Number(document.getElementById('pER').value));
+      g.showRuns = document.getElementById('pShowRuns')?.value === '1';
       g.pitchTens = Number(document.getElementById('pPitchTens').value);
       g.pitchOnes = Number(document.getElementById('pPitchOnes').value);
       if (g.pitchTens === 15) {
