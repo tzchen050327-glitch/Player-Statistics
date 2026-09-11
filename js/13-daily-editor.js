@@ -53,14 +53,31 @@
            </div>`
         : '';
 
+      const todayHeading = scope === 'cpbl' && player.cpblAcnt
+        ? `<h2 class="today-status-heading"><button id="playerErrorPageBtn" class="today-player-name-link" type="button" title="開啟失誤紀錄">#${escapeHtml(player.number)} ${escapeHtml(player.name)}</button><span>｜今日狀況</span></h2>`
+        : `<h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜今日狀況</h2>`;
+
       els.content.innerHTML = `
-        <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜今日狀況</h2>
+        ${todayHeading}
         ${opponentField}
         ${importButton}
         ${roleSwitchHtml}
         ${appearanceHtml}
         <div class="metrics">${metricHtml}</div>
         <div id="todaySpecific"></div>`;
+
+      document.getElementById('playerErrorPageBtn')?.addEventListener('click', async () => {
+        selectedTab = 'errors';
+        delete currentRecord.cpblGameErrorsLoadError;
+        renderAll();
+        try {
+          await refreshCpblGameErrors(player, { quiet:true });
+        } catch (error) {
+          currentRecord.cpblGameErrorsLoadError = error?.message || '抓取失誤資料失敗。';
+          if (selectedTab === 'errors') renderCpblErrorsPage(player);
+          setStatus(currentRecord.cpblGameErrorsLoadError, true);
+        }
+      });
 
       const opponentInput = document.getElementById('opponentInput');
       if (scope !== 'overseas') syncOpponentSelectColor(opponentInput);

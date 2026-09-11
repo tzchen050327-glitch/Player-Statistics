@@ -19,6 +19,7 @@
         }
       }
       if (selectedTab === 'photos') renderPhotos(player);
+      if (selectedTab === 'errors' && playerScope(player) === 'cpbl') renderCpblErrorsPage(player);
     }
 
     function updateHomePaneHeight() {
@@ -35,14 +36,17 @@
     function renderAll() {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
+      const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
 
       els.homePage?.classList.toggle('hidden', playerPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       if (els.pageSubtitle) {
         els.pageSubtitle.textContent = playerPageActive
-          ? (playerScope(player) === 'international'
-              ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
-              : `球員設定｜${scopeLabel(playerScope(player))}`)
+          ? (errorPageActive
+              ? '失誤紀錄｜CPBL 官方'
+              : (playerScope(player) === 'international'
+                  ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
+                  : `球員設定｜${scopeLabel(playerScope(player))}`))
           : homePageBreadcrumb();
       }
       if (els.selectedPlayerText) {
@@ -109,6 +113,7 @@
       const tabsHost = document.querySelector('.player-page-tabs');
       tabsHost?.classList.toggle('league-level-tabs', levelTabs);
       tabsHost?.classList.toggle('us-dual-role-tabs', usDualTabs);
+      tabsHost?.classList.toggle('hidden', errorPageActive);
 
       if (baseTab) {
         baseTab.textContent = playerScopeCode === 'international'
@@ -137,7 +142,7 @@
       const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
       const seasonReportActive = statsTabActive && (playerScopeCode !== 'international' || selectedTab === 'base');
       const dailyReportActive = selectedTab === 'today';
-      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', levelTabs && !statsTabActive);
+      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
 
       els.downloadBtn?.classList.toggle('hidden', !dailyReportActive);
@@ -186,10 +191,13 @@
       if (playerPageActive) {
         const internationalOverview = playerScopeCode === 'international'
           && selectedTab === 'today' && !internationalSelectedGameKey;
-        document.querySelector('#playerPage .workspace')?.classList.toggle('international-overview', internationalOverview);
+        const workspace = document.querySelector('#playerPage .workspace');
+        workspace?.classList.toggle('international-overview', internationalOverview);
+        workspace?.classList.toggle('error-management', errorPageActive);
+        document.querySelector('#playerPage .canvas-wrap')?.classList.toggle('hidden', errorPageActive);
         renderContent();
 
-        if (!internationalOverview) {
+        if (!internationalOverview && !errorPageActive) {
           if (seasonReportActive) {
             void renderAnnualSeasonCanvas(activeSeasonReportRole(player), player);
           } else {

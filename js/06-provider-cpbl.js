@@ -602,3 +602,122 @@
       return true;
     }
 
+    async function refreshCpblGameErrors(player, { quiet = false } = {}) {
+      if (!player?.cpblAcnt) throw new Error('此球員尚未連結中職官網。');
+      const date = String(els.gameDate.value || '').trim();
+      if (!date) throw new Error('請先選擇日期。');
+
+      const data = await cpblRequest('game-errors', {
+        acnt: player.cpblAcnt,
+        date,
+        teamCode: player.cpblTeamCode || '',
+        kindCode: currentRecord?.level || selectedLevel || 'A'
+      });
+      if (!data?.found) throw new Error(data?.reason || '找不到這場比賽的失誤資料。');
+
+      currentRecord.cpblGameErrors = Array.isArray(data.errors)
+        ? data.errors.map(item => ({
+            acnt: String(item?.acnt || ''),
+            name: String(item?.name || '').trim(),
+            number: String(item?.number || '').trim(),
+            teamCode: String(item?.teamCode || '').trim(),
+            teamName: String(item?.teamName || '').trim(),
+            count: Math.max(0, Number(item?.count) || 0)
+          })).filter(item => item.count > 0)
+        : [];
+      currentRecord.cpblGameErrorsGame = data.game ? { ...data.game } : null;
+      currentRecord.cpblGameErrorsFetchedAt = Date.now();
+      delete currentRecord.cpblGameErrorsLoadError;
+      await saveRecord();
+
+      if (!quiet) {
+        const total = currentRecord.cpblGameErrors.reduce((sum, item) => sum + item.count, 0);
+        setStatus(total
+          ? `已抓到本場 ${currentRecord.cpblGameErrors.length} 位球員、共 ${total} 次失誤。`
+          : 'CPBL 官方記錄本場沒有失誤。');
+      }
+      if (selectedTab === 'errors') renderCpblErrorsPage(player);
+      return currentRecord.cpblGameErrors;
+    }
+
+    function cpblErrorPlayerLabel(item) {
+      const number = String(item?.number || '').trim();
+      const name = String(item?.name || '').trim() || '未辨識球員';
+      return `${number ? `#${number} ` : ''}${name}`;
+    }
+
+    function renderCpblErrorsPage(player) {
+      const errors = Array.isArray(currentRecord?.cpblGameErrors) ? currentRecord.cpblGameErrors : null;
+      const game = currentRecord?.cpblGameErrorsGame || null;
+      const loadError = String(currentRecord?.cpblGameErrorsLoadError || '');
+      const ownAcnt = String(player?.cpblAcnt || '');
+      const own = errors?.find(item => String(item?.acnt || '') === ownAcnt) || null;
+      const dateText = String(els.gameDate.value || '').replaceAll('-', '/');
+      const matchup = [game?.visitingTeamName, game?.homeTeamName].filter(Boolean).join(' vs ');
+      const gameMeta = [dateText, matchup, game?.field].filter(Boolean).join('｜');
+
+      let listHtml = '';
+      if (loadError) {
+        listHtml = `<div class="error-page-empty error">${escapeHtml(loadError)}</div>`;
+      } else if (errors === null) {
+        listHtml = '<div class="error-page-empty">正在抓取 CPBL 官方本場失誤…</div>';
+      } else if (!errors.length) {
+        listHtml = '<div class="error-page-empty success">CPBL 官方紀錄：本場沒有任何球員被記失誤。</div>';
+      } else {
+        listHtml = errors.map(item => {
+          const selected = String(item.acnt || '') === ownAcnt;
+          const team = item.teamName || item.teamCode || '';
+          return `
+            <div class="error-player-card ${selected ? 'selected' : ''}">
+              <div class="error-player-info">
+                <div class="error-player-name">${escapeHtml(cpblErrorPlayerLabel(item))}</div>
+                <div class="error-player-team">${escapeHtml(team || 'CPBL 官方紀錄')}${selected ? '｜目前球員' : ''}</div>
+              </div>
+              <div class="error-count-badge">${Math.max(0, Number(item.count) || 0)} 次</div>
+            </div>`;
+        }).join('');
+      }
+
+      els.content.innerHTML = `
+        <div class="error-page-shell">
+          <div class="error-page-head">
+            <button id="backFromErrorsBtn" class="press-btn" type="button">← 返回今日戰績</button>
+            <button id="refreshGameErrorsBtn" class="press-btn primary" type="button">重新抓取官方失誤</button>
+          </div>
+          <div class="error-page-title-row">
+            <div>
+              <div class="error-page-kicker">FIELDING ERRORS</div>
+              <h2>#${escapeHtml(player.number)} ${escapeHtml(player.name)}｜失誤紀錄</h2>
+              <div class="subtle">${escapeHtml(gameMeta || dateText)}</div>
+            </div>
+            <div class="error-own-summary">
+              <span>此球員本場</span>
+              <strong>${own ? `${Math.max(0, Number(own.count) || 0)} 次失誤` : '0 次失誤'}</strong>
+            </div>
+          </div>
+          <div class="error-page-note">資料來源為 CPBL 官方單場 BOX；下方列出這場比賽所有被記失誤的球員。</div>
+          <div class="error-player-list">${listHtml}</div>
+        </div>`;
+
+      document.getElementById('backFromErrorsBtn')?.addEventListener('click', () => {
+        selectedTab = 'today';
+        renderAll();
+      });
+      document.getElementById('refreshGameErrorsBtn')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = '正在抓取…';
+        try {
+          await refreshCpblGameErrors(player);
+        } catch (error) {
+          currentRecord.cpblGameErrorsLoadError = error?.message || '抓取失誤資料失敗。';
+          renderCpblErrorsPage(player);
+          setStatus(currentRecord.cpblGameErrorsLoadError, true);
+        } finally {
+          button.disabled = false;
+          button.textContent = original;
+        }
+      });
+    }
+
