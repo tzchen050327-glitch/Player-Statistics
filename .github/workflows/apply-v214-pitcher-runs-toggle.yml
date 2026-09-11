@@ -21,16 +21,24 @@ jobs:
 
       - name: Validate pitcher runs toggle wiring
         run: |
-          grep -Fq "const APP_VERSION = 'v2.14';" js/00-core-config.js
-          grep -Fq 'id="pShowRuns"' js/13-daily-editor.js
-          grep -Fq '<option value="0" ${g.showRuns ? '\''\'' : '\''selected'\''}>否</option>' js/13-daily-editor.js
-          grep -Fq "g.showRuns = document.getElementById('pShowRuns')?.value === '1';" js/13-daily-editor.js
-          grep -Fq 'const showRuns = Boolean(g.showRuns);' js/16-daily-canvas.js
-          grep -Fq "...(showRuns ? [['失分', g.r]] : [])" js/16-daily-canvas.js
-          grep -Fq 'baseball-player-card-pwa-v131' service-worker.js
-          test -f 'index v2.13.html'
-          test -f 'index v2.14.html'
-          test ! -e 'index v2.12.html'
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('js/00-core-config.js').read_text(encoding='utf-8')
+          editor = Path('js/13-daily-editor.js').read_text(encoding='utf-8')
+          canvas = Path('js/16-daily-canvas.js').read_text(encoding='utf-8')
+          sw = Path('service-worker.js').read_text(encoding='utf-8')
+          assert "const APP_VERSION = 'v2.14';" in config
+          assert 'id="pShowRuns"' in editor
+          assert '>戰報顯示失分' in editor
+          assert '<option value="0"' in editor and '>否</option>' in editor
+          assert "g.showRuns = document.getElementById('pShowRuns')?.value === '1';" in editor
+          assert 'const showRuns = Boolean(g.showRuns);' in canvas
+          assert "['失分', g.r]" in canvas
+          assert 'baseball-player-card-pwa-v131' in sw
+          assert Path('index v2.13.html').exists()
+          assert Path('index v2.14.html').exists()
+          assert not Path('index v2.12.html').exists()
+          PY
 
       - name: Syntax and deterministic build
         run: |
