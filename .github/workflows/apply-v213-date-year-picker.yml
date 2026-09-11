@@ -1,0 +1,69 @@
+name: Apply v2.13 date year picker
+
+on:
+  push:
+    branches: [feature-v2.13-date-year-picker]
+    paths:
+      - 'scripts/patch-v213-date-year-picker.py'
+      - '.github/workflows/apply-v213-date-year-picker.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply v2.13 year picker patch
+        run: python3 scripts/patch-v213-date-year-picker.py
+
+      - name: Validate year picker wiring
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.13';" js/00-core-config.js
+          grep -Fq "datePickerYearButton: document.getElementById('datePickerYearButton')" js/00-core-config.js
+          grep -Fq 'id="datePickerYearButton"' index.html
+          grep -Fq 'id="datePickerYearGrid"' index.html
+          grep -Fq 'id="datePickerWeekdays"' index.html
+          grep -Fq 'function renderDatePickerYearGrid()' js/19-forms-events.js
+          grep -Fq 'datePickerYearMode = !datePickerYearMode' js/19-forms-events.js
+          grep -Fq '.app-date-year-trigger' styles.css
+          grep -Fq '.app-date-year-option.is-selected' styles.css
+          grep -Fq 'baseball-player-card-pwa-v130' service-worker.js
+          test -f 'index v2.12.html'
+          test -f 'index v2.13.html'
+          test ! -e 'index v2.11.html'
+
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-v213.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-v213.js app.js
+
+      - name: Browser smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          test -n "$CHROME"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'id="datePickerYearButton"' /tmp/dom.html
+          grep -Fq 'id="datePickerYearGrid"' /tmp/dom.html
+          grep -Fq 'content="v2.13"' /tmp/dom.html
+
+      - name: Commit v2.13
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'v2.13 add year selector to custom date picker'
+            git push
+          fi
