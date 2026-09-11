@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-version" content="v2.12" />
+  <meta name="app-version" content="v2.14" />
   <title>球員戰績圖片</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="球員戰績" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-    <link rel="stylesheet" href="./styles.css?v=v2.12" />
+    <link rel="stylesheet" href="./styles.css?v=v2.14" />
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
@@ -166,7 +166,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.12</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v2.14</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -355,13 +355,20 @@
         </div>
         <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="app-date-picker-body">
+      <div id="datePickerBody" class="app-date-picker-body">
         <div class="app-date-monthbar">
           <button id="datePickerPrev" class="app-date-nav" type="button" aria-label="上個月">‹</button>
-          <div id="datePickerMonthLabel" class="app-date-month-label"></div>
+          <div class="app-date-heading">
+            <button id="datePickerYearButton" class="app-date-year-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="datePickerYearGrid">
+              <span id="datePickerYearLabel">年份</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div id="datePickerMonthLabel" class="app-date-month-label"></div>
+          </div>
           <button id="datePickerNext" class="app-date-nav" type="button" aria-label="下個月">›</button>
         </div>
-        <div class="app-date-weekdays" aria-hidden="true">
+        <div id="datePickerYearGrid" class="app-date-year-grid hidden" role="listbox" aria-label="年份"></div>
+        <div id="datePickerWeekdays" class="app-date-weekdays" aria-hidden="true">
           <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
         </div>
         <div id="datePickerGrid" class="app-date-grid" role="grid" aria-label="日期"></div>
@@ -448,6 +455,6 @@
       </div>
     </div>
   </dialog>
-    <script src="./app.js?v=v2.12"></script>
+    <script src="./app.js?v=v2.14"></script>
 </body>
 </html>

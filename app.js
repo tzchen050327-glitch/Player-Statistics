@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.13';
+    const APP_VERSION = 'v2.14';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,8 +7,8 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.13';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.13';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.14';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.14';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5839,6 +5839,12 @@ bg2: {
           <label class="field">最後一格顯示
             <select id="pLastMetric">${pitcherLastMetricOptions(player?.pitcherLastMetric)}</select>
           </label>
+          <label class="field">戰報顯示失分
+            <select id="pShowRuns">
+              <option value="0" ${g.showRuns ? '' : 'selected'}>否</option>
+              <option value="1" ${g.showRuns ? 'selected' : ''}>是</option>
+            </select>
+          </label>
         </div>
 
         <h3>特殊紀錄</h3>
@@ -5892,7 +5898,7 @@ bg2: {
         await renderCanvas();
       });
 
-      const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes'];
+      const ids = ['pK','pBB','pH','pHBP','pOtherReach','pR','pER','pPitchTens','pPitchOnes','pShowRuns'];
       ids.forEach(id => document.getElementById(id).addEventListener('change', updatePitcherGameFromUI));
       ['pCG','pSHO','pNoWH','pBSV','pRainCalled'].forEach(id => document.getElementById(id).addEventListener('change', async () => {
         syncPitcherDependencies(id);
@@ -5981,6 +5987,7 @@ bg2: {
       g.otherReach = Number(document.getElementById('pOtherReach').value);
       g.r = Number(document.getElementById('pR').value);
       g.er = Math.min(g.r, Number(document.getElementById('pER').value));
+      g.showRuns = document.getElementById('pShowRuns')?.value === '1';
       g.pitchTens = Number(document.getElementById('pPitchTens').value);
       g.pitchOnes = Number(document.getElementById('pPitchOnes').value);
       if (g.pitchTens === 15) {
@@ -6900,13 +6907,14 @@ bg2: {
           ctx.fillText('投球戰績', 88, 430);
         }
 
+        const showRuns = Boolean(g.showRuns);
         const lines = currentRecord?.externalWalksCombined
           ? [
               ['投球局數', g.innings],
               ['三振', g.k],
               ['四死球', g.bb],
               ['被安打', g.h],
-              ['失分', g.r],
+              ...(showRuns ? [['失分', g.r]] : []),
               ['自責分', g.er],
               ['用球數', pitches]
             ]
@@ -6916,6 +6924,7 @@ bg2: {
               ['保送', g.bb],
               ['被安打', g.h],
               ['死球', g.hbp],
+              ...(showRuns ? [['失分', g.r]] : []),
               ['自責分', g.er],
               ['用球數', pitches]
             ];
