@@ -646,6 +646,91 @@
       return `${number ? `#${number} ` : ''}${name}`;
     }
 
+    async function openCpblErrorPlayer(item) {
+      const acnt = String(item?.acnt || '').trim();
+      if (!acnt) throw new Error('這筆官方失誤資料沒有球員 ID，暫時無法開啟。');
+
+      const sourceDate = String(els.gameDate.value || '').trim();
+      const sourceName = String(item?.name || '').trim();
+      let player = players.find(p => playerScope(p) === 'cpbl' && String(p.cpblAcnt || '') === acnt) || null;
+
+      // If the user already has an unlinked CPBL player with the exact same name,
+      // link that record instead of creating a duplicate.
+      if (!player && sourceName) {
+        player = players.find(p =>
+          playerScope(p) === 'cpbl'
+          && !String(p.cpblAcnt || '').trim()
+          && String(p.name || '').trim() === sourceName
+        ) || null;
+      }
+
+      let official = null;
+      try {
+        const profileData = await cpblRequest('player-profile', { acnt });
+        official = profileData?.player || null;
+      } catch (error) {
+        console.warn('失誤頁開啟球員時讀取 CPBL profile 失敗，改用單場資料建立', error);
+      }
+
+      const position = String(official?.position || '').trim();
+      const type = /投手/.test(position) ? 'pitcher' : 'hitter';
+      const now = Date.now();
+
+      if (!player) {
+        player = {
+          id: uid(),
+          name: String(official?.name || sourceName || '未命名球員').trim(),
+          number: String(official?.number || item?.number || '—').trim() || '—',
+          type,
+          scope: 'cpbl',
+          stats: type === 'pitcher' ? pitcherDefaults() : hitterDefaults(),
+          pitcherLastMetric: type === 'pitcher' ? 'wl' : undefined,
+          selectedPhotoId: null,
+          photoTransforms: {},
+          cpblAcnt: acnt,
+          cpblTeam: normalizeTeamName(official?.team || item?.teamName || ''),
+          cpblTeamCode: String(official?.teamCode || item?.teamCode || '').trim(),
+          cpblCurrentLevel: 'A',
+          cpblPosition: position,
+          createdAt: now,
+          updatedAt: now,
+          lastUsedAt: now
+        };
+        await savePlayer(player);
+      } else {
+        player.cpblAcnt = acnt;
+        if (official?.name) player.name = String(official.name).trim();
+        else if (!player.name && sourceName) player.name = sourceName;
+        if (official?.number) player.number = String(official.number).trim();
+        else if ((!player.number || player.number === '—') && item?.number) player.number = String(item.number).trim();
+        if (official?.team) player.cpblTeam = normalizeTeamName(official.team);
+        else if (!player.cpblTeam && item?.teamName) player.cpblTeam = normalizeTeamName(item.teamName);
+        if (official?.teamCode) player.cpblTeamCode = String(official.teamCode).trim();
+        else if (!player.cpblTeamCode && item?.teamCode) player.cpblTeamCode = String(item.teamCode).trim();
+        if (position) {
+          player.cpblPosition = position;
+          repairStoredCpblPlayerType(player, position);
+        }
+        await savePlayer(player);
+      }
+
+      await selectPlayer(player.id);
+
+      // Stay on the same game date and open the same error workspace for the
+      // newly selected player, so another error card can be downloaded immediately.
+      if (sourceDate) els.gameDate.value = sourceDate;
+      selectedTab = 'errors';
+      await loadRecord();
+      renderAll();
+      try {
+        await refreshCpblGameErrors(player, { quiet:true });
+      } catch (error) {
+        currentRecord.cpblGameErrorsLoadError = error?.message || '抓取失誤資料失敗。';
+        renderCpblErrorsPage(player);
+        setStatus(currentRecord.cpblGameErrorsLoadError, true);
+      }
+    }
+
     function renderCpblErrorsPage(player) {
       const errors = Array.isArray(currentRecord?.cpblGameErrors) ? currentRecord.cpblGameErrors : null;
       const game = currentRecord?.cpblGameErrorsGame || null;
@@ -670,7 +755,7 @@
           return `
             <div class="error-player-card ${selected ? 'selected' : ''}">
               <div class="error-player-info">
-                <div class="error-player-name">${escapeHtml(cpblErrorPlayerLabel(item))}</div>
+                <button class="error-player-name error-player-name-link" type="button" data-error-player-acnt="${escapeAttr(String(item.acnt || ''))}" ${item.acnt ? '' : 'disabled'}>${escapeHtml(cpblErrorPlayerLabel(item))}</button>
                 <div class="error-player-team">${escapeHtml(team || 'CPBL 官方紀錄')}${selected ? '｜目前球員' : ''}</div>
               </div>
               <div class="error-count-badge">${Math.max(0, Number(item.count) || 0)} 次</div>
@@ -705,6 +790,24 @@
       document.getElementById('backFromErrorsBtn')?.addEventListener('click', () => {
         selectedTab = 'today';
         renderAll();
+      });
+      document.querySelectorAll('[data-error-player-acnt]').forEach(button => {
+        button.addEventListener('click', async event => {
+          const target = event.currentTarget;
+          const acnt = String(target.dataset.errorPlayerAcnt || '');
+          const item = (errors || []).find(row => String(row.acnt || '') === acnt);
+          if (!item) return;
+          const original = target.textContent;
+          target.disabled = true;
+          target.textContent = `${original}｜開啟中…`;
+          try {
+            await openCpblErrorPlayer(item);
+          } catch (error) {
+            target.disabled = false;
+            target.textContent = original;
+            setStatus(error?.message || '開啟球員失敗。', true);
+          }
+        });
       });
       document.getElementById('downloadErrorCardBtn')?.addEventListener('click', async event => {
         const button = event.currentTarget;

@@ -4055,3 +4055,7 @@ dialog::backdrop {
 
 .error-page-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:640px){.error-page-actions{width:100%;justify-content:stretch}.error-page-actions .press-btn{flex:1 1 160px}}
+
+.error-player-name-link{appearance:none;border:0;background:none;padding:0;margin:0;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;text-decoration:none}
+.error-player-name-link:hover,.error-player-name-link:focus-visible{color:#1f4e79;text-decoration:underline;text-underline-offset:4px}
+.error-player-name-link:disabled{cursor:default;opacity:.7;text-decoration:none}
