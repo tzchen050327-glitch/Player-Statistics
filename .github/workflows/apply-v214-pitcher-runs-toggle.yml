@@ -1,0 +1,64 @@
+name: Apply v2.14 pitcher runs toggle
+
+on:
+  push:
+    branches: [feature-v2.14-pitcher-runs-toggle]
+    paths:
+      - 'scripts/patch-v214-pitcher-runs-toggle.py'
+      - '.github/workflows/apply-v214-pitcher-runs-toggle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply v2.14 patch
+        run: python3 scripts/patch-v214-pitcher-runs-toggle.py
+
+      - name: Validate pitcher runs toggle wiring
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.14';" js/00-core-config.js
+          grep -Fq 'id="pShowRuns"' js/13-daily-editor.js
+          grep -Fq '<option value="0" ${g.showRuns ? '\''\'' : '\''selected'\''}>否</option>' js/13-daily-editor.js
+          grep -Fq "g.showRuns = document.getElementById('pShowRuns')?.value === '1';" js/13-daily-editor.js
+          grep -Fq 'const showRuns = Boolean(g.showRuns);' js/16-daily-canvas.js
+          grep -Fq "...(showRuns ? [['失分', g.r]] : [])" js/16-daily-canvas.js
+          grep -Fq 'baseball-player-card-pwa-v131' service-worker.js
+          test -f 'index v2.13.html'
+          test -f 'index v2.14.html'
+          test ! -e 'index v2.12.html'
+
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-v214.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-v214.js app.js
+
+      - name: Browser smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          test -n "$CHROME"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.14"' /tmp/dom.html
+
+      - name: Commit v2.14
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'v2.14 make pitcher runs display optional'
+            git push
+          fi
