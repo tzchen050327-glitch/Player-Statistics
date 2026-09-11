@@ -147,6 +147,7 @@
     let activeAllFilterSelect = null;
     let appToastTimer = null;
     let datePickerView = null;
+    let datePickerYearMode = false;
 
     function formatPickerDate(value) {
       const raw = String(value || '');
@@ -184,6 +185,43 @@
       ].join('-');
     }
 
+    function renderDatePickerYearGrid() {
+      if (!els.datePickerYearGrid || !(datePickerView instanceof Date)) return;
+      const activeYear = datePickerView.getFullYear();
+      const minYear = Math.min(1990, activeYear);
+      const maxYear = Math.max(CURRENT_YEAR, activeYear);
+      const years = [];
+      for (let year = maxYear; year >= minYear; year--) years.push(year);
+
+      els.datePickerYearGrid.innerHTML = years.map(year => {
+        const active = year === activeYear;
+        return `<button class="app-date-year-option ${active ? 'is-selected' : ''}" type="button" role="option" data-picker-year="${year}" aria-selected="${active}">${year}</button>`;
+      }).join('');
+
+      els.datePickerYearGrid.querySelectorAll('[data-picker-year]').forEach(button => {
+        button.addEventListener('click', () => {
+          const year = Number(button.dataset.pickerYear);
+          if (!Number.isInteger(year) || !(datePickerView instanceof Date)) return;
+          datePickerView = new Date(year, datePickerView.getMonth(), 1);
+          datePickerYearMode = false;
+          renderDatePicker();
+        });
+      });
+
+      requestAnimationFrame(() => {
+        els.datePickerYearGrid?.querySelector('.is-selected')?.scrollIntoView({ block:'center' });
+      });
+    }
+
+    function syncDatePickerMode() {
+      els.datePickerBody?.classList.toggle('is-year-mode', datePickerYearMode);
+      els.datePickerYearGrid?.classList.toggle('hidden', !datePickerYearMode);
+      els.datePickerWeekdays?.classList.toggle('hidden', datePickerYearMode);
+      els.datePickerGrid?.classList.toggle('hidden', datePickerYearMode);
+      els.datePickerYearButton?.setAttribute('aria-expanded', String(datePickerYearMode));
+      if (datePickerYearMode) renderDatePickerYearGrid();
+    }
+
     function renderDatePicker() {
       if (!els.datePickerGrid || !els.datePickerMonthLabel) return;
       const selected = localCalendarDate(els.gameDate?.value) || new Date();
@@ -193,7 +231,9 @@
 
       const year = datePickerView.getFullYear();
       const month = datePickerView.getMonth();
-      els.datePickerMonthLabel.textContent = `${year} 年 ${month + 1} 月`;
+      if (els.datePickerYearLabel) els.datePickerYearLabel.textContent = `${year} 年`;
+      els.datePickerMonthLabel.textContent = `${month + 1} 月`;
+      syncDatePickerMode();
 
       const firstDay = new Date(year, month, 1).getDay();
       const days = new Date(year, month + 1, 0).getDate();
@@ -230,6 +270,7 @@
     function openDatePicker() {
       const selected = localCalendarDate(els.gameDate?.value) || new Date();
       datePickerView = new Date(selected.getFullYear(), selected.getMonth(), 1);
+      datePickerYearMode = false;
       renderDatePicker();
       if (els.datePickerDialog && !els.datePickerDialog.open) els.datePickerDialog.showModal();
     }
@@ -334,14 +375,21 @@
     });
 
     els.gameDateButton?.addEventListener('click', openDatePicker);
+    els.datePickerYearButton?.addEventListener('click', () => {
+      if (!(datePickerView instanceof Date)) return openDatePicker();
+      datePickerYearMode = !datePickerYearMode;
+      syncDatePickerMode();
+    });
     els.datePickerPrev?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();
       datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() - 1, 1);
+      datePickerYearMode = false;
       renderDatePicker();
     });
     els.datePickerNext?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();
       datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() + 1, 1);
+      datePickerYearMode = false;
       renderDatePicker();
     });
     els.datePickerToday?.addEventListener('click', () => {

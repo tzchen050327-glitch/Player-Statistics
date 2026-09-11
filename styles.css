@@ -3791,13 +3791,86 @@ dialog::backdrop {
   font-weight:900;
   box-shadow:0 3px 9px rgba(17,38,66,.06);
 }
+.app-date-heading{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+.app-date-year-trigger{
+  min-height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  padding:6px 9px 6px 11px;
+  border:1px solid #d6e0e9;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff,#f7f9fc);
+  color:#153b62;
+  font-size:15px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 3px 9px rgba(17,38,66,.05);
+}
+.app-date-year-trigger:hover,
+.app-date-year-trigger[aria-expanded="true"]{
+  border-color:#d8bb73;
+  background:#fffaf0;
+  color:#76551b;
+}
+.app-date-year-trigger svg{
+  width:15px;
+  height:15px;
+  color:#a0782a;
+  transition:transform .15s ease;
+}
+.app-date-year-trigger[aria-expanded="true"] svg{transform:rotate(180deg);}
 .app-date-month-label{
+  min-width:44px;
   color:#173754;
   font-size:17px;
   font-weight:950;
   text-align:center;
   font-variant-numeric:tabular-nums;
   letter-spacing:.03em;
+}
+.app-date-year-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  min-height:282px;
+  max-height:282px;
+  overflow-y:auto;
+  padding:5px 3px 6px;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.app-date-year-grid:not(.hidden){display:grid;}
+.app-date-year-option{
+  min-height:46px;
+  padding:7px 5px;
+  border:1px solid #dce4ec;
+  border-radius:11px;
+  background:linear-gradient(180deg,#fff,#f7f9fc);
+  color:#31475e;
+  font-size:13px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 3px 8px rgba(17,38,66,.045);
+}
+.app-date-year-option:hover{
+  border-color:#c7d4e1;
+  background:#f1f6fb;
+}
+.app-date-year-option.is-selected{
+  border-color:#123f6d;
+  background:linear-gradient(145deg,#174f86,#0c3156);
+  color:#fff;
+  box-shadow:0 5px 13px rgba(18,63,109,.20),inset 0 -3px #c79a39;
+}
+.app-date-picker-body.is-year-mode .app-date-nav{
+  opacity:.42;
 }
 .app-date-weekdays,
 .app-date-grid{
@@ -3883,7 +3956,12 @@ dialog::backdrop {
   .app-date-picker-body{padding:10px 10px 12px;}
   .app-date-monthbar{grid-template-columns:38px minmax(0,1fr) 38px;gap:6px;}
   .app-date-nav{width:38px;height:38px;border-radius:10px;}
-  .app-date-month-label{font-size:16px;}
+  .app-date-heading{gap:5px;}
+  .app-date-year-trigger{min-height:34px;padding:5px 6px 5px 8px;font-size:13px;}
+  .app-date-year-trigger svg{width:13px;height:13px;}
+  .app-date-month-label{min-width:38px;font-size:15px;}
+  .app-date-year-grid{grid-template-columns:repeat(3,minmax(0,1fr));min-height:258px;max-height:258px;gap:5px;}
+  .app-date-year-option{min-height:43px;font-size:12px;}
   .app-date-weekdays,.app-date-grid{gap:3px;}
   .app-date-grid{min-height:258px;}
   .app-date-day{min-height:35px;border-radius:9px;font-size:12px;}
@@ -3938,3 +4016,5 @@ dialog::backdrop {
       .sync-source-meta { gap: 5px 10px; padding: 9px 10px; }
     }
     /* ===== v2.05 END ===== */
+
+/* ===== v2.13 DATE YEAR PICKER ===== */

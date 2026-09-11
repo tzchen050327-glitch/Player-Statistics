@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.12';
+    const APP_VERSION = 'v2.13';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,8 +7,8 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.12';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.12';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.13';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.13';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -17,8 +17,13 @@
       gameDateButton: document.getElementById('gameDateButton'),
       gameDateButtonText: document.getElementById('gameDateButtonText'),
       datePickerDialog: document.getElementById('datePickerDialog'),
+      datePickerBody: document.getElementById('datePickerBody'),
       datePickerGrid: document.getElementById('datePickerGrid'),
+      datePickerWeekdays: document.getElementById('datePickerWeekdays'),
       datePickerMonthLabel: document.getElementById('datePickerMonthLabel'),
+      datePickerYearButton: document.getElementById('datePickerYearButton'),
+      datePickerYearLabel: document.getElementById('datePickerYearLabel'),
+      datePickerYearGrid: document.getElementById('datePickerYearGrid'),
       datePickerPrev: document.getElementById('datePickerPrev'),
       datePickerNext: document.getElementById('datePickerNext'),
       datePickerToday: document.getElementById('datePickerToday'),
@@ -8466,6 +8471,7 @@ bg2: {
     let activeAllFilterSelect = null;
     let appToastTimer = null;
     let datePickerView = null;
+    let datePickerYearMode = false;
 
     function formatPickerDate(value) {
       const raw = String(value || '');
@@ -8503,6 +8509,43 @@ bg2: {
       ].join('-');
     }
 
+    function renderDatePickerYearGrid() {
+      if (!els.datePickerYearGrid || !(datePickerView instanceof Date)) return;
+      const activeYear = datePickerView.getFullYear();
+      const minYear = Math.min(1990, activeYear);
+      const maxYear = Math.max(CURRENT_YEAR, activeYear);
+      const years = [];
+      for (let year = maxYear; year >= minYear; year--) years.push(year);
+
+      els.datePickerYearGrid.innerHTML = years.map(year => {
+        const active = year === activeYear;
+        return `<button class="app-date-year-option ${active ? 'is-selected' : ''}" type="button" role="option" data-picker-year="${year}" aria-selected="${active}">${year}</button>`;
+      }).join('');
+
+      els.datePickerYearGrid.querySelectorAll('[data-picker-year]').forEach(button => {
+        button.addEventListener('click', () => {
+          const year = Number(button.dataset.pickerYear);
+          if (!Number.isInteger(year) || !(datePickerView instanceof Date)) return;
+          datePickerView = new Date(year, datePickerView.getMonth(), 1);
+          datePickerYearMode = false;
+          renderDatePicker();
+        });
+      });
+
+      requestAnimationFrame(() => {
+        els.datePickerYearGrid?.querySelector('.is-selected')?.scrollIntoView({ block:'center' });
+      });
+    }
+
+    function syncDatePickerMode() {
+      els.datePickerBody?.classList.toggle('is-year-mode', datePickerYearMode);
+      els.datePickerYearGrid?.classList.toggle('hidden', !datePickerYearMode);
+      els.datePickerWeekdays?.classList.toggle('hidden', datePickerYearMode);
+      els.datePickerGrid?.classList.toggle('hidden', datePickerYearMode);
+      els.datePickerYearButton?.setAttribute('aria-expanded', String(datePickerYearMode));
+      if (datePickerYearMode) renderDatePickerYearGrid();
+    }
+
     function renderDatePicker() {
       if (!els.datePickerGrid || !els.datePickerMonthLabel) return;
       const selected = localCalendarDate(els.gameDate?.value) || new Date();
@@ -8512,7 +8555,9 @@ bg2: {
 
       const year = datePickerView.getFullYear();
       const month = datePickerView.getMonth();
-      els.datePickerMonthLabel.textContent = `${year} 年 ${month + 1} 月`;
+      if (els.datePickerYearLabel) els.datePickerYearLabel.textContent = `${year} 年`;
+      els.datePickerMonthLabel.textContent = `${month + 1} 月`;
+      syncDatePickerMode();
 
       const firstDay = new Date(year, month, 1).getDay();
       const days = new Date(year, month + 1, 0).getDate();
@@ -8549,6 +8594,7 @@ bg2: {
     function openDatePicker() {
       const selected = localCalendarDate(els.gameDate?.value) || new Date();
       datePickerView = new Date(selected.getFullYear(), selected.getMonth(), 1);
+      datePickerYearMode = false;
       renderDatePicker();
       if (els.datePickerDialog && !els.datePickerDialog.open) els.datePickerDialog.showModal();
     }
@@ -8653,14 +8699,21 @@ bg2: {
     });
 
     els.gameDateButton?.addEventListener('click', openDatePicker);
+    els.datePickerYearButton?.addEventListener('click', () => {
+      if (!(datePickerView instanceof Date)) return openDatePicker();
+      datePickerYearMode = !datePickerYearMode;
+      syncDatePickerMode();
+    });
     els.datePickerPrev?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();
       datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() - 1, 1);
+      datePickerYearMode = false;
       renderDatePicker();
     });
     els.datePickerNext?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();
       datePickerView = new Date(datePickerView.getFullYear(), datePickerView.getMonth() + 1, 1);
+      datePickerYearMode = false;
       renderDatePicker();
     });
     els.datePickerToday?.addEventListener('click', () => {
