@@ -610,9 +610,7 @@
       } else {
         bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map(game => {
           const status = String(game?.status || 'scheduled').toLowerCase();
-          const statusLabel = league === 'CPBL' && status === 'final'
-            ? ''
-            : homeDailyGameStatusLabel(game);
+          const statusLabel = homeDailyGameStatusLabel(game);
           const showScore = status === 'live' || status === 'final';
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
@@ -620,7 +618,7 @@
           return `
             <article class="home-game-card status-${escapeAttr(status)}">
               <div class="home-game-card-top">
-                ${statusLabel ? `<span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>` : ''}
+                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
               </div>
               <div class="home-game-team">
