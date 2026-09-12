@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.31';
+    const APP_VERSION = 'v2.32';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -10,8 +10,9 @@
     const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
     const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.31';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.31';
+    const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.32';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.32';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5198,7 +5199,8 @@ bg2: {
     }
 
     async function leagueGameDetailRequest(league, date, game) {
-      const response = await fetch(LEAGUE_GAME_DETAIL_API_URL, {
+      const detailApiUrl = league === 'CPBL' ? CPBL_GAME_DETAIL_API_URL : LEAGUE_GAME_DETAIL_API_URL;
+      const response = await fetch(detailApiUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
         body:JSON.stringify({
@@ -5229,6 +5231,42 @@ bg2: {
     function homeGameDetailScore(value) {
       const n = Number(value);
       return Number.isFinite(n) ? String(n) : '—';
+    }
+
+    function homeGameDetailOutLabel(value) {
+      const raw = String(value ?? '').trim();
+      if (!raw) return '';
+      if (/^\d+$/.test(raw)) return `${Number(raw)}出局`;
+      return raw.replace(/(\d+)\s*アウト/g, '$1出局').replace(/(\d+)\s*outs?/gi, '$1出局');
+    }
+
+    function homeGameDetailBasesLabel(value) {
+      let raw = String(value ?? '').trim();
+      if (!raw) return '';
+      raw = raw.replace(/走者なし|ランナーなし|no runners?/gi, '壘上無人')
+        .replace(/一塁|1塁/g, '一壘')
+        .replace(/二塁|2塁/g, '二壘')
+        .replace(/三塁|3塁/g, '三壘');
+      if (/壘上無人/.test(raw)) return '壘上無人';
+      if (/一、二、三壘|滿壘/.test(raw)) return /滿壘/.test(raw) ? '一、二、三壘' : raw;
+      const bases = [];
+      if (/一壘|(?:^|[^0-9])1(?:[^0-9]|$)/.test(raw)) bases.push('一');
+      if (/二壘|(?:^|[^0-9])2(?:[^0-9]|$)/.test(raw)) bases.push('二');
+      if (/三壘|(?:^|[^0-9])3(?:[^0-9]|$)/.test(raw)) bases.push('三');
+      return bases.length ? `${[...new Set(bases)].join('、')}壘` : raw;
+    }
+
+    function homeGameDetailRbiLabel(value) {
+      const n = Number(value);
+      return Number.isFinite(n) && n > 0 ? `${Math.floor(n)}打點` : '';
+    }
+
+    function homeGameDetailMeta(play) {
+      return [
+        homeGameDetailOutLabel(play?.outs),
+        homeGameDetailBasesLabel(play?.bases),
+        homeGameDetailRbiLabel(play?.rbi)
+      ].map(v => String(v || '').trim()).filter(Boolean).join('｜');
     }
 
     function homeGameDetailGroups(plays = []) {
@@ -5291,7 +5329,7 @@ bg2: {
             ${group.plays.map(play => `
               <div class="game-detail-pa-row">
                 <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span>${escapeHtml(String(play?.result || '—'))}</span></div>
-                <div class="game-detail-pa-meta">${[play?.outs, play?.bases, play?.count].map(v => String(v || '').trim()).filter(Boolean).map(escapeHtml).join('｜')}</div>
+                <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
               </div>`).join('')}
           </div>
         </details>`).join('') : `<div class="game-detail-empty">${status === 'scheduled' ? '比賽尚未開始，開打後這裡會顯示逐打席。' : loading ? '正在讀取官方逐打席…' : '官方來源目前沒有可顯示的逐打席。'}</div>`;
