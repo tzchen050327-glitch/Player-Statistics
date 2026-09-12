@@ -631,7 +631,7 @@
     }
 
     async function leagueDailyGamesRequest(league, date) {
-      const response = await fetch(LEAGUE_GAMES_API_URL, {
+      const response = await fetch(league === 'NPB' ? NPB_GAMES_API_URL : LEAGUE_GAMES_API_URL, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
         body:JSON.stringify({
