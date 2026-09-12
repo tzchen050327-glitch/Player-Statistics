@@ -1,10 +1,14 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v157';
-const APP_VERSION = 'v2.40';
+const CACHE_NAME = 'baseball-player-card-pwa-v158';
+
+// 穩定版啟動策略：核心 app.js / index.html 保持原始版本，
+// Service Worker 不再動態改寫 APP_VERSION，避免啟動檢查與 controllerchange 互相觸發。
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.40',
+  './styles.css?v=v2.33',
+  './app.js?v=v2.33',
   './game-detail-enhancement.css?v=v2.40',
+  './game-detail-enhancement.js?v=v2.40',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -12,58 +16,30 @@ const APP_SHELL = [
 
 function enhanceHtml(text) {
   let html = String(text || '');
-  html = html.replace(/<meta\s+name=["']app-version["']\s+content=["'][^"']*["']\s*\/?\s*>/i, `<meta name="app-version" content="${APP_VERSION}" />`);
-  html = html.replace(/app\.js\?v=v[\d.]+/g, `app.js?v=${APP_VERSION}`);
-  html = html.replace(/styles\.css\?v=v[\d.]+/g, `styles.css?v=${APP_VERSION}`);
-  html = html.replace(/game-detail-enhancement\.css\?v=v[\d.]+/g, `game-detail-enhancement.css?v=${APP_VERSION}`);
-  html = html.replace(/game-detail-enhancement\.js\?v=v[\d.]+/g, `game-detail-enhancement.js?v=${APP_VERSION}`);
-  html = html.replace(/(<button[^>]+id=["']appVersionBadge["'][^>]*>)[^<]*(<\/button>)/i, `$1${APP_VERSION}$2`);
+  html = html.replace(/game-detail-enhancement\.css\?v=v[\d.]+/g, 'game-detail-enhancement.css?v=v2.40');
+  html = html.replace(/game-detail-enhancement\.js\?v=v[\d.]+/g, 'game-detail-enhancement.js?v=v2.40');
+
   if (!html.includes('game-detail-enhancement.css')) {
-    html = html.replace('</head>', `  <link rel="stylesheet" href="./game-detail-enhancement.css?v=${APP_VERSION}" />\n</head>`);
+    html = html.replace('</head>', '  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.40" />\n</head>');
   }
   if (!html.includes('game-detail-enhancement.js')) {
-    html = html.replace('</body>', `  <script src="./game-detail-enhancement.js?v=${APP_VERSION}"></script>\n</body>`);
+    html = html.replace('</body>', '  <script src="./game-detail-enhancement.js?v=v2.40"></script>\n</body>');
   }
   return html;
 }
 
-function enhanceAppJs(text) {
-  let js = String(text || '');
-  js = js.replace(/const APP_VERSION = 'v[\d.]+';/, `const APP_VERSION = '${APP_VERSION}';`);
-  js = js.replace(/default-hitter\.jpg\?v=v[\d.]+/g, `default-hitter.jpg?v=${APP_VERSION}`);
-  js = js.replace(/default-pitcher\.jpg\?v=v[\d.]+/g, `default-pitcher.jpg?v=${APP_VERSION}`);
-  return js;
-}
-
-function enhanceDetailJs(text) {
-  let js = String(text || '');
-  js = js.replace(
-    "if (badge) badge.textContent = UI_VERSION;",
-    "if (badge && badge.textContent !== UI_VERSION) badge.textContent = UI_VERSION;"
-  );
-  js = js.replace(
-    "if (splash) splash.textContent = `VERSION ${UI_VERSION}`;",
-    "const splashVersion = `VERSION ${UI_VERSION}`;\n    if (splash && splash.textContent !== splashVersion) splash.textContent = splashVersion;"
-  );
-  js = js.replace(
-    "if (meta) meta.setAttribute('content', UI_VERSION);",
-    "if (meta && meta.getAttribute('content') !== UI_VERSION) meta.setAttribute('content', UI_VERSION);"
-  );
-  js = js.replace(
-    /new MutationObserver\(\(\) => \{\s*applyVersionLabel\(\);\s*scheduleEnhance\(\);\s*\}\)\.observe/,
-    "new MutationObserver(() => {\n    scheduleEnhance();\n  }).observe"
-  );
-  return js;
-}
-
-async function rewriteResponse(response, transform, contentType) {
+async function enhancedHtmlResponse(response) {
   if (!response || response.status !== 200 || response.type === 'opaque') return response;
-  const text = transform(await response.clone().text());
+  const html = enhanceHtml(await response.clone().text());
   const headers = new Headers(response.headers);
-  headers.set('content-type', contentType);
+  headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('cache-control', 'no-store, max-age=0');
   headers.delete('content-length');
-  return new Response(text, { status: response.status, statusText: response.statusText, headers });
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 }
 
 self.addEventListener('install', event => {
@@ -84,8 +60,6 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of clients) client.postMessage({ type: 'V240_SW_ACTIVE' });
   })());
 });
 
@@ -100,48 +74,32 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   const isNavigation = request.mode === 'navigate';
   const isHtml = request.destination === 'document' || url.pathname.endsWith('/index.html');
-  const isAppJs = url.pathname.endsWith('/app.js');
-  const isDetailJs = url.pathname.endsWith('/game-detail-enhancement.js');
 
   if (isNavigation || isHtml) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
-        const rewritten = await rewriteResponse(response, enhanceHtml, 'text/html; charset=utf-8');
-        if (rewritten?.ok) caches.open(CACHE_NAME).then(cache => cache.put('./index.html', rewritten.clone()));
-        return rewritten;
+        const enhanced = await enhancedHtmlResponse(response);
+        if (enhanced?.ok) {
+          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', enhanced.clone()));
+        }
+        return enhanced;
       } catch {
         const cached = await caches.match('./index.html') || await caches.match('./');
         if (!cached) return Response.error();
-        return rewriteResponse(cached, enhanceHtml, 'text/html; charset=utf-8');
+        return enhancedHtmlResponse(cached);
       }
     })());
     return;
   }
 
-  if (isAppJs) {
+  // 核心 JS 與 Service Worker 永遠優先抓線上原檔，不再做任何字串改寫。
+  if (url.pathname.endsWith('/app.js') || url.pathname.endsWith('/service-worker.js')) {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request, { cache: 'no-store' });
-        return rewriteResponse(response, enhanceAppJs, 'application/javascript; charset=utf-8');
+        return await fetch(request, { cache: 'no-store' });
       } catch {
-        const cached = await caches.match(request, { ignoreSearch: true });
-        if (!cached) return Response.error();
-        return rewriteResponse(cached, enhanceAppJs, 'application/javascript; charset=utf-8');
-      }
-    })());
-    return;
-  }
-
-  if (isDetailJs) {
-    event.respondWith((async () => {
-      try {
-        const response = await fetch(request, { cache: 'no-store' });
-        return rewriteResponse(response, enhanceDetailJs, 'application/javascript; charset=utf-8');
-      } catch {
-        const cached = await caches.match(request, { ignoreSearch: true });
-        if (!cached) return Response.error();
-        return rewriteResponse(cached, enhanceDetailJs, 'application/javascript; charset=utf-8');
+        return await caches.match(request, { ignoreSearch: true }) || Response.error();
       }
     })());
     return;
