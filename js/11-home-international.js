@@ -500,6 +500,11 @@
 
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
+    const homeGameDetailCache = new Map();
+    const HOME_GAME_DETAIL_AUTO_LIMIT = 120;
+    const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
+    let activeHomeGameDetail = null;
+    let homeGameDetailRefreshTimer = 0;
     const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
     const HOME_DAILY_AUTO_REFRESH_LIMIT = 360;
@@ -567,6 +572,7 @@
 
     function scheduleHomeDailyGamesAutoRefresh() {
       stopHomeDailyGamesAutoRefresh();
+      if (activeHomeGameDetail) return;
       if (document.visibilityState !== 'visible' || currentPage !== 'home') return;
       const league = homeDailyGamesLeague();
       const date = String(els.gameDate?.value || localISODate());
@@ -588,10 +594,12 @@
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+        if (activeHomeGameDetail) refreshActiveHomeGameDetail();
         // Reuse a still-fresh result instead of forcing another Edge Function invocation on every focus change.
-        if (currentPage === 'home') renderHomeDailyGames();
+        else if (currentPage === 'home') renderHomeDailyGames();
       } else {
         stopHomeDailyGamesAutoRefresh();
+        stopHomeGameDetailRefresh();
       }
     });
 
@@ -640,6 +648,233 @@
         throw new Error(data?.error || `當日賽事讀取失敗（${response.status}）`);
       }
       return Array.isArray(data.games) ? data.games : [];
+    }
+
+
+    function homeGameDetailSupported(league) {
+      return league === 'CPBL' || league === 'NPB';
+    }
+
+    function homeGameDetailKey(league, date, game = {}) {
+      return [league, date, String(game?.id || ''), String(game?.away || ''), String(game?.home || '')].join('|');
+    }
+
+    function homeGameDetailBudget() {
+      const day = localISODate();
+      try {
+        const raw = JSON.parse(localStorage.getItem(HOME_GAME_DETAIL_AUTO_STORAGE_KEY) || '{}');
+        if (raw?.day === day) return { day, count:Math.max(0, Number(raw.count) || 0) };
+      } catch {}
+      return { day, count:0 };
+    }
+
+    function homeGameDetailAutoAvailable() {
+      return homeGameDetailBudget().count < HOME_GAME_DETAIL_AUTO_LIMIT;
+    }
+
+    function consumeHomeGameDetailAuto() {
+      const state = homeGameDetailBudget();
+      if (state.count >= HOME_GAME_DETAIL_AUTO_LIMIT) return false;
+      try {
+        localStorage.setItem(HOME_GAME_DETAIL_AUTO_STORAGE_KEY, JSON.stringify({ day:state.day, count:state.count + 1 }));
+      } catch {}
+      return true;
+    }
+
+    async function leagueGameDetailRequest(league, date, game) {
+      const response = await fetch(LEAGUE_GAME_DETAIL_API_URL, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          action:'game-detail',
+          league,
+          date,
+          gameId:String(game?.id || ''),
+          away:String(game?.away || ''),
+          home:String(game?.home || ''),
+          venue:String(game?.venue || ''),
+          status:String(game?.status || '')
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `單場逐打席讀取失敗（${response.status}）`);
+      return data;
+    }
+
+    function homeGameDetailStatusLabel(detail) {
+      const status = String(detail?.status || '').toLowerCase();
+      if (status === 'live') return ['比賽中', detail?.game?.inningLabel || ''].filter(Boolean).join('｜');
+      if (status === 'final') return '比賽結束';
+      if (status === 'cancelled') return '延賽／取消';
+      return '尚未開打';
+    }
+
+    function homeGameDetailScore(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? String(n) : '—';
+    }
+
+    function homeGameDetailGroups(plays = []) {
+      const map = new Map();
+      for (const play of Array.isArray(plays) ? plays : []) {
+        const inning = Math.max(0, Number(play?.inning) || 0);
+        const half = String(play?.half || '');
+        const key = `${inning}|${half}`;
+        if (!map.has(key)) map.set(key, { inning, half, team:String(play?.team || ''), plays:[] });
+        map.get(key).plays.push(play);
+      }
+      return [...map.values()].sort((a,b) => a.inning - b.inning || (a.half === 'top' ? -1 : 1));
+    }
+
+    function ensureHomeGameDetailOverlay() {
+      let overlay = document.getElementById('homeGameDetailOverlay');
+      if (overlay) return overlay;
+      overlay = document.createElement('div');
+      overlay.id = 'homeGameDetailOverlay';
+      overlay.className = 'home-game-detail-overlay hidden';
+      overlay.innerHTML = '<div class="home-game-detail-page" role="dialog" aria-modal="true" aria-label="單場逐打席"><div id="homeGameDetailBody"></div></div>';
+      document.body.appendChild(overlay);
+      return overlay;
+    }
+
+    function stopHomeGameDetailRefresh() {
+      if (homeGameDetailRefreshTimer) clearTimeout(homeGameDetailRefreshTimer);
+      homeGameDetailRefreshTimer = 0;
+    }
+
+    function closeHomeGameDetail() {
+      stopHomeGameDetailRefresh();
+      activeHomeGameDetail = null;
+      const overlay = document.getElementById('homeGameDetailOverlay');
+      if (overlay) overlay.classList.add('hidden');
+      document.body.classList.remove('home-game-detail-open');
+      if (currentPage === 'home') scheduleHomeDailyGamesAutoRefresh();
+    }
+
+    function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
+      const overlay = ensureHomeGameDetailOverlay();
+      const body = overlay.querySelector('#homeGameDetailBody');
+      if (!body) return;
+      const status = String(detail?.status || game?.status || 'scheduled').toLowerCase();
+      const currentBatter = String(detail?.current?.batter?.name || '').trim();
+      const currentPitcher = String(detail?.current?.pitcher?.name || '').trim();
+      const groups = homeGameDetailGroups(detail?.plays || []);
+      const gameInfo = detail?.game || game || {};
+      const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
+      const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
+      const matchup = status === 'live' ? `
+        <div class="game-detail-current-grid">
+          <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
+          <div class="game-detail-current-card"><span>目前投手</span><strong>${escapeHtml(currentPitcher || '讀取中')}</strong></div>
+        </div>` : '';
+      const playsHtml = groups.length ? groups.map(group => `
+        <details class="game-detail-inning" open>
+          <summary>${group.inning || '—'}局${group.half === 'top' ? '上' : group.half === 'bottom' ? '下' : ''}${group.team ? `｜${escapeHtml(group.team)}` : ''}<span>${group.plays.length} 打席</span></summary>
+          <div class="game-detail-pa-list">
+            ${group.plays.map(play => `
+              <div class="game-detail-pa-row">
+                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span>${escapeHtml(String(play?.result || '—'))}</span></div>
+                <div class="game-detail-pa-meta">${[play?.outs, play?.bases, play?.count].map(v => String(v || '').trim()).filter(Boolean).map(escapeHtml).join('｜')}</div>
+              </div>`).join('')}
+          </div>
+        </details>`).join('') : `<div class="game-detail-empty">${status === 'scheduled' ? '比賽尚未開始，開打後這裡會顯示逐打席。' : loading ? '正在讀取官方逐打席…' : '官方來源目前沒有可顯示的逐打席。'}</div>`;
+
+      body.innerHTML = `
+        <header class="game-detail-sticky-head">
+          <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回賽事</button>
+          <div class="game-detail-head-copy"><strong>${escapeHtml(leagueLabel)}</strong><span>${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}</span></div>
+          ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE</span>` : ''}
+        </header>
+        <main class="game-detail-content">
+          <section class="game-detail-score-card">
+            <div class="game-detail-status">${escapeHtml(homeGameDetailStatusLabel(detail || {status,game:gameInfo}))}${loading ? '｜更新中…' : ''}</div>
+            <div class="game-detail-score-row">
+              <div><span>${escapeHtml(String(gameInfo?.away || game?.away || '客隊'))}</span><strong>${homeGameDetailScore(gameInfo?.awayScore)}</strong></div>
+              <b>－</b>
+              <div><span>${escapeHtml(String(gameInfo?.home || game?.home || '主隊'))}</span><strong>${homeGameDetailScore(gameInfo?.homeScore)}</strong></div>
+            </div>
+            ${matchup}
+          </section>
+          ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
+          <section class="game-detail-play-section">
+            <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>
+            ${playsHtml}
+          </section>
+        </main>`;
+      overlay.classList.remove('hidden');
+      document.body.classList.add('home-game-detail-open');
+      body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
+      body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
+    }
+
+    function homeGameDetailCacheTtl(detail) {
+      const status = String(detail?.status || '').toLowerCase();
+      if (status === 'final' || status === 'cancelled') return 12 * 60 * 60 * 1000;
+      if (status === 'scheduled') return 5 * 60 * 1000;
+      return 45 * 1000;
+    }
+
+    function scheduleHomeGameDetailRefresh(detail) {
+      stopHomeGameDetailRefresh();
+      if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
+      if (String(detail?.status || '').toLowerCase() !== 'live') return;
+      if (!homeGameDetailAutoAvailable()) return;
+      const delay = activeHomeGameDetail.league === 'NPB' ? 90 * 1000 : 60 * 1000;
+      homeGameDetailRefreshTimer = setTimeout(() => {
+        homeGameDetailRefreshTimer = 0;
+        if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
+        refreshActiveHomeGameDetail({ force:true, automatic:true });
+      }, globalThis.navigator?.connection?.saveData ? delay * 2 : delay);
+    }
+
+    async function refreshActiveHomeGameDetail({ force = false, automatic = false } = {}) {
+      if (!activeHomeGameDetail) return;
+      const { league, date, game } = activeHomeGameDetail;
+      const key = homeGameDetailKey(league, date, game);
+      const cached = homeGameDetailCache.get(key);
+      const age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
+      if (!force && cached && age < homeGameDetailCacheTtl(cached.detail)) {
+        renderHomeGameDetail(cached.detail, game);
+        scheduleHomeGameDetailRefresh(cached.detail);
+        return;
+      }
+      if (activeHomeGameDetail.loading) return;
+      activeHomeGameDetail.loading = true;
+      if (cached?.detail) renderHomeGameDetail(cached.detail, game, { loading:true });
+      else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
+      try {
+        const detail = await leagueGameDetailRequest(league, date, game);
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        homeGameDetailCache.set(key, { at:Date.now(), detail });
+        if (detail?.game?.id && !game.id) game.id = detail.game.id;
+        renderHomeGameDetail(detail, game);
+        scheduleHomeGameDetailRefresh(detail);
+      } catch (error) {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        const detail = cached?.detail || { status:game?.status, game, plays:[] };
+        renderHomeGameDetail(detail, game, { error:error?.message || '單場逐打席讀取失敗。' });
+        if (automatic) {
+          stopHomeGameDetailRefresh();
+          homeGameDetailRefreshTimer = setTimeout(() => {
+            homeGameDetailRefreshTimer = 0;
+            if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });
+          }, 5 * 60 * 1000);
+        }
+      } finally {
+        if (activeHomeGameDetail && activeHomeGameDetail.key === key) activeHomeGameDetail.loading = false;
+      }
+    }
+
+    function openHomeGameDetail(game, league, date) {
+      if (!homeGameDetailSupported(league)) return;
+      stopHomeDailyGamesAutoRefresh();
+      const key = homeGameDetailKey(league, date, game);
+      activeHomeGameDetail = { league, date, game, key, loading:false };
+      const cached = homeGameDetailCache.get(key);
+      if (cached?.detail) renderHomeGameDetail(cached.detail, game);
+      else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
+      refreshActiveHomeGameDetail();
     }
 
     async function loadHomeDailyGames(league, date, { force = false } = {}) {
@@ -704,7 +939,7 @@
       } else if (!games.length) {
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map(game => {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map((game, gameIndex) => {
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const showScore = status === 'live' || status === 'final';
@@ -712,7 +947,7 @@
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
           const venue = String(game?.venue || '').trim();
           return `
-            <article class="home-game-card status-${escapeAttr(status)}">
+            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
@@ -754,6 +989,22 @@
         homeDailyGamesCache.delete(key);
         renderHomeDailyGames({ force:true });
       });
+      if (homeGameDetailSupported(league)) {
+        host.querySelectorAll('[data-game-detail-index]').forEach(card => {
+          const open = () => {
+            const index = Number(card.dataset.gameDetailIndex);
+            const game = games[index];
+            if (game) openHomeGameDetail(game, league, date);
+          };
+          card.addEventListener('click', open);
+          card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              open();
+            }
+          });
+        });
+      }
 
       if (!skipLoad && (force || !cached || !fresh) && !loading) {
         void loadHomeDailyGames(league, date, { force }).then(() => {});
