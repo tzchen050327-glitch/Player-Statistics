@@ -5022,6 +5022,8 @@ bg2: {
     const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
     let activeHomeGameDetail = null;
     let homeGameDetailRefreshTimer = 0;
+    let homeGameDetailCountdownTimer = 0;
+    let homeGameDetailNextRefreshAt = 0;
     let homeGameDetailErrorStreak = 0;
     const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
@@ -5332,9 +5334,39 @@ bg2: {
       apply(target);
     }
 
+    function updateHomeGameDetailRefreshCountdown() {
+      const el = document.getElementById('homeGameDetailRefreshCountdown');
+      if (!el) return;
+      if (activeHomeGameDetail?.loading) {
+        el.textContent = '更新中…';
+        return;
+      }
+      if (!homeGameDetailNextRefreshAt) {
+        el.textContent = '';
+        return;
+      }
+      const seconds = Math.max(0, Math.ceil((homeGameDetailNextRefreshAt - Date.now()) / 1000));
+      el.textContent = `${seconds}秒後更新`;
+    }
+
+    function startHomeGameDetailRefreshCountdown(delay) {
+      if (homeGameDetailCountdownTimer) clearInterval(homeGameDetailCountdownTimer);
+      homeGameDetailNextRefreshAt = Date.now() + Math.max(0, Number(delay) || 0);
+      updateHomeGameDetailRefreshCountdown();
+      homeGameDetailCountdownTimer = setInterval(updateHomeGameDetailRefreshCountdown, 1000);
+    }
+
+    function stopHomeGameDetailRefreshCountdown() {
+      if (homeGameDetailCountdownTimer) clearInterval(homeGameDetailCountdownTimer);
+      homeGameDetailCountdownTimer = 0;
+      homeGameDetailNextRefreshAt = 0;
+      updateHomeGameDetailRefreshCountdown();
+    }
+
     function stopHomeGameDetailRefresh() {
       if (homeGameDetailRefreshTimer) clearTimeout(homeGameDetailRefreshTimer);
       homeGameDetailRefreshTimer = 0;
+      stopHomeGameDetailRefreshCountdown();
     }
 
     function closeHomeGameDetail() {
@@ -5378,7 +5410,7 @@ bg2: {
         <header class="game-detail-sticky-head">
           <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回賽事</button>
           <div class="game-detail-head-copy"><strong>${escapeHtml(leagueLabel)}</strong><span>${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}</span></div>
-          ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE</span>` : ''}
+          ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
         <main class="game-detail-content">
           <section class="game-detail-score-card">
@@ -5400,6 +5432,7 @@ bg2: {
       document.body.classList.add('home-game-detail-open');
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
+      updateHomeGameDetailRefreshCountdown();
     }
 
     function homeGameDetailCacheTtl(detail) {
@@ -5415,8 +5448,10 @@ bg2: {
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
       const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
+      startHomeGameDetailRefreshCountdown(delay);
       homeGameDetailRefreshTimer = setTimeout(() => {
         homeGameDetailRefreshTimer = 0;
+        stopHomeGameDetailRefreshCountdown();
         if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
         refreshActiveHomeGameDetail({ force:true, automatic:true });
       }, delay);
@@ -5454,6 +5489,7 @@ bg2: {
           homeGameDetailErrorStreak = Math.min(homeGameDetailErrorStreak + 1, 5);
           const retryDelay = Math.min(10 * 60 * 1000, 60 * 1000 * (2 ** (homeGameDetailErrorStreak - 1)));
           stopHomeGameDetailRefresh();
+          startHomeGameDetailRefreshCountdown(retryDelay);
           homeGameDetailRefreshTimer = setTimeout(() => {
             homeGameDetailRefreshTimer = 0;
             if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });
