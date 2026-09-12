@@ -1,0 +1,90 @@
+name: Apply v2.19 compact daily games
+
+on:
+  push:
+    branches: [feature-v2.19-compact-daily-games]
+    paths:
+      - 'scripts/patch-v219-compact-daily-games.py'
+      - '.github/workflows/apply-v219-compact-daily-games.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply v2.19 patch
+        run: python3 scripts/patch-v219-compact-daily-games.py
+
+      - name: Validate compact scoreboard wiring
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.19'" js/00-core-config.js
+          grep -Fq "const showScore = status === 'live' || status === 'final';" js/11-home-international.js
+          grep -Fq "v2.19 compact homepage daily games" styles.css
+          grep -Fq "grid-auto-columns:minmax(170px,188px)" styles.css
+          grep -Fq "min-height:94px" styles.css
+          grep -Fq "./app.js?v=v2.19" index.html
+          grep -Fq "baseball-player-card-pwa-v136" service-worker.js
+          test -f 'index v2.19.html'
+          test -f 'index v2.18.html'
+          test ! -f 'index v2.17.html'
+
+      - name: Verify CPBL status fix
+        run: |
+          python3 - <<'PY'
+          import json, re, subprocess
+          source=open('js/00-core-config.js',encoding='utf-8').read()
+          url=re.search(r"const LEAGUE_GAMES_API_URL = '([^']+)'",source).group(1)
+          key=re.search(r"const CPBL_APP_KEY = '([^']+)'",source).group(1)
+          def fetch(date):
+            payload=json.dumps({'appKey':key,'action':'daily-games','league':'CPBL','date':date})
+            raw=subprocess.check_output(['curl','-fsS','--retry','2','--retry-delay','1',url,'-H','content-type: application/json','--data',payload],text=True)
+            data=json.loads(raw)
+            assert data.get('ok') is True, data
+            return data['games']
+          today=fetch('2026-09-12')
+          assert today, 'no CPBL games for 2026-09-12'
+          assert not any(g.get('status')=='final' for g in today), today
+          prior=fetch('2026-09-11')
+          assert prior, 'no CPBL games for 2026-09-11'
+          assert any(g.get('status')=='final' for g in prior), prior
+          print('today:', [(g['away'],g['home'],g['status'],g['time']) for g in today])
+          print('prior:', [(g['away'],g['home'],g['status']) for g in prior])
+          PY
+
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome not preinstalled; static checks passed.'
+            exit 0
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'id="homeDailyGames"' /tmp/dom.html
+          grep -Fq 'content="v2.19"' /tmp/dom.html
+
+      - name: Commit v2.19
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.19.html' js/00-core-config.js js/11-home-international.js styles.css service-worker.js
+          if [ -f 'index v2.17.html' ]; then git rm -f 'index v2.17.html'; fi
+          git commit -m 'v2.19 fix CPBL pregame status and compact scoreboard'
+          git push origin HEAD:feature-v2.19-compact-daily-games
