@@ -1,0 +1,59 @@
+name: Apply v2.24 live rail layout
+
+on:
+  push:
+    branches: [feature-v2.24-live-rail-stable-height]
+    paths:
+      - 'scripts/patch-v224-live-rail-stable-height.py'
+      - '.github/workflows/apply-v224-live-rail-stable-height.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.24 patch
+        run: python3 scripts/patch-v224-live-rail-stable-height.py
+      - name: Validate layout changes
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.24'" js/00-core-config.js
+          grep -Fq 'homeLiveRefreshSweepFull' styles.css
+          grep -Fq 'left:calc(100% - 15px)' styles.css
+          grep -Fq '.home-games-state{min-height:107px}' styles.css
+          grep -Fq '.home-games-state{min-height:99px}' styles.css
+          grep -Fq '.home-daily-games-meta{position:absolute;top:1px;right:0' styles.css
+          grep -Fq "./app.js?v=v2.24" index.html
+          grep -Fq "baseball-player-card-pwa-v141" service-worker.js
+          test -f 'index v2.24.html'
+          test -f 'index v2.23.html'
+          test ! -f 'index v2.22.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.24"' /tmp/dom.html
+      - name: Commit v2.24
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.24.html' js/00-core-config.js styles.css service-worker.js
+          if [ -f 'index v2.22.html' ]; then git rm -f 'index v2.22.html'; fi
+          git commit -m 'v2.24 stretch live refresh rail and stabilize schedule height'
+          git push origin HEAD:feature-v2.24-live-rail-stable-height
