@@ -1,11 +1,10 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v156';
+const CACHE_NAME = 'baseball-player-card-pwa-v157';
 const APP_VERSION = 'v2.40';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css?v=v2.40',
   './game-detail-enhancement.css?v=v2.40',
-  './game-detail-enhancement.js?v=v2.40',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -33,6 +32,27 @@ function enhanceAppJs(text) {
   js = js.replace(/const APP_VERSION = 'v[\d.]+';/, `const APP_VERSION = '${APP_VERSION}';`);
   js = js.replace(/default-hitter\.jpg\?v=v[\d.]+/g, `default-hitter.jpg?v=${APP_VERSION}`);
   js = js.replace(/default-pitcher\.jpg\?v=v[\d.]+/g, `default-pitcher.jpg?v=${APP_VERSION}`);
+  return js;
+}
+
+function enhanceDetailJs(text) {
+  let js = String(text || '');
+  js = js.replace(
+    "if (badge) badge.textContent = UI_VERSION;",
+    "if (badge && badge.textContent !== UI_VERSION) badge.textContent = UI_VERSION;"
+  );
+  js = js.replace(
+    "if (splash) splash.textContent = `VERSION ${UI_VERSION}`;",
+    "const splashVersion = `VERSION ${UI_VERSION}`;\n    if (splash && splash.textContent !== splashVersion) splash.textContent = splashVersion;"
+  );
+  js = js.replace(
+    "if (meta) meta.setAttribute('content', UI_VERSION);",
+    "if (meta && meta.getAttribute('content') !== UI_VERSION) meta.setAttribute('content', UI_VERSION);"
+  );
+  js = js.replace(
+    /new MutationObserver\(\(\) => \{\s*applyVersionLabel\(\);\s*scheduleEnhance\(\);\s*\}\)\.observe/,
+    "new MutationObserver(() => {\n    scheduleEnhance();\n  }).observe"
+  );
   return js;
 }
 
@@ -81,6 +101,7 @@ self.addEventListener('fetch', event => {
   const isNavigation = request.mode === 'navigate';
   const isHtml = request.destination === 'document' || url.pathname.endsWith('/index.html');
   const isAppJs = url.pathname.endsWith('/app.js');
+  const isDetailJs = url.pathname.endsWith('/game-detail-enhancement.js');
 
   if (isNavigation || isHtml) {
     event.respondWith((async () => {
@@ -107,6 +128,20 @@ self.addEventListener('fetch', event => {
         const cached = await caches.match(request, { ignoreSearch: true });
         if (!cached) return Response.error();
         return rewriteResponse(cached, enhanceAppJs, 'application/javascript; charset=utf-8');
+      }
+    })());
+    return;
+  }
+
+  if (isDetailJs) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        return rewriteResponse(response, enhanceDetailJs, 'application/javascript; charset=utf-8');
+      } catch {
+        const cached = await caches.match(request, { ignoreSearch: true });
+        if (!cached) return Response.error();
+        return rewriteResponse(cached, enhanceDetailJs, 'application/javascript; charset=utf-8');
       }
     })());
     return;
