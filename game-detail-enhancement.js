@@ -24,11 +24,12 @@
 
   function applyVersionLabel() {
     const badge = document.getElementById('appVersionBadge');
-    if (badge) badge.textContent = UI_VERSION;
+    if (badge && badge.textContent !== UI_VERSION) badge.textContent = UI_VERSION;
     const splash = document.getElementById('appSplashVersion');
-    if (splash) splash.textContent = `VERSION ${UI_VERSION}`;
+    const splashText = `VERSION ${UI_VERSION}`;
+    if (splash && splash.textContent !== splashText) splash.textContent = splashText;
     const meta = document.querySelector('meta[name="app-version"]');
-    if (meta) meta.setAttribute('content', UI_VERSION);
+    if (meta && meta.getAttribute('content') !== UI_VERSION) meta.setAttribute('content', UI_VERSION);
   }
 
   function esc(value) {
@@ -38,9 +39,7 @@
   }
 
   function normalizeBaseState(value) {
-    if (Array.isArray(value)) {
-      return { first: !!value[0], second: !!value[1], third: !!value[2] };
-    }
+    if (Array.isArray(value)) return { first: !!value[0], second: !!value[1], third: !!value[2] };
     if (value && typeof value === 'object') {
       return {
         first: !!(value.first ?? value[1] ?? value.base1),
@@ -84,16 +83,13 @@
   function currentOuts(detail) {
     const direct = parseOutNumber(detail?.current?.outs);
     if (direct !== null) return Math.min(2, direct);
-
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
     if (!last) return 0;
-
-    const label = String(detail?.game?.inningLabel || '');
-    const inningMatch = label.match(/(\d+)局([上下])/);
-    if (inningMatch) {
-      const sameInning = Number(inningMatch[1]) === Number(last.inning || 0);
-      const sameHalf = (inningMatch[2] === '上' && last.half === 'top') || (inningMatch[2] === '下' && last.half === 'bottom');
+    const m = String(detail?.game?.inningLabel || '').match(/(\d+)局([上下])/);
+    if (m) {
+      const sameInning = Number(m[1]) === Number(last.inning || 0);
+      const sameHalf = (m[2] === '上' && last.half === 'top') || (m[2] === '下' && last.half === 'bottom');
       if (!sameInning || !sameHalf) return 0;
     }
     const after = inferredOutsAfterPlay(last);
@@ -101,14 +97,13 @@
   }
 
   function renderDiamond(value) {
-    const state = normalizeBaseState(value);
-    return `
-      <div class="gdx-diamond" aria-label="目前壘包狀態">
-        <span class="gdx-base gdx-base-second ${state.second ? 'is-on' : ''}" title="二壘"></span>
-        <span class="gdx-base gdx-base-third ${state.third ? 'is-on' : ''}" title="三壘"></span>
-        <span class="gdx-base gdx-base-first ${state.first ? 'is-on' : ''}" title="一壘"></span>
-        <span class="gdx-home"></span>
-      </div>`;
+    const s = normalizeBaseState(value);
+    return `<div class="gdx-diamond" aria-label="目前壘包狀態">
+      <span class="gdx-base gdx-base-second ${s.second ? 'is-on' : ''}" title="二壘"></span>
+      <span class="gdx-base gdx-base-third ${s.third ? 'is-on' : ''}" title="三壘"></span>
+      <span class="gdx-base gdx-base-first ${s.first ? 'is-on' : ''}" title="一壘"></span>
+      <span class="gdx-home"></span>
+    </div>`;
   }
 
   function safeCell(value) {
@@ -123,12 +118,10 @@
       const text = `${play?.result || ''} ${play?.raw || ''}`;
       const offense = play?.half === 'bottom' ? 'home' : 'away';
       if (/全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text)) {
-        if (offense === 'away') awayH += 1;
-        else homeH += 1;
+        if (offense === 'away') awayH += 1; else homeH += 1;
       }
       if (/失誤上壘|失誤|エラー/.test(text)) {
-        if (offense === 'away') homeE += 1;
-        else awayE += 1;
+        if (offense === 'away') homeE += 1; else awayE += 1;
       }
     }
     return { awayH, homeH, awayE, homeE };
@@ -141,20 +134,20 @@
     const innings = Array.isArray(source.innings) ? source.innings.map(String) : [];
     const away = Array.isArray(source.away) ? source.away : [];
     const home = Array.isArray(source.home) ? source.home : [];
-    const valueOrFallback = (value, fallback) => safeCell(value) === '' ? fallback : value;
+    const fallback = (value, alt) => safeCell(value) === '' ? alt : value;
     return {
       innings,
       away,
       home,
       awayTotals: {
         R: source?.awayTotals?.R ?? game.awayScore ?? '',
-        H: valueOrFallback(source?.awayTotals?.H, inferred.awayH),
-        E: valueOrFallback(source?.awayTotals?.E, inferred.awayE)
+        H: fallback(source?.awayTotals?.H, inferred.awayH),
+        E: fallback(source?.awayTotals?.E, inferred.awayE)
       },
       homeTotals: {
         R: source?.homeTotals?.R ?? game.homeScore ?? '',
-        H: valueOrFallback(source?.homeTotals?.H, inferred.homeH),
-        E: valueOrFallback(source?.homeTotals?.E, inferred.homeE)
+        H: fallback(source?.homeTotals?.H, inferred.homeH),
+        E: fallback(source?.homeTotals?.E, inferred.homeE)
       }
     };
   }
@@ -162,68 +155,40 @@
   function renderScoreboard(detail) {
     const board = normalizedBoard(detail);
     const game = detail?.game || {};
-    const innings = board.innings;
-    const inningHead = innings.map(x => `<th>${esc(x)}</th>`).join('');
-    const rowCells = (values) => innings.map((_, i) => `<td>${esc(safeCell(values[i]))}</td>`).join('');
-    return `
-      <section class="gdx-scoreboard game-detail-enhanced-marker" aria-label="計分板">
-        <div class="gdx-section-head"><strong>計分板</strong></div>
-        <div class="gdx-scoreboard-scroll">
-          <table>
-            <thead><tr>
-              <th class="gdx-team-col">球隊</th>
-              ${inningHead}
-              <th>R</th><th>H</th><th>E</th>
-            </tr></thead>
-            <tbody>
-              <tr>
-                <th class="gdx-team-col">${esc(game.away || '客隊')}</th>
-                ${rowCells(board.away)}
-                <td class="gdx-total">${esc(safeCell(board.awayTotals.R))}</td>
-                <td>${esc(safeCell(board.awayTotals.H))}</td>
-                <td>${esc(safeCell(board.awayTotals.E))}</td>
-              </tr>
-              <tr>
-                <th class="gdx-team-col">${esc(game.home || '主隊')}</th>
-                ${rowCells(board.home)}
-                <td class="gdx-total">${esc(safeCell(board.homeTotals.R))}</td>
-                <td>${esc(safeCell(board.homeTotals.H))}</td>
-                <td>${esc(safeCell(board.homeTotals.E))}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>`;
+    const head = board.innings.map(x => `<th>${esc(x)}</th>`).join('');
+    const cells = values => board.innings.map((_, i) => `<td>${esc(safeCell(values[i]))}</td>`).join('');
+    return `<section class="gdx-scoreboard game-detail-enhanced-marker" aria-label="計分板">
+      <div class="gdx-section-head"><strong>計分板</strong></div>
+      <div class="gdx-scoreboard-scroll"><table>
+        <thead><tr><th class="gdx-team-col">球隊</th>${head}<th>R</th><th>H</th><th>E</th></tr></thead>
+        <tbody>
+          <tr><th class="gdx-team-col">${esc(game.away || '客隊')}</th>${cells(board.away)}<td class="gdx-total">${esc(safeCell(board.awayTotals.R))}</td><td>${esc(safeCell(board.awayTotals.H))}</td><td>${esc(safeCell(board.awayTotals.E))}</td></tr>
+          <tr><th class="gdx-team-col">${esc(game.home || '主隊')}</th>${cells(board.home)}<td class="gdx-total">${esc(safeCell(board.homeTotals.R))}</td><td>${esc(safeCell(board.homeTotals.H))}</td><td>${esc(safeCell(board.homeTotals.E))}</td></tr>
+        </tbody>
+      </table></div>
+    </section>`;
   }
 
   function renderLiveSituation(detail) {
     const pitcher = String(detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || '').trim() || '讀取中';
     const batter = String(detail?.current?.batter?.fullName || detail?.current?.batter?.name || '').trim() || '等待下一位打者';
-    const outs = currentOuts(detail);
-    return `
-      <section class="gdx-live-situation game-detail-enhanced-marker">
-        <div class="gdx-bases-card">
-          <span>目前壘包</span>
-          ${renderDiamond(currentBaseState(detail))}
-          <strong class="gdx-outs">${outs}出局</strong>
-        </div>
-        <div class="gdx-current-stack">
-          <div class="gdx-current-row"><span>目前投手</span><strong>${esc(pitcher)}</strong></div>
-          <div class="gdx-current-row"><span>目前打者</span><strong>${esc(batter)}</strong></div>
-        </div>
-      </section>`;
+    return `<section class="gdx-live-situation game-detail-enhanced-marker">
+      <div class="gdx-bases-card"><span>目前壘包</span>${renderDiamond(currentBaseState(detail))}<strong class="gdx-outs">${currentOuts(detail)}出局</strong></div>
+      <div class="gdx-current-stack">
+        <div class="gdx-current-row"><span>目前投手</span><strong>${esc(pitcher)}</strong></div>
+        <div class="gdx-current-row"><span>目前打者</span><strong>${esc(batter)}</strong></div>
+      </div>
+    </section>`;
   }
 
   function detailStamp(detail) {
     const game = detail?.game || {};
     const last = Array.isArray(detail?.plays) && detail.plays.length ? detail.plays[detail.plays.length - 1] : null;
     const board = detail?.scoreboard || {};
-    return [
-      detail?.league, detail?.date, detail?.status, game.id, game.awayScore, game.homeScore,
+    return [detail?.league, detail?.date, detail?.status, game.id, game.awayScore, game.homeScore,
       detail?.updatedAt, detail?.current?.outs, detail?.current?.pitcher?.name, detail?.current?.batter?.name,
       board?.awayTotals?.H, board?.awayTotals?.E, board?.homeTotals?.H, board?.homeTotals?.E,
-      last?.inning, last?.half, last?.batter, last?.result, last?.bases
-    ].map(v => String(v ?? '')).join('|');
+      last?.inning, last?.half, last?.batter, last?.result, last?.bases].map(v => String(v ?? '')).join('|');
   }
 
   function sameGame(body, detail) {
@@ -242,19 +207,13 @@
     const overlay = document.getElementById('homeGameDetailOverlay');
     const body = overlay?.querySelector('#homeGameDetailBody');
     if (!overlay || overlay.classList.contains('hidden') || !body || !sameGame(body, detail)) return;
-
-    const main = body.querySelector('.game-detail-content');
     const scoreCard = body.querySelector('.game-detail-score-card');
-    if (!main || !scoreCard) return;
-
+    if (!scoreCard) return;
     const stamp = detailStamp(detail);
     if (body.dataset.gdxStamp === stamp && body.querySelector('.game-detail-enhanced-marker')) return;
     body.dataset.gdxStamp = stamp;
-
     body.querySelectorAll('.game-detail-enhanced-marker').forEach(el => el.remove());
-    const nativeCurrent = body.querySelector('.game-detail-current-grid');
-    if (nativeCurrent) nativeCurrent.remove();
-
+    body.querySelector('.game-detail-current-grid')?.remove();
     const status = String(detail.status || '').toLowerCase();
     let anchor = scoreCard;
     if (status === 'live') {
@@ -269,10 +228,7 @@
     enhanceTimer = setTimeout(enhanceGameDetail, 40);
   }
 
-  new MutationObserver(() => {
-    applyVersionLabel();
-    scheduleEnhance();
-  }).observe(document.documentElement, {
+  new MutationObserver(() => scheduleEnhance()).observe(document.documentElement, {
     childList: true,
     subtree: true,
     attributes: true,
@@ -280,9 +236,7 @@
   });
 
   document.addEventListener('click', event => {
-    if (event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) {
-      setTimeout(scheduleEnhance, 200);
-    }
+    if (event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) setTimeout(scheduleEnhance, 200);
   }, true);
 
   applyVersionLabel();
