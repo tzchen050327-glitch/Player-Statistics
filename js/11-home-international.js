@@ -501,6 +501,66 @@
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
     const HOME_DAILY_GAMES_TTL = 60 * 1000;
+    let homeDailyGamesRefreshTimer = 0;
+
+    function homeDailyGamesHasLive(games = []) {
+      return Array.isArray(games) && games.some(game => String(game?.status || '').toLowerCase() === 'live');
+    }
+
+    function homeDailyGamesStartMs(league, date, time) {
+      const m = String(time || '').match(/(\d{1,2}):(\d{2})/);
+      if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return NaN;
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      if (!Number.isFinite(hh) || !Number.isFinite(mm)) return NaN;
+      const offsetHours = league === 'NPB' || league === 'KBO' ? 9 : league === 'MLB' ? -4 : 8;
+      const [y, mo, d] = String(date).split('-').map(Number);
+      return Date.UTC(y, mo - 1, d, hh - offsetHours, mm, 0, 0);
+    }
+
+    function homeDailyGamesRefreshDelay(league, date, games = []) {
+      if (String(date || '') !== localISODate()) return 0;
+      if (homeDailyGamesHasLive(games)) return 30 * 1000;
+      const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
+      if (!scheduled.length) return 0;
+      const starts = scheduled.map(game => homeDailyGamesStartMs(league, date, game?.time)).filter(Number.isFinite);
+      if (!starts.length) return 30 * 60 * 1000;
+      const msUntil = Math.min(...starts) - Date.now();
+      if (msUntil <= 15 * 60 * 1000) return 60 * 1000;
+      if (msUntil <= 60 * 60 * 1000) return 5 * 60 * 1000;
+      if (msUntil <= 3 * 60 * 60 * 1000) return 10 * 60 * 1000;
+      return 30 * 60 * 1000;
+    }
+
+    function stopHomeDailyGamesAutoRefresh() {
+      if (homeDailyGamesRefreshTimer) clearTimeout(homeDailyGamesRefreshTimer);
+      homeDailyGamesRefreshTimer = 0;
+    }
+
+    function scheduleHomeDailyGamesAutoRefresh() {
+      stopHomeDailyGamesAutoRefresh();
+      if (document.visibilityState !== 'visible' || currentPage !== 'home') return;
+      const league = homeDailyGamesLeague();
+      const date = String(els.gameDate?.value || localISODate());
+      if (!league) return;
+      const cached = homeDailyGamesCache.get(`${league}|${date}`);
+      const games = Array.isArray(cached?.games) ? cached.games : [];
+      const delay = homeDailyGamesRefreshDelay(league, date, games);
+      if (!delay) return;
+      homeDailyGamesRefreshTimer = setTimeout(() => {
+        homeDailyGamesRefreshTimer = 0;
+        if (document.visibilityState !== 'visible' || currentPage !== 'home' || homeDailyGamesLeague() !== league || String(els.gameDate?.value || localISODate()) !== date) return;
+        renderHomeDailyGames({ force:true });
+      }, delay);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (currentPage === 'home') renderHomeDailyGames({ force:true });
+      } else {
+        stopHomeDailyGamesAutoRefresh();
+      }
+    });
 
     function homeDailyGamesLeague() {
       if (homeRootSection === 'international') return '';
@@ -634,12 +694,16 @@
         }).join('')}</div>`;
       }
 
+      scheduleHomeDailyGamesAutoRefresh();
       host.innerHTML = `
         <section class="home-daily-games-shell">
           <div class="home-daily-games-head">
             <div class="home-daily-games-title">
               <strong>當日賽事</strong>
-              <span>${escapeHtml(leagueLabel)}</span>
+              <span class="home-league-live-row">
+                <span>${escapeHtml(leagueLabel)}</span>
+                ${homeDailyGamesHasLive(games) ? `<span class="home-live-refresh-rail ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分"><i></i></span>` : ''}
+              </span>
             </div>
             <div class="home-daily-games-meta">
               <span>${escapeHtml(dateLabel)}</span>
