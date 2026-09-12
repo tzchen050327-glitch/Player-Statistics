@@ -1012,8 +1012,10 @@
                         <path d="M22.8 13.5c4.9 1 8.3 4.1 10.7 7.1l-2.6 2.5c-2.8-2.8-5.8-4.7-9.4-5.2Z"></path>
                         <circle class="battery-hand" cx="33.4" cy="21.9" r="1.7"></circle>
                       </g>
-                      <path class="battery-glove-arm" d="M14.2 14.3 8.1 18l1.7 3.3 6.8-3.4Z"></path>
-                      <ellipse class="battery-glove" cx="7.7" cy="19.4" rx="3.4" ry="2.9"></ellipse>
+                      <g class="battery-catcher-glove-side">
+                        <path class="battery-glove-arm" d="M14.2 14.3 8.1 18l1.7 3.3 6.8-3.4Z"></path>
+                        <ellipse class="battery-glove" cx="7.7" cy="19.4" rx="3.4" ry="2.9"></ellipse>
+                      </g>
                     </g>
                   </svg>
                 </span>` : ''}
