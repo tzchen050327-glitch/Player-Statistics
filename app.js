@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.40';
+    const APP_VERSION = 'v2.33';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -11,8 +11,8 @@
     const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.40';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.40';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.33';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.33';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5024,7 +5024,7 @@ bg2: {
     let homeGameDetailRefreshTimer = 0;
     const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
-    const HOME_DAILY_AUTO_REFRESH_LIMIT = 360;
+    const HOME_DAILY_AUTO_REFRESH_LIMIT = 2400;
     const HOME_DAILY_AUTO_REFRESH_STORAGE_KEY = 'home-daily-games-auto-refresh-budget-v1';
     let homeDailyGamesRefreshTimer = 0;
 
@@ -5069,7 +5069,7 @@ bg2: {
       if (String(date || '') !== localISODate()) return 0;
       if (homeDailyGamesHasLive(games)) {
         // MLB games span much more of the day, so poll it less aggressively.
-        return league === 'MLB' ? 2 * 60 * 1000 : 60 * 1000;
+        return league === 'MLB' ? 2 * 60 * 1000 : 15 * 1000;
       }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
@@ -5293,6 +5293,44 @@ bg2: {
       return overlay;
     }
 
+    function detailRunsFromScoreboard(detail, side) {
+      const values = Array.isArray(detail?.scoreboard?.[side]) ? detail.scoreboard[side] : [];
+      let total = 0;
+      let found = false;
+      for (const value of values) {
+        const raw = String(value ?? '').trim();
+        if (!/^\d+$/.test(raw)) continue;
+        total += Number(raw);
+        found = true;
+      }
+      return found ? total : null;
+    }
+
+    function syncHomeDailyGameFromDetail(league, date, game, detail) {
+      const info = detail?.game || {};
+      const awayRuns = detailRunsFromScoreboard(detail, 'away');
+      const homeRuns = detailRunsFromScoreboard(detail, 'home');
+      const normalizedStatus = String(detail?.status || '').toLowerCase();
+      const apply = target => {
+        if (!target) return;
+        const awayScore = awayRuns !== null ? awayRuns : Number(info?.awayScore);
+        const homeScore = homeRuns !== null ? homeRuns : Number(info?.homeScore);
+        if (Number.isFinite(awayScore)) target.awayScore = awayScore;
+        if (Number.isFinite(homeScore)) target.homeScore = homeScore;
+        if (normalizedStatus) target.status = normalizedStatus;
+        if (info?.id && !target.id) target.id = info.id;
+      };
+      apply(game);
+      const daily = homeDailyGamesCache.get(`${league}|${date}`);
+      const games = Array.isArray(daily?.games) ? daily.games : [];
+      const target = games.find(item =>
+        (info?.id && item?.id && String(info.id) === String(item.id))
+        || (String(item?.away || '') === String(info?.away || game?.away || '')
+          && String(item?.home || '') === String(info?.home || game?.home || ''))
+      );
+      apply(target);
+    }
+
     function stopHomeGameDetailRefresh() {
       if (homeGameDetailRefreshTimer) clearTimeout(homeGameDetailRefreshTimer);
       homeGameDetailRefreshTimer = 0;
@@ -5402,6 +5440,7 @@ bg2: {
         const detail = await leagueGameDetailRequest(league, date, game);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         homeGameDetailCache.set(key, { at:Date.now(), detail });
+        syncHomeDailyGameFromDetail(league, date, game, detail);
         if (detail?.game?.id && !game.id) game.id = detail.game.id;
         renderHomeGameDetail(detail, game);
         scheduleHomeGameDetailRefresh(detail);
