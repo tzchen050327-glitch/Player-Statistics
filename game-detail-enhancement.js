@@ -1,4 +1,5 @@
 (() => {
+  const UI_VERSION = 'v2.40';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -20,6 +21,15 @@
     } catch {}
     return response;
   };
+
+  function applyVersionLabel() {
+    const badge = document.getElementById('appVersionBadge');
+    if (badge) badge.textContent = UI_VERSION;
+    const splash = document.getElementById('appSplashVersion');
+    if (splash) splash.textContent = `VERSION ${UI_VERSION}`;
+    const meta = document.querySelector('meta[name="app-version"]');
+    if (meta) meta.setAttribute('content', UI_VERSION);
+  }
 
   function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -107,25 +117,44 @@
     return s === 'null' || s === 'undefined' ? '' : s;
   }
 
+  function inferredTotals(detail) {
+    let awayH = 0, homeH = 0, awayE = 0, homeE = 0;
+    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
+      const text = `${play?.result || ''} ${play?.raw || ''}`;
+      const offense = play?.half === 'bottom' ? 'home' : 'away';
+      if (/全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text)) {
+        if (offense === 'away') awayH += 1;
+        else homeH += 1;
+      }
+      if (/失誤上壘|失誤|エラー/.test(text)) {
+        if (offense === 'away') homeE += 1;
+        else awayE += 1;
+      }
+    }
+    return { awayH, homeH, awayE, homeE };
+  }
+
   function normalizedBoard(detail) {
     const game = detail?.game || {};
     const source = detail?.scoreboard || {};
+    const inferred = inferredTotals(detail);
     const innings = Array.isArray(source.innings) ? source.innings.map(String) : [];
     const away = Array.isArray(source.away) ? source.away : [];
     const home = Array.isArray(source.home) ? source.home : [];
+    const valueOrFallback = (value, fallback) => safeCell(value) === '' ? fallback : value;
     return {
       innings,
       away,
       home,
       awayTotals: {
         R: source?.awayTotals?.R ?? game.awayScore ?? '',
-        H: source?.awayTotals?.H ?? '',
-        E: source?.awayTotals?.E ?? ''
+        H: valueOrFallback(source?.awayTotals?.H, inferred.awayH),
+        E: valueOrFallback(source?.awayTotals?.E, inferred.awayE)
       },
       homeTotals: {
         R: source?.homeTotals?.R ?? game.homeScore ?? '',
-        H: source?.homeTotals?.H ?? '',
-        E: source?.homeTotals?.E ?? ''
+        H: valueOrFallback(source?.homeTotals?.H, inferred.homeH),
+        E: valueOrFallback(source?.homeTotals?.E, inferred.homeE)
       }
     };
   }
@@ -136,8 +165,6 @@
     const innings = board.innings;
     const inningHead = innings.map(x => `<th>${esc(x)}</th>`).join('');
     const rowCells = (values) => innings.map((_, i) => `<td>${esc(safeCell(values[i]))}</td>`).join('');
-    const hasHits = safeCell(board.awayTotals.H) !== '' || safeCell(board.homeTotals.H) !== '';
-    const hasErrors = safeCell(board.awayTotals.E) !== '' || safeCell(board.homeTotals.E) !== '';
     return `
       <section class="gdx-scoreboard game-detail-enhanced-marker" aria-label="計分板">
         <div class="gdx-section-head"><strong>計分板</strong></div>
@@ -146,22 +173,22 @@
             <thead><tr>
               <th class="gdx-team-col">球隊</th>
               ${inningHead}
-              <th>R</th>${hasHits ? '<th>H</th>' : ''}${hasErrors ? '<th>E</th>' : ''}
+              <th>R</th><th>H</th><th>E</th>
             </tr></thead>
             <tbody>
               <tr>
                 <th class="gdx-team-col">${esc(game.away || '客隊')}</th>
                 ${rowCells(board.away)}
                 <td class="gdx-total">${esc(safeCell(board.awayTotals.R))}</td>
-                ${hasHits ? `<td>${esc(safeCell(board.awayTotals.H))}</td>` : ''}
-                ${hasErrors ? `<td>${esc(safeCell(board.awayTotals.E))}</td>` : ''}
+                <td>${esc(safeCell(board.awayTotals.H))}</td>
+                <td>${esc(safeCell(board.awayTotals.E))}</td>
               </tr>
               <tr>
                 <th class="gdx-team-col">${esc(game.home || '主隊')}</th>
                 ${rowCells(board.home)}
                 <td class="gdx-total">${esc(safeCell(board.homeTotals.R))}</td>
-                ${hasHits ? `<td>${esc(safeCell(board.homeTotals.H))}</td>` : ''}
-                ${hasErrors ? `<td>${esc(safeCell(board.homeTotals.E))}</td>` : ''}
+                <td>${esc(safeCell(board.homeTotals.H))}</td>
+                <td>${esc(safeCell(board.homeTotals.E))}</td>
               </tr>
             </tbody>
           </table>
@@ -190,9 +217,11 @@
   function detailStamp(detail) {
     const game = detail?.game || {};
     const last = Array.isArray(detail?.plays) && detail.plays.length ? detail.plays[detail.plays.length - 1] : null;
+    const board = detail?.scoreboard || {};
     return [
       detail?.league, detail?.date, detail?.status, game.id, game.awayScore, game.homeScore,
       detail?.updatedAt, detail?.current?.outs, detail?.current?.pitcher?.name, detail?.current?.batter?.name,
+      board?.awayTotals?.H, board?.awayTotals?.E, board?.homeTotals?.H, board?.homeTotals?.E,
       last?.inning, last?.half, last?.batter, last?.result, last?.bases
     ].map(v => String(v ?? '')).join('|');
   }
@@ -207,6 +236,7 @@
   }
 
   function enhanceGameDetail() {
+    applyVersionLabel();
     const detail = latestDetail;
     if (!detail?.game) return;
     const overlay = document.getElementById('homeGameDetailOverlay');
@@ -232,11 +262,6 @@
       anchor = scoreCard.nextElementSibling || scoreCard;
     }
     anchor.insertAdjacentHTML('afterend', renderScoreboard(detail));
-
-    const badge = document.getElementById('appVersionBadge');
-    if (badge) badge.textContent = 'v2.35';
-    const splash = document.getElementById('appSplashVersion');
-    if (splash) splash.textContent = 'VERSION v2.35';
   }
 
   function scheduleEnhance() {
@@ -244,7 +269,10 @@
     enhanceTimer = setTimeout(enhanceGameDetail, 40);
   }
 
-  new MutationObserver(scheduleEnhance).observe(document.documentElement, {
+  new MutationObserver(() => {
+    applyVersionLabel();
+    scheduleEnhance();
+  }).observe(document.documentElement, {
     childList: true,
     subtree: true,
     attributes: true,
@@ -257,5 +285,6 @@
     }
   }, true);
 
+  applyVersionLabel();
   scheduleEnhance();
 })();
