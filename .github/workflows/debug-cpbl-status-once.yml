@@ -1,0 +1,23 @@
+name: Debug CPBL status once
+on:
+  push:
+    branches: [debug-cpbl-20260912-status]
+    paths: ['.github/workflows/debug-cpbl-status-once.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Query CPBL daily games
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, re
+          source=open('js/00-core-config.js',encoding='utf-8').read()
+          key=re.search(r"const CPBL_APP_KEY = '([^']+)'", source).group(1)
+          url='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games'
+          payload=json.dumps({'appKey':key,'action':'daily-games','league':'CPBL','date':'2026-09-12'})
+          raw=subprocess.check_output(['curl','-fsS',url,'-H','content-type: application/json','--data',payload], text=True)
+          print(raw)
+          PY
