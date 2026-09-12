@@ -1,11 +1,11 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v152';
+const CACHE_NAME = 'baseball-player-card-pwa-v153';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css?v=v2.33',
   './app.js?v=v2.34',
-  './game-detail-enhancement.css?v=v2.34',
-  './game-detail-enhancement.js?v=v2.34',
+  './game-detail-enhancement.css?v=v2.35',
+  './game-detail-enhancement.js?v=v2.35',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -15,11 +15,13 @@ const APP_SHELL = [
 
 function enhanceHtml(text) {
   let html = String(text || '');
+  html = html.replace(/game-detail-enhancement\.css\?v=v[\d.]+/g, 'game-detail-enhancement.css?v=v2.35');
+  html = html.replace(/game-detail-enhancement\.js\?v=v[\d.]+/g, 'game-detail-enhancement.js?v=v2.35');
   if (!html.includes('game-detail-enhancement.css')) {
-    html = html.replace('</head>', '  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.34" />\n</head>');
+    html = html.replace('</head>', '  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.35" />\n</head>');
   }
   if (!html.includes('game-detail-enhancement.js')) {
-    html = html.replace('</body>', '  <script src="./game-detail-enhancement.js?v=v2.34"></script>\n</body>');
+    html = html.replace('</body>', '  <script src="./game-detail-enhancement.js?v=v2.35"></script>\n</body>');
   }
   return html;
 }
@@ -61,7 +63,6 @@ self.addEventListener('fetch', event => {
   const isHtml = request.destination === 'document'
     || new URL(request.url).pathname.endsWith('/index.html');
 
-  // HTML / App 導覽：network-first，並在回應中掛上單場賽況增強模組。
   if (isNavigation || isHtml) {
     event.respondWith((async () => {
       try {
@@ -81,7 +82,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 其他靜態資源維持 cache-first。
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
