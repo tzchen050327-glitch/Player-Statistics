@@ -1,0 +1,37 @@
+name: Smoke NPB status v5
+
+on:
+  push:
+    branches: [debug-npb-status-v5]
+    paths: ['.github/workflows/smoke-npb-status-v5.yml']
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify NPB 14:00 games are live after first pitch
+        run: |
+          set -euo pipefail
+          KEY="$(python3 - <<'PY'
+          import re
+          s=open('js/00-core-config.js',encoding='utf-8').read()
+          print(re.search(r"const CPBL_APP_KEY = '([^']+)'",s).group(1))
+          PY
+          )"
+          URL='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games'
+          curl -fsS "$URL" -H 'content-type: application/json' --data "{\"appKey\":\"$KEY\",\"action\":\"daily-games\",\"league\":\"NPB\",\"date\":\"2026-09-12\"}" >/tmp/npb.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/npb.json',encoding='utf-8'))
+          print(json.dumps(d,ensure_ascii=False,indent=2))
+          games=d.get('games',[])
+          assert d.get('ok') is True
+          assert len(games)==6, len(games)
+          afternoon=[g for g in games if str(g.get('time','')).startswith('14:00')]
+          assert len(afternoon)==5, afternoon
+          assert all(g.get('status')=='live' for g in afternoon), afternoon
+          assert all(g.get('awayScore') is None and g.get('homeScore') is None for g in afternoon), afternoon
+          evening=[g for g in games if str(g.get('time','')).startswith('18:00')]
+          assert len(evening)==1 and evening[0].get('status')=='scheduled', evening
+          PY
