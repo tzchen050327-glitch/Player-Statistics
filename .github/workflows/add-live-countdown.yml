@@ -1,0 +1,90 @@
+name: Add live refresh countdown
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/add-live-countdown.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add countdown next to LIVE badge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('js/11-home-international.js')
+          s = p.read_text(encoding='utf-8')
+          old = s
+
+          # Countdown state.
+          s = s.replace(
+              'let homeGameDetailRefreshTimer = 0;\n    let homeGameDetailErrorStreak = 0;',
+              'let homeGameDetailRefreshTimer = 0;\n    let homeGameDetailCountdownTimer = 0;\n    let homeGameDetailNextRefreshAt = 0;\n    let homeGameDetailErrorStreak = 0;',
+              1
+          )
+
+          # LIVE badge: add countdown at the right.
+          s = s.replace(
+              '${status === \'live\' ? `<span class="game-detail-live-dot ${loading ? \'is-refreshing\' : \'\'}"><i></i>LIVE</span>` : \'\'}',
+              '${status === \'live\' ? `<span class="game-detail-live-dot ${loading ? \'is-refreshing\' : \'\'}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? \'更新中…\' : \'\'}</span></span>` : \'\'}',
+              1
+          )
+
+          # Add countdown helpers before stopHomeGameDetailRefresh.
+          marker = '    function stopHomeGameDetailRefresh() {\n'
+          helper = '''    function updateHomeGameDetailRefreshCountdown() {\n      const el = document.getElementById('homeGameDetailRefreshCountdown');\n      if (!el) return;\n      if (activeHomeGameDetail?.loading) {\n        el.textContent = '更新中…';\n        return;\n      }\n      if (!homeGameDetailNextRefreshAt) {\n        el.textContent = '';\n        return;\n      }\n      const seconds = Math.max(0, Math.ceil((homeGameDetailNextRefreshAt - Date.now()) / 1000));\n      el.textContent = `${seconds}秒後更新`;\n    }\n\n    function startHomeGameDetailRefreshCountdown(delay) {\n      if (homeGameDetailCountdownTimer) clearInterval(homeGameDetailCountdownTimer);\n      homeGameDetailNextRefreshAt = Date.now() + Math.max(0, Number(delay) || 0);\n      updateHomeGameDetailRefreshCountdown();\n      homeGameDetailCountdownTimer = setInterval(updateHomeGameDetailRefreshCountdown, 1000);\n    }\n\n    function stopHomeGameDetailRefreshCountdown() {\n      if (homeGameDetailCountdownTimer) clearInterval(homeGameDetailCountdownTimer);\n      homeGameDetailCountdownTimer = 0;\n      homeGameDetailNextRefreshAt = 0;\n      updateHomeGameDetailRefreshCountdown();\n    }\n\n'''
+          if helper not in s:
+              if marker not in s:
+                  raise SystemExit('stop refresh marker missing')
+              s = s.replace(marker, helper + marker, 1)
+
+          # Stopping refresh also stops countdown.
+          s = s.replace(
+              '    function stopHomeGameDetailRefresh() {\n      if (homeGameDetailRefreshTimer) clearTimeout(homeGameDetailRefreshTimer);\n      homeGameDetailRefreshTimer = 0;\n    }',
+              '    function stopHomeGameDetailRefresh() {\n      if (homeGameDetailRefreshTimer) clearTimeout(homeGameDetailRefreshTimer);\n      homeGameDetailRefreshTimer = 0;\n      stopHomeGameDetailRefreshCountdown();\n    }',
+              1
+          )
+
+          # Repaint the countdown immediately after detail HTML is rendered.
+          needle = "      body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));\n"
+          if needle in s:
+              s = s.replace(needle, needle + '      updateHomeGameDetailRefreshCountdown();\n', 1)
+
+          # Normal schedule: start visible countdown.
+          schedule_needle = "      const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;\n      homeGameDetailRefreshTimer = setTimeout(() => {"
+          schedule_repl = "      const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;\n      startHomeGameDetailRefreshCountdown(delay);\n      homeGameDetailRefreshTimer = setTimeout(() => {"
+          if schedule_needle not in s:
+              raise SystemExit('normal schedule marker missing')
+          s = s.replace(schedule_needle, schedule_repl, 1)
+
+          # At timer fire, switch countdown label to updating state.
+          timer_needle = "        homeGameDetailRefreshTimer = 0;\n        if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;"
+          timer_repl = "        homeGameDetailRefreshTimer = 0;\n        stopHomeGameDetailRefreshCountdown();\n        if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;"
+          s = s.replace(timer_needle, timer_repl, 1)
+
+          # Error backoff also gets a countdown.
+          backoff_needle = "          stopHomeGameDetailRefresh();\n          homeGameDetailRefreshTimer = setTimeout(() => {"
+          backoff_repl = "          stopHomeGameDetailRefresh();\n          startHomeGameDetailRefreshCountdown(retryDelay);\n          homeGameDetailRefreshTimer = setTimeout(() => {"
+          if backoff_needle not in s:
+              raise SystemExit('backoff marker missing')
+          s = s.replace(backoff_needle, backoff_repl, 1)
+
+          if s == old:
+              raise SystemExit('No countdown changes made')
+          p.write_text(s, encoding='utf-8')
+          PY
+          python3 scripts/build-app.py
+          node --check app.js
+      - name: Commit changes
+        run: |
+          git config user.name 'chatgpt-fix'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/11-home-international.js app.js
+          git commit -m 'Show live refresh countdown'
+          git push
