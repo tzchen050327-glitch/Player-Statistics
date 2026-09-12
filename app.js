@@ -5025,7 +5025,7 @@ bg2: {
     let homeGameDetailCountdownTimer = 0;
     let homeGameDetailNextRefreshAt = 0;
     let homeGameDetailErrorStreak = 0;
-    const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
+    const HOME_DAILY_GAMES_TTL = 15 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
     const HOME_DAILY_AUTO_REFRESH_LIMIT = 2400;
     const HOME_DAILY_AUTO_REFRESH_STORAGE_KEY = 'home-daily-games-auto-refresh-budget-v1';
@@ -5072,7 +5072,7 @@ bg2: {
       if (String(date || '') !== localISODate()) return 0;
       if (homeDailyGamesHasLive(games)) {
         // MLB games span much more of the day, so poll it less aggressively.
-        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 60 * 1000 : 30 * 1000;
+        return league === 'MLB' ? 2 * 60 * 1000 : 15 * 1000;
       }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
@@ -5140,7 +5140,7 @@ bg2: {
       const status = String(game?.status || '').toLowerCase();
       if (status === 'final') return '已結束';
       if (status === 'live') return '比賽中';
-      if (status === 'cancelled') return '取消／延期';
+      if (status === 'cancelled') return '保留／延期／取消';
       return String(game?.time || '').trim() || '未開打';
     }
 
@@ -5375,7 +5375,10 @@ bg2: {
       const overlay = document.getElementById('homeGameDetailOverlay');
       if (overlay) overlay.classList.add('hidden');
       document.body.classList.remove('home-game-detail-open');
-      if (currentPage === 'home') scheduleHomeDailyGamesAutoRefresh();
+      if (currentPage === 'home') {
+        renderHomeDailyGames();
+        scheduleHomeDailyGamesAutoRefresh();
+      }
     }
 
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
