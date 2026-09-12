@@ -1,4 +1,4 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v155';
+const CACHE_NAME = 'baseball-player-card-pwa-v156';
 const APP_VERSION = 'v2.40';
 const APP_SHELL = [
   './',
@@ -8,9 +8,7 @@ const APP_SHELL = [
   './game-detail-enhancement.js?v=v2.40',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png',
-  './assets/default-hitter.jpg?v=v2.40',
-  './assets/default-pitcher.jpg?v=v2.40'
+  './icon-512.png'
 ];
 
 function enhanceHtml(text) {
@@ -38,35 +36,37 @@ function enhanceAppJs(text) {
   return js;
 }
 
-async function enhancedHtmlResponse(response) {
+async function rewriteResponse(response, transform, contentType) {
   if (!response || response.status !== 200 || response.type === 'opaque') return response;
-  const html = enhanceHtml(await response.clone().text());
+  const text = transform(await response.clone().text());
   const headers = new Headers(response.headers);
-  headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('content-type', contentType);
+  headers.set('cache-control', 'no-store, max-age=0');
   headers.delete('content-length');
-  return new Response(html, { status: response.status, statusText: response.statusText, headers });
-}
-
-async function enhancedAppJsResponse(response) {
-  if (!response || response.status !== 200 || response.type === 'opaque') return response;
-  const js = enhanceAppJs(await response.clone().text());
-  const headers = new Headers(response.headers);
-  headers.set('content-type', 'application/javascript; charset=utf-8');
-  headers.delete('content-length');
-  return new Response(js, { status: response.status, statusText: response.statusText, headers });
+  return new Response(text, { status: response.status, statusText: response.statusText, headers });
 }
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.allSettled(APP_SHELL.map(async url => {
+      try {
+        const response = await fetch(url, { cache: 'reload' });
+        if (response.ok) await cache.put(url, response.clone());
+      } catch {}
+    }));
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+    await self.clients.claim();
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) client.postMessage({ type: 'V240_SW_ACTIVE' });
+  })());
 });
 
 self.addEventListener('message', event => {
@@ -86,15 +86,13 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
-        const enhanced = await enhancedHtmlResponse(response);
-        if (enhanced && enhanced.status === 200 && enhanced.type !== 'opaque') {
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', enhanced.clone()));
-        }
-        return enhanced;
+        const rewritten = await rewriteResponse(response, enhanceHtml, 'text/html; charset=utf-8');
+        if (rewritten?.ok) caches.open(CACHE_NAME).then(cache => cache.put('./index.html', rewritten.clone()));
+        return rewritten;
       } catch {
         const cached = await caches.match('./index.html') || await caches.match('./');
         if (!cached) return Response.error();
-        return enhancedHtmlResponse(cached);
+        return rewriteResponse(cached, enhanceHtml, 'text/html; charset=utf-8');
       }
     })());
     return;
@@ -104,24 +102,27 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
-        return await enhancedAppJsResponse(response);
+        return rewriteResponse(response, enhanceAppJs, 'application/javascript; charset=utf-8');
       } catch {
         const cached = await caches.match(request, { ignoreSearch: true });
         if (!cached) return Response.error();
-        return enhancedAppJsResponse(cached);
+        return rewriteResponse(cached, enhanceAppJs, 'application/javascript; charset=utf-8');
       }
     })());
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    try {
+      const response = await fetch(request);
+      if (response && response.ok && response.type !== 'opaque') {
         caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-        return response;
-      });
-    })
-  );
+      }
+      return response;
+    } catch {
+      return Response.error();
+    }
+  })());
 });
