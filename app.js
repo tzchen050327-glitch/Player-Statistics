@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.17';
+    const APP_VERSION = 'v2.18';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,8 +7,9 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.17';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.17';
+    const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.18';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.18';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -40,6 +41,7 @@
       homeProCountrySwitch: document.getElementById('homeProCountrySwitch'),
       homeUsLeagueSwitch: document.getElementById('homeUsLeagueSwitch'),
       homeZoneNote: document.getElementById('homeZoneNote'),
+      homeDailyGames: document.getElementById('homeDailyGames'),
       homeLevelFilters: document.getElementById('homeLevelFilters'),
       homeTeamFilters: document.getElementById('homeTeamFilters'),
       homeCpblFilters: document.getElementById('homeCpblFilters'),
@@ -4978,6 +4980,7 @@ bg2: {
       els.homeUsLeagueSwitch?.classList.add('hidden');
 
       const cpbl = !international && homeProCountry === 'TW';
+      els.homeDailyGames?.classList.toggle('hidden', international);
       els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
@@ -5009,9 +5012,171 @@ bg2: {
       renderInternationalExplorer();
     }
 
+    const homeDailyGamesCache = new Map();
+    const homeDailyGamesLoading = new Set();
+    const HOME_DAILY_GAMES_TTL = 60 * 1000;
+
+    function homeDailyGamesLeague() {
+      if (homeRootSection === 'international') return '';
+      if (homeProCountry === 'TW') return 'CPBL';
+      if (homeProCountry === 'JP') return 'NPB';
+      if (homeProCountry === 'KR') return 'KBO';
+      if (homeProCountry === 'US') return 'MLB';
+      return '';
+    }
+
+    function homeDailyGamesLeagueLabel(league) {
+      return ({ CPBL:'中華職棒', NPB:'日本職棒', KBO:'韓國職棒', MLB:'MLB' })[league] || league;
+    }
+
+    function homeDailyGameStatusLabel(game) {
+      const status = String(game?.status || '').toLowerCase();
+      if (status === 'final') return '已結束';
+      if (status === 'live') return '比賽中';
+      if (status === 'cancelled') return '取消／延期';
+      return String(game?.time || '').trim() || '未開打';
+    }
+
+    function homeDailyGameScore(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      const number = Number(value);
+      return Number.isFinite(number) ? String(number) : '—';
+    }
+
+    async function leagueDailyGamesRequest(league, date) {
+      const response = await fetch(LEAGUE_GAMES_API_URL, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          action:'daily-games',
+          league,
+          date
+        })
+      });
+      const text = await response.text();
+      let data = {};
+      try { data = JSON.parse(text || '{}'); } catch {}
+      if (!response.ok || data?.ok !== true) {
+        throw new Error(data?.error || `當日賽事讀取失敗（${response.status}）`);
+      }
+      return Array.isArray(data.games) ? data.games : [];
+    }
+
+    async function loadHomeDailyGames(league, date, { force = false } = {}) {
+      const key = `${league}|${date}`;
+      const now = Date.now();
+      const cached = homeDailyGamesCache.get(key);
+      if (!force && cached && now - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL) return cached.games || [];
+      if (homeDailyGamesLoading.has(key)) return null;
+
+      homeDailyGamesLoading.add(key);
+      try {
+        const games = await leagueDailyGamesRequest(league, date);
+        homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
+        return games;
+      } catch (error) {
+        homeDailyGamesCache.set(key, {
+          at:Date.now(),
+          games:Array.isArray(cached?.games) ? cached.games : [],
+          error:error?.message || '當日賽事讀取失敗。'
+        });
+        return null;
+      } finally {
+        homeDailyGamesLoading.delete(key);
+        if (currentPage === 'home' && homeDailyGamesLeague() === league && String(els.gameDate?.value || '') === date) {
+          renderHomeDailyGames({ skipLoad:true });
+        }
+      }
+    }
+
+    function renderHomeDailyGames({ force = false, skipLoad = false } = {}) {
+      const host = els.homeDailyGames;
+      if (!host) return;
+
+      const league = homeDailyGamesLeague();
+      const date = String(els.gameDate?.value || localISODate());
+      if (!league || homeRootSection === 'international') {
+        host.classList.add('hidden');
+        host.innerHTML = '';
+        return;
+      }
+      host.classList.remove('hidden');
+
+      const key = `${league}|${date}`;
+      const cached = homeDailyGamesCache.get(key) || null;
+      const loading = homeDailyGamesLoading.has(key);
+      const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
+      const games = Array.isArray(cached?.games) ? cached.games : [];
+      const error = String(cached?.error || '');
+      const leagueLabel = homeDailyGamesLeagueLabel(league);
+      const dateLabel = date.replaceAll('-', '/');
+
+      let bodyHtml = '';
+      if (!cached && !loading) {
+        bodyHtml = '<div class="home-games-state">正在讀取官方賽程…</div>';
+      } else if (loading && !games.length) {
+        bodyHtml = '<div class="home-games-state"><span class="home-games-loading-dot"></span>正在讀取官方賽程…</div>';
+      } else if (error && !games.length) {
+        bodyHtml = `<div class="home-games-state error"><span>${escapeHtml(error)}</span><button class="press-btn home-games-retry" type="button">重新整理</button></div>`;
+      } else if (!games.length) {
+        bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
+      } else {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map(game => {
+          const status = String(game?.status || 'scheduled').toLowerCase();
+          const statusLabel = homeDailyGameStatusLabel(game);
+          const awayScore = homeDailyGameScore(game?.awayScore);
+          const homeScore = homeDailyGameScore(game?.homeScore);
+          const venue = String(game?.venue || '').trim();
+          return `
+            <article class="home-game-card status-${escapeAttr(status)}">
+              <div class="home-game-card-top">
+                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
+              </div>
+              <div class="home-game-team">
+                <span class="home-game-team-name">${escapeHtml(String(game?.away || '客隊'))}</span>
+                <strong class="home-game-score">${escapeHtml(awayScore)}</strong>
+              </div>
+              <div class="home-game-team">
+                <span class="home-game-team-name">${escapeHtml(String(game?.home || '主隊'))}</span>
+                <strong class="home-game-score">${escapeHtml(homeScore)}</strong>
+              </div>
+              <div class="home-game-venue">${escapeHtml(venue || '場地未提供')}</div>
+            </article>`;
+        }).join('')}</div>`;
+      }
+
+      host.innerHTML = `
+        <section class="home-daily-games-shell">
+          <div class="home-daily-games-head">
+            <div class="home-daily-games-title">
+              <strong>當日賽事</strong>
+              <span>${escapeHtml(leagueLabel)}</span>
+            </div>
+            <div class="home-daily-games-meta">
+              <span>${escapeHtml(dateLabel)}</span>
+              ${games.length ? `<span>${games.length} 場</span>` : ''}
+              ${loading && games.length ? '<span>更新中…</span>' : ''}
+            </div>
+          </div>
+          ${bodyHtml}
+        </section>`;
+
+      host.querySelector('.home-games-retry')?.addEventListener('click', () => {
+        homeDailyGamesCache.delete(key);
+        renderHomeDailyGames({ force:true });
+      });
+
+      if (!skipLoad && (force || !cached || !fresh) && !loading) {
+        void loadHomeDailyGames(league, date, { force }).then(() => {});
+      }
+    }
+
     function renderRecentPlayers() {
       renderHomePlayerFilters();
       els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
+      renderHomeDailyGames();
 
       if (homeRootSection === 'international') {
         if (els.homePlayerCount) els.homePlayerCount.textContent = '';
@@ -8996,6 +9161,9 @@ bg2: {
       if (event.target === els.filterChoiceDialog) els.filterChoiceDialog.close();
     });
 
+    els.gameDate?.addEventListener('change', () => {
+      if (currentPage === 'home' && homeRootSection !== 'international') renderHomeDailyGames({ force:true });
+    });
     els.gameDateButton?.addEventListener('click', openDatePicker);
     els.datePickerYearButton?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();

@@ -4059,3 +4059,43 @@ dialog::backdrop {
 .error-player-name-link{appearance:none;border:0;background:none;padding:0;margin:0;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;text-decoration:none}
 .error-player-name-link:hover,.error-player-name-link:focus-visible{color:#1f4e79;text-decoration:underline;text-underline-offset:4px}
 .error-player-name-link:disabled{cursor:default;opacity:.7;text-decoration:none}
+
+
+/* v2.18 homepage daily league games */
+.home-daily-games{margin:18px 0 20px;min-width:0}
+.home-daily-games.hidden{display:none}
+.home-daily-games-shell{border:1px solid #d8e3ef;background:linear-gradient(180deg,#f9fbfe 0%,#f2f6fb 100%);border-radius:20px;padding:15px 16px 13px;box-shadow:0 8px 24px rgba(31,78,121,.055)}
+.home-daily-games-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.home-daily-games-title{display:flex;align-items:baseline;gap:9px;min-width:0}
+.home-daily-games-title strong{font-size:20px;line-height:1.2;color:#153a5f;letter-spacing:.01em}
+.home-daily-games-title span{font-size:13px;font-weight:800;color:#7a8999;white-space:nowrap}
+.home-daily-games-meta{display:flex;align-items:center;justify-content:flex-end;gap:9px;font-size:12px;font-weight:750;color:#6d7d8e;white-space:nowrap}
+.home-games-scroller{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,250px);gap:11px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;padding:2px 2px 8px;scrollbar-width:thin;scrollbar-color:#b7c9dc transparent}
+.home-games-scroller.is-mlb{grid-auto-columns:minmax(205px,235px)}
+.home-game-card{scroll-snap-align:start;box-sizing:border-box;min-height:142px;border:1px solid #d7e1eb;background:#fff;border-radius:16px;padding:12px 13px 10px;box-shadow:0 5px 16px rgba(17,50,82,.06)}
+.home-game-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;margin-bottom:6px}
+.home-game-status{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:#edf3f8;color:#56697d;font-size:11px;font-weight:850;white-space:nowrap}
+.home-game-status.status-final{background:#eef1f4;color:#53606c}
+.home-game-status.status-live{background:#fff1d5;color:#945f00}
+.home-game-status.status-cancelled{background:#f7e9e9;color:#965454}
+.home-game-time{font-size:11px;font-weight:700;color:#8a97a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-game-team{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 0}
+.home-game-team-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#173b60;font-size:14px;font-weight:850}
+.home-game-score{min-width:28px;text-align:right;color:#112f4d;font:900 23px/1 Arial,sans-serif}
+.home-game-card.status-scheduled .home-game-score,.home-game-card.status-cancelled .home-game-score{color:#9aa7b4}
+.home-game-venue{margin-top:5px;padding-top:8px;border-top:1px solid #edf1f5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7b8997;font-size:11px;font-weight:650}
+.home-games-state{min-height:84px;border:1px dashed #cbd9e7;border-radius:14px;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;text-align:center;color:#718194;font-size:13px;font-weight:700}
+.home-games-state.error{color:#8a5151}
+.home-games-retry{padding:7px 11px!important;min-height:34px!important;font-size:12px!important}
+.home-games-loading-dot{width:8px;height:8px;border-radius:999px;background:#d7ad52;box-shadow:0 0 0 0 rgba(215,173,82,.38);animation:homeGamesPulse 1.35s infinite}
+@keyframes homeGamesPulse{0%{box-shadow:0 0 0 0 rgba(215,173,82,.35)}70%{box-shadow:0 0 0 7px rgba(215,173,82,0)}100%{box-shadow:0 0 0 0 rgba(215,173,82,0)}}
+@media(max-width:720px){
+  .home-daily-games{margin:14px 0 17px}
+  .home-daily-games-shell{padding:13px 12px 11px;border-radius:17px}
+  .home-daily-games-head{align-items:flex-start;margin-bottom:10px}
+  .home-daily-games-title{display:grid;gap:2px}
+  .home-daily-games-title strong{font-size:18px}
+  .home-daily-games-meta{flex-wrap:wrap;gap:5px 8px}
+  .home-games-scroller,.home-games-scroller.is-mlb{grid-auto-columns:minmax(190px,79vw);gap:9px}
+  .home-game-card{min-height:138px}
+}

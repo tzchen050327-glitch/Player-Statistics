@@ -374,6 +374,9 @@
       if (event.target === els.filterChoiceDialog) els.filterChoiceDialog.close();
     });
 
+    els.gameDate?.addEventListener('change', () => {
+      if (currentPage === 'home' && homeRootSection !== 'international') renderHomeDailyGames({ force:true });
+    });
     els.gameDateButton?.addEventListener('click', openDatePicker);
     els.datePickerYearButton?.addEventListener('click', () => {
       if (!(datePickerView instanceof Date)) return openDatePicker();
