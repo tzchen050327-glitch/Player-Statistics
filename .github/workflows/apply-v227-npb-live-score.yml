@@ -1,0 +1,84 @@
+name: Apply v2.27 NPB live score
+
+on:
+  push:
+    branches: [feature-v2.27-npb-live-score]
+    paths:
+      - 'scripts/patch-v227-npb-live-score.py'
+      - '.github/workflows/apply-v227-npb-live-score.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.27 patch
+        run: python3 scripts/patch-v227-npb-live-score.py
+      - name: Verify live NPB endpoint
+        run: |
+          set -euo pipefail
+          KEY="$(python3 - <<'PY'
+          import re
+          s=open('js/00-core-config.js',encoding='utf-8').read()
+          print(re.search(r"const CPBL_APP_KEY = '([^']+)'",s).group(1))
+          PY
+          )"
+          URL='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games'
+          curl -fsS "$URL" -H 'content-type: application/json' \
+            --data "{\"appKey\":\"$KEY\",\"action\":\"daily-games\",\"league\":\"NPB\",\"date\":\"2026-09-12\"}" > /tmp/npb.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/npb.json',encoding='utf-8'))
+          assert d.get('ok') is True, d
+          games=d.get('games') or []
+          assert len(games)==6, len(games)
+          live=[g for g in games if g.get('status')=='live']
+          assert live, games
+          for g in live:
+              assert isinstance(g.get('awayScore'), int), g
+              assert isinstance(g.get('homeScore'), int), g
+          target=next((g for g in games if '軟銀' in g.get('away','') and '羅德' in g.get('home','')), None)
+          assert target, games
+          assert target.get('status')=='live', target
+          print('LIVE_TARGET', target['away'], target['awayScore'], '-', target['homeScore'], target['home'])
+          print('LIVE_GAMES', [(g['away'],g['awayScore'],g['homeScore'],g['home']) for g in live])
+          PY
+      - name: Validate frontend wiring
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.27'" js/00-core-config.js
+          grep -Fq "const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';" js/00-core-config.js
+          grep -Fq "league === 'NPB' ? NPB_GAMES_API_URL : LEAGUE_GAMES_API_URL" js/11-home-international.js
+          grep -Fq "./app.js?v=v2.27" index.html
+          grep -Fq "baseball-player-card-pwa-v144" service-worker.js
+          test -f 'index v2.27.html'
+          test -f 'index v2.26.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.27"' /tmp/dom.html
+      - name: Commit v2.27
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.27.html' js/00-core-config.js js/11-home-international.js service-worker.js
+          if [ -f 'index v2.25.html' ]; then git rm -f 'index v2.25.html'; fi
+          git commit -m 'v2.27 add NPB live scoreboard updates'
+          git push origin HEAD:feature-v2.27-npb-live-score
