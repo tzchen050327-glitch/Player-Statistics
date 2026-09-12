@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.29';
+    const APP_VERSION = 'v2.30';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -10,8 +10,8 @@
     const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
     const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.29';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.29';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.30';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.30';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5490,16 +5490,23 @@ bg2: {
               <span class="home-league-live-row">
                 <span>${escapeHtml(leagueLabel)}</span>
                 ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
-                  <svg class="battery-player battery-pitcher" viewBox="0 0 44 44" aria-hidden="true">
+                  <svg class="battery-player battery-pitcher battery-pitcher-formal" viewBox="0 0 44 44" aria-hidden="true">
                     <g class="battery-pitcher-figure">
-                      <path class="battery-cap" d="M9 8.7c1.2-4 4.4-6.2 8.4-5.5 2.8.5 4.7 2.1 5.8 4.7l-9.3 1.9Z"></path>
-                      <circle class="battery-skin" cx="16.4" cy="10.8" r="4.2"></circle>
-                      <path class="battery-uniform" d="M12.8 15.1c2-1.2 5.7-1.1 7.8.2l3.5 9.4-3.5 3.2-4-7.3-3.1 7.1-4-2.2Z"></path>
-                      <path class="battery-leg" d="M12.9 25.4 8.5 36.6l4.2 1 4.2-9.8 5.4 9 3.8-1.8-5.8-11Z"></path>
-                      <path class="battery-throw-arm" d="M20.2 16.4c5.5 1 9.6 4 12.9 7.2l-2.7 2.8c-3-2.7-6.8-4.8-11.1-5.5Z"></path>
-                      <path class="battery-glove-arm" d="M12.5 16.9 6.8 21.2l2 3.4 6.4-3.6Z"></path>
-                      <ellipse class="battery-glove" cx="6.6" cy="22.5" rx="3.8" ry="3.1"></ellipse>
-                      <circle class="battery-hand" cx="33" cy="24.8" r="1.7"></circle>
+                      <g class="battery-pitcher-core">
+                        <path class="battery-cap" d="M9 8.7c1.2-4 4.4-6.2 8.4-5.5 2.8.5 4.7 2.1 5.8 4.7l-9.3 1.9Z"></path>
+                        <circle class="battery-skin" cx="16.4" cy="10.8" r="4.2"></circle>
+                        <path class="battery-uniform" d="M12.8 15.1c2-1.2 5.7-1.1 7.8.2l3.5 9.4-3.5 3.2-4-7.3-3.1 7.1-4-2.2Z"></path>
+                      </g>
+                      <path class="battery-drive-leg" d="M13.9 24.2 9.2 36.7l4.2 1.1 4.7-10.6-1.4-3.7Z"></path>
+                      <path class="battery-stride-leg" d="M18.4 24.2c3.6 2.5 6 6.1 7.9 10.1l-3.8 1.9c-1.9-3.5-4.1-6.1-6.6-7.6Z"></path>
+                      <g class="battery-throw-arm-formal">
+                        <path d="M20 16.3c4.7.3 8.7 2.8 12.1 5.9l-2.4 3.1c-3-2.4-6.3-4-10.5-4.3Z"></path>
+                        <circle class="battery-hand" cx="31.8" cy="23.5" r="1.7"></circle>
+                      </g>
+                      <g class="battery-glove-side-formal">
+                        <path class="battery-glove-arm" d="M12.7 16.5 7 20.8l2 3.4 6.5-3.5Z"></path>
+                        <ellipse class="battery-glove" cx="6.8" cy="22" rx="3.8" ry="3.1"></ellipse>
+                      </g>
                     </g>
                   </svg>
                   <span class="battery-ball"><i></i></span>
