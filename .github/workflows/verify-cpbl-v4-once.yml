@@ -1,0 +1,28 @@
+name: Verify CPBL v4 once
+on:
+  push:
+    branches: [debug-cpbl-20260912-status]
+    paths: ['.github/workflows/verify-cpbl-v4-once.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify CPBL schedule status
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, re
+          source=open('js/00-core-config.js',encoding='utf-8').read()
+          key=re.search(r"const CPBL_APP_KEY = '([^']+)'", source).group(1)
+          url='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games'
+          payload=json.dumps({'appKey':key,'action':'daily-games','league':'CPBL','date':'2026-09-12'})
+          data=json.loads(subprocess.check_output(['curl','-fsS',url,'-H','content-type: application/json','--data',payload],text=True))
+          print(json.dumps(data,ensure_ascii=False,indent=2))
+          assert data['ok'] is True
+          assert len(data['games'])==3
+          assert all(g['status']=='scheduled' for g in data['games'])
+          assert [g['time'] for g in data['games']]==['16:05','17:05','17:05']
+          assert all(g['awayScore'] is None and g['homeScore'] is None for g in data['games'])
+          PY
