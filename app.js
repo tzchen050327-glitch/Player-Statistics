@@ -5022,6 +5022,7 @@ bg2: {
     const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
     let activeHomeGameDetail = null;
     let homeGameDetailRefreshTimer = 0;
+    let homeGameDetailErrorStreak = 0;
     const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
     const HOME_DAILY_AUTO_REFRESH_LIMIT = 2400;
@@ -5069,7 +5070,7 @@ bg2: {
       if (String(date || '') !== localISODate()) return 0;
       if (homeDailyGamesHasLive(games)) {
         // MLB games span much more of the day, so poll it less aggressively.
-        return league === 'MLB' ? 2 * 60 * 1000 : 15 * 1000;
+        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 60 * 1000 : 30 * 1000;
       }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
@@ -5413,7 +5414,7 @@ bg2: {
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
-      const delay = 15 * 1000;
+      const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
       homeGameDetailRefreshTimer = setTimeout(() => {
         homeGameDetailRefreshTimer = 0;
         if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
@@ -5440,6 +5441,7 @@ bg2: {
         const detail = await leagueGameDetailRequest(league, date, game);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         homeGameDetailCache.set(key, { at:Date.now(), detail });
+        homeGameDetailErrorStreak = 0;
         syncHomeDailyGameFromDetail(league, date, game, detail);
         if (detail?.game?.id && !game.id) game.id = detail.game.id;
         renderHomeGameDetail(detail, game);
@@ -5449,11 +5451,13 @@ bg2: {
         const detail = cached?.detail || { status:game?.status, game, plays:[] };
         renderHomeGameDetail(detail, game, { error:error?.message || '單場逐打席讀取失敗。' });
         if (automatic) {
+          homeGameDetailErrorStreak = Math.min(homeGameDetailErrorStreak + 1, 5);
+          const retryDelay = Math.min(10 * 60 * 1000, 60 * 1000 * (2 ** (homeGameDetailErrorStreak - 1)));
           stopHomeGameDetailRefresh();
           homeGameDetailRefreshTimer = setTimeout(() => {
             homeGameDetailRefreshTimer = 0;
             if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });
-          }, 5 * 60 * 1000);
+          }, retryDelay);
         }
       } finally {
         if (activeHomeGameDetail && activeHomeGameDetail.key === key) activeHomeGameDetail.loading = false;
