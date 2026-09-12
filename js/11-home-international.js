@@ -973,16 +973,41 @@
               <strong>當日賽事</strong>
               <span class="home-league-live-row">
                 <span>${escapeHtml(leagueLabel)}</span>
-                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-catchplay ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
-                  <svg class="home-live-player home-live-pitcher" viewBox="0 0 22 22" aria-hidden="true">
-                    <circle cx="6" cy="4" r="2.1"></circle>
-                    <path d="M6 6.7 8.3 10.2 12.8 7.9M8.3 10.2 6.1 16.7M8.3 10.2 11.4 16.5M12.8 7.9 15.2 6.5"></path>
+                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
+                  <svg class="battery-player battery-pitcher" viewBox="0 0 44 44" aria-hidden="true">
+                    <g class="battery-pitcher-figure">
+                      <path class="battery-cap" d="M9 8.7c1.2-4 4.4-6.2 8.4-5.5 2.8.5 4.7 2.1 5.8 4.7l-9.3 1.9Z"></path>
+                      <circle class="battery-skin" cx="16.4" cy="10.8" r="4.2"></circle>
+                      <path class="battery-uniform" d="M12.8 15.1c2-1.2 5.7-1.1 7.8.2l3.5 9.4-3.5 3.2-4-7.3-3.1 7.1-4-2.2Z"></path>
+                      <path class="battery-leg" d="M12.9 25.4 8.5 36.6l4.2 1 4.2-9.8 5.4 9 3.8-1.8-5.8-11Z"></path>
+                      <path class="battery-throw-arm" d="M20.2 16.4c5.5 1 9.6 4 12.9 7.2l-2.7 2.8c-3-2.7-6.8-4.8-11.1-5.5Z"></path>
+                      <path class="battery-glove-arm" d="M12.5 16.9 6.8 21.2l2 3.4 6.4-3.6Z"></path>
+                      <ellipse class="battery-glove" cx="6.6" cy="22.5" rx="3.8" ry="3.1"></ellipse>
+                      <circle class="battery-hand" cx="33" cy="24.8" r="1.7"></circle>
+                    </g>
                   </svg>
-                  <span class="home-live-ball"></span>
-                  <svg class="home-live-player home-live-catcher" viewBox="0 0 22 22" aria-hidden="true">
-                    <circle cx="15.5" cy="4.4" r="2.1"></circle>
-                    <path d="M15.3 6.7 13.8 10.4 9.3 9.2M13.8 10.4 10.4 15.8M13.8 10.4 17.4 15.8M9.3 9.2 7.2 8.4"></path>
-                    <path class="home-live-mitt" d="M6.3 6.9c-1.3.4-2.1 1.4-1.8 2.4.4 1.2 1.8 1.6 3.1.8 1-.6 1.3-1.8.6-2.6-.5-.6-1.2-.8-1.9-.6Z"></path>
+                  <span class="battery-ball"><i></i></span>
+                  <svg class="battery-player battery-catcher" viewBox="0 0 44 44" aria-hidden="true">
+                    <g class="battery-catcher-crouch">
+                      <path class="battery-mask" d="M14 5.6c2.2-2.1 6.4-2.4 9-.6l1.7 4.5-2.4 5.2-7.7-.4-2.1-5.1Z"></path>
+                      <path class="battery-mask-line" d="M14.5 8.6h9.2M16.1 5.8l-.3 7.1M21.2 5.5l.7 7.4"></path>
+                      <path class="battery-chest" d="M13.7 14.1c3-1.2 7.5-1 10 .5l2.2 10-5.3 2.8-4.2-1-4.6-2.4Z"></path>
+                      <path class="battery-catcher-leg" d="m14 23.6-7 7.6 3.7 3.5 7.5-5.4 6.8 5.2 3.4-3.4-6.4-7.5Z"></path>
+                      <path class="battery-receive-arm" d="M13.8 16.1 6.7 19l1.6 3.7 7.8-2.6Z"></path>
+                      <ellipse class="battery-mitt" cx="5.7" cy="20.7" rx="4.2" ry="3.4"></ellipse>
+                    </g>
+                    <g class="battery-catcher-stand">
+                      <path class="battery-mask" d="M14.8 3.8c2.2-2 6.2-2.2 8.8-.4l1.5 4.1-2.1 4.9-7.6-.3-2-4.9Z"></path>
+                      <path class="battery-mask-line" d="M15.2 6.6h9M16.8 4l-.3 7M21.8 3.9l.6 7"></path>
+                      <path class="battery-chest" d="M14.1 12.1c3.1-1.2 7.2-1.1 9.7.4l2 10.2-4.6 2.2-4.4-.5-4.2-2.8Z"></path>
+                      <path class="battery-stand-leg" d="m15.3 22.1-3.7 14.7 4.1.8 3.5-10.7 4 10.5 4-1.2-4.1-14Z"></path>
+                      <g class="battery-return-arm">
+                        <path d="M22.8 13.5c4.9 1 8.3 4.1 10.7 7.1l-2.6 2.5c-2.8-2.8-5.8-4.7-9.4-5.2Z"></path>
+                        <circle class="battery-hand" cx="33.4" cy="21.9" r="1.7"></circle>
+                      </g>
+                      <path class="battery-glove-arm" d="M14.2 14.3 8.1 18l1.7 3.3 6.8-3.4Z"></path>
+                      <ellipse class="battery-glove" cx="7.7" cy="19.4" rx="3.4" ry="2.9"></ellipse>
+                    </g>
                   </svg>
                 </span>` : ''}
               </span>
