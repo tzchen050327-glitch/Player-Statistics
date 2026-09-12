@@ -1,0 +1,54 @@
+name: Apply v2.32 CPBL PA metadata
+on:
+  push:
+    branches: [feature-v2.32-cpbl-pa-meta]
+    paths:
+      - 'scripts/patch-v232-cpbl-pa-meta.py'
+      - '.github/workflows/apply-v232-cpbl-pa-meta.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature-v2.32-cpbl-pa-meta
+      - name: Apply v2.32 patch
+        run: python scripts/patch-v232-cpbl-pa-meta.py
+      - name: Build bundle
+        run: python scripts/build-app.py
+      - name: Validate CPBL PA metadata wiring
+        run: |
+          grep -q "APP_VERSION = 'v2.32'" js/00-core-config.js
+          grep -q "CPBL_GAME_DETAIL_API_URL" js/00-core-config.js
+          grep -q "homeGameDetailMeta(play)" js/11-home-international.js
+          grep -q "homeGameDetailRbiLabel" js/11-home-international.js
+          grep -q "baseball-player-card-pwa-v149" service-worker.js
+          test -f 'index v2.32.html'
+          test -f 'index v2.31.html'
+          test ! -f 'index v2.30.html'
+      - name: Syntax and deterministic build
+        run: |
+          node --check app.js
+          cp app.js /tmp/app.js
+          python scripts/build-app.py
+          cmp -s app.js /tmp/app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python -m http.server 8765 >/tmp/server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          google-chrome --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=3500 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -q '球員戰績圖片' /tmp/dom.html
+      - name: Commit v2.32
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.32.html' js/00-core-config.js js/11-home-international.js service-worker.js
+          git add -u 'index v2.30.html' || true
+          git commit -m 'v2.32 add CPBL outs bases and RBI metadata'
+          git push origin HEAD:feature-v2.32-cpbl-pa-meta
