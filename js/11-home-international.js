@@ -500,8 +500,33 @@
 
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
-    const HOME_DAILY_GAMES_TTL = 60 * 1000;
+    const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
+    const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
+    const HOME_DAILY_AUTO_REFRESH_LIMIT = 360;
+    const HOME_DAILY_AUTO_REFRESH_STORAGE_KEY = 'home-daily-games-auto-refresh-budget-v1';
     let homeDailyGamesRefreshTimer = 0;
+
+    function homeDailyGamesAutoRefreshBudget() {
+      const day = localISODate();
+      try {
+        const raw = JSON.parse(localStorage.getItem(HOME_DAILY_AUTO_REFRESH_STORAGE_KEY) || '{}');
+        if (raw?.day === day) return { day, count:Math.max(0, Number(raw.count) || 0) };
+      } catch {}
+      return { day, count:0 };
+    }
+
+    function homeDailyGamesAutoRefreshAvailable() {
+      return homeDailyGamesAutoRefreshBudget().count < HOME_DAILY_AUTO_REFRESH_LIMIT;
+    }
+
+    function consumeHomeDailyGamesAutoRefresh() {
+      const state = homeDailyGamesAutoRefreshBudget();
+      if (state.count >= HOME_DAILY_AUTO_REFRESH_LIMIT) return false;
+      try {
+        localStorage.setItem(HOME_DAILY_AUTO_REFRESH_STORAGE_KEY, JSON.stringify({ day:state.day, count:state.count + 1 }));
+      } catch {}
+      return true;
+    }
 
     function homeDailyGamesHasLive(games = []) {
       return Array.isArray(games) && games.some(game => String(game?.status || '').toLowerCase() === 'live');
@@ -520,16 +545,19 @@
 
     function homeDailyGamesRefreshDelay(league, date, games = []) {
       if (String(date || '') !== localISODate()) return 0;
-      if (homeDailyGamesHasLive(games)) return 30 * 1000;
+      if (homeDailyGamesHasLive(games)) {
+        // MLB games span much more of the day, so poll it less aggressively.
+        return league === 'MLB' ? 2 * 60 * 1000 : 60 * 1000;
+      }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
       const starts = scheduled.map(game => homeDailyGamesStartMs(league, date, game?.time)).filter(Number.isFinite);
-      if (!starts.length) return 30 * 60 * 1000;
+      if (!starts.length) return 60 * 60 * 1000;
       const msUntil = Math.min(...starts) - Date.now();
-      if (msUntil <= 15 * 60 * 1000) return 60 * 1000;
-      if (msUntil <= 60 * 60 * 1000) return 5 * 60 * 1000;
-      if (msUntil <= 3 * 60 * 60 * 1000) return 10 * 60 * 1000;
-      return 30 * 60 * 1000;
+      if (msUntil <= 15 * 60 * 1000) return 2 * 60 * 1000;
+      if (msUntil <= 60 * 60 * 1000) return 10 * 60 * 1000;
+      if (msUntil <= 3 * 60 * 60 * 1000) return 20 * 60 * 1000;
+      return 60 * 60 * 1000;
     }
 
     function stopHomeDailyGamesAutoRefresh() {
@@ -545,18 +573,23 @@
       if (!league) return;
       const cached = homeDailyGamesCache.get(`${league}|${date}`);
       const games = Array.isArray(cached?.games) ? cached.games : [];
-      const delay = homeDailyGamesRefreshDelay(league, date, games);
-      if (!delay) return;
+      let delay = homeDailyGamesRefreshDelay(league, date, games);
+      // On upstream errors, slow down retries instead of hammering Supabase / official sites.
+      if (cached?.error) delay = Math.max(delay || 0, 10 * 60 * 1000);
+      if (!delay || !homeDailyGamesAutoRefreshAvailable()) return;
+      if (globalThis.navigator?.connection?.saveData) delay *= 2;
       homeDailyGamesRefreshTimer = setTimeout(() => {
         homeDailyGamesRefreshTimer = 0;
         if (document.visibilityState !== 'visible' || currentPage !== 'home' || homeDailyGamesLeague() !== league || String(els.gameDate?.value || localISODate()) !== date) return;
+        if (!consumeHomeDailyGamesAutoRefresh()) return;
         renderHomeDailyGames({ force:true });
       }, delay);
     }
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        if (currentPage === 'home') renderHomeDailyGames({ force:true });
+        // Reuse a still-fresh result instead of forcing another Edge Function invocation on every focus change.
+        if (currentPage === 'home') renderHomeDailyGames();
       } else {
         stopHomeDailyGamesAutoRefresh();
       }
@@ -613,7 +646,10 @@
       const key = `${league}|${date}`;
       const now = Date.now();
       const cached = homeDailyGamesCache.get(key);
-      if (!force && cached && now - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL) return cached.games || [];
+      const age = cached ? now - Number(cached.at || 0) : Infinity;
+      if (!force && cached && age < HOME_DAILY_GAMES_TTL) return cached.games || [];
+      // Even forced refreshes are coalesced for a short floor to avoid double-clicks / rapid tab changes.
+      if (force && cached && age < HOME_DAILY_GAMES_FORCE_FLOOR) return cached.games || [];
       if (homeDailyGamesLoading.has(key)) return null;
 
       homeDailyGamesLoading.add(key);
@@ -702,7 +738,7 @@
               <strong>當日賽事</strong>
               <span class="home-league-live-row">
                 <span>${escapeHtml(leagueLabel)}</span>
-                ${homeDailyGamesHasLive(games) ? `<span class="home-live-refresh-rail ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分"><i></i></span>` : ''}
+                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-refresh-rail ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分"><i></i></span>` : ''}
               </span>
             </div>
             <div class="home-daily-games-meta">
