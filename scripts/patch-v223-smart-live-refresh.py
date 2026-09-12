@@ -19,19 +19,12 @@ if anchor not in s:
     raise SystemExit('daily games state anchor not found')
 s = s.replace(anchor, insert, 1)
 
-old = """      } finally {\n        homeDailyGamesLoading.delete(key);\n        if (homeDailyGamesLeague() === league && String(els.gameDate?.value || localISODate()) === date) {\n          renderHomeDailyGames({ skipLoad:true });\n        }\n      }\n"""
-new = """      } finally {\n        homeDailyGamesLoading.delete(key);\n        if (homeDailyGamesLeague() === league && String(els.gameDate?.value || localISODate()) === date) {\n          renderHomeDailyGames({ skipLoad:true });\n          scheduleHomeDailyGamesAutoRefresh();\n        }\n      }\n"""
-if old not in s:
-    raise SystemExit('load finally anchor not found')
-s = s.replace(old, new, 1)
-
 old = """              <strong>當日賽事</strong>\n              <span>${escapeHtml(leagueLabel)}</span>\n"""
 new = """              <strong>當日賽事</strong>\n              <span class=\"home-league-live-row\">\n                <span>${escapeHtml(leagueLabel)}</span>\n                ${homeDailyGamesHasLive(games) ? `<span class=\"home-live-refresh-rail ${loading ? 'is-refreshing' : ''}\" title=\"比賽進行中，自動更新比分\" aria-label=\"比賽進行中，自動更新比分\"><i></i></span>` : ''}\n              </span>\n"""
 if old not in s:
     raise SystemExit('league label anchor not found')
 s = s.replace(old, new, 1)
 
-# Every render recalculates the next interval for the currently visible league/date.
 old = """      host.innerHTML = `\n        <section class=\"home-daily-games-shell\">\n"""
 new = """      scheduleHomeDailyGamesAutoRefresh();\n      host.innerHTML = `\n        <section class=\"home-daily-games-shell\">\n"""
 if old not in s:
