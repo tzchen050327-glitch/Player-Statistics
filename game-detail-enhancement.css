@@ -21,7 +21,7 @@
 
 .gdx-bases-card {
   min-height: 132px;
-  padding: 16px 18px;
+  padding: 16px 18px 13px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,6 +35,15 @@
   font-size: 13px;
   font-weight: 800;
   letter-spacing: .02em;
+}
+
+.gdx-outs {
+  margin-top: 5px;
+  color: #173f67;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .gdx-current-stack {
@@ -174,7 +183,12 @@
 
   .gdx-bases-card {
     min-height: 118px;
-    padding: 12px 8px;
+    padding: 12px 8px 10px;
+  }
+
+  .gdx-outs {
+    margin-top: 4px;
+    font-size: 15px;
   }
 
   .gdx-current-row {
