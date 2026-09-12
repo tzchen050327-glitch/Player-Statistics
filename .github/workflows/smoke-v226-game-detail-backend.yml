@@ -1,0 +1,38 @@
+name: Smoke v2.26 game detail backend
+
+on:
+  push:
+    branches: [feature-v2.26-game-detail-tw-jp]
+    paths:
+      - '.github/workflows/smoke-v226-game-detail-backend.yml'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise CPBL and NPB game-detail endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="$(python3 - <<'PY'
+          import re
+          s=open('js/00-core-config.js',encoding='utf-8').read()
+          print(re.search(r"const CPBL_APP_KEY = '([^']+)'",s).group(1))
+          PY
+          )"
+          URL='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail'
+          curl -fsS "$URL" -H 'content-type: application/json' \
+            --data "{\"appKey\":\"$KEY\",\"action\":\"game-detail\",\"league\":\"CPBL\",\"date\":\"2026-09-11\",\"gameId\":\"323\",\"away\":\"中信兄弟\",\"home\":\"樂天桃猿\"}" > /tmp/cpbl.json
+          curl -fsS "$URL" -H 'content-type: application/json' \
+            --data "{\"appKey\":\"$KEY\",\"action\":\"game-detail\",\"league\":\"NPB\",\"date\":\"2026-09-11\",\"away\":\"廣島鯉魚\",\"home\":\"橫濱DeNA\"}" > /tmp/npb.json
+          python3 - <<'PY'
+          import json
+          for league,path in [('CPBL','/tmp/cpbl.json'),('NPB','/tmp/npb.json')]:
+              data=json.load(open(path,encoding='utf-8'))
+              assert data.get('ok') is True, (league,data.get('error'))
+              assert data.get('league') == league, (league,data.get('league'))
+              assert isinstance(data.get('plays'),list), league
+              assert len(data['plays']) > 0, (league,'no plate appearances')
+              print(league,'ok','plays=',len(data['plays']),'status=',data.get('status'))
+          PY
