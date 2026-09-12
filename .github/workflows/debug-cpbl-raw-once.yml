@@ -1,0 +1,30 @@
+name: Debug CPBL raw once
+on:
+  push:
+    branches: [debug-cpbl-20260912-status]
+    paths: ['.github/workflows/debug-cpbl-raw-once.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query CPBL raw schedule rows
+        run: |
+          python3 - <<'PY'
+          import requests,re,json
+          s=requests.Session()
+          h={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36'}
+          page=s.get('https://cpbl.com.tw/schedule',headers=h,timeout=20)
+          page.raise_for_status()
+          m=re.search(r"RequestVerificationToken:\s*['\"]([^'\"]+)['\"]",page.text) or re.search(r'name=["\']__RequestVerificationToken["\'][^>]*value=["\']([^"\']+)',page.text)
+          token=m.group(1)
+          headers={**h,'Accept':'application/json, text/javascript, */*; q=0.01','Content-Type':'application/x-www-form-urlencoded; charset=UTF-8','X-Requested-With':'XMLHttpRequest','Referer':'https://cpbl.com.tw/schedule','Origin':'https://cpbl.com.tw','RequestVerificationToken':token}
+          r=s.post('https://cpbl.com.tw/schedule/getgamedatas',headers=headers,data={'calendar':'2026/09/01','location':'','kindCode':'A'},timeout=20)
+          r.raise_for_status()
+          j=r.json(); rows=json.loads(j['GameDatas']) if isinstance(j.get('GameDatas'),str) else j.get('GameDatas',[])
+          for row in rows:
+            if str(row.get('GameDate',''))[:10]=='2026-09-12':
+              keep={k:v for k,v in row.items() if any(x in k.lower() for x in ['status','state','score','point','time','date','sno','result','inning','field','team'])}
+              print(json.dumps(keep,ensure_ascii=False,sort_keys=True))
+          PY
