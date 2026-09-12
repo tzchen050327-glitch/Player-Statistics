@@ -973,7 +973,18 @@
               <strong>當日賽事</strong>
               <span class="home-league-live-row">
                 <span>${escapeHtml(leagueLabel)}</span>
-                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-refresh-rail ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分"><i></i></span>` : ''}
+                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-catchplay ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
+                  <svg class="home-live-player home-live-pitcher" viewBox="0 0 22 22" aria-hidden="true">
+                    <circle cx="6" cy="4" r="2.1"></circle>
+                    <path d="M6 6.7 8.3 10.2 12.8 7.9M8.3 10.2 6.1 16.7M8.3 10.2 11.4 16.5M12.8 7.9 15.2 6.5"></path>
+                  </svg>
+                  <span class="home-live-ball"></span>
+                  <svg class="home-live-player home-live-catcher" viewBox="0 0 22 22" aria-hidden="true">
+                    <circle cx="15.5" cy="4.4" r="2.1"></circle>
+                    <path d="M15.3 6.7 13.8 10.4 9.3 9.2M13.8 10.4 10.4 15.8M13.8 10.4 17.4 15.8M9.3 9.2 7.2 8.4"></path>
+                    <path class="home-live-mitt" d="M6.3 6.9c-1.3.4-2.1 1.4-1.8 2.4.4 1.2 1.8 1.6 3.1.8 1-.6 1.3-1.8.6-2.6-.5-.6-1.2-.8-1.9-.6Z"></path>
+                  </svg>
+                </span>` : ''}
               </span>
             </div>
             <div class="home-daily-games-meta">

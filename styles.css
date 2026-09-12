@@ -4241,3 +4241,85 @@ body.home-game-detail-open{overflow:hidden}
 .game-detail-play-section{margin-top:15px}.game-detail-section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 2px}.game-detail-section-title strong{font-size:17px;color:#173a5a}.game-detail-section-title span{font-size:12px;color:#7a8793}
 .game-detail-inning{border:1px solid #d3dde6;border-radius:12px;background:#fff;margin-bottom:9px;overflow:hidden}.game-detail-inning summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;font-weight:900;color:#24435f;background:#f4f7fa}.game-detail-inning summary::-webkit-details-marker{display:none}.game-detail-inning summary span{font-size:11px;color:#7b8792;font-weight:800}.game-detail-pa-list{padding:0 12px}.game-detail-pa-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-top:1px solid #edf0f3}.game-detail-pa-main{min-width:0;display:flex;align-items:center;gap:9px}.game-detail-pa-main strong{min-width:74px;color:#1f3d58}.game-detail-pa-main span{color:#394f62;overflow:hidden;text-overflow:ellipsis}.game-detail-pa-meta{font-size:11px;color:#86929d;text-align:right;white-space:nowrap}.game-detail-empty{border:1px dashed #cad4de;border-radius:12px;background:#fff;padding:28px 14px;text-align:center;color:#7a8792;font-size:13px}
 @media(max-width:720px){.game-detail-sticky-head{grid-template-columns:auto 1fr auto;gap:8px;min-height:56px;padding:8px 10px}.game-detail-back{padding:8px 9px;font-size:12px}.game-detail-content{padding:10px 10px 28px}.game-detail-score-card{padding:12px}.game-detail-score-row{gap:6px}.game-detail-score-row span{font-size:13px}.game-detail-score-row strong{font-size:30px}.game-detail-current-grid{grid-template-columns:1fr 1fr;gap:7px}.game-detail-current-card{padding:9px}.game-detail-current-card strong{font-size:15px}.game-detail-pa-row{grid-template-columns:1fr}.game-detail-pa-meta{text-align:left;padding-left:83px;margin-top:-4px}.game-detail-pa-main strong{min-width:74px}}
+
+
+/* v2.28 live pitcher/catcher refresh indicator */
+.home-live-catchplay{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  flex:1 1 auto;
+  min-width:66px;
+  height:17px;
+  overflow:hidden;
+  color:#315777;
+  vertical-align:middle;
+}
+.home-live-player{
+  position:relative;
+  z-index:2;
+  flex:0 0 19px;
+  width:19px;
+  height:19px;
+  overflow:visible;
+  fill:#315777;
+  stroke:#315777;
+  stroke-width:1.65;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.home-live-player circle{stroke:none}
+.home-live-player path{fill:none}
+.home-live-catcher .home-live-mitt{fill:#d7ad52;stroke:#b08328;stroke-width:1.15;transform-origin:6.8px 8.7px;animation:homeLiveMittCatch 1.55s ease-in-out infinite}
+.home-live-pitcher{transform-origin:8px 11px;animation:homeLivePitcherMotion 1.55s ease-in-out infinite}
+.home-live-ball{
+  position:absolute;
+  z-index:3;
+  top:6px;
+  left:19px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#e4b447;
+  box-shadow:0 0 5px rgba(228,180,71,.72);
+  animation:homeLivePitchFlight 1.55s cubic-bezier(.3,.02,.55,.98) infinite;
+}
+.home-live-catchplay::after{
+  content:'';
+  position:absolute;
+  z-index:0;
+  left:20px;
+  right:20px;
+  bottom:2px;
+  height:1px;
+  border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(49,87,119,.12),transparent);
+}
+.home-live-catchplay.is-refreshing .home-live-ball,
+.home-live-catchplay.is-refreshing .home-live-pitcher,
+.home-live-catchplay.is-refreshing .home-live-mitt{animation-duration:.82s}
+@keyframes homeLivePitchFlight{
+  0%,12%{left:19px;opacity:0;transform:translateY(1px) scale(.85)}
+  17%{opacity:1}
+  64%{left:calc(100% - 24px);opacity:1;transform:translateY(-1px) scale(1)}
+  70%,100%{left:calc(100% - 24px);opacity:0;transform:translateY(0) scale(.85)}
+}
+@keyframes homeLivePitcherMotion{
+  0%,8%,100%{transform:rotate(0deg) translateX(0)}
+  18%{transform:rotate(-8deg) translateX(-1px)}
+  32%{transform:rotate(7deg) translateX(1px)}
+  46%,85%{transform:rotate(0deg) translateX(0)}
+}
+@keyframes homeLiveMittCatch{
+  0%,52%,100%{transform:scale(1)}
+  63%{transform:scale(1.18) rotate(-5deg)}
+  74%{transform:scale(.96)}
+}
+@media(max-width:720px){
+  .home-live-catchplay{width:100%;min-width:0;height:17px}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-live-ball{animation-duration:3.2s}
+  .home-live-pitcher,.home-live-catcher .home-live-mitt{animation:none}
+}
