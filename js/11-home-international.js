@@ -508,7 +508,7 @@
     let homeGameDetailCountdownTimer = 0;
     let homeGameDetailNextRefreshAt = 0;
     let homeGameDetailErrorStreak = 0;
-    const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;
+    const HOME_DAILY_GAMES_TTL = 30 * 1000;
     const HOME_DAILY_GAMES_FORCE_FLOOR = 15 * 1000;
     const HOME_DAILY_AUTO_REFRESH_LIMIT = 2400;
     const HOME_DAILY_AUTO_REFRESH_STORAGE_KEY = 'home-daily-games-auto-refresh-budget-v1';
@@ -1006,7 +1006,29 @@
 
       homeDailyGamesLoading.add(key);
       try {
-        const games = await leagueDailyGamesRequest(league, date);
+        let games = await leagueDailyGamesRequest(league, date);
+
+        // CPBL's schedule feed can keep a suspended/reserved game marked as live.
+        // For games that the outer feed still calls live, verify against the authoritative
+        // single-game detail endpoint before rendering the card.
+        if (league === 'CPBL' && Array.isArray(games)) {
+          const liveGames = games.filter(item => String(item?.status || '').toLowerCase() === 'live' && item?.id);
+          if (liveGames.length) {
+            await Promise.all(liveGames.map(async item => {
+              try {
+                const verified = await leagueGameDetailRequest('CPBL', date, item);
+                const verifiedStatus = String(verified?.status || '').toLowerCase();
+                if (verifiedStatus) item.status = verifiedStatus;
+                if (verified?.game?.awayScore !== undefined && verified.game.awayScore !== null) item.awayScore = verified.game.awayScore;
+                if (verified?.game?.homeScore !== undefined && verified.game.homeScore !== null) item.homeScore = verified.game.homeScore;
+                if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;
+              } catch (error) {
+                console.warn('CPBL 外層賽況驗證失敗', error);
+              }
+            }));
+          }
+        }
+
         homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
         return games;
       } catch (error) {
