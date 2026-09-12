@@ -1,0 +1,65 @@
+name: Apply v2.25 quota guard
+
+on:
+  push:
+    branches: [feature-v2.25-quota-guard]
+    paths:
+      - 'scripts/patch-v225-quota-guard.py'
+      - '.github/workflows/apply-v225-quota-guard.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.25 patch
+        run: python3 scripts/patch-v225-quota-guard.py
+      - name: Validate quota guard
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.25'" js/00-core-config.js
+          grep -Fq 'const HOME_DAILY_GAMES_TTL = 2 * 60 * 1000;' js/11-home-international.js
+          grep -Fq 'const HOME_DAILY_AUTO_REFRESH_LIMIT = 360;' js/11-home-international.js
+          grep -Fq "return league === 'MLB' ? 2 * 60 * 1000 : 60 * 1000;" js/11-home-international.js
+          grep -Fq 'if (msUntil <= 15 * 60 * 1000) return 2 * 60 * 1000;' js/11-home-international.js
+          grep -Fq 'if (msUntil <= 60 * 60 * 1000) return 10 * 60 * 1000;' js/11-home-international.js
+          grep -Fq 'if (msUntil <= 3 * 60 * 60 * 1000) return 20 * 60 * 1000;' js/11-home-international.js
+          grep -Fq 'return 60 * 60 * 1000;' js/11-home-international.js
+          grep -Fq 'if (cached?.error) delay = Math.max(delay || 0, 10 * 60 * 1000);' js/11-home-international.js
+          grep -Fq 'if (force && cached && age < HOME_DAILY_GAMES_FORCE_FLOOR)' js/11-home-international.js
+          grep -Fq "if (currentPage === 'home') renderHomeDailyGames();" js/11-home-international.js
+          grep -Fq 'homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable()' js/11-home-international.js
+          grep -Fq './app.js?v=v2.25' index.html
+          grep -Fq 'baseball-player-card-pwa-v142' service-worker.js
+          test -f 'index v2.25.html'
+          test -f 'index v2.24.html'
+          test ! -f 'index v2.23.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.25"' /tmp/dom.html
+      - name: Commit v2.25
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.25.html' js/00-core-config.js js/11-home-international.js service-worker.js
+          if [ -f 'index v2.23.html' ]; then git rm -f 'index v2.23.html'; fi
+          git commit -m 'v2.25 reduce live-score quota and upstream risk'
+          git push origin HEAD:feature-v2.25-quota-guard
