@@ -1,0 +1,60 @@
+name: Apply v2.29 battery animation
+
+on:
+  push:
+    branches: [feature-v2.29-battery-animation]
+    paths:
+      - 'scripts/patch-v229-battery-animation.py'
+      - '.github/workflows/apply-v229-battery-animation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.29 patch
+        run: python3 scripts/patch-v229-battery-animation.py
+      - name: Validate battery animation
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.29'" js/00-core-config.js
+          grep -Fq 'home-live-battery' js/11-home-international.js
+          grep -Fq 'battery-catcher-crouch' js/11-home-international.js
+          grep -Fq 'battery-catcher-stand' js/11-home-international.js
+          grep -Fq 'battery-return-arm' js/11-home-international.js
+          grep -Fq '@keyframes batteryBallRoundTrip' styles.css
+          grep -Fq '@keyframes batteryCatcherStand' styles.css
+          grep -Fq '@keyframes batteryReturnArm' styles.css
+          grep -Fq './app.js?v=v2.29' index.html
+          grep -Fq 'baseball-player-card-pwa-v146' service-worker.js
+          test -f 'index v2.29.html'
+          test -f 'index v2.28.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.29"' /tmp/dom.html
+      - name: Commit v2.29
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.29.html' js/00-core-config.js js/11-home-international.js styles.css service-worker.js
+          if [ -f 'index v2.27.html' ]; then git rm -f 'index v2.27.html'; fi
+          git commit -m 'v2.29 refine live pitcher catcher animation'
+          git push origin HEAD:feature-v2.29-battery-animation
