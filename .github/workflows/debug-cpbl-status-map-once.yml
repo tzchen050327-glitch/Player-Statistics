@@ -1,0 +1,27 @@
+name: Debug CPBL status map once
+on:
+  push:
+    branches: [debug-cpbl-20260912-status]
+    paths: ['.github/workflows/debug-cpbl-status-map-once.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query CPBL status map samples
+        run: |
+          python3 - <<'PY'
+          import requests,re,json
+          s=requests.Session(); h={'User-Agent':'Mozilla/5.0'}
+          page=s.get('https://cpbl.com.tw/schedule',headers=h,timeout=20); page.raise_for_status()
+          m=re.search(r"RequestVerificationToken:\s*['\"]([^'\"]+)['\"]",page.text) or re.search(r'name=["\']__RequestVerificationToken["\'][^>]*value=["\']([^"\']+)',page.text)
+          headers={**h,'Accept':'application/json, text/javascript, */*; q=0.01','Content-Type':'application/x-www-form-urlencoded; charset=UTF-8','X-Requested-With':'XMLHttpRequest','Referer':'https://cpbl.com.tw/schedule','Origin':'https://cpbl.com.tw','RequestVerificationToken':m.group(1)}
+          r=s.post('https://cpbl.com.tw/schedule/getgamedatas',headers=headers,data={'calendar':'2026/09/01','location':'','kindCode':'A'},timeout=20); r.raise_for_status()
+          j=r.json(); rows=json.loads(j['GameDatas']) if isinstance(j.get('GameDatas'),str) else j.get('GameDatas',[])
+          for day in ('2026-09-11','2026-09-12'):
+            print('DAY',day)
+            for row in rows:
+              if str(row.get('GameDate',''))[:10]==day:
+                print(json.dumps({k:row.get(k) for k in ['GameSno','PresentStatus','GameResult','GameDateTimeS','GameDateTimeE','HomeScore','VisitingScore','GameDuringTime','HomeTeamName','VisitingTeamName']},ensure_ascii=False))
+          PY
