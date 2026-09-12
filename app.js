@@ -5018,7 +5018,7 @@ bg2: {
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
     const homeGameDetailCache = new Map();
-    const HOME_GAME_DETAIL_AUTO_LIMIT = 120;
+    const HOME_GAME_DETAIL_AUTO_LIMIT = 2400;
     const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
     let activeHomeGameDetail = null;
     let homeGameDetailRefreshTimer = 0;
@@ -5375,12 +5375,12 @@ bg2: {
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
-      const delay = activeHomeGameDetail.league === 'NPB' ? 90 * 1000 : 60 * 1000;
+      const delay = 15 * 1000;
       homeGameDetailRefreshTimer = setTimeout(() => {
         homeGameDetailRefreshTimer = 0;
         if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
         refreshActiveHomeGameDetail({ force:true, automatic:true });
-      }, globalThis.navigator?.connection?.saveData ? delay * 2 : delay);
+      }, delay);
     }
 
     async function refreshActiveHomeGameDetail({ force = false, automatic = false } = {}) {
