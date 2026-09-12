@@ -4099,3 +4099,41 @@ dialog::backdrop {
   .home-games-scroller,.home-games-scroller.is-mlb{grid-auto-columns:minmax(190px,79vw);gap:9px}
   .home-game-card{min-height:138px}
 }
+
+
+/* v2.19 compact homepage daily games */
+.home-daily-games{margin:10px 0 12px}
+.home-daily-games-shell{border-radius:16px;padding:10px 11px 8px}
+.home-daily-games-head{gap:9px;margin-bottom:7px}
+.home-daily-games-title{gap:7px}
+.home-daily-games-title strong{font-size:17px}
+.home-daily-games-title span{font-size:11px}
+.home-daily-games-meta{gap:7px;font-size:11px}
+.home-games-scroller{grid-auto-columns:minmax(176px,205px);gap:8px;padding:1px 1px 5px}
+.home-games-scroller.is-mlb{grid-auto-columns:minmax(174px,198px)}
+.home-game-card{min-height:101px;border-radius:13px;padding:8px 10px 7px}
+.home-game-card-top{min-height:20px;margin-bottom:2px}
+.home-game-status{min-height:20px;padding:0 7px;font-size:10px}
+.home-game-time{font-size:10px}
+.home-game-team{gap:7px;padding:2px 0}
+.home-game-team-name{font-size:12px}
+.home-game-score{min-width:23px;font-size:19px}
+.home-game-venue{margin-top:3px;padding-top:5px;font-size:10px}
+.home-games-state{min-height:58px;padding:12px;font-size:12px}
+
+@media (max-width:600px){
+  .home-daily-games{margin:8px 0 10px}
+  .home-daily-games-shell{padding:9px 9px 7px;border-radius:15px}
+  .home-daily-games-head{margin-bottom:6px}
+  .home-daily-games-title strong{font-size:16px}
+  .home-daily-games-title span{font-size:10px}
+  .home-daily-games-meta{font-size:10px;gap:6px}
+  .home-games-scroller,.home-games-scroller.is-mlb{grid-auto-columns:minmax(170px,188px);gap:7px;padding-bottom:4px}
+  .home-game-card{min-height:94px;padding:7px 9px 6px}
+  .home-game-card-top{min-height:18px;margin-bottom:1px}
+  .home-game-status{min-height:18px;padding:0 6px;font-size:9px}
+  .home-game-team{padding:1px 0}
+  .home-game-team-name{font-size:12px}
+  .home-game-score{font-size:18px}
+  .home-game-venue{padding-top:4px;font-size:9px}
+}

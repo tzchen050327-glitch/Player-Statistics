@@ -611,8 +611,9 @@
         bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map(game => {
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
-          const awayScore = homeDailyGameScore(game?.awayScore);
-          const homeScore = homeDailyGameScore(game?.homeScore);
+          const showScore = status === 'live' || status === 'final';
+          const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
+          const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
           const venue = String(game?.venue || '').trim();
           return `
             <article class="home-game-card status-${escapeAttr(status)}">
