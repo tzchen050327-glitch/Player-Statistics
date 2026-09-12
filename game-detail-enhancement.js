@@ -55,6 +55,15 @@
     };
   }
 
+  function baseStateLabel(value) {
+    const s = normalizeBaseState(value);
+    const bases = [];
+    if (s.first) bases.push('一壘');
+    if (s.second) bases.push('二壘');
+    if (s.third) bases.push('三壘');
+    return bases.length ? `${bases.join('、')}有人` : '壘上無人';
+  }
+
   function currentBaseState(detail) {
     if (detail?.current?.baseState) return detail.current.baseState;
     if (detail?.current?.bases) return detail.current.bases;
@@ -112,6 +121,18 @@
     return s === 'null' || s === 'undefined' ? '' : s;
   }
 
+  function numericInningTotal(values) {
+    let total = 0;
+    let found = false;
+    for (const value of Array.isArray(values) ? values : []) {
+      const raw = safeCell(value);
+      if (!/^-?\d+$/.test(raw)) continue;
+      total += Number(raw);
+      found = true;
+    }
+    return found ? total : null;
+  }
+
   function inferredTotals(detail) {
     let awayH = 0, homeH = 0, awayE = 0, homeE = 0;
     for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
@@ -135,25 +156,41 @@
     const away = Array.isArray(source.away) ? source.away : [];
     const home = Array.isArray(source.home) ? source.home : [];
     const fallback = (value, alt) => safeCell(value) === '' ? alt : value;
+    const awayInningRuns = numericInningTotal(away);
+    const homeInningRuns = numericInningTotal(home);
+    const awayRuns = awayInningRuns !== null
+      ? awayInningRuns
+      : fallback(source?.awayTotals?.R, fallback(game.awayScore, ''));
+    const homeRuns = homeInningRuns !== null
+      ? homeInningRuns
+      : fallback(source?.homeTotals?.R, fallback(game.homeScore, ''));
     return {
       innings,
       away,
       home,
       awayTotals: {
-        R: source?.awayTotals?.R ?? game.awayScore ?? '',
+        R: awayRuns,
         H: fallback(source?.awayTotals?.H, inferred.awayH),
         E: fallback(source?.awayTotals?.E, inferred.awayE)
       },
       homeTotals: {
-        R: source?.homeTotals?.R ?? game.homeScore ?? '',
+        R: homeRuns,
         H: fallback(source?.homeTotals?.H, inferred.homeH),
         E: fallback(source?.homeTotals?.E, inferred.homeE)
       }
     };
   }
 
-  function renderScoreboard(detail) {
-    const board = normalizedBoard(detail);
+  function patchMainScore(scoreCard, board) {
+    const scoreEls = scoreCard?.querySelectorAll('.game-detail-score-row strong');
+    if (!scoreEls || scoreEls.length < 2) return;
+    const away = safeCell(board?.awayTotals?.R);
+    const home = safeCell(board?.homeTotals?.R);
+    if (away !== '') scoreEls[0].textContent = away;
+    if (home !== '') scoreEls[1].textContent = home;
+  }
+
+  function renderScoreboard(detail, board = normalizedBoard(detail)) {
     const game = detail?.game || {};
     const head = board.innings.map(x => `<th>${esc(x)}</th>`).join('');
     const cells = values => board.innings.map((_, i) => `<td>${esc(safeCell(values[i]))}</td>`).join('');
@@ -181,14 +218,51 @@
     </section>`;
   }
 
+  function renderPreviousPlay(detail) {
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const play = plays[plays.length - 1];
+    if (!play) return '';
+    const inning = Number(play.inning) || 0;
+    const half = play.half === 'bottom' ? '下' : play.half === 'top' ? '上' : '';
+    const inningLabel = inning ? `${inning}局${half}` : '';
+    const batter = String(play.batter || play.hitter || '—').trim() || '—';
+    const result = String(play.result || play.raw || '—').trim() || '—';
+    const outs = inferredOutsAfterPlay(play);
+    const baseValue = play.baseState || play.basesAfter || play.bases || '';
+    const meta = [];
+    if (outs >= 3) meta.push('3出局', '攻守交換');
+    else {
+      meta.push(`${Math.max(0, outs)}出局`);
+      meta.push(baseStateLabel(baseValue));
+    }
+    const rbi = Number(play.rbi) || 0;
+    if (rbi > 0) meta.push(`${rbi}打點`);
+    const pitcher = String(play.pitcher || '').trim();
+    if (pitcher) meta.push(`投手 ${pitcher}`);
+    const status = String(detail?.status || '').toLowerCase();
+    const title = status === 'final' ? '最後一個打席' : '上一個打席';
+    return `<section class="gdx-last-play game-detail-enhanced-marker" aria-label="${title}">
+      <div class="gdx-last-play-head"><strong>${title}</strong><span>${esc(inningLabel)}</span></div>
+      <div class="gdx-last-play-main">
+        <strong>${esc(batter)}</strong>
+        <span>${esc(result)}</span>
+      </div>
+      <div class="gdx-last-play-meta">${meta.map(esc).join('<i>｜</i>')}</div>
+    </section>`;
+  }
+
   function detailStamp(detail) {
     const game = detail?.game || {};
     const last = Array.isArray(detail?.plays) && detail.plays.length ? detail.plays[detail.plays.length - 1] : null;
     const board = detail?.scoreboard || {};
-    return [detail?.league, detail?.date, detail?.status, game.id, game.awayScore, game.homeScore,
+    return [
+      detail?.league, detail?.date, detail?.status, game.id, game.awayScore, game.homeScore,
       detail?.updatedAt, detail?.current?.outs, detail?.current?.pitcher?.name, detail?.current?.batter?.name,
-      board?.awayTotals?.H, board?.awayTotals?.E, board?.homeTotals?.H, board?.homeTotals?.E,
-      last?.inning, last?.half, last?.batter, last?.result, last?.bases].map(v => String(v ?? '')).join('|');
+      JSON.stringify(board?.away || []), JSON.stringify(board?.home || []),
+      board?.awayTotals?.R, board?.awayTotals?.H, board?.awayTotals?.E,
+      board?.homeTotals?.R, board?.homeTotals?.H, board?.homeTotals?.E,
+      last?.inning, last?.half, last?.batter, last?.pitcher, last?.result, last?.bases, last?.basesAfter, last?.rbi
+    ].map(v => String(v ?? '')).join('|');
   }
 
   function sameGame(body, detail) {
@@ -209,18 +283,28 @@
     if (!overlay || overlay.classList.contains('hidden') || !body || !sameGame(body, detail)) return;
     const scoreCard = body.querySelector('.game-detail-score-card');
     if (!scoreCard) return;
+    const board = normalizedBoard(detail);
+    patchMainScore(scoreCard, board);
+
     const stamp = detailStamp(detail);
     if (body.dataset.gdxStamp === stamp && body.querySelector('.game-detail-enhanced-marker')) return;
     body.dataset.gdxStamp = stamp;
     body.querySelectorAll('.game-detail-enhanced-marker').forEach(el => el.remove());
     body.querySelector('.game-detail-current-grid')?.remove();
+
     const status = String(detail.status || '').toLowerCase();
     let anchor = scoreCard;
     if (status === 'live') {
       scoreCard.insertAdjacentHTML('afterend', renderLiveSituation(detail));
       anchor = scoreCard.nextElementSibling || scoreCard;
     }
-    anchor.insertAdjacentHTML('afterend', renderScoreboard(detail));
+    anchor.insertAdjacentHTML('afterend', renderScoreboard(detail, board));
+
+    const playSection = body.querySelector('.game-detail-play-section');
+    const previousPlayHtml = renderPreviousPlay(detail);
+    if (playSection && previousPlayHtml) {
+      playSection.insertAdjacentHTML('beforebegin', previousPlayHtml);
+    }
   }
 
   function scheduleEnhance() {
