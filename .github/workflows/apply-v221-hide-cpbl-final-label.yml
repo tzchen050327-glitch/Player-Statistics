@@ -1,0 +1,56 @@
+name: Apply v2.21 hide CPBL final label
+
+on:
+  push:
+    branches: [feature-v2.20-compact-player-cards]
+    paths:
+      - 'scripts/patch-v221-hide-cpbl-final-label.py'
+      - '.github/workflows/apply-v221-hide-cpbl-final-label.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.21 patch
+        run: python3 scripts/patch-v221-hide-cpbl-final-label.py
+      - name: Validate CPBL final-label behavior
+        run: |
+          grep -Fq "const APP_VERSION = 'v2.21'" js/00-core-config.js
+          grep -Fq "league === 'CPBL' && status === 'final'" js/11-home-international.js
+          grep -Fq '${statusLabel ? `<span class="home-game-status' js/11-home-international.js
+          grep -Fq "./app.js?v=v2.21" index.html
+          grep -Fq "baseball-player-card-pwa-v138" service-worker.js
+          test -f 'index v2.21.html'
+          test -f 'index v2.20.html'
+          test ! -f 'index v2.19.html'
+      - name: Syntax and deterministic build
+        run: |
+          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
+          node --check app.js
+          cp app.js /tmp/app-committed.js
+          python3 scripts/build-app.py
+          cmp -s /tmp/app-committed.js app.js
+      - name: Chrome mobile smoke test
+        run: |
+          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then exit 0; fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --window-size=411,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
+          grep -Fq 'content="v2.21"' /tmp/dom.html
+      - name: Commit v2.21
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html 'index v2.21.html' js/00-core-config.js js/11-home-international.js service-worker.js
+          if [ -f 'index v2.19.html' ]; then git rm -f 'index v2.19.html'; fi
+          git commit -m 'v2.21 hide completed label for CPBL games'
+          git push origin HEAD:feature-v2.20-compact-player-cards
