@@ -1,14 +1,14 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v137';
+const CACHE_NAME = 'baseball-player-card-pwa-v138';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.20',
-  './app.js?v=v2.20',
+  './styles.css?v=v2.21',
+  './app.js?v=v2.21',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
-  './assets/default-hitter.jpg?v=v2.20',
-  './assets/default-pitcher.jpg?v=v2.20'
+  './assets/default-hitter.jpg?v=v2.21',
+  './assets/default-pitcher.jpg?v=v2.21'
 ];
 
 self.addEventListener('install', event => {
