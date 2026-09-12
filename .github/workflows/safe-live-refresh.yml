@@ -1,0 +1,72 @@
+name: Safe live refresh cadence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/safe-live-refresh.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch live refresh cadence and backoff
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('js/11-home-international.js')
+          s = p.read_text(encoding='utf-8')
+          old = s
+
+          # Home daily cards: CPBL/KBO 30s, NPB 60s, MLB 120s while live.
+          s = s.replace(
+              "return league === 'MLB' ? 2 * 60 * 1000 : 15 * 1000;",
+              "return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 60 * 1000 : 30 * 1000;"
+          )
+
+          # Single-game detail: CPBL 30s, NPB 45s.
+          s = s.replace(
+              "const delay = 15 * 1000;",
+              "const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;"
+          )
+
+          # Add adaptive error backoff state once.
+          if 'let homeGameDetailErrorStreak = 0;' not in s:
+              s = s.replace(
+                  'let homeGameDetailRefreshTimer = 0;',
+                  'let homeGameDetailRefreshTimer = 0;\n    let homeGameDetailErrorStreak = 0;',
+                  1
+              )
+
+          # Reset backoff after a successful refresh.
+          success = "        homeGameDetailCache.set(key, { at:Date.now(), detail });\n        syncHomeDailyGameFromDetail(league, date, game, detail);"
+          if success in s and 'homeGameDetailErrorStreak = 0;\n        syncHomeDailyGameFromDetail' not in s:
+              s = s.replace(
+                  success,
+                  "        homeGameDetailCache.set(key, { at:Date.now(), detail });\n        homeGameDetailErrorStreak = 0;\n        syncHomeDailyGameFromDetail(league, date, game, detail);",
+                  1
+              )
+
+          # Replace fixed 5-minute retry with 60s -> 120s -> 240s ... capped at 10m.
+          old_block = """        if (automatic) {\n          stopHomeGameDetailRefresh();\n          homeGameDetailRefreshTimer = setTimeout(() => {\n            homeGameDetailRefreshTimer = 0;\n            if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });\n          }, 5 * 60 * 1000);\n        }"""
+          new_block = """        if (automatic) {\n          homeGameDetailErrorStreak = Math.min(homeGameDetailErrorStreak + 1, 5);\n          const retryDelay = Math.min(10 * 60 * 1000, 60 * 1000 * (2 ** (homeGameDetailErrorStreak - 1)));\n          stopHomeGameDetailRefresh();\n          homeGameDetailRefreshTimer = setTimeout(() => {\n            homeGameDetailRefreshTimer = 0;\n            if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });\n          }, retryDelay);\n        }"""
+          if old_block in s:
+              s = s.replace(old_block, new_block, 1)
+
+          if s == old:
+              raise SystemExit('Expected refresh code was not found; no changes made.')
+          p.write_text(s, encoding='utf-8')
+          PY
+          python3 scripts/build-app.py
+          node --check app.js
+      - name: Commit changes
+        run: |
+          git config user.name 'chatgpt-fix'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/11-home-international.js app.js
+          git commit -m 'Reduce live polling and add adaptive backoff'
+          git push
