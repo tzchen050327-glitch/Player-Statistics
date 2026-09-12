@@ -1,16 +1,20 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v159';
+const CACHE_NAME = 'baseball-player-card-pwa-v160';
 
-// Emergency recovery service worker.
-// Do not intercept navigation or JS requests. Let the browser load the deployed files directly.
+// Emergency recovery worker: clear every old cache and unregister itself.
+// This intentionally disables SW interception so the installed PWA loads files directly.
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(key => caches.delete(key)));
-    await self.clients.claim();
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    } catch {}
+    try {
+      await self.registration.unregister();
+    } catch {}
   })());
 });
 
