@@ -731,12 +731,13 @@
         .replace(/二塁|2塁/g, '二壘')
         .replace(/三塁|3塁/g, '三壘');
       if (/壘上無人/.test(raw)) return '壘上無人';
-      if (/一、二、三壘|滿壘/.test(raw)) return /滿壘/.test(raw) ? '一、二、三壘' : raw;
+      if (/滿壘/.test(raw)) return '一、二、三壘有人';
       const bases = [];
       if (/一壘|(?:^|[^0-9])1(?:[^0-9]|$)/.test(raw)) bases.push('一');
       if (/二壘|(?:^|[^0-9])2(?:[^0-9]|$)/.test(raw)) bases.push('二');
       if (/三壘|(?:^|[^0-9])3(?:[^0-9]|$)/.test(raw)) bases.push('三');
-      return bases.length ? `${[...new Set(bases)].join('、')}壘` : raw;
+      if (bases.length) return `${[...new Set(bases)].join('、')}壘有人`;
+      return /壘$/.test(raw) ? `${raw}有人` : raw;
     }
 
     function homeGameDetailRbiLabel(value) {
