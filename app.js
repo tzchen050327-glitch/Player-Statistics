@@ -5072,7 +5072,7 @@ bg2: {
       if (String(date || '') !== localISODate()) return 0;
       if (homeDailyGamesHasLive(games)) {
         // MLB games span much more of the day, so poll it less aggressively.
-        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 60 * 1000 : 30 * 1000;
+        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 45 * 1000 : 30 * 1000;
       }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
