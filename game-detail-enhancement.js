@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.55';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.56';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -238,11 +238,13 @@
     };
 
     const wantedHalf = side === 'away' ? 'top' : 'bottom';
-    const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(play => play?.half === wantedHalf);
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const slots = new Map(), nameToSlot = new Map();
     let nextSlot = 1;
 
     for (const play of plays) {
+      // Substitutions can be announced while this team is on defense. Apply
+      // them to an already-known batting slot regardless of inning half.
       for (const change of parseSubs(play?.description)) {
         const slot = nameToSlot.get(normName(change.from));
         if (!slot) continue;
@@ -251,6 +253,8 @@
         slots.set(slot, repl);
         nameToSlot.set(normName(change.to), slot);
       }
+      // Only actual plate appearances advance this team's 1→9 batting cycle.
+      if (play?.half !== wantedHalf) continue;
       if (!realPA(play)) continue;
       const slot = nextSlot;
       nextSlot = slot === 9 ? 1 : slot + 1;
@@ -295,6 +299,43 @@
       const key = positionKey(entry?.position || entry?.pos || ''), name = compactName(entry?.name || entry?.fullName || '');
       if (key && name) map[key] = name;
     }
+
+    const removePlayer = name => {
+      const target = normName(name);
+      if (!target) return;
+      for (const [pos, current] of Object.entries(map)) {
+        if (normName(current) === target) delete map[pos];
+      }
+    };
+    const roleAndName = value => {
+      const text = compactName(value).replace(/[()（）]/g,'').replace(/^[-：:]+|[-：:]+$/g,'');
+      const m = text.match(/^(投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)[-：:]?(.*)$/);
+      if (m) return { pos:positionKey(m[1]), name:compactName(m[2]) };
+      const n = text.match(/^(.*?)[-：:]?(投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)$/);
+      if (n) return { pos:positionKey(n[2]), name:compactName(n[1]) };
+      return { pos:'', name:text };
+    };
+    const defensiveHalf = side === 'away' ? 'bottom' : 'top';
+    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
+      if (play?.half !== defensiveHalf) continue;
+      const text = String(play?.description || '');
+      let m;
+      const playerRe = /更換選手：([^。]+?)=>([^。]+)/g;
+      while ((m = playerRe.exec(text))) {
+        const from = roleAndName(m[1]), to = roleAndName(m[2]);
+        removePlayer(from.name);
+        removePlayer(to.name);
+        if (to.pos && to.name) map[to.pos] = to.name;
+      }
+      const defenseRe = /更換守備：([^。]+?)=>([^。]+)/g;
+      while ((m = defenseRe.exec(text))) {
+        const from = roleAndName(m[1]), to = roleAndName(m[2]);
+        const name = from.name || to.name;
+        removePlayer(name);
+        if (to.pos && name) map[to.pos] = name;
+      }
+    }
+
     const pitcher = compactName(raw?.pitcher?.fullName || raw?.pitcher?.name || detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || '');
     if (pitcher) map.p = pitcher;
     return map;
