@@ -525,18 +525,18 @@
     }
 
     function cloudSyncEnsureUi() {
-      const actions = document.getElementById('homeZoneSwitch');
+      const actions = document.getElementById('homeHeaderDateControl');
       if (actions && !document.getElementById('cloudSyncBtn')) {
         const button = document.createElement('button');
         button.id = 'cloudSyncBtn';
-        button.className = 'home-zone-btn';
+        button.className = 'cloud-sync-header-btn';
         button.type = 'button';
         button.textContent = '雲端同步';
         button.addEventListener('click', () => {
           cloudSyncRefreshUi();
           document.getElementById('cloudSyncDialog')?.showModal();
         });
-        actions.appendChild(button);
+        actions.insertBefore(button, actions.firstChild);
       }
 
       if (!document.getElementById('cloudSyncDialog')) {
@@ -655,9 +655,12 @@
     function cloudSyncRefreshUi() {
       const button = document.getElementById('cloudSyncBtn');
       if (button) {
-        button.textContent = cloudSyncCredentials ? `雲端同步 · ${cloudSyncCredentials.code}` : '雲端同步';
+        button.textContent = cloudSyncLastError ? '同步異常' : cloudSyncBusy ? '同步中' : cloudSyncCredentials ? '已同步' : '雲端同步';
+        button.classList.toggle('is-connected', Boolean(cloudSyncCredentials) && !cloudSyncLastError);
+        button.classList.toggle('is-error', Boolean(cloudSyncLastError));
+        button.classList.toggle('is-busy', Boolean(cloudSyncBusy));
         button.title = cloudSyncCredentials
-          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `已連接｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)
+          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)
           : '設定指定裝置／帳號共用球員資料';
       }
       const connected = document.getElementById('cloudSyncConnectedPanel');
@@ -680,5 +683,5 @@
       if (document.visibilityState === 'visible' && cloudSyncCredentials && db) void cloudSyncPull();
     });
 
-    // app.js is loaded at the end of <body>, so the home action row already exists here.
+    // app.js is loaded at the end of <body>, so the header controls already exist here.
     cloudSyncEnsureUi();
