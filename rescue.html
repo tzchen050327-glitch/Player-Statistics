@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>修復球員戰績圖片</title>
 <style>
-html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#10243d;color:#fff}body{display:grid;place-items:center;min-height:100vh}.card{width:min(86vw,420px);padding:28px;border:1px solid #34506f;border-radius:20px;background:#17314f;box-shadow:0 20px 60px #0004}.title{font-size:24px;font-weight:800;margin-bottom:10px}.status{line-height:1.7;color:#c8d8ea}.bar{height:8px;border-radius:99px;background:#2a4665;overflow:hidden;margin-top:18px}.bar i{display:block;height:100%;width:20%;background:#fff;animation:run 1.2s infinite ease-in-out}@keyframes run{0%{transform:translateX(-120%)}100%{transform:translateX(520%)}}</style>
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#10243d;color:#fff}body{display:grid;place-items:center;min-height:100vh}.card{width:min(86vw,420px);padding:28px;border:1px solid #34506f;border-radius:20px;background:#17314f;box-shadow:0 20px 60px #0004}.title{font-size:24px;font-weight:800;margin-bottom:10px}.status{line-height:1.7;color:#c8d8ea;word-break:break-word}.bar{height:8px;border-radius:99px;background:#2a4665;overflow:hidden;margin-top:18px}.bar i{display:block;height:100%;width:20%;background:#fff;animation:run 1.2s infinite ease-in-out}@keyframes run{0%{transform:translateX(-120%)}100%{transform:translateX(520%)}}</style>
 </head>
 <body>
-<div class="card"><div class="title">正在修復啟動環境</div><div id="status" class="status">正在解除舊版快取與 Service Worker…</div><div class="bar"><i></i></div></div>
+<div class="card"><div class="title">正在修復啟動環境</div><div id="status" class="status">正在清除舊版程式並強制下載最新版本…</div><div class="bar"><i></i></div></div>
 <script>
 (async()=>{
   const status=document.getElementById('status');
+  const stamp=Date.now().toString();
   try{
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
@@ -22,11 +23,33 @@ html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI
       await Promise.allSettled(keys.filter(k=>k.startsWith('baseball-player-card-pwa-')).map(k=>caches.delete(k)));
     }
     try{sessionStorage.clear();}catch{}
-    status.textContent='修復完成，正在重新開啟…';
-  }catch(e){status.textContent='已略過無法清除的項目，正在重新開啟…';}
-  const url=new URL('./index.html',location.href);
-  url.searchParams.set('__clean_boot',Date.now().toString());
-  setTimeout(()=>location.replace(url.href),500);
+
+    status.textContent='正在抓取最新首頁與程式檔…';
+    const indexUrl=new URL('./index.html',location.href);
+    indexUrl.searchParams.set('__safe_boot',stamp);
+    const response=await fetch(indexUrl.href,{cache:'no-store'});
+    if(!response.ok) throw new Error(`index.html HTTP ${response.status}`);
+    let html=await response.text();
+
+    // 強制所有核心資源使用新的 URL，避開一般 HTTP cache 與舊 Service Worker cache。
+    html=html.replace(/(<script\s+src=["'])([^"']+)(["'])/gi,(m,a,url,b)=>{
+      const sep=url.includes('?')?'&':'?';
+      return `${a}${url}${sep}__safe_boot=${stamp}${b}`;
+    });
+    html=html.replace(/(<link\s+[^>]*href=["'])([^"']+)(["'][^>]*>)/gi,(m,a,url,b)=>{
+      if(!/\.(?:css|webmanifest)(?:\?|$)/i.test(url)) return m;
+      const sep=url.includes('?')?'&':'?';
+      return `${a}${url}${sep}__safe_boot=${stamp}${b}`;
+    });
+
+    status.textContent='最新程式已取得，正在啟動…';
+    history.replaceState({},'',`./index.html?__safe_boot=${stamp}`);
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    status.textContent=`修復失敗：${e?.message||e}`;
+  }
 })();
 </script>
 </body>
