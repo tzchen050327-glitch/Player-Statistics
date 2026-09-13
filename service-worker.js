@@ -1,17 +1,17 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v267';
+const CACHE_NAME = 'baseball-player-card-pwa-v268';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.67',
-  './live-static-update.js?v=v2.67',
-  './cpbl-realtime.js?v=v2.67',
-  './app.js?v=v2.67',
-  './cpbl-cache-router.js?v=v2.67',
-  './game-detail-enhancement.css?v=v2.67',
-  './report-layout.css?v=v2.67',
-  './landscape-state.css?v=v2.67',
-  './game-detail-enhancement.js?v=v2.67',
-  './report-layout.js?v=v2.67',
+  './styles.css?v=v2.68',
+  './live-static-update.js?v=v2.68',
+  './cpbl-realtime.js?v=v2.68',
+  './app.js?v=v2.68',
+  './cpbl-cache-router.js?v=v2.68',
+  './game-detail-enhancement.css?v=v2.68',
+  './report-layout.css?v=v2.68',
+  './landscape-state.css?v=v2.68',
+  './game-detail-enhancement.js?v=v2.68',
+  './report-layout.js?v=v2.68',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
