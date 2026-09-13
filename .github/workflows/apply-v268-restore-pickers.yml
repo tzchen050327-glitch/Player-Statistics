@@ -10,82 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore date and season picker dialogs and sync v2.68
+      - name: Restore picker dialogs and sync v2.68
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-
           index = Path('index.html')
           html = index.read_text(encoding='utf-8')
-
           if 'id="datePickerDialog"' not in html:
               anchor = '  <dialog id="deletePlayerDialog">'
               if anchor not in html:
                   raise SystemExit('index insertion anchor not found')
-              block = r'''  <dialog id="seasonPickerDialog" class="filter-choice-dialog app-season-dialog" aria-labelledby="seasonPickerTitle">
-    <div class="filter-choice-shell">
-      <div class="filter-choice-head">
-        <div>
-          <span class="filter-choice-kicker">SEASON</span>
-          <h2 id="seasonPickerTitle">選擇賽季</h2>
-        </div>
-        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
-      </div>
-      <div id="seasonPickerList" class="filter-choice-list app-season-list" role="listbox"></div>
-    </div>
-  </dialog>
-
-  <dialog id="datePickerDialog" class="filter-choice-dialog app-date-dialog" aria-labelledby="datePickerTitle">
-    <div class="filter-choice-shell">
-      <div class="filter-choice-head">
-        <div>
-          <span class="filter-choice-kicker">DATE</span>
-          <h2 id="datePickerTitle">選擇日期</h2>
-        </div>
-        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
-      </div>
-      <div id="datePickerBody" class="app-date-picker-body">
-        <div class="app-date-monthbar">
-          <button id="datePickerPrev" class="app-date-nav" type="button" aria-label="上個月">‹</button>
-          <div class="app-date-heading">
-            <button id="datePickerYearButton" class="app-date-year-trigger" type="button" aria-expanded="false">
-              <span id="datePickerYearLabel"></span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div id="datePickerMonthLabel" class="app-date-month-label"></div>
-          </div>
-          <button id="datePickerNext" class="app-date-nav" type="button" aria-label="下個月">›</button>
-        </div>
-        <div id="datePickerYearGrid" class="app-date-year-grid hidden" role="listbox" aria-label="年份"></div>
-        <div id="datePickerWeekdays" class="app-date-weekdays" aria-hidden="true">
-          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-        </div>
-        <div id="datePickerGrid" class="app-date-grid" role="grid" aria-label="日期"></div>
-        <div class="app-date-footer">
-          <button id="datePickerToday" class="press-btn app-date-today" type="button">今天</button>
-        </div>
-      </div>
-    </div>
-  </dialog>'''
+              block = Path('.github/patches/v268-picker-dialogs.html').read_text(encoding='utf-8').rstrip()
               html = html.replace(anchor, block + '\n\n' + anchor, 1)
               index.write_text(html, encoding='utf-8')
-
-          files = [
-              'app.js','index.html','service-worker.js','game-detail-enhancement.js',
-              'game-detail-enhancement.css','report-layout.js','report-layout.css',
-              'cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js',
-              'landscape-state.js','landscape-state.css','manifest.webmanifest',
-              'rescue.html','styles.css'
-          ]
+          files = ['app.js','index.html','service-worker.js','game-detail-enhancement.js','game-detail-enhancement.css','report-layout.js','report-layout.css','cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js','landscape-state.js','landscape-state.css','manifest.webmanifest','rescue.html','styles.css']
           for name in files:
               p = Path(name)
               if not p.exists():
                   continue
               t = p.read_text(encoding='utf-8')
               t = t.replace('v2.67','v2.68').replace('v267','v268').replace('V267','V268')
-              t = t.replace('pwa-v267','pwa-v268')
               p.write_text(t, encoding='utf-8')
           Path('version.json').write_text('{"version":"v2.68"}\n', encoding='utf-8')
           PY
@@ -95,6 +41,7 @@ jobs:
           node --check app.js
           node --check game-detail-enhancement.js
           grep -q 'id="datePickerDialog"' index.html
+          grep -q 'id="datePickerBody"' index.html
           grep -q 'id="datePickerYearGrid"' index.html
           grep -q 'id="seasonPickerDialog"' index.html
           grep -q 'id="seasonPickerList"' index.html
