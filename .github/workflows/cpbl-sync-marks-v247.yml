@@ -1,0 +1,95 @@
+name: CPBL 25 and 55 second sync v2.47
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cpbl-sync-marks-v247.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align CPBL list and detail refreshes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('js/11-home-international.js')
+          s = p.read_text(encoding='utf-8')
+          marker = "    function homeDailyGamesRefreshDelay(league, date, games = []) {\n"
+          helper = """    function cpblAlignedRefreshDelay(now = Date.now()) {
+      const d = new Date(now);
+      const withinMinute = d.getSeconds() * 1000 + d.getMilliseconds();
+      for (const mark of [25 * 1000, 55 * 1000]) {
+        if (withinMinute < mark) return Math.max(250, mark - withinMinute);
+      }
+      return Math.max(250, 60 * 1000 - withinMinute + 25 * 1000);
+    }
+
+"""
+          if 'function cpblAlignedRefreshDelay(' not in s:
+              if marker not in s: raise SystemExit('refresh delay marker not found')
+              s = s.replace(marker, helper + marker, 1)
+          old_live = """      if (homeDailyGamesHasLive(games)) {
+        // MLB games span much more of the day, so poll it less aggressively.
+        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 45 * 1000 : 30 * 1000;
+      }
+"""
+          new_live = """      if (homeDailyGamesHasLive(games)) {
+        if (league === 'CPBL') return cpblAlignedRefreshDelay();
+        // MLB games span much more of the day, so poll it less aggressively.
+        return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 45 * 1000 : 30 * 1000;
+      }
+"""
+          if old_live not in s: raise SystemExit('live refresh branch not found')
+          s = s.replace(old_live, new_live, 1)
+          old_near = """      const msUntil = Math.min(...starts) - Date.now();
+      if (msUntil <= 15 * 60 * 1000) return 2 * 60 * 1000;
+"""
+          new_near = """      const msUntil = Math.min(...starts) - Date.now();
+      if (league === 'CPBL' && msUntil <= 2 * 60 * 1000) return cpblAlignedRefreshDelay();
+      if (msUntil <= 15 * 60 * 1000) return 2 * 60 * 1000;
+"""
+          if old_near not in s: raise SystemExit('near-start refresh branch not found')
+          s = s.replace(old_near, new_near, 1)
+          old_detail = "      const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;\n"
+          new_detail = """      const delay = activeHomeGameDetail.league === 'CPBL'
+        ? cpblAlignedRefreshDelay()
+        : activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
+"""
+          if old_detail not in s: raise SystemExit('detail refresh delay not found')
+          s = s.replace(old_detail, new_detail, 1)
+          comment_start = s.find("        // CPBL's schedule feed can keep a suspended/reserved game marked as live.")
+          if comment_start < 0: raise SystemExit('outer CPBL detail verification block start not found')
+          cache_set = s.find("        homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });", comment_start)
+          if cache_set < 0: raise SystemExit('outer CPBL detail verification block end not found')
+          s = s[:comment_start] + "        // Outer cards use only the daily schedule feed. Single-game detail is fetched only after the user opens a game.\n\n" + s[cache_set:]
+          p.write_text(s, encoding='utf-8')
+          for name in ['js/00-core-config.js', 'index.html', 'manifest.webmanifest', 'game-detail-enhancement.js', 'service-worker.js']:
+              q = Path(name)
+              text = q.read_text(encoding='utf-8').replace('v2.46', 'v2.47').replace('v246', 'v247')
+              q.write_text(text, encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.47"}\n', encoding='utf-8')
+          PY
+          python3 scripts/build-app.py
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -Fq 'function cpblAlignedRefreshDelay' js/11-home-international.js
+          grep -Fq "if (league === 'CPBL') return cpblAlignedRefreshDelay();" js/11-home-international.js
+          grep -Fq 'Single-game detail is fetched only after the user opens a game' js/11-home-international.js
+          if grep -Fq "const verified = await leagueGameDetailRequest('CPBL', date, item);" js/11-home-international.js; then exit 1; fi
+          grep -Fq "const APP_VERSION = 'v2.47';" app.js
+          grep -Fq 'baseball-player-card-pwa-v247-stable-1' service-worker.js
+          git diff --check
+      - name: Commit v2.47
+        run: |
+          git config user.name 'chatgpt-release'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/11-home-international.js js/00-core-config.js app.js index.html manifest.webmanifest service-worker.js version.json game-detail-enhancement.js
+          git commit -m 'Align CPBL refresh to 25 and 55 seconds in v2.47'
+          git pull --rebase origin main
+          git push
