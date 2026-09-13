@@ -1,0 +1,71 @@
+name: Update pregame starter stats
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-pregame-stats.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch starter cards
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('js/11-home-international.js')
+          s=p.read_text(encoding='utf-8')
+          pattern=r"    function homeStarterStatItems\(starter\) \{[\s\S]*?\n    \}\n\n    function homeStarterCard"
+          replacement="""    function homeStarterStatItems(starter) {
+      const stats = starter?.stats || {};
+      const out = [];
+      const win = String(stats.wins ?? '').trim();
+      const loss = String(stats.losses ?? '').trim();
+      if (win || loss) out.push(['勝敗', `${win || 0}-${loss || 0}`]);
+      if (String(stats.era ?? '').trim()) out.push(['ERA', String(stats.era)]);
+      if (String(stats.ip ?? '').trim()) out.push(['IP', String(stats.ip)]);
+      if (String(stats.so ?? '').trim()) out.push(['SO', String(stats.so)]);
+      if (String(stats.hits ?? '').trim()) out.push(['被安打', String(stats.hits)]);
+      if (String(stats.homeRuns ?? '').trim()) out.push(['被全壘打', String(stats.homeRuns)]);
+      if (String(stats.fourDead ?? '').trim()) out.push(['四死球', String(stats.fourDead)]);
+      if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
+      if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
+      else if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
+      return out.slice(0, 9);
+    }
+
+    function homeStarterCard"""
+          s2,n=re.subn(pattern,replacement,s,count=1)
+          if n!=1:
+              raise SystemExit(f'homeStarterStatItems patch count={n}')
+          p.write_text(s2,encoding='utf-8')
+
+          h=Path('index.html').read_text(encoding='utf-8')
+          h=re.sub(r'v2\.40-ui\d+', 'v2.40-ui6', h)
+          Path('index.html').write_text(h,encoding='utf-8')
+
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          sw=re.sub(r"baseball-player-card-pwa-v240-stable-\d+", 'baseball-player-card-pwa-v240-stable-10', sw)
+          sw=re.sub(r'v2\.40-ui\d+', 'v2.40-ui6', sw)
+          Path('service-worker.js').write_text(sw,encoding='utf-8')
+          PY
+          python3 scripts/build-app.py
+          node --check app.js
+          grep -q '被全壘打' js/11-home-international.js
+          grep -q '四死球' js/11-home-international.js
+          grep -q 'v2.40-ui6' index.html
+          grep -q 'stable-10' service-worker.js
+      - name: Commit
+        run: |
+          git config user.name 'chatgpt-pregame'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/11-home-international.js app.js index.html service-worker.js
+          git commit -m 'Show more pregame pitcher stats'
+          git push
