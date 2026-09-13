@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.48';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.49';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -251,6 +251,142 @@
     </section>`;
   }
 
+  function compactName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function samePlayerName(a, b) {
+    const norm = value => compactName(value).replace(/[・·.\s]/g, '').toLowerCase();
+    const x = norm(a), y = norm(b);
+    return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
+  }
+
+  function currentOffenseSide(detail) {
+    const inningLabel = String(detail?.game?.inningLabel || '');
+    if (/上/.test(inningLabel)) return 'away';
+    if (/下/.test(inningLabel)) return 'home';
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const last = plays[plays.length - 1];
+    if (last?.half === 'top') return 'away';
+    if (last?.half === 'bottom') return 'home';
+    return 'away';
+  }
+
+  function lineupEntries(detail, side) {
+    const raw = detail?.lineups?.[side];
+    const direct = Array.isArray(raw?.batters) ? raw.batters : Array.isArray(raw?.order) ? raw.order : Array.isArray(raw) ? raw : [];
+    const normalized = direct.map((entry, index) => ({
+      order: Number(entry?.order) || index + 1,
+      number: safeCell(entry?.number || entry?.uniformNumber || entry?.jersey || ''),
+      name: compactName(entry?.name || entry?.fullName || entry?.playerName || ''),
+      position: compactName(entry?.position || entry?.pos || ''),
+      avg: safeCell(entry?.avg ?? entry?.average ?? entry?.battingAverage ?? ''),
+      hits: safeCell(entry?.hits ?? entry?.h ?? ''),
+      homeRuns: safeCell(entry?.homeRuns ?? entry?.hr ?? ''),
+      rbi: safeCell(entry?.rbi ?? entry?.rbis ?? '')
+    })).filter(entry => entry.name);
+    if (normalized.length) return normalized.slice(0, 9);
+    const wantedHalf = side === 'away' ? 'top' : 'bottom';
+    const seen = [];
+    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
+      if (play?.half !== wantedHalf) continue;
+      const name = compactName(play?.batter || play?.hitter || '');
+      if (!name || seen.some(entry => samePlayerName(entry.name, name))) continue;
+      seen.push({ order: seen.length + 1, number: '', name, position: '', avg: '', hits: '', homeRuns: '', rbi: '' });
+      if (seen.length >= 9) break;
+    }
+    return seen;
+  }
+
+  function renderLineupPanel(detail, side) {
+    const entries = lineupEntries(detail, side);
+    const current = compactName(detail?.current?.batter?.fullName || detail?.current?.batter?.name || '');
+    const rows = Array.from({ length: 9 }, (_, i) => entries[i] || { order:i + 1, number:'', name:'', avg:'', hits:'', homeRuns:'', rbi:'' });
+    return `<div class="gdx-landscape-lineup">
+      <div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>
+      ${rows.map(entry => {
+        const active = entry.name && samePlayerName(entry.name, current);
+        return `<div class="gdx-lineup-row ${active ? 'is-current' : ''}">
+          <span>${esc(entry.number || entry.order || '')}</span>
+          <strong title="${esc(entry.name || '')}">${esc(entry.name || '—')}</strong>
+          <span>${esc(entry.avg || '—')}</span><span>${esc(entry.hits || '—')}</span><span>${esc(entry.homeRuns || '—')}</span><span>${esc(entry.rbi || '—')}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function currentPitcherInfo(detail, defenseSide) {
+    const direct = detail?.lineups?.[defenseSide]?.pitcher || {};
+    const current = detail?.current?.pitcher || {};
+    const name = compactName(current.fullName || current.name || direct.fullName || direct.name || '');
+    const stats = direct.stats || current.stats || direct || current;
+    const pitcherPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(play => !name || samePlayerName(play?.pitcher, name));
+    const text = play => `${play?.result || ''} ${play?.raw || ''}`;
+    return {
+      name: name || '投手資料讀取中',
+      pitches: safeCell(stats.pitches ?? stats.pitchCount ?? stats.pitchingCount ?? ''), ip: safeCell(stats.ip ?? stats.innings ?? stats.inningsPitched ?? ''),
+      hits: safeCell(stats.hits ?? stats.h ?? '') || String(pitcherPlays.filter(p => /全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text(p))).length || ''),
+      homeRuns: safeCell(stats.homeRuns ?? stats.hr ?? '') || String(pitcherPlays.filter(p => /全壘打/.test(text(p))).length || ''),
+      walks: safeCell(stats.walks ?? stats.bb ?? stats.fourDead ?? '') || String(pitcherPlays.filter(p => /四壞|觸身/.test(text(p))).length || ''),
+      strikeouts: safeCell(stats.so ?? stats.strikeouts ?? '') || String(pitcherPlays.filter(p => /三振/.test(text(p))).length || ''), era: safeCell(stats.era ?? '')
+    };
+  }
+
+  function renderPitcherPanel(detail, side) {
+    const p = currentPitcherInfo(detail, side);
+    const items = [['P',p.pitches],['IP',p.ip],['H',p.hits],['HR',p.homeRuns],['BB',p.walks],['SO',p.strikeouts],['ERA',p.era]];
+    return `<div class="gdx-landscape-pitcher"><div class="gdx-pitcher-kicker">CURRENT PITCHER</div><strong class="gdx-pitcher-name">${esc(p.name)}</strong><div class="gdx-pitcher-grid">${items.map(([label,value]) => `<div><span>${label}</span><b>${esc(value || '—')}</b></div>`).join('')}</div></div>`;
+  }
+
+  function renderLandscapeSide(detail, side, offenseSide) {
+    const game = detail?.game || {};
+    const team = side === 'away' ? game.away || '客隊' : game.home || '主隊';
+    const offense = side === offenseSide;
+    return `<section class="gdx-landscape-side gdx-side-${side}"><div class="gdx-landscape-team-head"><span>${side === 'away' ? 'AWAY' : 'HOME'}</span><strong>${esc(team)}</strong><em>${offense ? 'ATTACK' : 'DEFENSE'}</em></div>${offense ? renderLineupPanel(detail, side) : renderPitcherPanel(detail, side)}</section>`;
+  }
+
+  function positionKey(value) {
+    const p = compactName(value).toUpperCase();
+    if (/^(P|投|投手|PITCHER)$/.test(p)) return 'p'; if (/^(C|捕|捕手|CATCHER)$/.test(p)) return 'c';
+    if (/^(1B|一|一壘|一塁|FIRST)$/.test(p)) return '1b'; if (/^(2B|二|二壘|二塁|SECOND)$/.test(p)) return '2b';
+    if (/^(3B|三|三壘|三塁|THIRD)$/.test(p)) return '3b'; if (/^(SS|遊|游|遊撃|游擊|SHORT)$/.test(p)) return 'ss';
+    if (/^(LF|左|左翼|LEFT)$/.test(p)) return 'lf'; if (/^(CF|中|中堅|CENTER)$/.test(p)) return 'cf'; if (/^(RF|右|右翼|RIGHT)$/.test(p)) return 'rf'; return '';
+  }
+
+  function defenseMap(detail, side) {
+    const map = {}, raw = detail?.lineups?.[side];
+    const fielders = Array.isArray(raw?.fielders) ? raw.fielders : lineupEntries(detail, side);
+    for (const entry of fielders) { const key = positionKey(entry?.position || entry?.pos || ''); const name = compactName(entry?.name || entry?.fullName || ''); if (key && name) map[key] = name; }
+    const pitcher = compactName(detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || raw?.pitcher?.name || ''); if (pitcher) map.p = pitcher;
+    return map;
+  }
+
+  function renderDefenseField(detail, side) {
+    const field = defenseMap(detail, side), spots = ['lf','cf','rf','ss','2b','3b','1b','p','c'];
+    return `<div class="gdx-field-card"><div class="gdx-mini-title">守備</div><div class="gdx-field-shape" aria-label="守備佈陣">${spots.map(pos => `<div class="gdx-fielder gdx-pos-${pos}"><span>${esc(field[pos] || '—')}</span></div>`).join('')}</div></div>`;
+  }
+
+  function currentRunnerNames(detail) {
+    const raw = detail?.current?.runners || detail?.runners || {}, take = (...values) => compactName(values.find(v => compactName(v)) || '');
+    return { first:take(raw.first,raw.firstBase,raw[1],raw.base1), second:take(raw.second,raw.secondBase,raw[2],raw.base2), third:take(raw.third,raw.thirdBase,raw[3],raw.base3) };
+  }
+
+  function renderRunnerDiamond(detail) {
+    const state = normalizeBaseState(currentBaseState(detail)), names = currentRunnerNames(detail), label = (on,name) => on ? esc(name || '有人') : '';
+    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond" aria-label="壘上狀態"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div></div>`;
+  }
+
+  function renderLandscapeScoreboard(detail, board) {
+    const game = detail?.game || {}, innings = board.innings.length ? board.innings : Array.from({length:9},(_,i)=>String(i+1));
+    const cells = (values,totals) => `${innings.map((_,i)=>`<td>${esc(safeCell(values?.[i]))}</td>`).join('')}<td class="is-total">${esc(safeCell(totals.R))}</td><td>${esc(safeCell(totals.H))}</td><td>${esc(safeCell(totals.E))}</td>`;
+    return `<div class="gdx-landscape-score"><div class="gdx-landscape-scoreline"><div><span>${esc(game.away||'客隊')}</span><strong>${esc(safeCell(board.awayTotals.R)||'0')}</strong></div><div class="gdx-landscape-inning">${esc(game.inningLabel || (detail?.status==='final'?'比賽結束':''))}</div><div><strong>${esc(safeCell(board.homeTotals.R)||'0')}</strong><span>${esc(game.home||'主隊')}</span></div></div><div class="gdx-landscape-scoretable-wrap"><table class="gdx-landscape-scoretable"><thead><tr><th></th>${innings.map(x=>`<th>${esc(x)}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th>${esc(game.away||'客')}</th>${cells(board.away,board.awayTotals)}</tr><tr><th>${esc(game.home||'主')}</th>${cells(board.home,board.homeTotals)}</tr></tbody></table></div></div>`;
+  }
+
+  function renderLandscapeBoard(detail, board) {
+    const offense = currentOffenseSide(detail), defense = offense === 'away' ? 'home' : 'away';
+    return `<section class="gdx-landscape-board game-detail-enhanced-marker" aria-label="橫向大螢幕模式">${renderLandscapeSide(detail,'away',offense)}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${renderLandscapeSide(detail,'home',offense)}</section>`;
+  }
+
   function detailStamp(detail) {
     const game = detail?.game || {};
     const last = Array.isArray(detail?.plays) && detail.plays.length ? detail.plays[detail.plays.length - 1] : null;
@@ -261,6 +397,7 @@
       JSON.stringify(board?.away || []), JSON.stringify(board?.home || []),
       board?.awayTotals?.R, board?.awayTotals?.H, board?.awayTotals?.E,
       board?.homeTotals?.R, board?.homeTotals?.H, board?.homeTotals?.E,
+      JSON.stringify(detail?.lineups || {}), JSON.stringify(detail?.current?.runners || {}),
       last?.inning, last?.half, last?.batter, last?.pitcher, last?.result, last?.bases, last?.basesAfter, last?.rbi
     ].map(v => String(v ?? '')).join('|');
   }
@@ -291,6 +428,9 @@
     body.dataset.gdxStamp = stamp;
     body.querySelectorAll('.game-detail-enhanced-marker').forEach(el => el.remove());
     body.querySelector('.game-detail-current-grid')?.remove();
+
+    const portraitContent = body.querySelector('.game-detail-content');
+    if (portraitContent) portraitContent.insertAdjacentHTML('beforebegin', renderLandscapeBoard(detail, board));
 
     const status = String(detail.status || '').toLowerCase();
     let anchor = scoreCard;

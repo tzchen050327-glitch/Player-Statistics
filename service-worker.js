@@ -1,11 +1,11 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v248-stable-1';
+const CACHE_NAME = 'baseball-player-card-pwa-v249-stable-1';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.48-ui1',
-  './app.js?v=v2.48',
-  './game-detail-enhancement.css?v=v2.48-ui1',
-  './game-detail-enhancement.js?v=v2.48-ui1',
+  './styles.css?v=v2.49-ui1',
+  './app.js?v=v2.49',
+  './game-detail-enhancement.css?v=v2.49-ui1',
+  './game-detail-enhancement.js?v=v2.49-ui1',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -30,13 +30,13 @@ self.addEventListener('activate', event => {
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const target = new URL('./index.html?v=v2.48', self.registration.scope).href;
+    const target = new URL('./index.html?v=v2.49', self.registration.scope).href;
     await Promise.allSettled(clients.map(client => {
       try {
         const current = new URL(client.url);
-        if (current.origin === self.location.origin && !current.searchParams.has('__v248')) {
+        if (current.origin === self.location.origin && !current.searchParams.has('__v249')) {
           const next = new URL(target);
-          next.searchParams.set('__v248', Date.now().toString());
+          next.searchParams.set('__v249', Date.now().toString());
           return client.navigate(next.href);
         }
       } catch {}
