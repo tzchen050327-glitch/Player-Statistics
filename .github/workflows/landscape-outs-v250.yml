@@ -20,12 +20,16 @@ jobs:
           from pathlib import Path
           js = Path('game-detail-enhancement.js')
           s = js.read_text(encoding='utf-8')
-          old = '''        <div class="gdx-runner-home"></div>\n      </div>\n    </div>`;'''
-          new = '''        <div class="gdx-runner-home"></div>\n      </div>\n      <div class="gdx-runner-outs">${currentOuts(detail)}出局</div>\n    </div>`;'''
           if 'gdx-runner-outs' not in s:
-              if old not in s:
+              start = s.index('  function renderRunnerDiamond(detail) {')
+              end = s.index('\n  }\n\n  function renderLandscapeScoreboard', start) + 4
+              block = s[start:end]
+              old = '<div class=\\"gdx-runner-home\\"></div></div></div>`;'
+              new = '<div class=\\"gdx-runner-home\\"></div></div><div class=\\"gdx-runner-outs\\">${currentOuts(detail)}出局</div></div>`;'
+              if old not in block:
                   raise SystemExit('runner diamond hook not found')
-              s = s.replace(old, new, 1)
+              block = block.replace(old, new, 1)
+              s = s[:start] + block + s[end:]
           js.write_text(s, encoding='utf-8')
 
           css = Path('game-detail-enhancement.css')
