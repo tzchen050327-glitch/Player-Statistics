@@ -16,6 +16,37 @@
     );
   }
 
+  function baseTeamSignature(root) {
+    const row = root?.querySelector?.('.game-detail-score-card .game-detail-score-row');
+    if (!row) return '';
+    const teams = [...row.querySelectorAll(':scope > div > span')]
+      .map(el => String(el.textContent || '').trim())
+      .filter(Boolean);
+    return teams.length >= 2 ? teams.slice(0, 2).join('|') : '';
+  }
+
+  function enhancedTeamSignature(root) {
+    const teams = [...(root?.querySelectorAll?.('.gdx-landscape-team-head strong') || [])]
+      .map(el => String(el.textContent || '').trim())
+      .filter(Boolean);
+    return teams.length >= 2 ? teams.slice(0, 2).join('|') : '';
+  }
+
+  function clearEnhancedNodes(target) {
+    target?.querySelectorAll?.('.game-detail-enhanced-marker, [data-gdx]')?.forEach(node => node.remove());
+    if (target?.dataset) delete target.dataset.gdxStamp;
+  }
+
+  function purgeMismatchedEnhanced(target) {
+    const base = baseTeamSignature(target);
+    const enhanced = enhancedTeamSignature(target);
+    if (base && enhanced && base !== enhanced) {
+      clearEnhancedNodes(target);
+      return true;
+    }
+    return false;
+  }
+
   function elementKey(node) {
     if (!node || node.nodeType !== 1) return '';
     if (node.id) return `#${node.id}`;
@@ -110,6 +141,10 @@
     const template = document.createElement('template');
     nativeInnerHTML.set.call(template, String(html ?? ''));
 
+    const currentGame = baseTeamSignature(target);
+    const nextGame = baseTeamSignature(template.content);
+    if (currentGame && nextGame && currentGame !== nextGame) clearEnhancedNodes(target);
+
     const page = target.closest('.home-game-detail-page');
     const overlay = target.closest('.home-game-detail-overlay');
     const scrollTop = page?.scrollTop ?? overlay?.scrollTop ?? 0;
@@ -117,6 +152,7 @@
 
     target.classList.add('is-static-patching');
     morphChildren(target, template.content);
+    purgeMismatchedEnhanced(target);
     target.classList.remove('is-static-patching');
 
     if (page) {
