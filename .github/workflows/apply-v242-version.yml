@@ -1,0 +1,37 @@
+name: Apply v2.42 version refresh
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v242-version.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v2.42 patch
+        run: |
+          python3 .github/scripts/patch_v242_version.py
+          python3 scripts/build-app.py
+          node --check app.js
+          grep -q "const APP_VERSION = 'v2.42'" js/00-core-config.js
+          grep -q 'content="v2.42"' index.html
+          grep -q '>v2.42</button>' index.html
+          grep -q 'v2.42-ui1' index.html
+          grep -q 'index.html?v=v2.42' manifest.webmanifest
+          grep -q 'baseball-player-card-pwa-v242-stable-1' service-worker.js
+          grep -q 'version.json' js/23-bootstrap.js
+          grep -q '"version":"v2.42"' version.json
+          git diff --check
+      - name: Commit
+        run: |
+          git config user.name 'chatgpt-version'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/00-core-config.js js/23-bootstrap.js app.js index.html manifest.webmanifest service-worker.js version.json
+          git commit -m 'Bump app to v2.42 and harden PWA refresh'
+          git push
