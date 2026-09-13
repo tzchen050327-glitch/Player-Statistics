@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.62';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.63';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -59,10 +59,12 @@
   }
 
   function currentBaseState(detail) {
-    if (detail?.current?.baseState) return detail.current.baseState;
-    if (detail?.current?.bases) return detail.current.bases;
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
+    const status = String(detail?.status || '').toLowerCase();
+    if (status === 'final' || inferredOutsAfterPlay(last) >= 3) return [false,false,false];
+    if (detail?.current?.baseState) return detail.current.baseState;
+    if (detail?.current?.bases) return detail.current.bases;
     return last?.baseState || last?.basesAfter || last?.bases || '';
   }
 
@@ -75,22 +77,24 @@
     if (!play) return 0;
     const before = parseOutNumber(play.outs);
     if (before === null) return 0;
-    const text = `${play.raw || ''} ${play.result || ''}`;
+    const text = `${play.raw || ''} ${play.result || ''} ${play.description || ''}`;
+    if (/3\s*人出局|三人出局|3\s*出局/i.test(text)) return 3;
     let added = 0;
     if (/三殺|トリプルプレー/i.test(text)) added = 3;
-    else if (/雙殺|併殺|ダブルプレー/i.test(text)) added = 2;
-    else if (/三振|ゴロ|滾地|フライ|飛球|ライナー|平飛|犧牲|犠牲|犠打|アウト/i.test(text)) added = 1;
+    else if (/雙殺|併殺|ダブルプレー|DP\b/i.test(text)) added = 2;
+    else if (/三振|ゴロ|滾地|フライ|飛球|ライナー|平飛|犧牲|犠牲|犠打|アウト|出局/i.test(text)) added = 1;
     return Math.min(3, before + added);
   }
 
   function currentOuts(detail) {
-    const direct = parseOutNumber(detail?.current?.outs);
-    if (direct !== null) return Math.min(2, direct);
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
-    if (!last) return 0;
     const after = inferredOutsAfterPlay(last);
-    return after >= 3 ? 0 : after;
+    if (String(detail?.status || '').toLowerCase() === 'final') return 3;
+    if (after >= 3) return 3;
+    const direct = parseOutNumber(detail?.current?.outs);
+    if (direct !== null) return Math.min(2, direct);
+    return after;
   }
 
   function normalizedBoard(detail) {
@@ -219,6 +223,11 @@
   }
 
   function currentRunnerNames(detail) {
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const last = plays[plays.length - 1];
+    if (String(detail?.status || '').toLowerCase() === 'final' || inferredOutsAfterPlay(last) >= 3) {
+      return {first:'',second:'',third:''};
+    }
     const direct = directRunnerNames(detail), inferred = inferRunnerNames(detail);
     return {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
   }

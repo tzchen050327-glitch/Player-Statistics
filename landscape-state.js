@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.62';
+  const VERSION = 'v2.63';
   const DETAIL_RE = /\/(?:cpbl-game-detail|league-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let timer = 0;
@@ -59,7 +59,7 @@
   function renderLineup(detail, side) {
     const entries = lineupRows(detail, side);
     const rows = Array.from({length:9}, (_, index) => entries[index] || {});
-    return `<div class="gdx-landscape-lineup gdx-v262-lineup" data-v262-lineup="${side}">
+    return `<div class="gdx-landscape-lineup gdx-v263-lineup" data-v263-lineup="${side}">
       <div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>
       ${rows.map(entry => `<div class="gdx-lineup-row"><span>${esc(entry.number || '—')}</span><strong>${esc(entry.name || '—')}</strong><span>${esc(entry.avg || '—')}</span><span>${esc(entry.hits || '—')}</span><span>${esc(entry.homeRuns || '—')}</span><span>${esc(entry.rbi || '—')}</span></div>`).join('')}
     </div>`;
