@@ -1,11 +1,11 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v251-stable-3';
+const CACHE_NAME = 'baseball-player-card-pwa-v251-stable-4';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css?v=v2.51-ui1',
-  './live-static-update.js?v=v2.51-static3',
-  './app.js?v=v2.51',
-  './cpbl-cache-router.js?v=v2.51-cache2',
+  './live-static-update.js?v=v2.51-static4',
+  './app.js?v=v2.51-boot2',
+  './cpbl-cache-router.js?v=v2.51-cache3',
   './game-detail-enhancement.css?v=v2.51-ui1',
   './game-detail-enhancement.js?v=v2.51-ui1',
   './manifest.webmanifest',
@@ -17,33 +17,25 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.allSettled(APP_SHELL.map(async url => {
-      try {
-        const response = await fetch(url, { cache: 'reload' });
-        if (response.ok) await cache.put(url, response.clone());
-      } catch {}
+    // Do not activate a half-populated shell. If GitHub Pages is between
+    // deployments, keep the currently working worker instead of caching gaps.
+    await Promise.all(APP_SHELL.map(async url => {
+      const response = await fetch(url, { cache: 'reload' });
+      if (!response.ok) throw new Error(`App shell fetch failed: ${url} (${response.status})`);
+      await cache.put(url, response.clone());
     }));
   })());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    // Installation above guarantees the new shell is complete before old
+    // caches are removed.
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const target = new URL('./index.html?v=v2.51', self.registration.scope).href;
-    await Promise.allSettled(clients.map(client => {
-      try {
-        const current = new URL(client.url);
-        if (current.origin === self.location.origin && !current.searchParams.has('__v251')) {
-          const next = new URL(target);
-          next.searchParams.set('__v251', Date.now().toString());
-          return client.navigate(next.href);
-        }
-      } catch {}
-      return Promise.resolve();
-    }));
+    // Do not navigate/reload clients here. app.js owns update/reload flow;
+    // having both layers navigate caused startup races and 0% splash stalls.
   })());
 });
 
@@ -56,29 +48,36 @@ self.addEventListener('fetch', event => {
 
   const request = event.request;
   const url = new URL(request.url);
-  const isCore = request.mode === 'navigate'
+  const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
-    || url.pathname.endsWith('/index.html')
-    || url.pathname.endsWith('/live-static-update.js')
+    || url.pathname.endsWith('/index.html');
+  const isCoreAsset = url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
     || url.pathname.endsWith('/game-detail-enhancement.css');
 
-  if (isCore) {
+  if (isDocument || isCoreAsset) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
         if (response?.ok) {
           const cache = await caches.open(CACHE_NAME);
           cache.put(request, response.clone()).catch(() => {});
+          return response;
         }
-        return response;
+        throw new Error(`Network ${response?.status || 0}`);
       } catch {
-        return await caches.match(request, { ignoreSearch: true })
-          || await caches.match('./index.html')
-          || Response.error();
+        const cached = await caches.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        // HTML may fall back to the cached app shell. JS/CSS must NEVER receive
+        // index.html, otherwise the browser parses HTML as JavaScript and boot
+        // stops at the 0% splash screen.
+        if (isDocument) {
+          return await caches.match('./index.html', { ignoreSearch: true }) || Response.error();
+        }
+        return Response.error();
       }
     })());
     return;
