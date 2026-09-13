@@ -1,0 +1,43 @@
+name: Apply v2.58 batting total fix
+on:
+  push:
+    paths:
+      - '.github/v258-batting-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync all active app resource versions to v2.58
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            app.js index.html service-worker.js
+            game-detail-enhancement.js game-detail-enhancement.css
+            report-layout.js report-layout.css
+            cpbl-realtime.js live-static-update.js cpbl-cache-router.js
+            manifest.webmanifest rescue.html
+          )
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              sed -i 's/v2\.57/v2.58/g; s/v257/v258/g; s/V257/V258/g; s/pwa-v257/pwa-v258/g' "$f"
+            fi
+          done
+      - name: Syntax check
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          [ ! -f cpbl-realtime.js ] || node --check cpbl-realtime.js
+          [ ! -f report-layout.js ] || node --check report-layout.js
+      - name: Commit v2.58
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js manifest.webmanifest rescue.html 2>/dev/null || true
+          git commit -m 'Release v2.58 fix CPBL cumulative batting averages'
+          git push
