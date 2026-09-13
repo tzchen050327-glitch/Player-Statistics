@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.42';
+    const APP_VERSION = 'v2.43';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -12,8 +12,8 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.42';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.42';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.43';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.43';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6106,8 +6106,8 @@ bg2: {
       if (String(stats.fourDead ?? '').trim()) out.push(['四死球', String(stats.fourDead)]);
       if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
       if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
-      else if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
-      return out.slice(0, 9);
+      if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
+      return out.slice(0, 10);
     }
 
     function homeStarterCard(starter, teamName, sideLabel) {

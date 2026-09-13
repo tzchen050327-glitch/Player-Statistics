@@ -901,8 +901,8 @@
       if (String(stats.fourDead ?? '').trim()) out.push(['四死球', String(stats.fourDead)]);
       if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
       if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
-      else if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
-      return out.slice(0, 9);
+      if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
+      return out.slice(0, 10);
     }
 
     function homeStarterCard(starter, teamName, sideLabel) {

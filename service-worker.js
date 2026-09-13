@@ -1,11 +1,11 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v242-stable-3';
+const CACHE_NAME = 'baseball-player-card-pwa-v243-stable-1';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.42-ui2',
-  './app-v242.js?v=v2.42-ui2',
-  './game-detail-enhancement.css?v=v2.42-ui2',
-  './game-detail-enhancement.js?v=v2.42-ui3',
+  './styles.css?v=v2.43-ui1',
+  './app.js?v=v2.43',
+  './game-detail-enhancement.css?v=v2.43-ui1',
+  './game-detail-enhancement.js?v=v2.43-ui1',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -30,13 +30,13 @@ self.addEventListener('activate', event => {
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const target = new URL('./index.html?v=v2.42', self.registration.scope).href;
+    const target = new URL('./index.html?v=v2.43', self.registration.scope).href;
     await Promise.allSettled(clients.map(client => {
       try {
         const current = new URL(client.url);
-        if (current.origin === self.location.origin && !current.searchParams.has('__v242')) {
+        if (current.origin === self.location.origin && !current.searchParams.has('__v243')) {
           const next = new URL(target);
-          next.searchParams.set('__v242', Date.now().toString());
+          next.searchParams.set('__v243', Date.now().toString());
           return client.navigate(next.href);
         }
       } catch {}
@@ -57,7 +57,7 @@ self.addEventListener('fetch', event => {
   const isCore = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html')
-    || (url.pathname.endsWith('/app.js') || url.pathname.endsWith('/app-v242.js'))
+    || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/styles.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
     || url.pathname.endsWith('/game-detail-enhancement.css');
