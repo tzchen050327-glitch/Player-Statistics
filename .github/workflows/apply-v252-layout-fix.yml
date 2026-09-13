@@ -15,73 +15,40 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Patch v2.52
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
-
-          files = [
-              'app.js', 'index.html', 'styles.css', 'game-detail-enhancement.css',
-              'game-detail-enhancement.js', 'live-static-update.js',
-              'cpbl-cache-router.js', 'service-worker.js', 'rescue.html'
-          ]
-          for name in files:
+          import base64, re
+          current = ['app.js','index.html','styles.css','game-detail-enhancement.css','game-detail-enhancement.js','live-static-update.js','cpbl-cache-router.js','service-worker.js','rescue.html']
+          for name in current:
               p = Path(name)
               if not p.exists():
                   continue
-              text = p.read_text(encoding='utf-8')
-              text = text.replace('v2.51', 'v2.52').replace('v251', 'v252').replace('V251', 'V252')
-              text = re.sub(r'\?v=v2\.52-[A-Za-z0-9._-]+', '?v=v2.52', text)
-              p.write_text(text, encoding='utf-8')
-
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('v2.51','v2.52').replace('v251','v252').replace('V251','V252')
+              s = re.sub(r'\?v=v2\.52-[A-Za-z0-9._-]+','?v=v2.52',s)
+              p.write_text(s,encoding='utf-8')
           sw = Path('service-worker.js')
-          text = sw.read_text(encoding='utf-8')
-          text = re.sub(r"const CACHE_NAME = '[^']+';", "const CACHE_NAME = 'baseball-player-card-pwa-v252';", text, count=1)
-          text = re.sub(r"(\./(?:styles\.css|live-static-update\.js|app\.js|cpbl-cache-router\.js|game-detail-enhancement\.css|game-detail-enhancement\.js))\?v=[^']+", r"\1?v=v2.52", text)
-          sw.write_text(text, encoding='utf-8')
-
+          s = sw.read_text(encoding='utf-8')
+          s = re.sub(r"const CACHE_NAME = '[^']+';","const CACHE_NAME = 'baseball-player-card-pwa-v252';",s,count=1)
+          s = re.sub(r"(\./(?:styles\.css|live-static-update\.js|app\.js|cpbl-cache-router\.js|game-detail-enhancement\.css|game-detail-enhancement\.js))\?v=[^']+",r"\1?v=v2.52",s)
+          sw.write_text(s,encoding='utf-8')
           js = Path('game-detail-enhancement.js')
-          text = js.read_text(encoding='utf-8')
+          s = js.read_text(encoding='utf-8')
           old = "return `<div class=\"gdx-field-card\"><div class=\"gdx-mini-title\">守備</div><div class=\"gdx-field-shape\">${spots.map(pos=>`<div class=\"gdx-fielder gdx-pos-${pos}\"><span>${esc(field[pos]||'—')}</span></div>`).join('')}</div></div>`;"
           new = "return `<div class=\"gdx-field-card\"><div class=\"gdx-mini-title\">守備</div><div class=\"gdx-field-shape\"></div><div class=\"gdx-fielders-layer\">${spots.map(pos=>`<div class=\"gdx-fielder gdx-pos-${pos}\"><span>${esc(field[pos]||'—')}</span></div>`).join('')}</div></div>`;"
-          if old not in text:
+          if old not in s:
               raise SystemExit('renderDefenseField target not found')
-          js.write_text(text.replace(old, new, 1), encoding='utf-8')
-
+          js.write_text(s.replace(old,new,1),encoding='utf-8')
           css = Path('game-detail-enhancement.css')
-          text = css.read_text(encoding='utf-8')
+          s = css.read_text(encoding='utf-8')
           marker = '/* ===== v2.52 DESKTOP REPORT LAYOUT ===== */'
-          if marker not in text:
-              text += r'''
-
-/* ===== v2.52 DESKTOP REPORT LAYOUT ===== */
-@media (orientation:landscape) and (min-width:700px){
-  body.home-game-detail-open .home-game-detail-page{width:100%!important;max-width:none!important;margin:0!important;min-height:100dvh!important;box-shadow:none!important;background:#091728!important;}
-  body.home-game-detail-open .game-detail-sticky-head{display:none!important;}
-  body.home-game-detail-open .gdx-landscape-board{width:100vw!important;height:100dvh!important;grid-template-columns:minmax(250px,20%) minmax(0,60%) minmax(250px,20%)!important;}
-  body.home-game-detail-open .gdx-landscape-center{min-width:0!important;}
-  body.home-game-detail-open .gdx-landscape-lower{grid-template-columns:minmax(0,1.75fr) minmax(170px,.65fr)!important;gap:10px!important;padding:10px!important;}
-  .gdx-field-card{overflow:hidden!important;}
-  .gdx-field-shape{position:absolute!important;inset:24px 10px 10px!important;z-index:0!important;overflow:hidden!important;background:linear-gradient(145deg,rgba(25,105,72,.45),rgba(12,67,51,.38))!important;clip-path:polygon(50% 0,100% 54%,83% 100%,17% 100%,0 54%)!important;border-radius:40%!important;pointer-events:none!important;}
-  .gdx-field-shape:before{content:none!important;}
-  .gdx-field-shape:after{content:''!important;position:absolute!important;z-index:1!important;left:28%!important;right:28%!important;top:34%!important;bottom:10%!important;border:1px solid rgba(232,207,153,.34)!important;transform:rotate(45deg)!important;pointer-events:none!important;}
-  .gdx-fielders-layer{position:absolute!important;inset:24px 10px 10px!important;z-index:4!important;overflow:visible!important;pointer-events:none!important;}
-  .gdx-fielders-layer .gdx-fielder{z-index:5!important;max-width:44%!important;padding:3px 7px!important;background:rgba(3,15,25,.9)!important;border-color:rgba(255,255,255,.2)!important;box-shadow:0 2px 8px rgba(0,0,0,.32)!important;}
-  .gdx-fielders-layer .gdx-fielder span{overflow:visible!important;text-overflow:clip!important;font-size:10px!important;}
-  .gdx-pos-lf{left:25%!important;top:28%!important;}.gdx-pos-rf{left:75%!important;top:28%!important;}.gdx-pos-3b{left:27%!important;top:66%!important;}.gdx-pos-1b{left:73%!important;top:66%!important;}
-}
-@media (orientation:landscape) and (min-width:700px) and (max-width:1100px){
-  body.home-game-detail-open .gdx-landscape-board{grid-template-columns:minmax(190px,23%) minmax(0,54%) minmax(190px,23%)!important;}
-  body.home-game-detail-open .gdx-landscape-lower{grid-template-columns:minmax(0,1.5fr) minmax(130px,.7fr)!important;padding:6px!important;gap:6px!important;}
-  .gdx-fielders-layer .gdx-fielder span{font-size:8px!important;}
-}
-/* ===== v2.52 DESKTOP REPORT LAYOUT END ===== */
-'''
-          css.write_text(text, encoding='utf-8')
+          if marker not in s:
+              extra = base64.b64decode('Ci8qID09PT09IHYyLjUyIERFU0tUT1AgUkVQT1JUIExBWU9VVCA9PT09PSAqLwpAbWVkaWEgKG9yaWVudGF0aW9uOmxhbmRzY2FwZSkgYW5kIChtaW4td2lkdGg6NzAwcHgpewogIGJvZHkuaG9tZS1nYW1lLWRldGFpbC1vcGVuIC5ob21lLWdhbWUtZGV0YWlsLXBhZ2V7d2lkdGg6MTAwJSFpbXBvcnRhbnQ7bWF4LXdpZHRoOm5vbmUhaW1wb3J0YW50O21hcmdpbjowIWltcG9ydGFudDttaW4taGVpZ2h0OjEwMGR2aCFpbXBvcnRhbnQ7Ym94LXNoYWRvdzpub25lIWltcG9ydGFudDtiYWNrZ3JvdW5kOiMwOTE3MjghaW1wb3J0YW50O30KICBib2R5LmhvbWUtZ2FtZS1kZXRhaWwtb3BlbiAuZ2FtZS1kZXRhaWwtc3RpY2t5LWhlYWR7ZGlzcGxheTpub25lIWltcG9ydGFudDt9CiAgYm9keS5ob21lLWdhbWUtZGV0YWlsLW9wZW4gLmdkeC1sYW5kc2NhcGUtYm9hcmR7d2lkdGg6MTAwdnchaW1wb3J0YW50O2hlaWdodDoxMDBkdmghaW1wb3J0YW50O2dyaWQtdGVtcGxhdGUtY29sdW1uczptaW5tYXgoMjUwcHgsMjAlKSBtaW5tYXgoMCw2MCUpIG1pbm1heCgyNTBweCwyMCUpIWltcG9ydGFudDt9CiAgYm9keS5ob21lLWdhbWUtZGV0YWlsLW9wZW4gLmdkeC1sYW5kc2NhcGUtY2VudGVye21pbi13aWR0aDowIWltcG9ydGFudDt9CiAgYm9keS5ob21lLWdhbWUtZGV0YWlsLW9wZW4gLmdkeC1sYW5kc2NhcGUtbG93ZXJ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOm1pbm1heCgwLDEuNzVmciKSBG1pbm1heCgxNzBweCwuNjVmcikh aW1wb3J0YW50O2dhcDoxMHB4IWltcG9ydGFudDtwYWRkaW5nOjEwcHghaW1wb3J0YW50O30KIC4nZHgtZmllbGQtY2FyZHtvdmVyZmxvdzpoaWRkZW4haW1wb3J0YW50O30KICAuZ2R4LWZpZWxkLXNoYXBle3Bvc2l0aW9uOmFic29sdXRlIWltcG9ydGFudDtpbnNldDoyNHB4IDEwcHggMTBweCFpbXBvcnRhbnQ7ei1pbmRleDowIWltcG9ydGFudDtvdmVyZmxvdzpoaWRkZW4haW1wb3J0YW50O2JhY2tncm91bmQ6bGluZWFyLWdyYWRpZW50KDE0NWRlZyxyZ2JhKDI1LDEwNSw3MiwuNDUpLHJnYmEoMTIsNjcsNTEsLjM4KSkhaW1wb3J0YW50O2NsaXAtcGF0aDpwb2x5Z29uKDUwJSAwLDEwMCUgNTQlLDgzJSAxMDAlLDE3JSAxMDAlLDAgNTQlKSFpbXBvcnRhbnQ7Ym9yZGVyLXJhZGl1czo0MCUhaW1wb3J0YW50O3BvaW50ZXItZXZlbnRzOm5vbmUhaW1wb3J0YW50O30KICAuZ2R4LWZpZWxkLXNoYXBlOmJlZm9yZXtjb250ZW50Om5vbmUhaW1wb3J0YW50O30KICAuZ2R4LWZpZWxkLXNoYXBlOmFmdGVye2NvbnRlbnQ6JychaW1wb3J0YW50O3Bvc2l0aW9uOmFic29sdXRlIWltcG9ydGFudDt6LWluZGV4OjEhaW1wb3J0YW50O2xlZnQ6MjglIWltcG9ydGFudDtyaWdodDoyOCUhaW1wb3J0YW50O3RvcDozNCUhaW1wb3J0YW50O2JvdHRvbToxMCUhaW1wb3J0YW50O2JvcmRlcjoxcHggc29saWQgcmdiYSgyMzIsMjA3LDE1MywuMzQpIWltcG9ydGFudDt0cmFuc2Zvcm06cm90YXRlKDQ1ZGVnKSFpbXBvcnRhbnQ7cG9pbnRlci1ldmVudHM6bm9uZSFpbXBvcnRhbnQ7fQogIC5nZHgtZmllbGRlcnMtbGF5ZXJ7cG9zaXRpb246YWJzb2x1dGUhaW1wb3J0YW50O2luc2V0OjI0cHggMTBweCAxMHB4IWltcG9ydGFudDt6LWluZGV4OjQhaW1wb3J0YW50O292ZXJmbG93OnZpc2libGUhaW1wb3J0YW50O3BvaW50ZXItZXZlbnRzOm5vbmUhaW1wb3J0YW50O30KICAuZ2R4LWZpZWxkZXJzLWxheWVyIC5nZHgtZmllbGRlcnt6LWluZGV4OjUhaW1wb3J0YW50O21heC13aWR0aDo0NCUhaW1wb3J0YW50O3BhZGRpbmc6M3B4IDdweCFpbXBvcnRhbnQ7YmFja2dyb3VuZDpyZ2JhKDMsMTUsMjUsLjkpIWltcG9ydGFudDtib3JkZXItY29sb3I6cmdiYSgyNTUsMjU1LDI1NSwuMikh aW1wb3J0YW50O2JveC1zaGFkb3c6MCAycHggOHB4IHJnYmEoMCwwLDAsLjMyKSFpbXBvcnRhbnQ7fQogIC5nZHgtZmllbGRlcnMtbGF5ZXIgLmdkeC1maWVsZGVyIHNwYW57b3ZlcmZsb3c6dmlzaWJsZSFpbXBvcnRhbnQ7dGV4dC1vdmVyZmxvdzpjbGlwIWltcG9ydGFudDtmb250LXNpemU6MTBweCFpbXBvcnRhbnQ7fQogIC5nZHgtcG9zLWxme2xlZnQ6MjUlIWltcG9ydGFudDt0b3A6MjglIWltcG9ydGFudDt9LmdkeC1wb3MtcmZ7bGVmdDo3NSUhaW1wb3J0YW50O3RvcDoyOCUhaW1wb3J0YW50O30uZ2R4LXBvcy0zYntsZWZ0OjI3JSFpbXBvcnRhbnQ7dG9wOjY2JSFpbXBvcnRhbnQ7fS5nZHgtcG9zLTFie2xlZnQ6NzMlIWltcG9ydGFudDt0b3A6NjYlIWltcG9ydGFudDt9Cn0KQG1lZGlhIChvcmllbnRhdGlvbjpsYW5kc2NhcGUpIGFuZCAobWluLXdpZHRoOjcwMHB4KSBhbmQgKG1heC13aWR0aDoxMTAwcHgpewogIGJvZHkuaG9tZS1nYW1lLWRldGFpbC1vcGVuIC5nZHgtbGFuZHNjYXBlLWJvYXJke2dyaWQtdGVtcGxhdGUtY29sdW1uczptaW5tYXgoMTkwcHgsMjMlKSBtaW5tYXgoMCw1NCUpIG1pbm1heCgxOTBweCwyMyUpIWltcG9ydGFudDt9CiAgYm9keS5ob21lLWdhbWUtZGV0YWlsLW9wZW4gLmdkeC1sYW5kc2NhcGUtbG93ZXJ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOm1pbm1heCgwLDEuNWZyKSBtaW5tYXgoMTMwcHgsLjdmcilhaW1wb3J0YW50O3BhZGRpbmc6NnB4IWltcG9ydGFudDtnYXA6NnB4IWltcG9ydGFudDt9CiAgLmdkeC1maWVsZGVycy1sYXllciAuZ2R4LWZpZWxkZXIgc3Bhbntmb250LXNpemU6OHB4IWltcG9ydGFudDt9Cn0KLyo gPT09PT0gdjIuNTIgREVT S1RPUCBSRVBPUlQgTEFZT1VUIEVORCA9PT09PSAqLwo='.replace(' ', '')).decode('utf-8')
+              s += extra
+          css.write_text(s,encoding='utf-8')
           PY
-
       - name: Commit v2.52
         run: |
           git config user.name "github-actions[bot]"
