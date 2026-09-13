@@ -1,0 +1,125 @@
+name: Apply v2.59 live authority
+on:
+  push:
+    paths:
+      - '.github/v259-live-authority-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch v2.59
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app = Path('app.js')
+          s = app.read_text(encoding='utf-8')
+
+          old = """        if (league === 'CPBL' && date === localISODate() && game?.id && typeof window.__cpblRealtimeReadPublished === 'function') {
+          try {
+            const published = await window.__cpblRealtimeReadPublished(date, String(game.id));
+            detail = published?.detail || null;
+          } catch {}
+        }
+"""
+          new = """        const cpblInitialStatus = String(game?.status || '').toLowerCase();
+        if (league === 'CPBL' && date === localISODate() && game?.id && ['live','suspended'].includes(cpblInitialStatus) && typeof window.__cpblRealtimeReadPublished === 'function') {
+          try {
+            const published = await window.__cpblRealtimeReadPublished(date, String(game.id));
+            detail = published?.detail || null;
+          } catch {}
+        }
+"""
+          if old not in s:
+              raise SystemExit('published-read block not found')
+          s = s.replace(old, new, 1)
+
+          old = """        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB')) {
+"""
+          new = """        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        if (league === 'CPBL' && date === localISODate() && game?.id) {
+          const resolvedStatus = String(detail?.status || game?.status || '').toLowerCase();
+          if (['live','suspended'].includes(resolvedStatus)) {
+            window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), status:resolvedStatus } }));
+          } else {
+            window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+          }
+        }
+        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB')) {
+"""
+          if old not in s:
+              raise SystemExit('post-detail block not found')
+          s = s.replace(old, new, 1)
+
+          old = """      if (league === 'CPBL' && date === localISODate() && game?.id) {
+        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id) } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      }
+"""
+          new = """      const initialStatus = String(game?.status || '').toLowerCase();
+      if (league === 'CPBL' && date === localISODate() && game?.id && ['live','suspended'].includes(initialStatus)) {
+        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), status:initialStatus } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      }
+"""
+          if old not in s:
+              raise SystemExit('open watch block not found')
+          s = s.replace(old, new, 1)
+          app.write_text(s, encoding='utf-8')
+
+          rt = Path('cpbl-realtime.js')
+          r = rt.read_text(encoding='utf-8')
+          old = """  async function startWatch(input = {}) {
+    const date = String(input.date || '').trim();
+    const gameId = String(input.gameId || '').trim();
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !gameId) return;
+"""
+          new = """  async function startWatch(input = {}) {
+    const date = String(input.date || '').trim();
+    const gameId = String(input.gameId || '').trim();
+    const status = String(input.status || '').toLowerCase();
+    if (status && !['live','suspended'].includes(status)) {
+      await stopWatch();
+      return;
+    }
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !gameId) return;
+"""
+          if old not in r:
+              raise SystemExit('realtime startWatch block not found')
+          r = r.replace(old, new, 1)
+          rt.write_text(r, encoding='utf-8')
+
+          active = [
+            'app.js','index.html','service-worker.js','cpbl-realtime.js',
+            'live-static-update.js','cpbl-cache-router.js',
+            'game-detail-enhancement.js','game-detail-enhancement.css',
+            'report-layout.js','report-layout.css','styles.css'
+          ]
+          for name in active:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              text = p.read_text(encoding='utf-8')
+              text = text.replace('v2.58','v2.59').replace('V258','V259').replace('v258','v259')
+              p.write_text(text, encoding='utf-8')
+          PY
+      - name: Syntax check
+        run: |
+          node --check app.js
+          node --check cpbl-realtime.js
+          node --check game-detail-enhancement.js
+          node --check report-layout.js
+          node --check live-static-update.js
+      - name: Commit v2.59
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js cpbl-realtime.js live-static-update.js cpbl-cache-router.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css styles.css
+          git commit -m 'Release v2.59 CPBL live authority split'
+          git push
