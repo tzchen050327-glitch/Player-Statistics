@@ -1,0 +1,60 @@
+name: Move cloud sync to top navigation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/move-cloud-sync-tab.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move cloud sync next to international tab
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          cloud = Path('js/07a-cloud-sync.js')
+          text = cloud.read_text(encoding='utf-8')
+          old = """    function cloudSyncEnsureUi() {\n      const actions = document.querySelector('.home-player-actions');\n      if (actions && !document.getElementById('cloudSyncBtn')) {\n        const button = document.createElement('button');\n        button.id = 'cloudSyncBtn';\n        button.className = 'press-btn';\n"""
+          new = """    function cloudSyncEnsureUi() {\n      const actions = document.getElementById('homeZoneSwitch');\n      if (actions && !document.getElementById('cloudSyncBtn')) {\n        const button = document.createElement('button');\n        button.id = 'cloudSyncBtn';\n        button.className = 'home-zone-btn';\n"""
+          if old not in text:
+              raise SystemExit('cloud sync UI anchor not found')
+          cloud.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          css = Path('styles.css')
+          text = css.read_text(encoding='utf-8')
+          old = """#homePage .home-root-switch{\n  grid-template-columns:repeat(2,minmax(0,1fr));\n"""
+          new = """#homePage .home-root-switch{\n  grid-template-columns:repeat(3,minmax(0,1fr));\n"""
+          if old not in text:
+              raise SystemExit('home root switch CSS anchor not found')
+          css.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          sw = Path('service-worker.js')
+          text = sw.read_text(encoding='utf-8')
+          if 'baseball-player-card-pwa-v240-stable-3' in text:
+              text = text.replace('baseball-player-card-pwa-v240-stable-3', 'baseball-player-card-pwa-v240-stable-4', 1)
+          elif 'baseball-player-card-pwa-v240-stable-4' not in text:
+              raise SystemExit('unexpected service worker cache name')
+          sw.write_text(text, encoding='utf-8')
+          PY
+
+          python3 scripts/build-app.py
+          node --check app.js
+          grep -q "document.getElementById('homeZoneSwitch')" js/07a-cloud-sync.js
+          grep -q "button.className = 'home-zone-btn'" js/07a-cloud-sync.js
+          grep -q "grid-template-columns:repeat(3,minmax(0,1fr))" styles.css
+          grep -q "baseball-player-card-pwa-v240-stable-4" service-worker.js
+
+      - name: Commit navigation placement
+        run: |
+          git config user.name 'chatgpt-cloud-sync'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/07a-cloud-sync.js app.js styles.css service-worker.js
+          git commit -m 'Move cloud sync beside international tab'
+          git push
