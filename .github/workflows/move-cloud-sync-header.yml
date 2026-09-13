@@ -21,155 +21,27 @@ jobs:
 
           cloud = Path('js/07a-cloud-sync.js')
           text = cloud.read_text(encoding='utf-8')
-          old = '''    function cloudSyncEnsureUi() {
-      const actions = document.getElementById('homeZoneSwitch');
-      if (actions && !document.getElementById('cloudSyncBtn')) {
-        const button = document.createElement('button');
-        button.id = 'cloudSyncBtn';
-        button.className = 'home-zone-btn';
-        button.type = 'button';
-        button.textContent = '雲端同步';
-        button.addEventListener('click', () => {
-          cloudSyncRefreshUi();
-          document.getElementById('cloudSyncDialog')?.showModal();
-        });
-        actions.appendChild(button);
-      }
-'''
-          new = '''    function cloudSyncEnsureUi() {
-      const actions = document.getElementById('homeHeaderDateControl');
-      if (actions && !document.getElementById('cloudSyncBtn')) {
-        const button = document.createElement('button');
-        button.id = 'cloudSyncBtn';
-        button.className = 'cloud-sync-header-btn';
-        button.type = 'button';
-        button.setAttribute('aria-label', '球員資料雲端同步');
-        button.innerHTML = `
-          <svg class="cloud-sync-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M7.2 18.5h9.4a4.1 4.1 0 0 0 .55-8.16A5.65 5.65 0 0 0 6.35 8.7 4.95 4.95 0 0 0 7.2 18.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="m9.25 13 2.05 2.05L15.45 11" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="cloud-sync-label">雲端同步</span>
-          <i class="cloud-sync-dot" aria-hidden="true"></i>`;
-        button.addEventListener('click', () => {
-          cloudSyncRefreshUi();
-          document.getElementById('cloudSyncDialog')?.showModal();
-        });
-        actions.insertBefore(button, actions.firstChild);
-      }
-'''
+          text = text.replace("      const actions = document.getElementById('homeZoneSwitch');", "      const actions = document.getElementById('homeHeaderDateControl');", 1)
+          text = text.replace("        button.className = 'home-zone-btn';", "        button.className = 'cloud-sync-header-btn';", 1)
+          text = text.replace("        actions.appendChild(button);", "        actions.insertBefore(button, actions.firstChild);", 1)
+          old = "        button.textContent = cloudSyncCredentials ? `雲端同步 · ${cloudSyncCredentials.code}` : '雲端同步';\n        button.title = cloudSyncCredentials\n          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `已連接｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)\n          : '設定指定裝置／帳號共用球員資料';"
+          new = "        button.textContent = cloudSyncLastError ? '同步異常' : cloudSyncBusy ? '同步中' : cloudSyncCredentials ? '已同步' : '雲端同步';\n        button.classList.toggle('is-connected', Boolean(cloudSyncCredentials) && !cloudSyncLastError);\n        button.classList.toggle('is-error', Boolean(cloudSyncLastError));\n        button.classList.toggle('is-busy', Boolean(cloudSyncBusy));\n        button.title = cloudSyncCredentials\n          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)\n          : '設定指定裝置／帳號共用球員資料';"
           if old not in text:
-              raise SystemExit('cloud sync UI anchor not found')
-          text = text.replace(old, new, 1)
-
-          old_refresh = '''      const button = document.getElementById('cloudSyncBtn');
-      if (button) {
-        button.textContent = cloudSyncCredentials ? `雲端同步 · ${cloudSyncCredentials.code}` : '雲端同步';
-        button.title = cloudSyncCredentials
-          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `已連接｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)
-          : '設定指定裝置／帳號共用球員資料';
-      }
-'''
-          new_refresh = '''      const button = document.getElementById('cloudSyncBtn');
-      if (button) {
-        const label = button.querySelector('.cloud-sync-label');
-        if (label) {
-          label.textContent = cloudSyncLastError
-            ? '同步異常'
-            : cloudSyncBusy
-              ? '同步中'
-              : cloudSyncCredentials
-                ? '已同步'
-                : '雲端同步';
-        }
-        button.classList.toggle('is-connected', Boolean(cloudSyncCredentials) && !cloudSyncLastError);
-        button.classList.toggle('is-error', Boolean(cloudSyncLastError));
-        button.classList.toggle('is-busy', Boolean(cloudSyncBusy));
-        button.title = cloudSyncCredentials
-          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)
-          : '設定指定裝置／帳號共用球員資料';
-      }
-'''
-          if old_refresh not in text:
               raise SystemExit('cloud sync refresh anchor not found')
-          text = text.replace(old_refresh, new_refresh, 1)
+          text = text.replace(old, new, 1)
           text = text.replace('// app.js is loaded at the end of <body>, so the home action row already exists here.', '// app.js is loaded at the end of <body>, so the header controls already exist here.')
           cloud.write_text(text, encoding='utf-8')
 
           css = Path('styles.css')
           css_text = css.read_text(encoding='utf-8')
-          old_grid = '''#homePage .home-root-switch{
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  margin-bottom:10px;
-}'''
-          new_grid = '''#homePage .home-root-switch{
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  margin-bottom:10px;
-}'''
-          if old_grid not in css_text:
-              raise SystemExit('home root grid anchor not found')
-          css_text = css_text.replace(old_grid, new_grid, 1)
+          css_text = css_text.replace('#homePage .home-root-switch{\n  grid-template-columns:repeat(3,minmax(0,1fr));\n  margin-bottom:10px;\n}', '#homePage .home-root-switch{\n  grid-template-columns:repeat(2,minmax(0,1fr));\n  margin-bottom:10px;\n}', 1)
           marker = '/* ===== CLOUD SYNC HEADER CONTROL ===== */'
           if marker not in css_text:
-              css_text += '''\n\n/* ===== CLOUD SYNC HEADER CONTROL ===== */
-.cloud-sync-header-btn{
-  position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  min-height:30px;
-  padding:4px 8px;
-  border:1px solid rgba(255,255,255,.30);
-  border-radius:9px;
-  background:rgba(255,255,255,.14);
-  color:#fff;
-  box-shadow:none;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
-}
-.cloud-sync-header-btn:hover{background:rgba(255,255,255,.22);}
-.cloud-sync-header-btn:active{transform:translateY(1px);}
-.cloud-sync-icon{width:17px;height:17px;display:block;flex:0 0 auto;}
-.cloud-sync-dot{
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:rgba(255,255,255,.45);
-  box-shadow:0 0 0 2px rgba(255,255,255,.10);
-  flex:0 0 auto;
-}
-.cloud-sync-header-btn.is-connected .cloud-sync-dot{background:#35c46a;}
-.cloud-sync-header-btn.is-error .cloud-sync-dot{background:#ff6b6b;}
-.cloud-sync-header-btn.is-busy .cloud-sync-dot{background:#ffd166;animation:cloudSyncPulse 1s ease-in-out infinite;}
-@keyframes cloudSyncPulse{50%{opacity:.35;transform:scale(.8);}}
-@media(max-width:640px){
-  .cloud-sync-header-btn{
-    width:30px;
-    min-width:30px;
-    height:28px;
-    min-height:28px;
-    padding:3px;
-    gap:0;
-  }
-  .cloud-sync-header-btn .cloud-sync-label{display:none;}
-  .cloud-sync-header-btn .cloud-sync-dot{
-    position:absolute;
-    right:2px;
-    top:2px;
-    width:6px;
-    height:6px;
-  }
-  .cloud-sync-icon{width:16px;height:16px;}
-}
-/* ===== CLOUD SYNC HEADER CONTROL END ===== */
-'''
+              css_text += "\n\n/* ===== CLOUD SYNC HEADER CONTROL ===== */\n.cloud-sync-header-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:30px;padding:4px 8px;border:1px solid rgba(255,255,255,.30);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;box-shadow:none;font-size:12px;font-weight:800;white-space:nowrap;}\n.cloud-sync-header-btn::before{content:'☁';font-size:15px;line-height:1;}\n.cloud-sync-header-btn::after{content:'';width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);box-shadow:0 0 0 2px rgba(255,255,255,.10);}\n.cloud-sync-header-btn:hover{background:rgba(255,255,255,.22);}\n.cloud-sync-header-btn:active{transform:translateY(1px);}\n.cloud-sync-header-btn.is-connected::after{background:#35c46a;}\n.cloud-sync-header-btn.is-error::after{background:#ff6b6b;}\n.cloud-sync-header-btn.is-busy::after{background:#ffd166;animation:cloudSyncPulse 1s ease-in-out infinite;}\n@keyframes cloudSyncPulse{50%{opacity:.35;transform:scale(.8);}}\n@media(max-width:640px){.cloud-sync-header-btn{width:30px;min-width:30px;height:28px;min-height:28px;padding:3px;font-size:0;gap:0;}.cloud-sync-header-btn::before{font-size:16px;}.cloud-sync-header-btn::after{position:absolute;right:2px;top:2px;width:6px;height:6px;}}\n/* ===== CLOUD SYNC HEADER CONTROL END ===== */\n"
           css.write_text(css_text, encoding='utf-8')
 
           sw = Path('service-worker.js')
-          sw_text = sw.read_text(encoding='utf-8')
-          sw_text = sw_text.replace('baseball-player-card-pwa-v240-stable-3', 'baseball-player-card-pwa-v240-stable-4')
+          sw_text = sw.read_text(encoding='utf-8').replace('baseball-player-card-pwa-v240-stable-3', 'baseball-player-card-pwa-v240-stable-4')
           sw.write_text(sw_text, encoding='utf-8')
           PY
 
