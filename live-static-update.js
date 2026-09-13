@@ -27,6 +27,39 @@
     showBootFailure(reason?.message || reason || 'Promise rejected');
   });
 
+  // v2.51 index.html and app.js drifted apart: the current HTML removed several
+  // controls that app.js still binds synchronously during startup. Restore only
+  // those controls before app.js executes so fresh browsers and cached browsers
+  // use the same DOM contract.
+  function ensureV251DomCompatibility() {
+    const saveButton = document.getElementById('saveNewPlayerBtn');
+    if (saveButton && !document.getElementById('createManualPlayerBtn')) {
+      const actions = saveButton.closest('.section-actions');
+      if (actions) {
+        actions.innerHTML = `
+          <button id="createManualPlayerBtn" class="press-btn">純新增</button>
+          <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
+          <button id="createExternalPlayerBtn" class="press-btn primary hidden">搜尋國外聯盟資料</button>`;
+      }
+    }
+
+    const allDialog = document.getElementById('allPlayersDialog');
+    if (allDialog && !document.getElementById('allSearchPlayerBtn')) {
+      const head = allDialog.querySelector('.dialog-head');
+      if (head) {
+        const tools = document.createElement('div');
+        tools.className = 'all-player-tools';
+        tools.innerHTML = `
+          <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
+          <button id="batchReportBtn" class="press-btn primary">批量生成戰報</button>
+          <button id="allDeletePlayerBtn" class="press-btn danger">刪除球員</button>`;
+        head.insertAdjacentElement('afterend', tools);
+      }
+    }
+  }
+
+  ensureV251DomCompatibility();
+
   // v2.51 emergency mode: unregister old workers and return a harmless fake
   // registration during startup. The web app continues to work online without
   // a Service Worker; PWA updating can be re-enabled after boot stability is confirmed.
