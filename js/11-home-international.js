@@ -1101,10 +1101,7 @@
             await Promise.all(liveGames.map(async item => {
               try {
                 const verified = await leagueGameDetailRequest('CPBL', date, item);
-                const verifiedStatus = String(verified?.status || '').toLowerCase();
-                if (verifiedStatus) item.status = verifiedStatus;
-                if (verified?.game?.awayScore !== undefined && verified.game.awayScore !== null) item.awayScore = verified.game.awayScore;
-                if (verified?.game?.homeScore !== undefined && verified.game.homeScore !== null) item.homeScore = verified.game.homeScore;
+                syncHomeDailyGameFromDetail('CPBL', date, item, verified);
                 if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;
               } catch (error) {
                 console.warn('CPBL 外層賽況驗證失敗', error);

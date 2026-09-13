@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.45';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.46';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
