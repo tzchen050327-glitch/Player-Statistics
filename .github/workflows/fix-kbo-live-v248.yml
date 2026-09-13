@@ -1,0 +1,64 @@
+name: Fix KBO live status v2.48
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-kbo-live-v248.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Route KBO through live game API and release v2.48
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('js/00-core-config.js')
+          s = p.read_text(encoding='utf-8')
+          anchor = "    const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';\n"
+          insert = anchor + "    const KBO_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/kbo-live-games';\n"
+          if 'KBO_GAMES_API_URL' not in s:
+              if anchor not in s:
+                  raise SystemExit('NPB games URL anchor not found')
+              s = s.replace(anchor, insert, 1)
+          s = s.replace('v2.47', 'v2.48')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('js/11-home-international.js')
+          s = p.read_text(encoding='utf-8')
+          old = "      const response = await fetch(league === 'NPB' ? NPB_GAMES_API_URL : LEAGUE_GAMES_API_URL, {\n"
+          new = "      const response = await fetch(league === 'NPB' ? NPB_GAMES_API_URL : league === 'KBO' ? KBO_GAMES_API_URL : LEAGUE_GAMES_API_URL, {\n"
+          if old not in s:
+              raise SystemExit('daily games fetch route not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          for name in ['index.html', 'manifest.webmanifest', 'game-detail-enhancement.js', 'service-worker.js']:
+              q = Path(name)
+              text = q.read_text(encoding='utf-8').replace('v2.47', 'v2.48').replace('v247', 'v248')
+              q.write_text(text, encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.48"}\n', encoding='utf-8')
+          PY
+          python3 scripts/build-app.py
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -Fq "const APP_VERSION = 'v2.48';" app.js
+          grep -Fq 'KBO_GAMES_API_URL' app.js
+          grep -Fq "league === 'KBO' ? KBO_GAMES_API_URL" app.js
+          grep -Fq 'content="v2.48"' index.html
+          grep -Fq 'baseball-player-card-pwa-v248-stable-1' service-worker.js
+          git diff --check
+      - name: Commit v2.48
+        run: |
+          git config user.name 'chatgpt-release'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/00-core-config.js js/11-home-international.js app.js index.html manifest.webmanifest service-worker.js version.json game-detail-enhancement.js
+          git commit -m 'Use KBO live game status and release v2.48'
+          git pull --rebase origin main
+          git push
