@@ -1,7 +1,7 @@
 (() => {
   const VERSION = 'v2.59';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
 
   let client = null;
@@ -96,8 +96,6 @@
     const row = Array.isArray(rows) ? rows[0] : null;
     const detail = publishedDetail(row);
     const status = String(detail?.status || row?.status || '').toLowerCase();
-    // Only LIVE/SUSPENDED is owned by the Supabase live state. Pregame and
-    // completed games intentionally fall through to the normal CPBL request.
     return { ok:Boolean(detail) && isLiveStatus(status), detail:isLiveStatus(status) ? detail : null, row, gameStatus:status };
   }
   window.__cpblRealtimeReadPublished = readPublished;
