@@ -28,8 +28,27 @@
     return nativeFetch(input, init);
   };
 
-  // game-detail-enhancement 目前以 60ms debounce 等待畫面更新；
-  // 這會讓主程式重畫後短暫露出未增強狀態。只針對該函式壓成 0ms。
+  // Fresh-install guard: an empty IndexedDB has no selected player yet, but
+  // app.js still evaluates the season-report labels during renderAll().
+  // Returning a harmless empty context prevents that first render from being
+  // misreported as an IndexedDB-open failure.
+  const nativeAnnualSeasonContext = globalThis.annualSeasonContext;
+  if (typeof nativeAnnualSeasonContext === 'function') {
+    globalThis.annualSeasonContext = player => {
+      if (!player) {
+        return {
+          year: new Date().getFullYear(),
+          league: '',
+          team: '',
+          level: ''
+        };
+      }
+      return nativeAnnualSeasonContext(player);
+    };
+  }
+
+  // game-detail-enhancement currently waits 60ms before patching the enhanced
+  // live board. Collapse that one debounce so the base render is not exposed.
   window.setTimeout = (handler, timeout, ...args) => {
     const delay = Number(timeout) || 0;
     if (delay === 60 && typeof handler === 'function' && handler.name === 'enhanceGameDetail') {
