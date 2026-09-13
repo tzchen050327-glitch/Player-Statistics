@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.50';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.51';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -307,7 +307,7 @@
       ${rows.map(entry => {
         const active = entry.name && samePlayerName(entry.name, current);
         return `<div class="gdx-lineup-row ${active ? 'is-current' : ''}">
-          <span>${esc(entry.number || entry.order || '')}</span>
+          <span>${esc(entry.number || '—')}</span>
           <strong title="${esc(entry.name || '')}">${esc(entry.name || '—')}</strong>
           <span>${esc(entry.avg || '—')}</span><span>${esc(entry.hits || '—')}</span><span>${esc(entry.homeRuns || '—')}</span><span>${esc(entry.rbi || '—')}</span>
         </div>`;
@@ -318,8 +318,8 @@
   function currentPitcherInfo(detail, defenseSide) {
     const direct = detail?.lineups?.[defenseSide]?.pitcher || {};
     const current = detail?.current?.pitcher || {};
-    const name = compactName(current.fullName || current.name || direct.fullName || direct.name || '');
-    const stats = direct.stats || current.stats || direct || current;
+    const name = compactName(direct.fullName || direct.name || current.fullName || current.name || '');
+    const stats = direct.stats || direct || current.stats || current;
     const pitcherPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(play => !name || samePlayerName(play?.pitcher, name));
     const text = play => `${play?.result || ''} ${play?.raw || ''}`;
     return {
@@ -357,7 +357,7 @@
     const map = {}, raw = detail?.lineups?.[side];
     const fielders = Array.isArray(raw?.fielders) ? raw.fielders : lineupEntries(detail, side);
     for (const entry of fielders) { const key = positionKey(entry?.position || entry?.pos || ''); const name = compactName(entry?.name || entry?.fullName || ''); if (key && name) map[key] = name; }
-    const pitcher = compactName(detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || raw?.pitcher?.name || ''); if (pitcher) map.p = pitcher;
+    const pitcher = compactName(raw?.pitcher?.fullName || raw?.pitcher?.name || detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || ''); if (pitcher) map.p = pitcher;
     return map;
   }
 
