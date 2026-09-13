@@ -1,0 +1,58 @@
+name: Landscape outs v2.50
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/landscape-outs-v250.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add outs below runner diamond
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          js = Path('game-detail-enhancement.js')
+          s = js.read_text(encoding='utf-8')
+          old = '''        <div class="gdx-runner-home"></div>\n      </div>\n    </div>`;'''
+          new = '''        <div class="gdx-runner-home"></div>\n      </div>\n      <div class="gdx-runner-outs">${currentOuts(detail)}出局</div>\n    </div>`;'''
+          if 'gdx-runner-outs' not in s:
+              if old not in s:
+                  raise SystemExit('runner diamond hook not found')
+              s = s.replace(old, new, 1)
+          js.write_text(s, encoding='utf-8')
+
+          css = Path('game-detail-enhancement.css')
+          c = css.read_text(encoding='utf-8')
+          old_css = '.gdx-runner-card{display:flex;align-items:center;justify-content:center}'
+          new_css = '.gdx-runner-card{display:flex;flex-direction:column;align-items:center;justify-content:center}'
+          if old_css in c:
+              c = c.replace(old_css, new_css, 1)
+          if '.gdx-runner-outs{' not in c:
+              hook = '.gdx-runner-name-first{right:0;top:50%;transform:translateY(-50%)}'
+              add = hook + '.gdx-runner-outs{margin-top:2px;font-size:12px;font-weight:950;letter-spacing:.06em;color:#dce9f5;line-height:1;white-space:nowrap}'
+              if hook not in c:
+                  raise SystemExit('runner CSS hook not found')
+              c = c.replace(hook, add, 1)
+          css.write_text(c, encoding='utf-8')
+          PY
+
+          sed -i 's/v2\.49/v2.50/g' js/00-core-config.js index.html manifest.webmanifest version.json game-detail-enhancement.js game-detail-enhancement.css service-worker.js
+          sed -i 's/v249/v250/g' service-worker.js
+          python3 scripts/build-app.py
+          node --check app.js
+          node --check game-detail-enhancement.js
+
+      - name: Commit v2.50
+        run: |
+          git config user.name 'chatgpt-release'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/00-core-config.js app.js index.html manifest.webmanifest version.json game-detail-enhancement.js game-detail-enhancement.css service-worker.js
+          git commit -m 'Show outs under landscape runner diamond and release v2.50'
+          git push
