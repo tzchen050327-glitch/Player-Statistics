@@ -1,0 +1,85 @@
+name: Apply v2.62 terminal status and runner names
+on:
+  push:
+    paths:
+      - '.github/v262-fix-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v2.62 fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('game-detail-enhancement.js')
+          s = p.read_text(encoding='utf-8')
+
+          old_direct = """  function directRunnerNames(detail) {\n    const raw = detail?.current?.runners || detail?.runners || {};\n    const take=(...values)=>compactName(values.find(v=>compactName(v))||'');\n    return {first:take(raw.first,raw.firstBase,raw[1],raw.base1),second:take(raw.second,raw.secondBase,raw[2],raw.base2),third:take(raw.third,raw.thirdBase,raw[3],raw.base3)};\n  }\n"""
+          new_direct = """  function directRunnerNames(detail) {\n    const raw = detail?.current?.runners || detail?.runners || {};\n    const take=(...values)=>{\n      const value=compactName(values.find(v=>compactName(v))||'');\n      return /^\\d+$/.test(value)||/^(?:true|false|null|undefined)$/i.test(value)?'':value;\n    };\n    return {first:take(raw.first,raw.firstBase,raw[1],raw.base1),second:take(raw.second,raw.secondBase,raw[2],raw.base2),third:take(raw.third,raw.thirdBase,raw[3],raw.base3)};\n  }\n"""
+          if old_direct not in s:
+              raise SystemExit('directRunnerNames target not found')
+          s = s.replace(old_direct, new_direct, 1)
+
+          old_infer = """  function inferRunnerNames(detail) {\n    const offense = currentOffenseSide(detail), wantedHalf = offense === 'away' ? 'top' : 'bottom';\n    const gameInning = Number(String(detail?.game?.inningLabel||'').match(/(\\d+)/)?.[1]||0);\n    const plays = (Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>p?.half===wantedHalf && (!gameInning || Number(p?.inning)===gameInning));\n    let runners = {first:'',second:'',third:''};\n    for (const play of plays) {\n      const before = normalizeBaseState(play?.baseStateBefore || play?.basesBefore || '');\n      const after = normalizeBaseState(play?.baseState || play?.basesAfter || play?.bases || '');\n      if (!before.first) runners.first=''; if (!before.second) runners.second=''; if (!before.third) runners.third='';\n      const batter = compactName(play?.batter||play?.hitter||'');\n      const result = `${play?.result||''} ${play?.raw||''}`;\n      const old = {...runners};\n      runners = {first:'',second:'',third:''};\n      if (/全壘打/.test(result)) continue;\n      if (after.third) runners.third = /三壘安打/.test(result) ? batter : (old.second || old.first || old.third);\n      if (after.second) runners.second = /二壘安打/.test(result) ? batter : (old.first || old.second);\n      if (after.first) runners.first = /安打|四壞|觸身|失誤上壘|野手選擇/.test(result) ? batter : old.first;\n    }\n    return runners;\n  }\n"""
+          new_infer = """  function inferRunnerNames(detail) {\n    const offense=currentOffenseSide(detail), wantedHalf=offense==='away'?'top':'bottom';\n    const gameInning=Number(String(detail?.game?.inningLabel||'').match(/(\\d+)/)?.[1]||0);\n    const plays=(Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>p?.half===wantedHalf&&(!gameInning||Number(p?.inning)===gameInning));\n    let runners={first:'',second:'',third:''};\n    const keyOf=base=>base==='一壘'?'first':base==='二壘'?'second':'third';\n    const destOf=text=>/一壘/.test(text)?'first':/二壘/.test(text)?'second':/三壘/.test(text)?'third':'';\n    for(const play of plays){\n      const desc=compactName(play?.description||'');\n      const batter=compactName(play?.batter||play?.hitter||'');\n      const result=`${play?.result||''} ${play?.raw||''}`;\n\n      for(const m of desc.matchAll(/更換代跑[:：]\\s*([^=〉>。]+?)\\s*(?:=>|→|〉)\\s*([^，。\\s]+)/g)){\n        const from=compactName(m[1]),to=compactName(m[2]);\n        for(const k of ['first','second','third']) if(runners[k]===from) runners[k]=to;\n      }\n\n      for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\\s*([^\\s，。-]+?)\\s*(上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){\n        const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];\n        if(runners[from]===name||!runners[from]) runners[from]='';\n        if(/^上/.test(action)){\n          const to=destOf(action);\n          if(to) runners[to]=name;\n        }\n      }\n\n      if(/全壘打/.test(result)){\n        runners={first:'',second:'',third:''};\n      }else if(/三壘安打/.test(result)){\n        runners.third=batter;\n      }else if(/二壘安打/.test(result)){\n        runners.second=batter;\n      }else if(/(?:一壘安打|安打|四壞|故意四壞|觸身|失誤上壘|野手選擇)/.test(result)||/趁傳上壘|打者[^。]*上壘/.test(desc)){\n        runners.first=batter;\n      }\n\n      if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};\n    }\n    return runners;\n  }\n"""
+          if old_infer not in s:
+              raise SystemExit('inferRunnerNames target not found')
+          s = s.replace(old_infer, new_infer, 1)
+
+          old_label = """  function renderLandscapeScoreboard(detail,board) {\n"""
+          new_label = """  function gameStateLabel(detail) {\n    const supplied=compactName(detail?.game?.statusLabel||detail?.statusLabel||'');\n    if(supplied) return supplied;\n    const status=String(detail?.status||'').toLowerCase();\n    if(status==='final') return '比賽結束';\n    if(status==='postponed') return '延賽';\n    if(status==='cancelled') return '延賽／取消';\n    if(status==='suspended') return '比賽暫停';\n    return compactName(detail?.game?.inningLabel||'');\n  }\n\n  function renderLandscapeScoreboard(detail,board) {\n"""
+          if old_label not in s:
+              raise SystemExit('renderLandscapeScoreboard anchor not found')
+          s = s.replace(old_label, new_label, 1)
+          target = "${esc(game.inningLabel||(detail?.status==='final'?'比賽結束':''))}"
+          if target not in s:
+              raise SystemExit('landscape inning label target not found')
+          s = s.replace(target, "${esc(gameStateLabel(detail))}", 1)
+
+          target_runner = "const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'有人'):'';"
+          repl_runner = "const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'—'):'';"
+          if target_runner not in s:
+              raise SystemExit('runner fallback target not found')
+          s = s.replace(target_runner, repl_runner, 1)
+          p.write_text(s, encoding='utf-8')
+
+          files = [
+              'app.js','index.html','service-worker.js','game-detail-enhancement.js',
+              'game-detail-enhancement.css','report-layout.js','report-layout.css',
+              'cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest',
+              'rescue.html','styles.css'
+          ]
+          for name in files:
+              p=Path(name)
+              if not p.exists(): continue
+              text=p.read_text(encoding='utf-8')
+              text=text.replace('v2.61','v2.62').replace('v261','v262').replace('V261','V262')
+              text=text.replace('pwa-v261','pwa-v262')
+              p.write_text(text,encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.62"}\n',encoding='utf-8')
+          PY
+      - name: Verify v2.62
+        shell: bash
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -q "APP_VERSION = 'v2.62'" app.js
+          grep -q '"version":"v2.62"' version.json
+          grep -q 'baseball-player-card-pwa-v262' service-worker.js
+          grep -q "return '比賽結束'" game-detail-enhancement.js
+          ! grep -q "name||'有人'" game-detail-enhancement.js
+      - name: Commit v2.62
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css version.json
+          git commit -m 'Release v2.62 terminal status and runner names'
+          git push
