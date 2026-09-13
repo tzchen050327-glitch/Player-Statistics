@@ -1,8 +1,9 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v251-stable-1';
+const CACHE_NAME = 'baseball-player-card-pwa-v251-stable-2';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css?v=v2.51-ui1',
+  './live-static-update.js?v=v2.51-static2',
   './app.js?v=v2.51',
   './game-detail-enhancement.css?v=v2.51-ui1',
   './game-detail-enhancement.js?v=v2.51-ui1',
@@ -57,6 +58,7 @@ self.addEventListener('fetch', event => {
   const isCore = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html')
+    || url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/styles.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
