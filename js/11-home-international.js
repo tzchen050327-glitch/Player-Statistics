@@ -900,7 +900,6 @@
       if (String(stats.homeRuns ?? '').trim()) out.push(['被全壘打', String(stats.homeRuns)]);
       if (String(stats.fourDead ?? '').trim()) out.push(['四死球', String(stats.fourDead)]);
       if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
-      if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
       if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
       return out.slice(0, 10);
     }
