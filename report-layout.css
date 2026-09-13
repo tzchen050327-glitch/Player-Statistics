@@ -1,0 +1,124 @@
+/* Player Statistics report layout — v2.52 */
+
+@media (orientation: landscape) and (min-width: 700px) {
+  body.home-game-detail-open .home-game-detail-overlay {
+    background: #091728 !important;
+    overflow: hidden !important;
+  }
+
+  body.home-game-detail-open .home-game-detail-page {
+    width: 100vw !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    background: #091728 !important;
+    box-shadow: none !important;
+  }
+
+  /* Report mode uses the whole viewport; the normal game-detail title strip is hidden. */
+  body.home-game-detail-open .game-detail-sticky-head {
+    display: none !important;
+  }
+
+  body.home-game-detail-open #homeGameDetailBody {
+    width: 100vw !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  body.home-game-detail-open .gdx-landscape-board {
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    grid-template-columns: minmax(250px, 20%) minmax(0, 60%) minmax(250px, 20%) !important;
+  }
+
+  body.home-game-detail-open .gdx-landscape-center {
+    min-width: 0 !important;
+  }
+
+  body.home-game-detail-open .gdx-landscape-lower {
+    grid-template-columns: minmax(0, 1.75fr) minmax(170px, .65fr) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+
+  /* The field polygon is visual only. Player labels live in a separate overlay layer. */
+  .gdx-field-card {
+    overflow: hidden !important;
+  }
+
+  .gdx-field-shape {
+    position: absolute !important;
+    inset: 24px 10px 10px !important;
+    z-index: 0 !important;
+    overflow: hidden !important;
+    background: linear-gradient(145deg, rgba(25,105,72,.45), rgba(12,67,51,.38)) !important;
+    clip-path: polygon(50% 0, 100% 54%, 83% 100%, 17% 100%, 0 54%) !important;
+    border-radius: 40% !important;
+    pointer-events: none !important;
+  }
+
+  .gdx-field-shape::before {
+    content: none !important;
+  }
+
+  .gdx-field-shape::after {
+    content: '' !important;
+    position: absolute !important;
+    z-index: 1 !important;
+    left: 28% !important;
+    right: 28% !important;
+    top: 34% !important;
+    bottom: 10% !important;
+    border: 1px solid rgba(232,207,153,.34) !important;
+    transform: rotate(45deg) !important;
+    pointer-events: none !important;
+  }
+
+  .gdx-fielders-layer {
+    position: absolute !important;
+    inset: 24px 10px 10px !important;
+    z-index: 4 !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+  }
+
+  .gdx-fielders-layer .gdx-fielder {
+    z-index: 5 !important;
+    max-width: 44% !important;
+    padding: 3px 7px !important;
+    background: rgba(3,15,25,.90) !important;
+    border-color: rgba(255,255,255,.20) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.32) !important;
+  }
+
+  .gdx-fielders-layer .gdx-fielder span {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-size: 10px !important;
+  }
+
+  /* Pull the corner/outfield labels inward so long names remain inside the card. */
+  .gdx-fielders-layer .gdx-pos-lf { left: 25% !important; top: 28% !important; }
+  .gdx-fielders-layer .gdx-pos-rf { left: 75% !important; top: 28% !important; }
+  .gdx-fielders-layer .gdx-pos-3b { left: 27% !important; top: 66% !important; }
+  .gdx-fielders-layer .gdx-pos-1b { left: 73% !important; top: 66% !important; }
+}
+
+@media (orientation: landscape) and (min-width: 700px) and (max-width: 1100px) {
+  body.home-game-detail-open .gdx-landscape-board {
+    grid-template-columns: minmax(190px, 23%) minmax(0, 54%) minmax(190px, 23%) !important;
+  }
+
+  body.home-game-detail-open .gdx-landscape-lower {
+    grid-template-columns: minmax(0, 1.5fr) minmax(130px, .7fr) !important;
+    padding: 6px !important;
+    gap: 6px !important;
+  }
+
+  .gdx-fielders-layer .gdx-fielder span {
+    font-size: 8px !important;
+  }
+}
