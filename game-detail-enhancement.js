@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.64';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.65';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -278,9 +278,55 @@
     return `<div class="gdx-field-card"><div class="gdx-mini-title">守備</div><div class="gdx-field-shape"></div><div class="gdx-fielders-layer">${spots.map(pos=>`<div class="gdx-fielder gdx-pos-${pos}"><span>${esc(field[pos]||'—')}</span></div>`).join('')}</div></div>`;
   }
 
-  function renderRunnerDiamond(detail) {
+  function shortPaResult(play) {
+    const text=compactName(play?.result||play?.raw||play?.description||'');
+    if(!text) return '—';
+    if(/四壞|保送|walk/i.test(text)) return '四壞';
+    if(/觸身|死球|hit by pitch/i.test(text)) return '觸身';
+    if(/三振|strikeout/i.test(text)) return '三振';
+    if(/全壘打|全塁打|home run/i.test(text)) return '全壘打';
+    if(/三壘安打|三塁打|triple/i.test(text)) return '三安';
+    if(/二壘安打|二塁打|double/i.test(text)) return '二安';
+    if(/安打|single/i.test(text)) return '一安';
+    if(/雙殺|併殺|double play|DP\b/i.test(text)) return '雙殺';
+    if(/犧牲飛球|犠牲フライ|sacrifice fly/i.test(text)) return '犧飛';
+    if(/犧牲觸擊|犧牲短打|犠打|sacrifice bunt/i.test(text)) return '犧打';
+    if(/界外飛|邪飛/i.test(text)) return '界飛';
+    if(/飛球|飛出|flyout|フライ/i.test(text)) return '飛球';
+    if(/平飛|lineout|ライナー/i.test(text)) return '平飛';
+    if(/滾地|滾地球|groundout|ゴロ/i.test(text)) return '滾地';
+    return text.length>7?`${text.slice(0,7)}…`:text;
+  }
+
+  function currentBatterPaSummary(detail) {
+    const current=detail?.current?.batter||{};
+    const name=compactName(current.fullName||current.name||current.playerName||'');
+    const acnt=String(current.acnt||current.batterAcnt||current.playerAcnt||'').trim();
+    const plays=Array.isArray(detail?.plays)?detail.plays:[];
+    const matches=plays.filter(play=>{
+      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();
+      if(acnt&&paAcnt) return acnt===paAcnt;
+      const paName=compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||'');
+      return !!(name&&paName&&samePlayerName(name,paName));
+    });
+    return {name:name||'等待打者',results:matches.map(shortPaResult).filter(Boolean)};
+  }
+
+  function currentPitcherSummary(detail,side) {
+    const current=detail?.current?.pitcher||{};
+    const fallback=currentPitcherInfo(detail,side);
+    const stats=current.stats||current;
+    return {
+      name:compactName(current.fullName||current.name||current.playerName||fallback.name||'')||'投手資料讀取中',
+      pitches:safeCell(stats.pitches??stats.pitchCount??stats.pitchCnt??fallback.pitches??'')
+    };
+  }
+
+  function renderRunnerDiamond(detail,defenseSide) {
     const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'—'):'';
-    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div><div class="gdx-runner-outs">${currentOuts(detail)}出局</div></div>`;
+    const pitcher=currentPitcherSummary(detail,defenseSide), batter=currentBatterPaSummary(detail);
+    const paHtml=batter.results.length?batter.results.map((result,i)=>`<span title="第${i+1}打席">${esc(result)}</span>`).join(''):'<span class="is-empty">尚未有打席</span>';
+    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-top"><div class="gdx-runner-diamond"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div><div class="gdx-runner-outs">${currentOuts(detail)}出局</div></div><div class="gdx-live-strip"><div class="gdx-live-pitcher-row"><span>投手</span><strong>${esc(pitcher.name)}</strong><b>用球 ${esc(pitcher.pitches||'—')}</b></div><div class="gdx-live-batter-row"><div><span>打者</span><strong>${esc(batter.name)}</strong></div><div class="gdx-pa-results">${paHtml}</div></div></div></div>`;
   }
 
   function gameStateLabel(detail) {
@@ -312,7 +358,7 @@
       const team=which==='away'?game.away||'客隊':game.home||'主隊';
       return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>LINEUP</em></div>${renderLineupPanel(detail,which)}</section>`;
     };
-    return `<section class="gdx-landscape-board game-detail-enhanced-marker" data-gdx="landscape">${side('away')}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${side('home')}</section>`;
+    return `<section class="gdx-landscape-board game-detail-enhanced-marker" data-gdx="landscape">${side('away')}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail,defense)}</div></div>${side('home')}</section>`;
   }
 
   function renderPreviousPlay(detail) {
