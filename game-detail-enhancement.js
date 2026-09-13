@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.56';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.57';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -93,19 +93,8 @@
     return after >= 3 ? 0 : after;
   }
 
-  function inferredTotals(detail) {
-    let awayH = 0, homeH = 0, awayE = 0, homeE = 0;
-    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
-      const text = `${play?.result || ''} ${play?.raw || ''}`;
-      const offense = play?.half === 'bottom' ? 'home' : 'away';
-      if (/全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text)) offense === 'away' ? awayH++ : homeH++;
-      if (/失誤上壘|失誤|エラー/.test(text)) offense === 'away' ? homeE++ : awayE++;
-    }
-    return { awayH, homeH, awayE, homeE };
-  }
-
   function normalizedBoard(detail) {
-    const game = detail?.game || {}, source = detail?.scoreboard || {}, inferred = inferredTotals(detail);
+    const game = detail?.game || {}, source = detail?.scoreboard || {};
     const innings = Array.isArray(source.innings) ? source.innings.map(String) : [];
     const away = Array.isArray(source.away) ? source.away : [], home = Array.isArray(source.home) ? source.home : [];
     const sum = values => {
@@ -113,12 +102,13 @@
       for (const v of values) if (/^-?\d+$/.test(safeCell(v))) { total += Number(v); found = true; }
       return found ? total : null;
     };
-    const fallback = (v, alt) => safeCell(v) === '' ? alt : v;
-    const ar = sum(away), hr = sum(home);
+    const pick = (primary, fallback='') => safeCell(primary) === '' ? fallback : primary;
+    const awayRuns = pick(source?.awayTotals?.R, pick(game.awayScore, sum(away) ?? ''));
+    const homeRuns = pick(source?.homeTotals?.R, pick(game.homeScore, sum(home) ?? ''));
     return {
       innings, away, home,
-      awayTotals:{R:ar ?? fallback(source?.awayTotals?.R, game.awayScore ?? ''),H:fallback(source?.awayTotals?.H,inferred.awayH),E:fallback(source?.awayTotals?.E,inferred.awayE)},
-      homeTotals:{R:hr ?? fallback(source?.homeTotals?.R, game.homeScore ?? ''),H:fallback(source?.homeTotals?.H,inferred.homeH),E:fallback(source?.homeTotals?.E,inferred.homeE)}
+      awayTotals:{R:awayRuns,H:pick(source?.awayTotals?.H,''),E:pick(source?.awayTotals?.E,'')},
+      homeTotals:{R:homeRuns,H:pick(source?.homeTotals?.H,''),E:pick(source?.homeTotals?.E,'')}
     };
   }
 
@@ -146,136 +136,10 @@
     })).filter(x=>x.name);
   }
 
-  function lineupOrderFromGame(detail, side) {
-    const wantedHalf = side === 'away' ? 'top' : 'bottom';
-    const seen = [];
-    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
-      if (play?.half !== wantedHalf) continue;
-      const name = compactName(play?.batter || play?.hitter || '');
-      if (!name || seen.some(x=>samePlayerName(x,name))) continue;
-      seen.push(name);
-      if (seen.length >= 9) break;
-    }
-    return seen;
-  }
-
-  function classifyBatting(play) {
-    const text = `${play?.result||''} ${play?.raw||''}`.trim();
-    const hit = /全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text);
-    const hr = /全壘打/.test(text);
-    const walk = /四壞|故意四壞|觸身/.test(text);
-    const sacrifice = /犧牲短打|犧短|犧牲飛球|犧飛|犠牲|犠打/.test(text);
-    const interference = /妨礙打擊|catcher interference/i.test(text);
-    const ab = !(walk || sacrifice || interference);
-    return {hit,hr,ab,rbi:Number(play?.rbi)||0};
-  }
-
-  function gameBattingTotals(detail, side) {
-    const wantedHalf = side === 'away' ? 'top' : 'bottom', map = new Map();
-    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
-      if (play?.half !== wantedHalf) continue;
-      const name = compactName(play?.batter || play?.hitter || '');
-      if (!name) continue;
-      let row = [...map.entries()].find(([k])=>samePlayerName(k,name))?.[1];
-      if (!row) { row={ab:0,h:0,hr:0,rbi:0}; map.set(name,row); }
-      const c = classifyBatting(play);
-      if (c.ab) row.ab++;
-      if (c.hit) row.h++;
-      if (c.hr) row.hr++;
-      row.rbi += c.rbi;
-    }
-    return map;
-  }
-
   function lineupEntries(detail, side) {
-    const raw = detail?.lineups?.[side] || {};
-    const source = [
-      ...(Array.isArray(raw?.roster) ? raw.roster : []),
-      ...(Array.isArray(raw?.batters) ? raw.batters : [])
-    ];
-    const normalize = (entry, index=0) => ({
-      order:Number(entry?.order)||index+1,
-      number:safeCell(entry?.number||entry?.uniformNumber||entry?.jersey||''),
-      name:compactName(entry?.name||entry?.fullName||entry?.playerName||''),
-      position:compactName(entry?.position||entry?.pos||''),
-      acnt:safeCell(entry?.acnt||entry?.playerId||entry?.id||''),
-      avg:safeCell(entry?.avg??entry?.average??entry?.battingAverage??''),
-      hits:Number(entry?.hits??entry?.h??0)||0,
-      homeRuns:Number(entry?.homeRuns??entry?.hr??0)||0,
-      rbi:Number(entry?.rbi??entry?.rbis??0)||0
-    });
-    const byId = new Map(), byName = new Map();
-    source.forEach((entry,index) => {
-      const p = normalize(entry,index), id = String(p.acnt||''), name = compactName(p.name);
-      if (id) byId.set(id, { ...(byId.get(id)||{}), ...p });
-      if (name) byName.set(normName(name), { ...(byName.get(normName(name))||{}), ...p });
-    });
-    const player = (name, acnt='') => {
-      const n = compactName(name), id = String(acnt||'');
-      return { ...((id && byId.get(id)) || byName.get(normName(n)) || {}), acnt:id || ((id && byId.get(id))?.acnt||''), name:n || ((id && byId.get(id))?.name||'') };
-    };
-    const realPA = play => {
-      const d = String(play?.description||'');
-      if (!d) return !!String(play?.result||play?.raw||'').trim();
-      const hasChange = /更換(?:代打|代跑|選手|守備|投手)/.test(d);
-      const hasAction = /(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(d);
-      return !(hasChange && !hasAction);
-    };
-    const cleanSubName = value => {
-      let text = compactName(value).replace(/[()（）]/g,'');
-      const role = '(?:投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH|代打|代跑)';
-      text = text.replace(new RegExp(`^${role}[-：:]?`),'').replace(new RegExp(`[-：:]?${role}$`),'');
-      return text.replace(/^-+|-+$/g,'').trim();
-    };
-    const parseSubs = value => {
-      const out = [], re = /更換(?:代打|代跑|選手)：([^。]+?)=>([^。]+)/g, text = String(value||'');
-      let m;
-      while ((m = re.exec(text))) {
-        const from = cleanSubName(m[1]), to = cleanSubName(m[2]);
-        if (from && to && from !== to) out.push({from,to});
-      }
-      return out;
-    };
-
-    const wantedHalf = side === 'away' ? 'top' : 'bottom';
-    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
-    const slots = new Map(), nameToSlot = new Map();
-    let nextSlot = 1;
-
-    for (const play of plays) {
-      // Substitutions can be announced while this team is on defense. Apply
-      // them to an already-known batting slot regardless of inning half.
-      for (const change of parseSubs(play?.description)) {
-        const slot = nameToSlot.get(normName(change.from));
-        if (!slot) continue;
-        const repl = player(change.to);
-        repl.order = slot;
-        slots.set(slot, repl);
-        nameToSlot.set(normName(change.to), slot);
-      }
-      // Only actual plate appearances advance this team's 1→9 batting cycle.
-      if (play?.half !== wantedHalf) continue;
-      if (!realPA(play)) continue;
-      const slot = nextSlot;
-      nextSlot = slot === 9 ? 1 : slot + 1;
-      const p = player(play?.batter || play?.hitter || '', play?.batterAcnt || '');
-      p.order = slot;
-      slots.set(slot, p);
-      if (p.name) nameToSlot.set(normName(p.name), slot);
-    }
-
-    const fallback = rawRoster(detail,side).sort((a,b)=>(Number(a.order)||99)-(Number(b.order)||99));
-    const used = new Set([...slots.values()].map(p=>String(p.acnt||'') || `N:${normName(p.name)}`));
-    for (const p of fallback) {
-      const key = String(p.acnt||'') || `N:${normName(p.name)}`;
-      if (used.has(key)) continue;
-      let slot = 0;
-      for (let i=1;i<=9;i++) if (!slots.has(i)) { slot=i; break; }
-      if (!slot) break;
-      slots.set(slot, {...p, order:slot});
-      used.add(key);
-    }
-    return Array.from({length:9},(_,i)=>slots.get(i+1)).filter(Boolean);
+    return rawRoster(detail, side)
+      .sort((a,b)=>(Number(a.order)||99)-(Number(b.order)||99))
+      .slice(0,9);
   }
 
   function positionKey(value) {
@@ -299,43 +163,6 @@
       const key = positionKey(entry?.position || entry?.pos || ''), name = compactName(entry?.name || entry?.fullName || '');
       if (key && name) map[key] = name;
     }
-
-    const removePlayer = name => {
-      const target = normName(name);
-      if (!target) return;
-      for (const [pos, current] of Object.entries(map)) {
-        if (normName(current) === target) delete map[pos];
-      }
-    };
-    const roleAndName = value => {
-      const text = compactName(value).replace(/[()（）]/g,'').replace(/^[-：:]+|[-：:]+$/g,'');
-      const m = text.match(/^(投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)[-：:]?(.*)$/);
-      if (m) return { pos:positionKey(m[1]), name:compactName(m[2]) };
-      const n = text.match(/^(.*?)[-：:]?(投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)$/);
-      if (n) return { pos:positionKey(n[2]), name:compactName(n[1]) };
-      return { pos:'', name:text };
-    };
-    const defensiveHalf = side === 'away' ? 'bottom' : 'top';
-    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
-      if (play?.half !== defensiveHalf) continue;
-      const text = String(play?.description || '');
-      let m;
-      const playerRe = /更換選手：([^。]+?)=>([^。]+)/g;
-      while ((m = playerRe.exec(text))) {
-        const from = roleAndName(m[1]), to = roleAndName(m[2]);
-        removePlayer(from.name);
-        removePlayer(to.name);
-        if (to.pos && to.name) map[to.pos] = to.name;
-      }
-      const defenseRe = /更換守備：([^。]+?)=>([^。]+)/g;
-      while ((m = defenseRe.exec(text))) {
-        const from = roleAndName(m[1]), to = roleAndName(m[2]);
-        const name = from.name || to.name;
-        removePlayer(name);
-        if (to.pos && name) map[to.pos] = name;
-      }
-    }
-
     const pitcher = compactName(raw?.pitcher?.fullName || raw?.pitcher?.name || detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || '');
     if (pitcher) map.p = pitcher;
     return map;
@@ -416,7 +243,7 @@
 
   function renderDefenseField(detail,side) {
     const field=defenseMap(detail,side), spots=['lf','cf','rf','ss','2b','3b','1b','p','c'];
-    return `<div class="gdx-field-card"><div class="gdx-mini-title">守備</div><div class="gdx-field-shape">${spots.map(pos=>`<div class="gdx-fielder gdx-pos-${pos}"><span>${esc(field[pos]||'—')}</span></div>`).join('')}</div></div>`;
+    return `<div class="gdx-field-card"><div class="gdx-mini-title">守備</div><div class="gdx-field-shape"></div><div class="gdx-fielders-layer">${spots.map(pos=>`<div class="gdx-fielder gdx-pos-${pos}"><span>${esc(field[pos]||'—')}</span></div>`).join('')}</div></div>`;
   }
 
   function renderRunnerDiamond(detail) {
@@ -511,6 +338,7 @@
     const detail=latestDetail; if (!detail?.game) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
     const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
+    const landscapeMode=isCpbl && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
     if (!isCpbl && !isNpb) {
       document.body.classList.remove('gdx-cpbl-landscape');
       body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
@@ -521,36 +349,38 @@
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
-    const stamp=detailStamp(detail); if (body.dataset.gdxStamp===stamp) return;
+    const stamp=`${detailStamp(detail)}|${landscapeMode?'landscape':'portrait'}`;
+    if (body.dataset.gdxStamp===stamp) return;
     body.dataset.gdxStamp=stamp;
 
     const portrait=body.querySelector('.game-detail-content');
-    if (isCpbl) {
+    if (landscapeMode) {
       const landscapeHtml=renderLandscapeBoard(detail,board);
       if (body.querySelector('[data-gdx="landscape"]')) patchOrReplace(body,'[data-gdx="landscape"]',landscapeHtml,detail);
       else if (portrait) portrait.insertAdjacentHTML('beforebegin',landscapeHtml);
+      body.querySelectorAll('[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="last-play"]').forEach(node=>node.remove());
     } else {
       body.querySelector('[data-gdx="landscape"]')?.remove();
+
+      const status=String(detail.status||'').toLowerCase();
+      let live=body.querySelector('[data-gdx="live"]');
+      if (isCpbl && status==='live') {
+        const liveHtml=renderLiveSituation(detail);
+        if (live) patchOrReplace(body,'[data-gdx="live"]',liveHtml,detail);
+        else scoreCard.insertAdjacentHTML('afterend',liveHtml);
+      } else if (live) live.remove();
+
+      const scoreHtml=renderScoreboard(detail,board);
+      const scoreExtra=body.querySelector('[data-gdx="scoreboard"]');
+      if (scoreExtra) patchOrReplace(body,'[data-gdx="scoreboard"]',scoreHtml,detail);
+      else (body.querySelector('[data-gdx="live"]')||scoreCard).insertAdjacentHTML('afterend',scoreHtml);
+
+      const playSection=body.querySelector('.game-detail-play-section'), prevHtml=renderPreviousPlay(detail), prev=body.querySelector('[data-gdx="last-play"]');
+      if (prevHtml) {
+        if (prev) patchOrReplace(body,'[data-gdx="last-play"]',prevHtml,detail);
+        else if (playSection) playSection.insertAdjacentHTML('beforebegin',prevHtml);
+      } else prev?.remove();
     }
-
-    const status=String(detail.status||'').toLowerCase();
-    let live=body.querySelector('[data-gdx="live"]');
-    if (isCpbl && status==='live') {
-      const liveHtml=renderLiveSituation(detail);
-      if (live) patchOrReplace(body,'[data-gdx="live"]',liveHtml,detail);
-      else scoreCard.insertAdjacentHTML('afterend',liveHtml);
-    } else if (live) live.remove();
-
-    const scoreHtml=renderScoreboard(detail,board);
-    const scoreExtra=body.querySelector('[data-gdx="scoreboard"]');
-    if (scoreExtra) patchOrReplace(body,'[data-gdx="scoreboard"]',scoreHtml,detail);
-    else (body.querySelector('[data-gdx="live"]')||scoreCard).insertAdjacentHTML('afterend',scoreHtml);
-
-    const playSection=body.querySelector('.game-detail-play-section'), prevHtml=renderPreviousPlay(detail), prev=body.querySelector('[data-gdx="last-play"]');
-    if (prevHtml) {
-      if (prev) patchOrReplace(body,'[data-gdx="last-play"]',prevHtml,detail);
-      else if (playSection) playSection.insertAdjacentHTML('beforebegin',prevHtml);
-    } else prev?.remove();
 
     body.querySelector('.game-detail-current-grid')?.remove();
   }
@@ -562,6 +392,8 @@
 
   new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',event=>{if(event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) setTimeout(scheduleEnhance,200);},true);
+  window.addEventListener('resize',scheduleEnhance,{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(scheduleEnhance,80),{passive:true});
   applyVersionLabel();
   scheduleEnhance();
 })();
