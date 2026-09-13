@@ -367,13 +367,37 @@
     const b=root.querySelector('[data-gdx-current-batter]'); if (b) b.textContent=compactName(detail?.current?.batter?.fullName||detail?.current?.batter?.name)||'等待下一位打者';
   }
 
+  function morphNode(target, source) {
+    if (!target || !source) return;
+    if (target.nodeType !== source.nodeType || target.nodeName !== source.nodeName) {
+      target.replaceWith(source.cloneNode(true));
+      return;
+    }
+    if (target.nodeType === Node.TEXT_NODE) {
+      if (target.nodeValue !== source.nodeValue) target.nodeValue = source.nodeValue;
+      return;
+    }
+    const targetEl = target, sourceEl = source;
+    for (const attr of [...targetEl.attributes]) {
+      if (!sourceEl.hasAttribute(attr.name)) targetEl.removeAttribute(attr.name);
+    }
+    for (const attr of [...sourceEl.attributes]) {
+      if (targetEl.getAttribute(attr.name) !== attr.value) targetEl.setAttribute(attr.name, attr.value);
+    }
+    const tChildren = [...targetEl.childNodes], sChildren = [...sourceEl.childNodes];
+    const common = Math.min(tChildren.length, sChildren.length);
+    for (let i=0;i<common;i++) morphNode(tChildren[i], sChildren[i]);
+    for (let i=tChildren.length-1;i>=sChildren.length;i--) tChildren[i].remove();
+    for (let i=common;i<sChildren.length;i++) targetEl.appendChild(sChildren[i].cloneNode(true));
+  }
+
   function patchOrReplace(body, selector, html, detail) {
     const old=body.querySelector(selector);
     if (!old) return null;
     const temp=document.createElement('template'); temp.innerHTML=html.trim(); const fresh=temp.content.firstElementChild;
     if (!fresh) return old;
     if (selector.includes('live')) { patchLiveSection(old,detail); return old; }
-    if (old.innerHTML !== fresh.innerHTML) old.replaceChildren(...fresh.childNodes);
+    morphNode(old, fresh);
     return old;
   }
 
