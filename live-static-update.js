@@ -3,6 +3,51 @@
   const nativeInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   if (!nativeInnerHTML?.get || !nativeInnerHTML?.set) return;
 
+  // Boot guard: the app must never wait for Service Worker registration.
+  // Surface real runtime failures on the splash screen instead of freezing at 0%.
+  const bootPercent = document.getElementById('appUpdatePercent');
+  const bootStatus = document.getElementById('appUpdateStatus');
+  const bootBar = document.getElementById('appUpdateBar');
+  if (bootPercent) bootPercent.textContent = '3%';
+  if (bootStatus) bootStatus.textContent = '正在載入主程式…';
+  if (bootBar) bootBar.style.width = '3%';
+
+  function showBootFailure(message) {
+    const text = String(message || '未知錯誤').replace(/\s+/g, ' ').trim();
+    if (bootPercent) bootPercent.textContent = '錯誤';
+    if (bootStatus) bootStatus.textContent = `啟動錯誤：${text.slice(0, 180)}`;
+    if (bootBar) bootBar.style.width = '100%';
+  }
+
+  window.addEventListener('error', event => {
+    if (event?.message) showBootFailure(`${event.message}${event.lineno ? `（第 ${event.lineno} 行）` : ''}`);
+  });
+  window.addEventListener('unhandledrejection', event => {
+    const reason = event?.reason;
+    showBootFailure(reason?.message || reason || 'Promise rejected');
+  });
+
+  // v2.51 emergency mode: unregister old workers and return a harmless fake
+  // registration during startup. The web app continues to work online without
+  // a Service Worker; PWA updating can be re-enabled after boot stability is confirmed.
+  try {
+    const sw = navigator.serviceWorker;
+    if (sw) {
+      sw.getRegistrations?.().then(regs => Promise.allSettled(regs.map(reg => reg.unregister()))).catch(() => {});
+      const fakeRegistration = {
+        installing: null,
+        waiting: null,
+        active: null,
+        update: async () => undefined,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+      };
+      try {
+        sw.register = async () => fakeRegistration;
+      } catch {}
+    }
+  } catch {}
+
   const BOOT_RECOVERY_KEY = 'baseballBootRecoveryV251';
   const bootRecoveryTimer = window.setTimeout(async () => {
     const percent = String(document.getElementById('appUpdatePercent')?.textContent || '').trim();
