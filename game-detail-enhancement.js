@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.49';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.50';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -373,7 +373,7 @@
 
   function renderRunnerDiamond(detail) {
     const state = normalizeBaseState(currentBaseState(detail)), names = currentRunnerNames(detail), label = (on,name) => on ? esc(name || '有人') : '';
-    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond" aria-label="壘上狀態"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div></div>`;
+    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond" aria-label="壘上狀態"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div><div class="gdx-runner-outs">${currentOuts(detail)}出局</div></div>`;
   }
 
   function renderLandscapeScoreboard(detail, board) {
