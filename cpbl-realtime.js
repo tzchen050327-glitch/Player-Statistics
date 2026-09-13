@@ -57,6 +57,7 @@
   }
 
   function publishedDetail(row) {
+    if (Number(row?.published_revision || 0) <= 0) return null;
     const detail = row?.published_payload;
     return detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
   }
