@@ -1,9 +1,9 @@
-name: Sync v2.52 release assets
+name: Sync v2.53 release assets
 
 on:
   push:
     paths:
-      - '.github/v252-layout-trigger'
+      - '.github/v253-layout-trigger'
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Sync v2.52 version and report assets
+      - name: Sync v2.53 version across runtime assets
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -33,49 +33,42 @@ jobs:
               if not p.exists():
                   continue
               s = p.read_text(encoding='utf-8')
-              s = s.replace('v2.51','v2.52').replace('v251','v252').replace('V251','V252')
-              s = re.sub(r'\?v=v2\.52-[A-Za-z0-9._-]+','?v=v2.52',s)
+              s = s.replace('v2.52','v2.53').replace('v252','v253').replace('V252','V253')
+              s = re.sub(r'\?v=v2\.53-[A-Za-z0-9._-]+','?v=v2.53',s)
               p.write_text(s,encoding='utf-8')
 
           idx = Path('index.html')
           s = idx.read_text(encoding='utf-8')
           if 'report-layout.css' not in s:
               s = s.replace(
-                  '<link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.52" />',
-                  '<link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.52" />\n  <link rel="stylesheet" href="./report-layout.css?v=v2.52" />'
+                  '<link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.53" />',
+                  '<link rel="stylesheet" href="./game-detail-enhancement.css?v=v2.53" />\n  <link rel="stylesheet" href="./report-layout.css?v=v2.53" />'
               )
           if 'report-layout.js' not in s:
               s = s.replace(
-                  '<script src="./game-detail-enhancement.js?v=v2.52"></script>',
-                  '<script src="./game-detail-enhancement.js?v=v2.52"></script>\n  <script src="./report-layout.js?v=v2.52"></script>'
+                  '<script src="./game-detail-enhancement.js?v=v2.53"></script>',
+                  '<script src="./game-detail-enhancement.js?v=v2.53"></script>\n  <script src="./report-layout.js?v=v2.53"></script>'
               )
           idx.write_text(s,encoding='utf-8')
 
           sw = Path('service-worker.js')
           s = sw.read_text(encoding='utf-8')
-          s = re.sub(r"const CACHE_NAME = '[^']+';","const CACHE_NAME = 'baseball-player-card-pwa-v252';",s,count=1)
-          s = re.sub(r"(\./(?:styles\.css|live-static-update\.js|app\.js|cpbl-cache-router\.js|game-detail-enhancement\.css|game-detail-enhancement\.js|report-layout\.css|report-layout\.js))\?v=[^']+",r"\1?v=v2.52",s)
-          if "'./report-layout.css?v=v2.52'" not in s:
-              s = s.replace("  './game-detail-enhancement.css?v=v2.52',", "  './game-detail-enhancement.css?v=v2.52',\n  './report-layout.css?v=v2.52',")
-          if "'./report-layout.js?v=v2.52'" not in s:
-              s = s.replace("  './game-detail-enhancement.js?v=v2.52',", "  './game-detail-enhancement.js?v=v2.52',\n  './report-layout.js?v=v2.52',")
-          if "url.pathname.endsWith('/report-layout.css')" not in s:
-              s = s.replace(
-                  "    || url.pathname.endsWith('/game-detail-enhancement.css');",
-                  "    || url.pathname.endsWith('/game-detail-enhancement.css')\n    || url.pathname.endsWith('/report-layout.css')\n    || url.pathname.endsWith('/report-layout.js');"
-              )
+          s = re.sub(r"const CACHE_NAME = '[^']+';","const CACHE_NAME = 'baseball-player-card-pwa-v253';",s,count=1)
+          s = re.sub(r"(\./(?:styles\.css|live-static-update\.js|app\.js|cpbl-cache-router\.js|game-detail-enhancement\.css|game-detail-enhancement\.js|report-layout\.css|report-layout\.js))\?v=[^']+",r"\1?v=v2.53",s)
           sw.write_text(s,encoding='utf-8')
 
-          # Guardrail: current release files must not retain the previous version token.
           leftovers = []
           for name in current:
               p = Path(name)
-              if p.exists() and ('v2.51' in p.read_text(encoding='utf-8') or 'v251' in p.read_text(encoding='utf-8') or 'V251' in p.read_text(encoding='utf-8')):
+              if not p.exists():
+                  continue
+              text = p.read_text(encoding='utf-8')
+              if 'v2.52' in text or 'v252' in text or 'V252' in text:
                   leftovers.append(name)
           if leftovers:
-              raise SystemExit('Old version token remains in: ' + ', '.join(leftovers))
+              raise SystemExit('Old v2.52 token remains in: ' + ', '.join(leftovers))
           PY
-      - name: Commit synchronized v2.52 release
+      - name: Commit synchronized v2.53 release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -83,6 +76,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Sync v2.52 release assets and desktop report layout"
+            git commit -m "Release v2.53 desktop field geometry and unified versioning"
             git push
           fi
