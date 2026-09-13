@@ -6091,14 +6091,17 @@ bg2: {
       const out = [];
       const win = String(stats.wins ?? '').trim();
       const loss = String(stats.losses ?? '').trim();
-      if (win || loss) out.push(['勝敗', `${win || 0}-${loss || 0}`]);
+      if (win || loss) out.push(['勝敗', ]);
       if (String(stats.era ?? '').trim()) out.push(['ERA', String(stats.era)]);
       if (String(stats.ip ?? '').trim()) out.push(['IP', String(stats.ip)]);
       if (String(stats.so ?? '').trim()) out.push(['SO', String(stats.so)]);
+      if (String(stats.hits ?? '').trim()) out.push(['被安打', String(stats.hits)]);
+      if (String(stats.homeRuns ?? '').trim()) out.push(['被全壘打', String(stats.homeRuns)]);
+      if (String(stats.fourDead ?? '').trim()) out.push(['四死球', String(stats.fourDead)]);
       if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
       if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
       else if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
-      return out.slice(0, 6);
+      return out.slice(0, 9);
     }
 
     function homeStarterCard(starter, teamName, sideLabel) {
