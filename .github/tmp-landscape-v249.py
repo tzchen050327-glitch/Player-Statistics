@@ -1,0 +1,176 @@
+from pathlib import Path
+
+js = Path('game-detail-enhancement.js')
+s = js.read_text(encoding='utf-8')
+marker = '  function detailStamp(detail) {\n'
+if 'function renderLandscapeBoard(detail, board)' not in s:
+    block = r'''  function compactName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function samePlayerName(a, b) {
+    const norm = value => compactName(value).replace(/[・·.\s]/g, '').toLowerCase();
+    const x = norm(a), y = norm(b);
+    return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
+  }
+
+  function currentOffenseSide(detail) {
+    const inningLabel = String(detail?.game?.inningLabel || '');
+    if (/上/.test(inningLabel)) return 'away';
+    if (/下/.test(inningLabel)) return 'home';
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const last = plays[plays.length - 1];
+    if (last?.half === 'top') return 'away';
+    if (last?.half === 'bottom') return 'home';
+    return 'away';
+  }
+
+  function lineupEntries(detail, side) {
+    const raw = detail?.lineups?.[side];
+    const direct = Array.isArray(raw?.batters) ? raw.batters : Array.isArray(raw?.order) ? raw.order : Array.isArray(raw) ? raw : [];
+    const normalized = direct.map((entry, index) => ({
+      order: Number(entry?.order) || index + 1,
+      number: safeCell(entry?.number || entry?.uniformNumber || entry?.jersey || ''),
+      name: compactName(entry?.name || entry?.fullName || entry?.playerName || ''),
+      position: compactName(entry?.position || entry?.pos || ''),
+      avg: safeCell(entry?.avg ?? entry?.average ?? entry?.battingAverage ?? ''),
+      hits: safeCell(entry?.hits ?? entry?.h ?? ''),
+      homeRuns: safeCell(entry?.homeRuns ?? entry?.hr ?? ''),
+      rbi: safeCell(entry?.rbi ?? entry?.rbis ?? '')
+    })).filter(entry => entry.name);
+    if (normalized.length) return normalized.slice(0, 9);
+    const wantedHalf = side === 'away' ? 'top' : 'bottom';
+    const seen = [];
+    for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
+      if (play?.half !== wantedHalf) continue;
+      const name = compactName(play?.batter || play?.hitter || '');
+      if (!name || seen.some(entry => samePlayerName(entry.name, name))) continue;
+      seen.push({ order: seen.length + 1, number: '', name, position: '', avg: '', hits: '', homeRuns: '', rbi: '' });
+      if (seen.length >= 9) break;
+    }
+    return seen;
+  }
+
+  function renderLineupPanel(detail, side) {
+    const entries = lineupEntries(detail, side);
+    const current = compactName(detail?.current?.batter?.fullName || detail?.current?.batter?.name || '');
+    const rows = Array.from({ length: 9 }, (_, i) => entries[i] || { order:i + 1, number:'', name:'', avg:'', hits:'', homeRuns:'', rbi:'' });
+    return `<div class="gdx-landscape-lineup">
+      <div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>
+      ${rows.map(entry => {
+        const active = entry.name && samePlayerName(entry.name, current);
+        return `<div class="gdx-lineup-row ${active ? 'is-current' : ''}">
+          <span>${esc(entry.number || entry.order || '')}</span>
+          <strong title="${esc(entry.name || '')}">${esc(entry.name || '—')}</strong>
+          <span>${esc(entry.avg || '—')}</span><span>${esc(entry.hits || '—')}</span><span>${esc(entry.homeRuns || '—')}</span><span>${esc(entry.rbi || '—')}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function currentPitcherInfo(detail, defenseSide) {
+    const direct = detail?.lineups?.[defenseSide]?.pitcher || {};
+    const current = detail?.current?.pitcher || {};
+    const name = compactName(current.fullName || current.name || direct.fullName || direct.name || '');
+    const stats = direct.stats || current.stats || direct || current;
+    const pitcherPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(play => !name || samePlayerName(play?.pitcher, name));
+    const text = play => `${play?.result || ''} ${play?.raw || ''}`;
+    return {
+      name: name || '投手資料讀取中',
+      pitches: safeCell(stats.pitches ?? stats.pitchCount ?? stats.pitchingCount ?? ''), ip: safeCell(stats.ip ?? stats.innings ?? stats.inningsPitched ?? ''),
+      hits: safeCell(stats.hits ?? stats.h ?? '') || String(pitcherPlays.filter(p => /全壘打|三壘安打|二壘安打|(?:^|\s)安打(?:$|\s)/.test(text(p))).length || ''),
+      homeRuns: safeCell(stats.homeRuns ?? stats.hr ?? '') || String(pitcherPlays.filter(p => /全壘打/.test(text(p))).length || ''),
+      walks: safeCell(stats.walks ?? stats.bb ?? stats.fourDead ?? '') || String(pitcherPlays.filter(p => /四壞|觸身/.test(text(p))).length || ''),
+      strikeouts: safeCell(stats.so ?? stats.strikeouts ?? '') || String(pitcherPlays.filter(p => /三振/.test(text(p))).length || ''), era: safeCell(stats.era ?? '')
+    };
+  }
+
+  function renderPitcherPanel(detail, side) {
+    const p = currentPitcherInfo(detail, side);
+    const items = [['P',p.pitches],['IP',p.ip],['H',p.hits],['HR',p.homeRuns],['BB',p.walks],['SO',p.strikeouts],['ERA',p.era]];
+    return `<div class="gdx-landscape-pitcher"><div class="gdx-pitcher-kicker">CURRENT PITCHER</div><strong class="gdx-pitcher-name">${esc(p.name)}</strong><div class="gdx-pitcher-grid">${items.map(([label,value]) => `<div><span>${label}</span><b>${esc(value || '—')}</b></div>`).join('')}</div></div>`;
+  }
+
+  function renderLandscapeSide(detail, side, offenseSide) {
+    const game = detail?.game || {};
+    const team = side === 'away' ? game.away || '客隊' : game.home || '主隊';
+    const offense = side === offenseSide;
+    return `<section class="gdx-landscape-side gdx-side-${side}"><div class="gdx-landscape-team-head"><span>${side === 'away' ? 'AWAY' : 'HOME'}</span><strong>${esc(team)}</strong><em>${offense ? 'ATTACK' : 'DEFENSE'}</em></div>${offense ? renderLineupPanel(detail, side) : renderPitcherPanel(detail, side)}</section>`;
+  }
+
+  function positionKey(value) {
+    const p = compactName(value).toUpperCase();
+    if (/^(P|投|投手|PITCHER)$/.test(p)) return 'p'; if (/^(C|捕|捕手|CATCHER)$/.test(p)) return 'c';
+    if (/^(1B|一|一壘|一塁|FIRST)$/.test(p)) return '1b'; if (/^(2B|二|二壘|二塁|SECOND)$/.test(p)) return '2b';
+    if (/^(3B|三|三壘|三塁|THIRD)$/.test(p)) return '3b'; if (/^(SS|遊|游|遊撃|游擊|SHORT)$/.test(p)) return 'ss';
+    if (/^(LF|左|左翼|LEFT)$/.test(p)) return 'lf'; if (/^(CF|中|中堅|CENTER)$/.test(p)) return 'cf'; if (/^(RF|右|右翼|RIGHT)$/.test(p)) return 'rf'; return '';
+  }
+
+  function defenseMap(detail, side) {
+    const map = {}, raw = detail?.lineups?.[side];
+    const fielders = Array.isArray(raw?.fielders) ? raw.fielders : lineupEntries(detail, side);
+    for (const entry of fielders) { const key = positionKey(entry?.position || entry?.pos || ''); const name = compactName(entry?.name || entry?.fullName || ''); if (key && name) map[key] = name; }
+    const pitcher = compactName(detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || raw?.pitcher?.name || ''); if (pitcher) map.p = pitcher;
+    return map;
+  }
+
+  function renderDefenseField(detail, side) {
+    const field = defenseMap(detail, side), spots = ['lf','cf','rf','ss','2b','3b','1b','p','c'];
+    return `<div class="gdx-field-card"><div class="gdx-mini-title">守備</div><div class="gdx-field-shape" aria-label="守備佈陣">${spots.map(pos => `<div class="gdx-fielder gdx-pos-${pos}"><span>${esc(field[pos] || '—')}</span></div>`).join('')}</div></div>`;
+  }
+
+  function currentRunnerNames(detail) {
+    const raw = detail?.current?.runners || detail?.runners || {}, take = (...values) => compactName(values.find(v => compactName(v)) || '');
+    return { first:take(raw.first,raw.firstBase,raw[1],raw.base1), second:take(raw.second,raw.secondBase,raw[2],raw.base2), third:take(raw.third,raw.thirdBase,raw[3],raw.base3) };
+  }
+
+  function renderRunnerDiamond(detail) {
+    const state = normalizeBaseState(currentBaseState(detail)), names = currentRunnerNames(detail), label = (on,name) => on ? esc(name || '有人') : '';
+    return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond" aria-label="壘上狀態"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div></div>`;
+  }
+
+  function renderLandscapeScoreboard(detail, board) {
+    const game = detail?.game || {}, innings = board.innings.length ? board.innings : Array.from({length:9},(_,i)=>String(i+1));
+    const cells = (values,totals) => `${innings.map((_,i)=>`<td>${esc(safeCell(values?.[i]))}</td>`).join('')}<td class="is-total">${esc(safeCell(totals.R))}</td><td>${esc(safeCell(totals.H))}</td><td>${esc(safeCell(totals.E))}</td>`;
+    return `<div class="gdx-landscape-score"><div class="gdx-landscape-scoreline"><div><span>${esc(game.away||'客隊')}</span><strong>${esc(safeCell(board.awayTotals.R)||'0')}</strong></div><div class="gdx-landscape-inning">${esc(game.inningLabel || (detail?.status==='final'?'比賽結束':''))}</div><div><strong>${esc(safeCell(board.homeTotals.R)||'0')}</strong><span>${esc(game.home||'主隊')}</span></div></div><div class="gdx-landscape-scoretable-wrap"><table class="gdx-landscape-scoretable"><thead><tr><th></th>${innings.map(x=>`<th>${esc(x)}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th>${esc(game.away||'客')}</th>${cells(board.away,board.awayTotals)}</tr><tr><th>${esc(game.home||'主')}</th>${cells(board.home,board.homeTotals)}</tr></tbody></table></div></div>`;
+  }
+
+  function renderLandscapeBoard(detail, board) {
+    const offense = currentOffenseSide(detail), defense = offense === 'away' ? 'home' : 'away';
+    return `<section class="gdx-landscape-board game-detail-enhanced-marker" aria-label="橫向大螢幕模式">${renderLandscapeSide(detail,'away',offense)}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${renderLandscapeSide(detail,'home',offense)}</section>`;
+  }
+
+'''
+    if marker not in s:
+        raise SystemExit('detailStamp marker not found')
+    s = s.replace(marker, block + marker, 1)
+old = "      last?.inning, last?.half, last?.batter, last?.pitcher, last?.result, last?.bases, last?.basesAfter, last?.rbi\n"
+new = "      JSON.stringify(detail?.lineups || {}), JSON.stringify(detail?.current?.runners || {}),\n      last?.inning, last?.half, last?.batter, last?.pitcher, last?.result, last?.bases, last?.basesAfter, last?.rbi\n"
+if old in s and 'JSON.stringify(detail?.lineups || {})' not in s:
+    s = s.replace(old, new, 1)
+hook = "    body.querySelector('.game-detail-current-grid')?.remove();\n\n"
+replacement = hook + "    const portraitContent = body.querySelector('.game-detail-content');\n    if (portraitContent) portraitContent.insertAdjacentHTML('beforebegin', renderLandscapeBoard(detail, board));\n\n"
+if 'renderLandscapeBoard(detail, board)' not in s.split('function enhanceGameDetail()',1)[-1]:
+    if hook not in s: raise SystemExit('enhance hook not found')
+    s = s.replace(hook, replacement, 1)
+s = s.replace("|| 'v2.48';", "|| 'v2.49';")
+js.write_text(s, encoding='utf-8')
+
+css = Path('game-detail-enhancement.css')
+c = css.read_text(encoding='utf-8')
+if '/* ===== LANDSCAPE STADIUM BOARD v2.49 ===== */' not in c:
+    c += r'''
+
+/* ===== LANDSCAPE STADIUM BOARD v2.49 ===== */
+.gdx-landscape-board{display:none;}
+@media (orientation:landscape) and (min-width:700px){
+#homeGameDetailBody{overflow:hidden;}#homeGameDetailBody>.game-detail-content{display:none!important;}.gdx-landscape-board{display:grid;grid-template-columns:minmax(205px,24%) minmax(360px,52%) minmax(205px,24%);height:calc(100dvh - 58px);min-height:300px;background:#091728;color:#eef5ff;overflow:hidden}.gdx-landscape-side{min-width:0;background:linear-gradient(180deg,#10253d,#0b1b2e);border-right:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;overflow:hidden}.gdx-side-home{border-right:0;border-left:1px solid rgba(255,255,255,.12)}.gdx-landscape-team-head{height:48px;flex:0 0 48px;padding:7px 10px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:7px;border-bottom:1px solid rgba(255,255,255,.12)}.gdx-landscape-team-head>span{font-size:9px;font-weight:900;letter-spacing:.09em;color:#8faccc}.gdx-landscape-team-head>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:950;color:#fff}.gdx-landscape-team-head>em{font-style:normal;font-size:8px;font-weight:900;letter-spacing:.06em;color:#9dc1e8}.gdx-landscape-lineup{flex:1;min-height:0;display:grid;grid-template-rows:26px repeat(9,minmax(0,1fr));padding:5px 6px 7px;gap:2px}.gdx-lineup-head,.gdx-lineup-row{display:grid;grid-template-columns:26px minmax(54px,1fr) 38px 28px 30px 34px;align-items:center;gap:2px;min-width:0}.gdx-lineup-head{font-size:9px;font-weight:900;color:#83a3c5;text-align:center;border-bottom:1px solid rgba(255,255,255,.1)}.gdx-lineup-head span:nth-child(2){text-align:left}.gdx-lineup-row{position:relative;padding:0 3px;border:1px solid transparent;border-radius:5px;font-size:10px;text-align:center;color:#d7e3ef}.gdx-lineup-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:11px;color:#fff}.gdx-lineup-row.is-current{background:rgba(93,173,255,.16);border-color:#78baff;box-shadow:inset 3px 0 0 #78baff,0 0 16px rgba(64,153,255,.15)}.gdx-landscape-pitcher{flex:1;display:flex;min-height:0;flex-direction:column;justify-content:center;padding:16px}.gdx-pitcher-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:#86a6c7}.gdx-pitcher-name{margin-top:7px;font-size:clamp(22px,2.3vw,38px);line-height:1.08;color:#fff;overflow-wrap:anywhere}.gdx-pitcher-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:18px}.gdx-pitcher-grid>div{padding:7px 8px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.04);display:flex;align-items:baseline;justify-content:space-between;gap:8px}.gdx-pitcher-grid span{font-size:9px;font-weight:900;color:#83a3c5}.gdx-pitcher-grid b{font-size:14px;color:#fff}.gdx-landscape-center{display:grid;grid-template-rows:minmax(100px,34%) minmax(0,66%);min-width:0;min-height:0;background:radial-gradient(circle at 50% 55%,#163954 0,#0b2136 55%,#071725 100%)}.gdx-landscape-score{padding:7px 10px 8px;border-bottom:1px solid rgba(255,255,255,.14);min-width:0;overflow:hidden}.gdx-landscape-scoreline{height:42%;min-height:38px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}.gdx-landscape-scoreline>div:first-child,.gdx-landscape-scoreline>div:last-child{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}.gdx-landscape-scoreline>div:last-child{justify-content:flex-start}.gdx-landscape-scoreline span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:900;color:#dfeaf6}.gdx-landscape-scoreline strong{font-size:clamp(26px,3.4vw,48px);line-height:1;color:#fff}.gdx-landscape-inning{padding:4px 9px;border:1px solid rgba(255,255,255,.2);border-radius:999px;font-size:10px;font-weight:900;color:#a9c8e8;white-space:nowrap}.gdx-landscape-scoretable-wrap{height:58%;overflow:auto hidden}.gdx-landscape-scoretable{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;color:#eaf2fa}.gdx-landscape-scoretable th,.gdx-landscape-scoretable td{padding:2px 3px;text-align:center;border-top:1px solid rgba(255,255,255,.08);white-space:nowrap}.gdx-landscape-scoretable thead th{font-size:8px;color:#84a6c8;border-top:0}.gdx-landscape-scoretable tbody th{text-align:left;max-width:72px;overflow:hidden;text-overflow:ellipsis;color:#fff}.gdx-landscape-scoretable .is-total{font-weight:950;color:#8fc5ff}.gdx-landscape-lower{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(150px,.75fr);gap:8px;padding:8px;min-height:0}.gdx-field-card,.gdx-runner-card{position:relative;min-height:0;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(4,16,28,.46);overflow:hidden}.gdx-mini-title{position:absolute;left:9px;top:7px;z-index:3;font-size:9px;font-weight:900;letter-spacing:.08em;color:#8babca}.gdx-field-shape{position:absolute;inset:24px 8px 8px;background:linear-gradient(145deg,rgba(25,105,72,.45),rgba(12,67,51,.38));clip-path:polygon(50% 0,100% 54%,83% 100%,17% 100%,0 54%);border-radius:40%}.gdx-field-shape:after{content:'';position:absolute;left:28%;right:28%;top:34%;bottom:10%;border:1px solid rgba(232,207,153,.34);transform:rotate(45deg)}.gdx-fielder{position:absolute;z-index:2;transform:translate(-50%,-50%);max-width:31%;padding:2px 5px;border-radius:5px;background:rgba(4,18,29,.74);border:1px solid rgba(255,255,255,.13)}.gdx-fielder span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:850;color:#fff}.gdx-pos-cf{left:50%;top:14%}.gdx-pos-lf{left:21%;top:28%}.gdx-pos-rf{left:79%;top:28%}.gdx-pos-ss{left:37%;top:50%}.gdx-pos-2b{left:63%;top:50%}.gdx-pos-3b{left:25%;top:66%}.gdx-pos-1b{left:75%;top:66%}.gdx-pos-p{left:50%;top:68%}.gdx-pos-c{left:50%;top:91%}.gdx-runner-card{display:flex;align-items:center;justify-content:center}.gdx-runner-diamond{position:relative;width:min(68%,180px);aspect-ratio:1;margin-top:8px}.gdx-runner-diamond:before{content:'';position:absolute;left:18%;right:18%;top:18%;bottom:18%;border:2px solid rgba(222,232,242,.42);transform:rotate(45deg)}.gdx-runner-base{position:absolute;width:18px;height:18px;border:2px solid #cbd8e4;background:#10273b;transform:rotate(45deg);border-radius:2px;z-index:2}.gdx-runner-base.is-on{background:#62d6c4;border-color:#9af2e5;box-shadow:0 0 14px rgba(98,214,196,.45)}.gdx-runner-second{left:50%;top:9%;margin-left:-9px}.gdx-runner-third{left:9%;top:50%;margin-top:-9px}.gdx-runner-first{right:9%;top:50%;margin-top:-9px}.gdx-runner-home{position:absolute;left:50%;bottom:7%;margin-left:-8px;width:16px;height:14px;background:#d5e0ea;clip-path:polygon(50% 100%,0 50%,0 0,100% 0,100% 50%)}.gdx-runner-name{position:absolute;z-index:3;max-width:44%;padding:2px 4px;border-radius:4px;background:rgba(3,14,24,.78);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:900;color:#fff}.gdx-runner-name-second{left:50%;top:0;transform:translateX(-50%)}.gdx-runner-name-third{left:0;top:50%;transform:translateY(-50%)}.gdx-runner-name-first{right:0;top:50%;transform:translateY(-50%)}
+}
+@media (orientation:landscape) and (min-width:700px) and (max-width:980px){.gdx-landscape-board{grid-template-columns:minmax(190px,27%) minmax(310px,46%) minmax(190px,27%)}.gdx-landscape-team-head{height:40px;flex-basis:40px;padding:5px 7px}.gdx-landscape-team-head>strong{font-size:12px}.gdx-lineup-head,.gdx-lineup-row{grid-template-columns:20px minmax(45px,1fr) 31px 24px 25px 28px;font-size:8px}.gdx-lineup-row strong{font-size:9px}.gdx-landscape-lineup{grid-template-rows:22px repeat(9,minmax(0,1fr));padding:4px;gap:1px}.gdx-landscape-center{grid-template-rows:minmax(92px,36%) minmax(0,64%)}.gdx-landscape-lower{grid-template-columns:minmax(0,1.35fr) minmax(120px,.65fr);padding:5px;gap:5px}.gdx-fielder span,.gdx-runner-name{font-size:7px}.gdx-pitcher-grid{gap:4px;margin-top:10px}.gdx-pitcher-grid>div{padding:4px 5px}.gdx-pitcher-grid b{font-size:11px}}
+/* ===== LANDSCAPE STADIUM BOARD v2.49 END ===== */
+'''
+css.write_text(c, encoding='utf-8')
+
+for name in ['js/00-core-config.js','index.html','manifest.webmanifest','service-worker.js','game-detail-enhancement.js','game-detail-enhancement.css']:
+    p=Path(name); text=p.read_text(encoding='utf-8').replace('v2.48','v2.49').replace('v248','v249'); p.write_text(text,encoding='utf-8')
+Path('version.json').write_text('{"version":"v2.49"}\n', encoding='utf-8')
