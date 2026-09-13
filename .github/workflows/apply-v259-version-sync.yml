@@ -1,8 +1,8 @@
-name: Apply v2.59 version sync
+name: Apply v2.60 version sync
 on:
   push:
     paths:
-      - '.github/v259-version-sync-trigger'
+      - '.github/v260-version-sync-trigger'
 permissions:
   contents: write
 jobs:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Sync all active app resource versions to v2.59
+      - name: Sync all active app resource versions to v2.60
         shell: bash
         run: |
           set -euo pipefail
@@ -19,26 +19,48 @@ jobs:
             game-detail-enhancement.js game-detail-enhancement.css
             report-layout.js report-layout.css
             cpbl-realtime.js live-static-update.js cpbl-cache-router.js
+            landscape-state.js landscape-state.css
             manifest.webmanifest rescue.html styles.css
           )
           for f in "${files[@]}"; do
             if [ -f "$f" ]; then
-              sed -i 's/v2\.58/v2.59/g; s/v258/v259/g; s/V258/V259/g; s/pwa-v258/pwa-v259/g' "$f"
+              sed -i 's/v2\.59/v2.60/g; s/v259/v260/g; s/V259/V260/g; s/pwa-v259/pwa-v260/g' "$f"
             fi
           done
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          css = '  <link rel="stylesheet" href="./landscape-state.css?v=v2.60" />\n'
+          if 'landscape-state.css' not in s:
+              s = s.replace('  <link rel="stylesheet" href="./report-layout.css?v=v2.60" />\n', '  <link rel="stylesheet" href="./report-layout.css?v=v2.60" />\n' + css)
+          js = '  <script src="./landscape-state.js?v=v2.60"></script>\n'
+          if 'landscape-state.js' not in s:
+              s = s.replace('  <script src="./game-detail-enhancement.js?v=v2.60"></script>\n', '  <script src="./game-detail-enhancement.js?v=v2.60"></script>\n' + js)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('service-worker.js')
+          s = p.read_text(encoding='utf-8')
+          if "'./landscape-state.css?v=v2.60'" not in s:
+              s = s.replace("  './report-layout.css?v=v2.60',\n", "  './report-layout.css?v=v2.60',\n  './landscape-state.css?v=v2.60',\n")
+          if "'./landscape-state.js?v=v2.60'" not in s:
+              s = s.replace("  './game-detail-enhancement.js?v=v2.60',\n", "  './game-detail-enhancement.js?v=v2.60',\n  './landscape-state.js?v=v2.60',\n")
+          p.write_text(s, encoding='utf-8')
+          PY
       - name: Syntax check
         run: |
           node --check app.js
           node --check game-detail-enhancement.js
-          [ ! -f cpbl-realtime.js ] || node --check cpbl-realtime.js
-          [ ! -f report-layout.js ] || node --check report-layout.js
-          [ ! -f live-static-update.js ] || node --check live-static-update.js
-      - name: Commit v2.59
+          node --check cpbl-realtime.js
+          node --check report-layout.js
+          node --check live-static-update.js
+          node --check landscape-state.js
+      - name: Commit v2.60
         shell: bash
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js manifest.webmanifest rescue.html styles.css 2>/dev/null || true
-          git commit -m 'Release v2.59 CPBL live data authority split'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css 2>/dev/null || true
+          git commit -m 'Release v2.60 responsive landscape inning transitions'
           git push
