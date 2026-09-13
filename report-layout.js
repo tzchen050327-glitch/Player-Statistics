@@ -1,5 +1,5 @@
 (() => {
-  const REPORT_LAYOUT_VERSION = 'v2.54';
+  const REPORT_LAYOUT_VERSION = 'v2.55';
 
   function ensureFieldOverlay(root = document) {
     const cards = root.querySelectorAll?.('.gdx-field-card') || [];
