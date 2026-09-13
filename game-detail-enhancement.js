@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.63';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.64';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -308,12 +308,9 @@
 
   function renderLandscapeBoard(detail,board) {
     const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};
-    const showBothLineups=landscapeShowBothLineups(detail);
     const side=(which)=>{
-      const team=which==='away'?game.away||'客隊':game.home||'主隊', isOff=which===offense;
-      const showLineup=showBothLineups||isOff;
-      const stateLabel=showBothLineups?'LINEUP':(isOff?'ATTACK':'DEFENSE');
-      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${stateLabel}</em></div>${showLineup?renderLineupPanel(detail,which):renderPitcherPanel(detail,which)}</section>`;
+      const team=which==='away'?game.away||'客隊':game.home||'主隊';
+      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>LINEUP</em></div>${renderLineupPanel(detail,which)}</section>`;
     };
     return `<section class="gdx-landscape-board game-detail-enhanced-marker" data-gdx="landscape">${side('away')}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${side('home')}</section>`;
   }
