@@ -24,8 +24,8 @@ jobs:
               start = s.index('  function renderRunnerDiamond(detail) {')
               end = s.index('\n  }\n\n  function renderLandscapeScoreboard', start) + 4
               block = s[start:end]
-              old = '<div class=\\"gdx-runner-home\\"></div></div></div>`;'
-              new = '<div class=\\"gdx-runner-home\\"></div></div><div class=\\"gdx-runner-outs\\">${currentOuts(detail)}出局</div></div>`;'
+              old = '<div class="gdx-runner-home"></div></div></div>`;'
+              new = '<div class="gdx-runner-home"></div></div><div class="gdx-runner-outs">${currentOuts(detail)}出局</div></div>`;'
               if old not in block:
                   raise SystemExit('runner diamond hook not found')
               block = block.replace(old, new, 1)
