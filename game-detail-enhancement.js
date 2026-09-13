@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.60';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.61';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -257,11 +257,20 @@
     return `<div class="gdx-landscape-score"><div class="gdx-landscape-scoreline"><div><span>${esc(game.away||'客隊')}</span><strong>${esc(safeCell(board.awayTotals.R)||'0')}</strong></div><div class="gdx-landscape-inning">${esc(game.inningLabel||(detail?.status==='final'?'比賽結束':''))}</div><div><strong>${esc(safeCell(board.homeTotals.R)||'0')}</strong><span>${esc(game.home||'主隊')}</span></div></div><div class="gdx-landscape-scoretable-wrap"><table class="gdx-landscape-scoretable"><thead><tr><th></th>${innings.map(x=>`<th>${esc(x)}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th>${esc(game.away||'客')}</th>${cells(board.away,board.awayTotals)}</tr><tr><th>${esc(game.home||'主')}</th>${cells(board.home,board.homeTotals)}</tr></tbody></table></div></div>`;
   }
 
+  function landscapeShowBothLineups(detail) {
+    if (String(detail?.status || '').toLowerCase() === 'final') return true;
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    return inferredOutsAfterPlay(plays.at(-1)) >= 3;
+  }
+
   function renderLandscapeBoard(detail,board) {
     const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};
+    const showBothLineups=landscapeShowBothLineups(detail);
     const side=(which)=>{
       const team=which==='away'?game.away||'客隊':game.home||'主隊', isOff=which===offense;
-      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${isOff?'ATTACK':'DEFENSE'}</em></div>${isOff?renderLineupPanel(detail,which):renderPitcherPanel(detail,which)}</section>`;
+      const showLineup=showBothLineups||isOff;
+      const stateLabel=showBothLineups?'LINEUP':(isOff?'ATTACK':'DEFENSE');
+      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${stateLabel}</em></div>${showLineup?renderLineupPanel(detail,which):renderPitcherPanel(detail,which)}</section>`;
     };
     return `<section class="gdx-landscape-board game-detail-enhanced-marker" data-gdx="landscape">${side('away')}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${side('home')}</section>`;
   }

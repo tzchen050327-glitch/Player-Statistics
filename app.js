@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.60';
+    const APP_VERSION = 'v2.61';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -13,8 +13,8 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.60';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.60';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.61';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.61';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6239,7 +6239,7 @@ bg2: {
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
       if (activeHomeGameDetail.league === 'CPBL') {
-        // v2.60: CPBL is pushed by Supabase Realtime. Poll only as a low-frequency
+        // v2.61: CPBL is pushed by Supabase Realtime. Poll only as a low-frequency
         // safety net when the Realtime channel is unavailable.
         if (window.__cpblRealtimeConnected) {
           updateHomeGameDetailRefreshCountdown();
@@ -12200,6 +12200,23 @@ bg2: {
       return false;
     }
 
+    function parseAppVersion(value) {
+      const match = String(value || '').trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/i);
+      if (!match) return null;
+      return [Number(match[1]), Number(match[2]), Number(match[3] || 0)];
+    }
+
+    function isRemoteVersionNewer(remote, current = APP_VERSION) {
+      const r = parseAppVersion(remote);
+      const c = parseAppVersion(current);
+      if (!r || !c) return false;
+      for (let i = 0; i < 3; i += 1) {
+        if (r[i] > c[i]) return true;
+        if (r[i] < c[i]) return false;
+      }
+      return false;
+    }
+
     async function checkAppUpdate({ manual = false, showProgress = false, keepProgressOpen = false } = {}) {
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (showProgress) {
@@ -12233,7 +12250,7 @@ bg2: {
           if (markerResponse.ok) {
             const marker = await markerResponse.json().catch(() => ({}));
             const remoteVersion = String(marker?.version || '').trim();
-            if (remoteVersion && remoteVersion !== APP_VERSION) {
+            if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
@@ -12259,7 +12276,7 @@ bg2: {
             const metaMatch = remoteHtml.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
             const legacyMatch = remoteHtml.match(/const APP_VERSION = '([^']+)'/);
             const remoteVersion = String(metaMatch?.[1] || legacyMatch?.[1] || '').trim();
-            if (remoteVersion && remoteVersion !== APP_VERSION) {
+            if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
@@ -12389,7 +12406,7 @@ bg2: {
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // v2.60: do not check/apply updates merely because the user returned
+        // v2.61: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
         // existing 15-minute timer remain responsible for update checks.
 
