@@ -168,10 +168,12 @@ s=s[:m.start()]+injected+listeners+s[m.end():]
 
 old="""      const league = homeDailyGamesLeague();
       const date = String(els.gameDate?.value || localISODate());
+      if (!league) return;
       const cached = homeDailyGamesCache.get(`${league}|${date}`);
 """
 new="""      const league = homeDailyGamesLeague();
       const date = String(els.gameDate?.value || localISODate());
+      if (!league) return;
       if (league === 'CPBL' && date === localISODate()) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch-day', { detail:{ date } }));
         if (window.__cpblDayRealtimeConnected) return;
