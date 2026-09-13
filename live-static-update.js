@@ -25,6 +25,15 @@
     return teams.length >= 2 ? teams.slice(0, 2).join('|') : '';
   }
 
+  function gameIdentity(root) {
+    if (!root?.querySelector) return '';
+    const league = String(root.querySelector('.game-detail-head-copy strong')?.textContent || '').trim();
+    const meta = String(root.querySelector('.game-detail-head-copy span')?.textContent || '').trim();
+    const teams = baseTeamSignature(root);
+    if (!teams) return '';
+    return [league, meta, teams].join('|');
+  }
+
   function enhancedTeamSignature(root) {
     const teams = [...(root?.querySelectorAll?.('.gdx-landscape-team-head strong') || [])]
       .map(el => String(el.textContent || '').trim())
@@ -138,12 +147,25 @@
   }
 
   function staticPatch(target, html) {
+    const sourceHtml = String(html ?? '');
     const template = document.createElement('template');
-    nativeInnerHTML.set.call(template, String(html ?? ''));
+    nativeInnerHTML.set.call(template, sourceHtml);
 
-    const currentGame = baseTeamSignature(target);
-    const nextGame = baseTeamSignature(template.content);
-    if (currentGame && nextGame && currentGame !== nextGame) clearEnhancedNodes(target);
+    const currentIdentity = gameIdentity(target);
+    const nextIdentity = gameIdentity(template.content);
+
+    // Static patching is only safe while refreshing the exact same game.
+    // When league/date/venue/teams change, rebuild the body once so no DOM
+    // from a previously opened game can survive into the next game.
+    if (currentIdentity && nextIdentity && currentIdentity !== nextIdentity) {
+      nativeInnerHTML.set.call(target, sourceHtml);
+      if (target.dataset) delete target.dataset.gdxStamp;
+      const page = target.closest('.home-game-detail-page');
+      const overlay = target.closest('.home-game-detail-overlay');
+      if (page) { page.scrollTop = 0; page.scrollLeft = 0; }
+      else if (overlay) { overlay.scrollTop = 0; overlay.scrollLeft = 0; }
+      return;
+    }
 
     const page = target.closest('.home-game-detail-page');
     const overlay = target.closest('.home-game-detail-overlay');
