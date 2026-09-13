@@ -27,11 +27,11 @@
     showBootFailure(reason?.message || reason || 'Promise rejected');
   });
 
-  // v2.53 index.html and app.js drifted apart: the current HTML removed several
+  // v2.54 index.html and app.js drifted apart: the current HTML removed several
   // controls that app.js still binds synchronously during startup. Restore only
   // those controls before app.js executes so fresh browsers and cached browsers
   // use the same DOM contract.
-  function ensureV253DomCompatibility() {
+  function ensureV254DomCompatibility() {
     const saveButton = document.getElementById('saveNewPlayerBtn');
     if (saveButton && !document.getElementById('createManualPlayerBtn')) {
       const actions = saveButton.closest('.section-actions');
@@ -58,9 +58,9 @@
     }
   }
 
-  ensureV253DomCompatibility();
+  ensureV254DomCompatibility();
 
-  // v2.53 emergency mode: unregister old workers and return a harmless fake
+  // v2.54 emergency mode: unregister old workers and return a harmless fake
   // registration during startup. The web app continues to work online without
   // a Service Worker; PWA updating can be re-enabled after boot stability is confirmed.
   try {
@@ -81,7 +81,7 @@
     }
   } catch {}
 
-  const BOOT_RECOVERY_KEY = 'baseballBootRecoveryV253';
+  const BOOT_RECOVERY_KEY = 'baseballBootRecoveryV254';
   const bootRecoveryTimer = window.setTimeout(async () => {
     const percent = String(document.getElementById('appUpdatePercent')?.textContent || '').trim();
     const status = String(document.getElementById('appUpdateStatus')?.textContent || '').trim();

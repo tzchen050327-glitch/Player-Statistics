@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.53';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.54';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -188,32 +188,11 @@
   }
 
   function lineupEntries(detail, side) {
-    const roster = rawRoster(detail,side);
-    const order = lineupOrderFromGame(detail,side);
-    const status = String(detail?.status||'').toLowerCase();
-    const totals = gameBattingTotals(detail,side);
-    let arranged = order.map((name,i)=>{
-      const r = roster.find(x=>samePlayerName(x.name,name)) || {name,order:i+1,number:'',position:'',avg:'',hits:0,homeRuns:0,rbi:0};
-      return {...r,order:i+1};
-    });
-    for (const r of roster) if (!arranged.some(x=>samePlayerName(x.name,r.name)) && arranged.length<9) arranged.push({...r,order:arranged.length+1});
-    if (!arranged.length) arranged = roster.slice(0,9);
-    return arranged.slice(0,9).map(entry=>{
-      if (status === 'final') return entry;
-      const game = [...totals.entries()].find(([k])=>samePlayerName(k,entry.name))?.[1] || {ab:0,h:0,hr:0,rbi:0};
-      const officialGameH = game.h;
-      const officialSeasonH = Number(entry.hits)||0;
-      const seasonHBefore = Math.max(0, officialSeasonH - officialGameH);
-      const shownH = seasonHBefore + game.h;
-      let avg = entry.avg;
-      if (avg && /^\.\d{3}$/.test(avg) && officialSeasonH >= 0 && game.ab > 0) {
-        const finalAvg = Number(`0${avg}`);
-        const approxFinalAB = finalAvg > 0 ? Math.round(officialSeasonH / finalAvg) : 0;
-        const preAB = Math.max(0, approxFinalAB - game.ab);
-        avg = preAB + game.ab > 0 ? ((seasonHBefore + game.h)/(preAB + game.ab)).toFixed(3).replace(/^0/,'') : '.000';
-      }
-      return {...entry,avg,hits:shownH,homeRuns:Math.max(0,(Number(entry.homeRuns)||0)-game.hr)+game.hr,rbi:Math.max(0,(Number(entry.rbi)||0)-game.rbi)+game.rbi};
-    });
+    // v2.54: the backend owns batting order and season/live totals. The browser
+    // renders the normalized lineup instead of rebuilding it from play sequence.
+    return rawRoster(detail,side)
+      .sort((a,b)=>(Number(a.order)||99)-(Number(b.order)||99))
+      .slice(0,9);
   }
 
   function positionKey(value) {
@@ -411,6 +390,14 @@
     applyVersionLabel();
     const detail=latestDetail; if (!detail?.game) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
+    const isCpbl=String(detail?.league||'').toUpperCase()==='CPBL';
+    if (!isCpbl) {
+      document.body.classList.remove('gdx-cpbl-landscape');
+      body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
+      if (body) delete body.dataset.gdxStamp;
+      return;
+    }
+    document.body.classList.add('gdx-cpbl-landscape');
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);

@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.53';
+    const APP_VERSION = 'v2.54';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -13,8 +13,8 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.53';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.53';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.54';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.54';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5797,9 +5797,16 @@ bg2: {
       const league = homeDailyGamesLeague();
       const date = String(els.gameDate?.value || localISODate());
       if (!league) return;
+      if (league === 'CPBL' && date === localISODate()) {
+        window.dispatchEvent(new CustomEvent('cpbl-live-watch-day', { detail:{ date } }));
+        if (window.__cpblDayRealtimeConnected) return;
+      } else {
+        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch-day'));
+      }
       const cached = homeDailyGamesCache.get(`${league}|${date}`);
       const games = Array.isArray(cached?.games) ? cached.games : [];
       let delay = homeDailyGamesRefreshDelay(league, date, games);
+      if (league === 'CPBL') delay = window.__cpblDayRealtimeConnected ? 0 : 5 * 60 * 1000;
       // On upstream errors, slow down retries instead of hammering Supabase / official sites.
       if (cached?.error) delay = Math.max(delay || 0, 10 * 60 * 1000);
       if (!delay || !homeDailyGamesAutoRefreshAvailable()) return;
@@ -6063,6 +6070,10 @@ bg2: {
     function updateHomeGameDetailRefreshCountdown() {
       const el = document.getElementById('homeGameDetailRefreshCountdown');
       if (!el) return;
+      if (activeHomeGameDetail?.league === 'CPBL' && window.__cpblRealtimeConnected) {
+        el.textContent = '即時推送';
+        return;
+      }
       if (activeHomeGameDetail?.loading) {
         el.textContent = '更新中…';
         return;
@@ -6097,6 +6108,8 @@ bg2: {
 
     function closeHomeGameDetail() {
       stopHomeGameDetailRefresh();
+      window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      document.body.classList.remove('gdx-cpbl-landscape');
       activeHomeGameDetail = null;
       const overlay = document.getElementById('homeGameDetailOverlay');
       if (overlay) overlay.classList.add('hidden');
@@ -6224,9 +6237,18 @@ bg2: {
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
-      const delay = activeHomeGameDetail.league === 'CPBL'
-        ? cpblAlignedRefreshDelay()
-        : activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
+      let delay = 30 * 1000;
+      if (activeHomeGameDetail.league === 'CPBL') {
+        // v2.54: CPBL is pushed by Supabase Realtime. Poll only as a low-frequency
+        // safety net when the Realtime channel is unavailable.
+        if (window.__cpblRealtimeConnected) {
+          updateHomeGameDetailRefreshCountdown();
+          return;
+        }
+        delay = 5 * 60 * 1000;
+      } else if (activeHomeGameDetail.league === 'NPB') {
+        delay = 45 * 1000;
+      }
       startHomeGameDetailRefreshCountdown(delay);
       homeGameDetailRefreshTimer = setTimeout(() => {
         homeGameDetailRefreshTimer = 0;
@@ -6252,7 +6274,14 @@ bg2: {
       if (cached?.detail) renderHomeGameDetail(cached.detail, game, { loading:true });
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       try {
-        const detail = await leagueGameDetailRequest(league, date, game);
+        let detail = null;
+        if (league === 'CPBL' && date === localISODate() && game?.id && typeof window.__cpblRealtimeReadPublished === 'function') {
+          try {
+            const published = await window.__cpblRealtimeReadPublished(date, String(game.id));
+            detail = published?.detail || null;
+          } catch {}
+        }
+        if (!detail) detail = await leagueGameDetailRequest(league, date, game);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB')) {
           try {
@@ -6291,11 +6320,78 @@ bg2: {
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
       activeHomeGameDetail = { league, date, game, key, loading:false };
+      if (league === 'CPBL' && date === localISODate() && game?.id) {
+        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id) } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      }
+
       const cached = homeGameDetailCache.get(key);
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       refreshActiveHomeGameDetail();
     }
+
+
+    window.addEventListener('cpbl-live-cache-update', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
+      const row = event?.detail?.row || null;
+      const detail = event?.detail?.detail || row?.published_payload || null;
+      if (!detail?.game) return;
+      const { date, game } = activeHomeGameDetail;
+      if (String(row?.game_date || detail?.date || '') !== String(date || '')) return;
+      const expectedId = String(game?.id || '');
+      const incomingId = String(row?.game_id || detail?.game?.id || '');
+      if (expectedId && incomingId && expectedId !== incomingId) return;
+      const key = homeGameDetailKey('CPBL', date, game);
+      homeGameDetailCache.set(key, { at:Date.now(), detail });
+      homeGameDetailErrorStreak = 0;
+      syncHomeDailyGameFromDetail('CPBL', date, game, detail);
+      renderHomeGameDetail(detail, game);
+      scheduleHomeGameDetailRefresh(detail);
+    });
+
+    window.addEventListener('cpbl-live-realtime-status', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
+      const cached = homeGameDetailCache.get(homeGameDetailKey('CPBL', activeHomeGameDetail.date, activeHomeGameDetail.game));
+      if (event?.detail?.connected) {
+        stopHomeGameDetailRefresh();
+        updateHomeGameDetailRefreshCountdown();
+      } else if (cached?.detail) {
+        scheduleHomeGameDetailRefresh(cached.detail);
+      }
+    });
+
+    window.addEventListener('cpbl-live-day-update', event => {
+      if (currentPage !== 'home' || homeDailyGamesLeague() !== 'CPBL') return;
+      const row = event?.detail?.row || null;
+      const detail = event?.detail?.detail || row?.published_payload || null;
+      const date = String(row?.game_date || detail?.date || '');
+      if (!date || date !== String(els.gameDate?.value || localISODate())) return;
+      const key = `CPBL|${date}`;
+      const cached = homeDailyGamesCache.get(key);
+      if (!cached || !Array.isArray(cached.games)) return;
+      const incomingId = String(row?.game_id || detail?.game?.id || '');
+      const index = cached.games.findIndex(g => String(g?.id || '') === incomingId);
+      if (index < 0) return;
+      const gameInfo = detail?.game || {};
+      cached.games[index] = {
+        ...cached.games[index],
+        ...gameInfo,
+        id:incomingId || cached.games[index]?.id,
+        status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled')
+      };
+      cached.at = Date.now();
+      cached.error = '';
+      homeDailyGamesCache.set(key, cached);
+      renderHomeDailyGames({ skipLoad:true });
+    });
+
+    window.addEventListener('cpbl-live-day-realtime-status', event => {
+      if (currentPage !== 'home' || homeDailyGamesLeague() !== 'CPBL') return;
+      if (event?.detail?.connected) stopHomeDailyGamesAutoRefresh();
+      else scheduleHomeDailyGamesAutoRefresh();
+    });
 
     async function loadHomeDailyGames(league, date, { force = false } = {}) {
       const key = `${league}|${date}`;

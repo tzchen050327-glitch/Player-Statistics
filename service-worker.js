@@ -1,15 +1,16 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v253';
+const CACHE_NAME = 'baseball-player-card-pwa-v254';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.53',
-  './live-static-update.js?v=v2.53',
-  './app.js?v=v2.53',
-  './cpbl-cache-router.js?v=v2.53',
-  './game-detail-enhancement.css?v=v2.53',
-  './report-layout.css?v=v2.53',
-  './game-detail-enhancement.js?v=v2.53',
-  './report-layout.js?v=v2.53',
+  './styles.css?v=v2.54',
+  './live-static-update.js?v=v2.54',
+  './cpbl-realtime.js?v=v2.54',
+  './app.js?v=v2.54',
+  './cpbl-cache-router.js?v=v2.54',
+  './game-detail-enhancement.css?v=v2.54',
+  './report-layout.css?v=v2.54',
+  './game-detail-enhancement.js?v=v2.54',
+  './report-layout.js?v=v2.54',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -53,7 +54,8 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html');
-  const isCoreAsset = url.pathname.endsWith('/live-static-update.js')
+  const isCoreAsset = url.pathname.endsWith('/cpbl-realtime.js')
+    || url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
