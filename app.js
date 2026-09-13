@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.46';
+    const APP_VERSION = 'v2.47';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -12,8 +12,8 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.46';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.46';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.47';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.47';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5756,9 +5756,19 @@ bg2: {
       return Date.UTC(y, mo - 1, d, hh - offsetHours, mm, 0, 0);
     }
 
+    function cpblAlignedRefreshDelay(now = Date.now()) {
+      const d = new Date(now);
+      const withinMinute = d.getSeconds() * 1000 + d.getMilliseconds();
+      for (const mark of [25 * 1000, 55 * 1000]) {
+        if (withinMinute < mark) return Math.max(250, mark - withinMinute);
+      }
+      return Math.max(250, 60 * 1000 - withinMinute + 25 * 1000);
+    }
+
     function homeDailyGamesRefreshDelay(league, date, games = []) {
       if (String(date || '') !== localISODate()) return 0;
       if (homeDailyGamesHasLive(games)) {
+        if (league === 'CPBL') return cpblAlignedRefreshDelay();
         // MLB games span much more of the day, so poll it less aggressively.
         return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 45 * 1000 : 30 * 1000;
       }
@@ -5767,6 +5777,7 @@ bg2: {
       const starts = scheduled.map(game => homeDailyGamesStartMs(league, date, game?.time)).filter(Number.isFinite);
       if (!starts.length) return 60 * 60 * 1000;
       const msUntil = Math.min(...starts) - Date.now();
+      if (league === 'CPBL' && msUntil <= 2 * 60 * 1000) return cpblAlignedRefreshDelay();
       if (msUntil <= 15 * 60 * 1000) return 2 * 60 * 1000;
       if (msUntil <= 60 * 60 * 1000) return 10 * 60 * 1000;
       if (msUntil <= 3 * 60 * 60 * 1000) return 20 * 60 * 1000;
@@ -6212,7 +6223,9 @@ bg2: {
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
-      const delay = activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
+      const delay = activeHomeGameDetail.league === 'CPBL'
+        ? cpblAlignedRefreshDelay()
+        : activeHomeGameDetail.league === 'NPB' ? 45 * 1000 : 30 * 1000;
       startHomeGameDetailRefreshCountdown(delay);
       homeGameDetailRefreshTimer = setTimeout(() => {
         homeGameDetailRefreshTimer = 0;
@@ -6297,23 +6310,7 @@ bg2: {
       try {
         let games = await leagueDailyGamesRequest(league, date);
 
-        // CPBL's schedule feed can keep a suspended/reserved game marked as live.
-        // For games that the outer feed still calls live, verify against the authoritative
-        // single-game detail endpoint before rendering the card.
-        if (league === 'CPBL' && Array.isArray(games)) {
-          const liveGames = games.filter(item => String(item?.status || '').toLowerCase() === 'live' && item?.id);
-          if (liveGames.length) {
-            await Promise.all(liveGames.map(async item => {
-              try {
-                const verified = await leagueGameDetailRequest('CPBL', date, item);
-                syncHomeDailyGameFromDetail('CPBL', date, item, verified);
-                if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;
-              } catch (error) {
-                console.warn('CPBL 外層賽況驗證失敗', error);
-              }
-            }));
-          }
-        }
+        // Outer cards use only the daily schedule feed. Single-game detail is fetched only after the user opens a game.
 
         homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
         return games;
