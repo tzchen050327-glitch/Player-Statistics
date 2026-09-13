@@ -887,7 +887,7 @@
       const out = [];
       const win = String(stats.wins ?? '').trim();
       const loss = String(stats.losses ?? '').trim();
-      if (win || loss) out.push(['勝敗', ]);
+      if (win || loss) out.push(['勝敗', String(win || 0) + '-' + String(loss || 0)]);
       if (String(stats.era ?? '').trim()) out.push(['ERA', String(stats.era)]);
       if (String(stats.ip ?? '').trim()) out.push(['IP', String(stats.ip)]);
       if (String(stats.so ?? '').trim()) out.push(['SO', String(stats.so)]);
