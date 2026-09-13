@@ -1,0 +1,81 @@
+name: Apply v2.64 fixed lineups and outline field
+on:
+  push:
+    paths:
+      - '.github/v264-lineup-field-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v2.64 fixed lineups and outline field
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # 1) Both side panels are always batting lineups.
+          p = Path('game-detail-enhancement.js')
+          s = p.read_text(encoding='utf-8')
+          old = """  function renderLandscapeBoard(detail,board) {\n    const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};\n    const showBothLineups=landscapeShowBothLineups(detail);\n    const side=(which)=>{\n      const team=which==='away'?game.away||'客隊':game.home||'主隊', isOff=which===offense;\n      const showLineup=showBothLineups||isOff;\n      const stateLabel=showBothLineups?'LINEUP':(isOff?'ATTACK':'DEFENSE');\n      return `<section class=\"gdx-landscape-side gdx-side-${which}\"><div class=\"gdx-landscape-team-head\"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${stateLabel}</em></div>${showLineup?renderLineupPanel(detail,which):renderPitcherPanel(detail,which)}</section>`;\n    };\n    return `<section class=\"gdx-landscape-board game-detail-enhanced-marker\" data-gdx=\"landscape\">${side('away')}<div class=\"gdx-landscape-center\">${renderLandscapeScoreboard(detail,board)}<div class=\"gdx-landscape-lower\">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${side('home')}</section>`;\n  }\n"""
+          new = """  function renderLandscapeBoard(detail,board) {\n    const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};\n    const side=(which)=>{\n      const team=which==='away'?game.away||'客隊':game.home||'主隊';\n      return `<section class=\"gdx-landscape-side gdx-side-${which}\"><div class=\"gdx-landscape-team-head\"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>LINEUP</em></div>${renderLineupPanel(detail,which)}</section>`;\n    };\n    return `<section class=\"gdx-landscape-board game-detail-enhanced-marker\" data-gdx=\"landscape\">${side('away')}<div class=\"gdx-landscape-center\">${renderLandscapeScoreboard(detail,board)}<div class=\"gdx-landscape-lower\">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}</div></div>${side('home')}</section>`;\n  }\n"""
+          if old not in s:
+              raise SystemExit('renderLandscapeBoard target not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # 2) Remove the green field fill. Keep the running diamond and make
+          #    foul/outfield guide lines continue directly from 3B/1B corners.
+          p = Path('report-layout.css')
+          s = p.read_text(encoding='utf-8')
+          old = "background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 100' preserveAspectRatio='xMidYMid meet'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23196948' stop-opacity='.58'/%3E%3Cstop offset='1' stop-color='%230c4333' stop-opacity='.52'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M70 96 L5 42 C7 17 28 3 70 3 C112 3 133 17 135 42 Z' fill='url(%23g)'/%3E%3Cpath d='M70 96 L5 42 M70 96 L135 42' fill='none' stroke='%23e8cf99' stroke-opacity='.32' stroke-width='.5'/%3E%3Cpath d='M70 88 L44 62 L70 36 L96 62 Z' fill='none' stroke='%23e8cf99' stroke-opacity='.40' stroke-width='.5'/%3E%3C/svg%3E\") !important;"
+          new = "background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 100' preserveAspectRatio='xMidYMid meet'%3E%3Cpath d='M70 88 L44 62 L70 36 L96 62 Z M44 62 L5 23 M96 62 L135 23' fill='none' stroke='%23e8cf99' stroke-opacity='.40' stroke-width='.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") !important;"
+          if old not in s:
+              raise SystemExit('field SVG target not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # 3) Formal release version lock.
+          files = [
+              'app.js','index.html','service-worker.js','game-detail-enhancement.js',
+              'game-detail-enhancement.css','report-layout.js','report-layout.css',
+              'cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest',
+              'rescue.html','styles.css'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              t = p.read_text(encoding='utf-8')
+              t = t.replace('v2.63','v2.64').replace('v263','v264').replace('V263','V264')
+              t = t.replace('pwa-v263','pwa-v264')
+              p.write_text(t, encoding='utf-8')
+
+          Path('version.json').write_text('{"version":"v2.64"}\n', encoding='utf-8')
+          PY
+
+      - name: Verify v2.64
+        shell: bash
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -q '"version":"v2.64"' version.json
+          grep -q "APP_VERSION = 'v2.64'" app.js
+          grep -q "baseball-player-card-pwa-v264" service-worker.js
+          grep -q '<em>LINEUP</em>.*renderLineupPanel' game-detail-enhancement.js
+          ! grep -q "showLineup?renderLineupPanel" game-detail-enhancement.js
+          ! grep -q "linearGradient id='g'" report-layout.css
+          grep -q "M44 62 L5 23 M96 62 L135 23" report-layout.css
+
+      - name: Commit v2.64
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css version.json
+          git commit -m 'Release v2.64 fixed lineups and outline field'
+          git push
