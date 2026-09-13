@@ -3,6 +3,9 @@
         db = await openDB();
         players = await idbGetAll(STORES.players);
         photos = await idbGetAll(STORES.photos);
+        if (typeof cloudSyncInitialMerge === 'function') {
+          await cloudSyncInitialMerge();
+        }
         for (const player of players) {
           ensurePhotoTransforms(player);
           const fixedName = applyStoredPreferredExternalName(player);

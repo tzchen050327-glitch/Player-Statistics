@@ -304,7 +304,7 @@
       if (selectedPlayerId && typeof loadRecord === 'function' && els?.gameDate?.value) {
         try { await loadRecord(); } catch (error) { console.warn('同步後重新載入單場資料失敗', error); }
       }
-      if (typeof renderAll === 'function') renderAll();
+      if (els?.gameDate?.value && typeof renderAll === 'function') renderAll();
     }
 
     async function cloudSyncMergeRemote(records, { uploadLocalOnly = true } = {}) {
