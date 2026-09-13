@@ -3,6 +3,37 @@
   const nativeInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   if (!nativeInnerHTML?.get || !nativeInnerHTML?.set) return;
 
+  const BOOT_RECOVERY_KEY = 'baseballBootRecoveryV251';
+  const bootRecoveryTimer = window.setTimeout(async () => {
+    const percent = String(document.getElementById('appUpdatePercent')?.textContent || '').trim();
+    const status = String(document.getElementById('appUpdateStatus')?.textContent || '').trim();
+    const stuck = percent === '0%' && (!status || /準備中/.test(status));
+    if (!stuck || sessionStorage.getItem(BOOT_RECOVERY_KEY) === '1') return;
+
+    sessionStorage.setItem(BOOT_RECOVERY_KEY, '1');
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations?.();
+      if (Array.isArray(regs)) await Promise.allSettled(regs.map(reg => reg.unregister()));
+    } catch {}
+    try {
+      const keys = await caches.keys();
+      await Promise.allSettled(keys
+        .filter(key => key.startsWith('baseball-player-card-pwa-'))
+        .map(key => caches.delete(key)));
+    } catch {}
+
+    const url = new URL(location.href);
+    url.searchParams.set('__boot_recovery', Date.now().toString());
+    location.replace(url.href);
+  }, 6000);
+
+  window.addEventListener('load', () => {
+    window.setTimeout(() => {
+      const percent = String(document.getElementById('appUpdatePercent')?.textContent || '').trim();
+      if (percent !== '0%') window.clearTimeout(bootRecoveryTimer);
+    }, 250);
+  }, { once: true });
+
   const LISTENER_RESET_IDS = new Set([
     'homeGameDetailBack',
     'homeGameDetailRetry',
