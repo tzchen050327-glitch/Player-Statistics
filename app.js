@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.40';
+    const APP_VERSION = 'v2.41';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -9,10 +9,11 @@
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
     const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
     const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
+    const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.40';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.40';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.41';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.41';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5911,9 +5912,14 @@ bg2: {
     }
 
     async function pregameStarterRequest(league, date, game) {
-      const endpoint = new URL(LEAGUE_GAME_DETAIL_API_URL);
-      endpoint.pathname = endpoint.pathname.replace(/\/[^/]+$/, '/pregame-starters');
-      const response = await fetch(endpoint.toString(), {
+      const endpoint = league === 'NPB'
+        ? NPB_PREGAME_STARTERS_API_URL
+        : (() => {
+            const url = new URL(LEAGUE_GAME_DETAIL_API_URL);
+            url.pathname = url.pathname.replace(/\/[^/]+$/, '/pregame-starters');
+            return url.toString();
+          })();
+      const response = await fetch(endpoint, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
         body:JSON.stringify({

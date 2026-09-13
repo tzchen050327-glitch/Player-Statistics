@@ -707,9 +707,14 @@
     }
 
     async function pregameStarterRequest(league, date, game) {
-      const endpoint = new URL(LEAGUE_GAME_DETAIL_API_URL);
-      endpoint.pathname = endpoint.pathname.replace(/\/[^/]+$/, '/pregame-starters');
-      const response = await fetch(endpoint.toString(), {
+      const endpoint = league === 'NPB'
+        ? NPB_PREGAME_STARTERS_API_URL
+        : (() => {
+            const url = new URL(LEAGUE_GAME_DETAIL_API_URL);
+            url.pathname = url.pathname.replace(/\/[^/]+$/, '/pregame-starters');
+            return url.toString();
+          })();
+      const response = await fetch(endpoint, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
         body:JSON.stringify({
