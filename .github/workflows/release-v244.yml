@@ -1,0 +1,77 @@
+name: Release v2.44
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v244.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump app version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('js/00-core-config.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("const APP_VERSION = 'v2.43';", "const APP_VERSION = 'v2.44';", 1)
+          s = s.replace('./assets/default-hitter.jpg?v=v2.43', './assets/default-hitter.jpg?v=v2.44')
+          s = s.replace('./assets/default-pitcher.jpg?v=v2.43', './assets/default-pitcher.jpg?v=v2.44')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('content="v2.43"', 'content="v2.44"', 1)
+          s = s.replace('>v2.43</button>', '>v2.44</button>', 1)
+          s = s.replace('./styles.css?v=v2.43-ui1', './styles.css?v=v2.44-ui1')
+          s = s.replace('./game-detail-enhancement.css?v=v2.43-ui1', './game-detail-enhancement.css?v=v2.44-ui1')
+          s = s.replace('./app.js?v=v2.43', './app.js?v=v2.44')
+          s = s.replace('./game-detail-enhancement.js?v=v2.43-ui1', './game-detail-enhancement.js?v=v2.44-ui1')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('manifest.webmanifest')
+          s = p.read_text(encoding='utf-8').replace('./index.html?v=v2.43', './index.html?v=v2.44')
+          p.write_text(s, encoding='utf-8')
+
+          Path('version.json').write_text('{"version":"v2.44"}\n', encoding='utf-8')
+
+          p = Path('game-detail-enhancement.js')
+          s = p.read_text(encoding='utf-8').replace("|| 'v2.43';", "|| 'v2.44';", 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('service-worker.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("const CACHE_NAME = 'baseball-player-card-pwa-v243-stable-1';", "const CACHE_NAME = 'baseball-player-card-pwa-v244-stable-1';", 1)
+          s = s.replace('./styles.css?v=v2.43-ui1', './styles.css?v=v2.44-ui1')
+          s = s.replace('./app.js?v=v2.43', './app.js?v=v2.44')
+          s = s.replace('./game-detail-enhancement.css?v=v2.43-ui1', './game-detail-enhancement.css?v=v2.44-ui1')
+          s = s.replace('./game-detail-enhancement.js?v=v2.43-ui1', './game-detail-enhancement.js?v=v2.44-ui1')
+          s = s.replace('./index.html?v=v2.43', './index.html?v=v2.44')
+          s = s.replace('__v243', '__v244')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          python3 scripts/build-app.py
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -Fq "const APP_VERSION = 'v2.44';" app.js
+          grep -Fq './app.js?v=v2.44' index.html
+          grep -Fq './app.js?v=v2.44' service-worker.js
+          grep -Fq 'baseball-player-card-pwa-v244-stable-1' service-worker.js
+          grep -Fq 'content="v2.44"' index.html
+          grep -Fq '>v2.44</button>' index.html
+          git diff --check
+      - name: Commit release
+        run: |
+          git config user.name 'chatgpt-release'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/00-core-config.js app.js index.html manifest.webmanifest service-worker.js version.json game-detail-enhancement.js
+          git commit -m 'Release v2.44 after CPBL starter stat fix'
+          git push
