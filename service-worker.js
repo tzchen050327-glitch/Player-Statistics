@@ -1,13 +1,15 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v251-stable-4';
+const CACHE_NAME = 'baseball-player-card-pwa-v252';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.51-ui1',
-  './live-static-update.js?v=v2.51-static4',
-  './app.js?v=v2.51-boot2',
-  './cpbl-cache-router.js?v=v2.51-cache3',
-  './game-detail-enhancement.css?v=v2.51-ui1',
-  './game-detail-enhancement.js?v=v2.51-ui1',
+  './styles.css?v=v2.52',
+  './live-static-update.js?v=v2.52',
+  './app.js?v=v2.52',
+  './cpbl-cache-router.js?v=v2.52',
+  './game-detail-enhancement.css?v=v2.52',
+  './report-layout.css?v=v2.52',
+  './game-detail-enhancement.js?v=v2.52',
+  './report-layout.js?v=v2.52',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -56,7 +58,9 @@ self.addEventListener('fetch', event => {
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
-    || url.pathname.endsWith('/game-detail-enhancement.css');
+    || url.pathname.endsWith('/game-detail-enhancement.css')
+    || url.pathname.endsWith('/report-layout.css')
+    || url.pathname.endsWith('/report-layout.js');
 
   if (isDocument || isCoreAsset) {
     event.respondWith((async () => {
