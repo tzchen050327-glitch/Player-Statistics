@@ -1,0 +1,122 @@
+name: Force refresh mobile sync UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/force-refresh-mobile-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch mobile sync UI and cache busting
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          cloud = Path('js/07a-cloud-sync.js')
+          text = cloud.read_text(encoding='utf-8')
+          text = text.replace(
+              "        button.textContent = '雲端同步';",
+              "        button.innerHTML = '<span class=\"cloud-sync-glyph\" aria-hidden=\"true\">☁</span><span class=\"cloud-sync-label\">雲端同步</span><span class=\"cloud-sync-dot\" aria-hidden=\"true\"></span>';",
+              1
+          )
+          old = "        button.textContent = cloudSyncLastError ? '同步異常' : cloudSyncBusy ? '同步中' : cloudSyncCredentials ? '已同步' : '雲端同步';"
+          new = "        const label = button.querySelector('.cloud-sync-label');\n        if (label) label.textContent = cloudSyncLastError ? '同步異常' : cloudSyncBusy ? '同步中' : cloudSyncCredentials ? '已同步' : '雲端同步';"
+          if old not in text:
+              raise SystemExit('refresh label anchor missing')
+          text = text.replace(old, new, 1)
+          cloud.write_text(text, encoding='utf-8')
+
+          css = Path('styles.css')
+          css_text = css.read_text(encoding='utf-8')
+          marker = '/* ===== MOBILE SYNC FINAL OVERRIDE ===== */'
+          if marker not in css_text:
+              css_text += r'''
+
+/* ===== MOBILE SYNC FINAL OVERRIDE ===== */
+#homePage #homeZoneSwitch.home-root-switch{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  width:100% !important;
+}
+#homePage #homeZoneSwitch.home-root-switch > .home-zone-btn{
+  width:100% !important;
+  min-width:0 !important;
+}
+.cloud-sync-header-btn{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.cloud-sync-header-btn::before,
+.cloud-sync-header-btn::after{content:none !important;display:none !important;}
+.cloud-sync-glyph{display:inline-block;font-size:16px;line-height:1;flex:0 0 auto;}
+.cloud-sync-label{display:inline-block;white-space:nowrap;}
+.cloud-sync-dot{display:block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);box-shadow:0 0 0 2px rgba(255,255,255,.10);flex:0 0 auto;}
+.cloud-sync-header-btn.is-connected .cloud-sync-dot{background:#35c46a;}
+.cloud-sync-header-btn.is-error .cloud-sync-dot{background:#ff6b6b;}
+.cloud-sync-header-btn.is-busy .cloud-sync-dot{background:#ffd166;animation:cloudSyncPulse 1s ease-in-out infinite;}
+@media(max-width:900px),(hover:none) and (pointer:coarse){
+  #cloudSyncBtn.cloud-sync-header-btn{
+    width:32px !important;
+    min-width:32px !important;
+    max-width:32px !important;
+    height:30px !important;
+    min-height:30px !important;
+    padding:3px !important;
+    gap:0 !important;
+    overflow:visible !important;
+  }
+  #cloudSyncBtn .cloud-sync-label{display:none !important;}
+  #cloudSyncBtn .cloud-sync-glyph{display:block !important;font-size:17px !important;line-height:1 !important;}
+  #cloudSyncBtn .cloud-sync-dot{position:absolute !important;right:2px !important;top:2px !important;width:6px !important;height:6px !important;display:block !important;}
+}
+/* ===== MOBILE SYNC FINAL OVERRIDE END ===== */
+'''
+          css.write_text(css_text, encoding='utf-8')
+
+          index = Path('index.html')
+          html = index.read_text(encoding='utf-8')
+          html = html.replace('./styles.css?v=v2.40', './styles.css?v=v2.40-ui3')
+          html = html.replace('./app.js?v=v2.40', './app.js?v=v2.40-ui3')
+          html = html.replace('./game-detail-enhancement.css?v=v2.40', './game-detail-enhancement.css?v=v2.40-ui3')
+          html = html.replace('./game-detail-enhancement.js?v=v2.40', './game-detail-enhancement.js?v=v2.40-ui3')
+          index.write_text(html, encoding='utf-8')
+
+          sw = Path('service-worker.js')
+          sw_text = sw.read_text(encoding='utf-8')
+          sw_text = sw_text.replace("const CACHE_NAME = 'baseball-player-card-pwa-v240-stable-4';", "const CACHE_NAME = 'baseball-player-card-pwa-v240-stable-6';")
+          sw_text = sw_text.replace("'./styles.css?v=v2.40'", "'./styles.css?v=v2.40-ui3'")
+          sw_text = sw_text.replace("'./app.js?v=v2.40'", "'./app.js?v=v2.40-ui3'")
+          sw_text = sw_text.replace("'./game-detail-enhancement.css?v=v2.40'", "'./game-detail-enhancement.css?v=v2.40-ui3'")
+          sw_text = sw_text.replace("'./game-detail-enhancement.js?v=v2.40'", "'./game-detail-enhancement.js?v=v2.40-ui3'")
+          needle = "    || url.pathname.endsWith('/app.js')\n"
+          if "url.pathname.endsWith('/styles.css')" not in sw_text:
+              sw_text = sw_text.replace(needle, needle + "    || url.pathname.endsWith('/styles.css')\n", 1)
+          sw.write_text(sw_text, encoding='utf-8')
+          PY
+
+          python3 scripts/build-app.py
+          node --check app.js
+          grep -q 'cloud-sync-glyph' js/07a-cloud-sync.js
+          grep -q 'MOBILE SYNC FINAL OVERRIDE' styles.css
+          grep -q 'styles.css?v=v2.40-ui3' index.html
+          grep -q "url.pathname.endsWith('/styles.css')" service-worker.js
+          grep -q 'baseball-player-card-pwa-v240-stable-6' service-worker.js
+
+      - name: Commit
+        run: |
+          git config user.name 'chatgpt-ui-fix'
+          git config user.email 'actions@users.noreply.github.com'
+          git add js/07a-cloud-sync.js styles.css index.html app.js service-worker.js
+          git commit -m 'Force refresh mobile sync UI'
+          git push
