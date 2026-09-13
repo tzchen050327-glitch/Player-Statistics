@@ -525,11 +525,11 @@
     }
 
     function cloudSyncEnsureUi() {
-      const actions = document.querySelector('.home-player-actions');
+      const actions = document.getElementById('homeZoneSwitch');
       if (actions && !document.getElementById('cloudSyncBtn')) {
         const button = document.createElement('button');
         button.id = 'cloudSyncBtn';
-        button.className = 'press-btn';
+        button.className = 'home-zone-btn';
         button.type = 'button';
         button.textContent = '雲端同步';
         button.addEventListener('click', () => {
