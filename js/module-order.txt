@@ -6,6 +6,7 @@
 05-provider-international.js
 06-provider-cpbl.js
 07-storage.js
+07a-cloud-sync.js
 08-stats-search.js
 09-player-navigation.js
 10-batch-reports.js
