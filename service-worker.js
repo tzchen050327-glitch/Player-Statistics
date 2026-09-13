@@ -1,11 +1,11 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v241-stable-1';
+const CACHE_NAME = 'baseball-player-card-pwa-v242-stable-1';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=v2.41-ui1',
-  './app.js?v=v2.41-ui1',
-  './game-detail-enhancement.css?v=v2.41-ui1',
-  './game-detail-enhancement.js?v=v2.41-ui1',
+  './styles.css?v=v2.42-ui1',
+  './app.js?v=v2.42-ui1',
+  './game-detail-enhancement.css?v=v2.42-ui1',
+  './game-detail-enhancement.js?v=v2.42-ui1',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -29,6 +29,19 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const target = new URL('./index.html?v=v2.42', self.registration.scope).href;
+    await Promise.allSettled(clients.map(client => {
+      try {
+        const current = new URL(client.url);
+        if (current.origin === self.location.origin && !current.searchParams.has('__v242')) {
+          const next = new URL(target);
+          next.searchParams.set('__v242', Date.now().toString());
+          return client.navigate(next.href);
+        }
+      } catch {}
+      return Promise.resolve();
+    }));
   })());
 });
 

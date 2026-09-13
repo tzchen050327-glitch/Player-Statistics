@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.41';
+    const APP_VERSION = 'v2.42';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -12,8 +12,8 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.41';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.41';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.42';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.42';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -12135,8 +12135,31 @@ bg2: {
 
         if (showProgress) await appUpdateStep(32, '正在連線檢查新版…', 110);
 
-        // 直接向線上 index.html 比對版本。這不依賴 service worker 檔案本身有沒有改動，
-        // 可避免「網站已部署新版，但舊頁面一直停在舊 APP_VERSION」。
+        // 先讀取獨立 version.json，再以 index.html 作相容 fallback。
+        try {
+          const markerUrl = new URL('./version.json', location.href);
+          markerUrl.searchParams.set('__version_check', Date.now().toString());
+          const markerResponse = await fetch(markerUrl.href, { cache: 'no-store' });
+          if (markerResponse.ok) {
+            const marker = await markerResponse.json().catch(() => ({}));
+            const remoteVersion = String(marker?.version || '').trim();
+            if (remoteVersion && remoteVersion !== APP_VERSION) {
+              if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
+              if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
+              appRefreshing = true;
+              sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+              const reloadUrl = new URL('./index.html', location.href);
+              reloadUrl.searchParams.set('v', remoteVersion);
+              reloadUrl.searchParams.set('__app_version', remoteVersion);
+              setTimeout(() => location.replace(reloadUrl.href), 120);
+              return { activated:true, remoteVersion };
+            }
+          }
+        } catch (markerError) {
+          console.warn('版本標記讀取失敗：', markerError);
+        }
+
+        // 再向線上 index.html 比對版本，避免舊部署沒有 version.json 時失去更新能力。
         try {
           const versionUrl = new URL('./index.html', location.href);
           versionUrl.searchParams.set('__version_check', Date.now().toString());
