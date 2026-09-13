@@ -5910,6 +5910,27 @@ bg2: {
       return data;
     }
 
+    async function pregameStarterRequest(league, date, game) {
+      const endpoint = new URL(LEAGUE_GAME_DETAIL_API_URL);
+      endpoint.pathname = endpoint.pathname.replace(/\/[^/]+$/, '/pregame-starters');
+      const response = await fetch(endpoint.toString(), {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          action:'pregame-starters',
+          league,
+          date,
+          gameId:String(game?.id || ''),
+          away:String(game?.away || ''),
+          home:String(game?.home || '')
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `先發投手資料讀取失敗（${response.status}）`);
+      return data;
+    }
+
     function homeGameDetailStatusLabel(detail) {
       const status = String(detail?.status || '').toLowerCase();
       if (status === 'live') return ['比賽中', detail?.game?.inningLabel || ''].filter(Boolean).join('｜');
@@ -6065,6 +6086,39 @@ bg2: {
       if (currentPage === 'home') scheduleHomeDailyGamesAutoRefresh();
     }
 
+    function homeStarterStatItems(starter) {
+      const stats = starter?.stats || {};
+      const out = [];
+      const win = String(stats.wins ?? '').trim();
+      const loss = String(stats.losses ?? '').trim();
+      if (win || loss) out.push(['勝敗', `${win || 0}-${loss || 0}`]);
+      if (String(stats.era ?? '').trim()) out.push(['ERA', String(stats.era)]);
+      if (String(stats.ip ?? '').trim()) out.push(['IP', String(stats.ip)]);
+      if (String(stats.so ?? '').trim()) out.push(['SO', String(stats.so)]);
+      if (String(stats.whip ?? '').trim()) out.push(['WHIP', String(stats.whip)]);
+      if (String(stats.starts ?? '').trim()) out.push(['GS', String(stats.starts)]);
+      else if (String(stats.games ?? '').trim()) out.push(['G', String(stats.games)]);
+      return out.slice(0, 6);
+    }
+
+    function homeStarterCard(starter, teamName, sideLabel) {
+      if (!starter) {
+        return `<article class="game-detail-starter-card is-empty"><div class="game-detail-starter-team">${escapeHtml(teamName || sideLabel)}</div><div class="game-detail-starter-empty">先發投手尚未公布</div></article>`;
+      }
+      const statItems = homeStarterStatItems(starter);
+      const meta = [
+        starter?.number ? `#${starter.number}` : '',
+        starter?.throws || '',
+        starter?.stats?.year ? `${starter.stats.year} 球季` : ''
+      ].filter(Boolean).join('｜');
+      return `<article class="game-detail-starter-card">
+        <div class="game-detail-starter-team">${escapeHtml(teamName || starter?.team || sideLabel)}</div>
+        <div class="game-detail-starter-name">${escapeHtml(String(starter?.fullName || starter?.name || '—'))}</div>
+        <div class="game-detail-starter-meta">${escapeHtml(meta || '預告先發')}</div>
+        ${statItems.length ? `<div class="game-detail-starter-stats">${statItems.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>` : '<div class="game-detail-starter-no-stats">目前沒有可用的本季投球數據</div>'}
+      </article>`;
+    }
+
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
@@ -6076,6 +6130,20 @@ bg2: {
       const gameInfo = detail?.game || game || {};
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
+      const pregame = detail?.pregame || null;
+      const starterSection = status === 'scheduled' ? `
+        <section class="game-detail-pregame-section">
+          <div class="game-detail-section-title game-detail-pregame-title">
+            <div><strong>預告先發</strong><span>${escapeHtml(String(pregame?.source || (activeHomeGameDetail?.league === 'NPB' ? 'NPB 官方' : 'CPBL 官方')))}</span></div>
+            <button id="homeGameDetailPregameRefresh" class="game-detail-pregame-refresh" type="button" ${loading ? 'disabled' : ''}>重新整理</button>
+          </div>
+          ${pregame?.error ? `<div class="game-detail-pregame-note error">${escapeHtml(String(pregame.error))}</div>` : ''}
+          <div class="game-detail-starter-grid">
+            ${homeStarterCard(pregame?.awayStarter || null, String(gameInfo?.away || game?.away || '客隊'), '客隊')}
+            ${homeStarterCard(pregame?.homeStarter || null, String(gameInfo?.home || game?.home || '主隊'), '主隊')}
+          </div>
+          ${!pregame?.awayStarter && !pregame?.homeStarter ? '<div class="game-detail-pregame-note">聯盟公布預告先發後，重新整理就會自動帶入本季投球資料。</div>' : ''}
+        </section>` : '';
       const matchup = status === 'live' ? `
         <div class="game-detail-current-grid">
           <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
@@ -6110,6 +6178,7 @@ bg2: {
             ${matchup}
           </section>
           ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
+          ${starterSection}
           <section class="game-detail-play-section">
             <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>
             ${playsHtml}
@@ -6119,13 +6188,14 @@ bg2: {
       document.body.classList.add('home-game-detail-open');
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
+      body.querySelector('#homeGameDetailPregameRefresh')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
       updateHomeGameDetailRefreshCountdown();
     }
 
     function homeGameDetailCacheTtl(detail) {
       const status = String(detail?.status || '').toLowerCase();
       if (status === 'final' || status === 'cancelled') return 12 * 60 * 60 * 1000;
-      if (status === 'scheduled') return 5 * 60 * 1000;
+      if (status === 'scheduled') return 2 * 60 * 1000;
       return 45 * 1000;
     }
 
@@ -6162,6 +6232,13 @@ bg2: {
       try {
         const detail = await leagueGameDetailRequest(league, date, game);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB')) {
+          try {
+            detail.pregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
+          } catch (pregameError) {
+            detail.pregame = { awayStarter:null, homeStarter:null, error:pregameError?.message || '先發投手資料讀取失敗。' };
+          }
+        }
         homeGameDetailCache.set(key, { at:Date.now(), detail });
         homeGameDetailErrorStreak = 0;
         syncHomeDailyGameFromDetail(league, date, game, detail);
