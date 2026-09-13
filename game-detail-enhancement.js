@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.61';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.62';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -170,27 +170,50 @@
 
   function directRunnerNames(detail) {
     const raw = detail?.current?.runners || detail?.runners || {};
-    const take=(...values)=>compactName(values.find(v=>compactName(v))||'');
+    const take=(...values)=>{
+      const value=compactName(values.find(v=>compactName(v))||'');
+      return /^\d+$/.test(value)||/^(?:true|false|null|undefined)$/i.test(value)?'':value;
+    };
     return {first:take(raw.first,raw.firstBase,raw[1],raw.base1),second:take(raw.second,raw.secondBase,raw[2],raw.base2),third:take(raw.third,raw.thirdBase,raw[3],raw.base3)};
   }
 
   function inferRunnerNames(detail) {
-    const offense = currentOffenseSide(detail), wantedHalf = offense === 'away' ? 'top' : 'bottom';
-    const gameInning = Number(String(detail?.game?.inningLabel||'').match(/(\d+)/)?.[1]||0);
-    const plays = (Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>p?.half===wantedHalf && (!gameInning || Number(p?.inning)===gameInning));
-    let runners = {first:'',second:'',third:''};
-    for (const play of plays) {
-      const before = normalizeBaseState(play?.baseStateBefore || play?.basesBefore || '');
-      const after = normalizeBaseState(play?.baseState || play?.basesAfter || play?.bases || '');
-      if (!before.first) runners.first=''; if (!before.second) runners.second=''; if (!before.third) runners.third='';
-      const batter = compactName(play?.batter||play?.hitter||'');
-      const result = `${play?.result||''} ${play?.raw||''}`;
-      const old = {...runners};
-      runners = {first:'',second:'',third:''};
-      if (/全壘打/.test(result)) continue;
-      if (after.third) runners.third = /三壘安打/.test(result) ? batter : (old.second || old.first || old.third);
-      if (after.second) runners.second = /二壘安打/.test(result) ? batter : (old.first || old.second);
-      if (after.first) runners.first = /安打|四壞|觸身|失誤上壘|野手選擇/.test(result) ? batter : old.first;
+    const offense=currentOffenseSide(detail), wantedHalf=offense==='away'?'top':'bottom';
+    const gameInning=Number(String(detail?.game?.inningLabel||'').match(/(\d+)/)?.[1]||0);
+    const plays=(Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>p?.half===wantedHalf&&(!gameInning||Number(p?.inning)===gameInning));
+    let runners={first:'',second:'',third:''};
+    const keyOf=base=>base==='一壘'?'first':base==='二壘'?'second':'third';
+    const destOf=text=>/一壘/.test(text)?'first':/二壘/.test(text)?'second':/三壘/.test(text)?'third':'';
+    for(const play of plays){
+      const desc=compactName(play?.description||'');
+      const batter=compactName(play?.batter||play?.hitter||'');
+      const result=`${play?.result||''} ${play?.raw||''}`;
+
+      for(const m of desc.matchAll(/更換代跑[:：]\s*([^=〉>。]+?)\s*(?:=>|→|〉)\s*([^，。\s]+)/g)){
+        const from=compactName(m[1]),to=compactName(m[2]);
+        for(const k of ['first','second','third']) if(runners[k]===from) runners[k]=to;
+      }
+
+      for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*(上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
+        const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];
+        if(runners[from]===name||!runners[from]) runners[from]='';
+        if(/^上/.test(action)){
+          const to=destOf(action);
+          if(to) runners[to]=name;
+        }
+      }
+
+      if(/全壘打/.test(result)){
+        runners={first:'',second:'',third:''};
+      }else if(/三壘安打/.test(result)){
+        runners.third=batter;
+      }else if(/二壘安打/.test(result)){
+        runners.second=batter;
+      }else if(/(?:一壘安打|安打|四壞|故意四壞|觸身|失誤上壘|野手選擇)/.test(result)||/趁傳上壘|打者[^。]*上壘/.test(desc)){
+        runners.first=batter;
+      }
+
+      if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
     }
     return runners;
   }
@@ -247,14 +270,25 @@
   }
 
   function renderRunnerDiamond(detail) {
-    const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'有人'):'';
+    const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'—'):'';
     return `<div class="gdx-runner-card"><div class="gdx-mini-title">壘上</div><div class="gdx-runner-diamond"><div class="gdx-runner-base gdx-runner-second ${state.second?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-third ${state.third?'is-on':''}"></div><div class="gdx-runner-base gdx-runner-first ${state.first?'is-on':''}"></div><span class="gdx-runner-name gdx-runner-name-second">${label(state.second,names.second)}</span><span class="gdx-runner-name gdx-runner-name-third">${label(state.third,names.third)}</span><span class="gdx-runner-name gdx-runner-name-first">${label(state.first,names.first)}</span><div class="gdx-runner-home"></div></div><div class="gdx-runner-outs">${currentOuts(detail)}出局</div></div>`;
+  }
+
+  function gameStateLabel(detail) {
+    const supplied=compactName(detail?.game?.statusLabel||detail?.statusLabel||'');
+    if(supplied) return supplied;
+    const status=String(detail?.status||'').toLowerCase();
+    if(status==='final') return '比賽結束';
+    if(status==='postponed') return '延賽';
+    if(status==='cancelled') return '延賽／取消';
+    if(status==='suspended') return '比賽暫停';
+    return compactName(detail?.game?.inningLabel||'');
   }
 
   function renderLandscapeScoreboard(detail,board) {
     const game=detail?.game||{}, innings=board.innings.length?board.innings:Array.from({length:9},(_,i)=>String(i+1));
     const cells=(values,totals)=>`${innings.map((_,i)=>`<td>${esc(safeCell(values?.[i]))}</td>`).join('')}<td class="is-total">${esc(safeCell(totals.R))}</td><td>${esc(safeCell(totals.H))}</td><td>${esc(safeCell(totals.E))}</td>`;
-    return `<div class="gdx-landscape-score"><div class="gdx-landscape-scoreline"><div><span>${esc(game.away||'客隊')}</span><strong>${esc(safeCell(board.awayTotals.R)||'0')}</strong></div><div class="gdx-landscape-inning">${esc(game.inningLabel||(detail?.status==='final'?'比賽結束':''))}</div><div><strong>${esc(safeCell(board.homeTotals.R)||'0')}</strong><span>${esc(game.home||'主隊')}</span></div></div><div class="gdx-landscape-scoretable-wrap"><table class="gdx-landscape-scoretable"><thead><tr><th></th>${innings.map(x=>`<th>${esc(x)}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th>${esc(game.away||'客')}</th>${cells(board.away,board.awayTotals)}</tr><tr><th>${esc(game.home||'主')}</th>${cells(board.home,board.homeTotals)}</tr></tbody></table></div></div>`;
+    return `<div class="gdx-landscape-score"><div class="gdx-landscape-scoreline"><div><span>${esc(game.away||'客隊')}</span><strong>${esc(safeCell(board.awayTotals.R)||'0')}</strong></div><div class="gdx-landscape-inning">${esc(gameStateLabel(detail))}</div><div><strong>${esc(safeCell(board.homeTotals.R)||'0')}</strong><span>${esc(game.home||'主隊')}</span></div></div><div class="gdx-landscape-scoretable-wrap"><table class="gdx-landscape-scoretable"><thead><tr><th></th>${innings.map(x=>`<th>${esc(x)}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th>${esc(game.away||'客')}</th>${cells(board.away,board.awayTotals)}</tr><tr><th>${esc(game.home||'主')}</th>${cells(board.home,board.homeTotals)}</tr></tbody></table></div></div>`;
   }
 
   function landscapeShowBothLineups(detail) {
