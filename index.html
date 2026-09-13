@@ -193,7 +193,7 @@
             <circle cx="18" cy="5" r="2.5" stroke="currentColor" stroke-width="2"/>
             <circle cx="6" cy="12" r="2.5" stroke="currentColor" stroke-width="2"/>
             <circle cx="18" cy="19" r="2.5" stroke="currentColor" stroke-width="2"/>
-            <path d="M8.2 10.8 15.8 6.4M8.2 13.2l7.6 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8.2 10.8 15.8 6.4M8.2 13.2l7.6 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span id="sharePreparedLabel">分享圖片</span>
         </button>
@@ -249,144 +249,54 @@
             <option value="overseas">國外聯盟</option>
           </select>
         </label>
-        <label id="newPlayerCompetitionLabel" class="field">賽事／聯盟
+        <label id="newPlayerCompetitionLabel" class="field">聯盟
           <select id="newPlayerCompetition"></select>
         </label>
-        <label id="newPlayerTeamLabel" class="field">代表隊／球隊
-          <input id="newPlayerExternalTeam" type="text" maxlength="40" placeholder="例如：中華台北、Los Angeles Dodgers" />
+        <label id="newPlayerTeamLabel" class="field">球隊
+          <select id="newPlayerExternalTeam"></select>
         </label>
-        <label id="newPlayerYearLabel" class="field">年份
-          <input id="newPlayerExternalYear" type="number" min="1990" max="2100" step="1" />
+        <label id="newPlayerYearLabel" class="field">賽季
+          <input id="newPlayerExternalYear" type="number" min="1900" max="2100" />
         </label>
       </div>
-
+      <div id="newPlayerScopeHelp" class="subtle" style="margin-top:10px"></div>
       <div class="section-actions">
-        <button id="createManualPlayerBtn" class="press-btn">純新增</button>
-        <button id="createCpblPlayerBtn" class="press-btn primary">搜尋中職資料</button>
-        <button id="createExternalPlayerBtn" class="press-btn primary hidden">搜尋國外聯盟資料</button>
+        <button id="saveNewPlayerBtn" class="press-btn primary">新增</button>
       </div>
-      <div id="newPlayerScopeHelp" class="small new-player-scope-help">純新增不連結中職；搜尋中職資料會用姓名＋背號查詢。建立後抓取單場資料會自動先查一軍，再查二軍。</div>
     </div>
   </dialog>
 
   <dialog id="allPlayersDialog">
     <div class="dialog-body">
       <div class="dialog-head">
-        <h2>所有球員</h2>
+        <h2>全部球員</h2>
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="all-player-tools">
-        <button id="allSearchPlayerBtn" class="press-btn">搜尋球員</button>
-        <button id="batchReportBtn" class="press-btn primary">批量生成戰報</button>
-        <button id="allDeletePlayerBtn" class="press-btn danger">刪除球員</button>
+      <div class="all-player-filters">
+        <div id="allCpblFilters" class="cpbl-filter-row"></div>
+        <div id="allLevelFilters" class="home-special-filter-row"></div>
+        <div id="allTeamFilters" class="home-special-filter-row"></div>
       </div>
-      <div id="allCpblFilters" class="home-cpbl-filter-grid all-cpbl-filter-grid hidden" aria-label="中職球員篩選">
-        <div class="home-filter-field">
-          <span>類別</span>
-          <button id="allLevelFilterButton" class="all-filter-trigger" type="button" aria-haspopup="dialog" aria-controls="filterChoiceDialog">
-            <span data-filter-label>全部</span>
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <select id="allLevelFilters" class="custom-filter-native" aria-label="類別" tabindex="-1">
-            <option value="ALL">全部</option>
-            <option value="A">一軍</option>
-            <option value="D">二軍</option>
-            <option value="OTHER">其他</option>
-          </select>
-        </div>
-        <div class="home-filter-field">
-          <span>球隊</span>
-          <button id="allTeamFilterButton" class="all-filter-trigger" type="button" aria-haspopup="dialog" aria-controls="filterChoiceDialog">
-            <span data-filter-label>全部球隊</span>
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <select id="allTeamFilters" class="custom-filter-native" aria-label="球隊" tabindex="-1">
-            <option value="">全部球隊</option>
-            <option value="富邦悍將">富邦悍將</option>
-            <option value="台鋼雄鷹">台鋼雄鷹</option>
-            <option value="中信兄弟">中信兄弟</option>
-            <option value="樂天桃猿">樂天桃猿</option>
-            <option value="統一7-ELEVEn獅">統一7-ELEVEn獅</option>
-            <option value="味全龍">味全龍</option>
-          </select>
-        </div>
-      </div>
-      <div class="player-group">
+      <div class="all-player-section">
         <h3>投手</h3>
-        <div id="allPitchers" class="player-list"></div>
+        <div id="allPitchers" class="all-player-grid"></div>
       </div>
-      <div class="player-group">
-        <h3>打者</h3>
-        <div id="allHitters" class="player-list"></div>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog id="filterChoiceDialog" class="filter-choice-dialog" aria-labelledby="filterChoiceTitle">
-    <div class="filter-choice-shell">
-      <div class="filter-choice-head">
-        <div>
-          <span class="filter-choice-kicker">FILTER</span>
-          <h2 id="filterChoiceTitle">選擇條件</h2>
-        </div>
-        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
-      </div>
-      <div id="filterChoiceList" class="filter-choice-list" role="listbox"></div>
-    </div>
-  </dialog>
-
-  <dialog id="seasonPickerDialog" class="filter-choice-dialog app-season-dialog" aria-labelledby="seasonPickerTitle">
-    <div class="filter-choice-shell">
-      <div class="filter-choice-head">
-        <div>
-          <span class="filter-choice-kicker">SEASON</span>
-          <h2 id="seasonPickerTitle">選擇賽季</h2>
-        </div>
-        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
-      </div>
-      <div id="seasonPickerList" class="filter-choice-list app-season-list" role="listbox"></div>
-    </div>
-  </dialog>
-
-  <dialog id="datePickerDialog" class="filter-choice-dialog app-date-dialog" aria-labelledby="datePickerTitle">
-    <div class="filter-choice-shell">
-      <div class="filter-choice-head">
-        <div>
-          <span class="filter-choice-kicker">DATE</span>
-          <h2 id="datePickerTitle">選擇日期</h2>
-        </div>
-        <button class="press-btn dialog-close filter-choice-close" type="button" aria-label="關閉" title="關閉">×</button>
-      </div>
-      <div id="datePickerBody" class="app-date-picker-body">
-        <div class="app-date-monthbar">
-          <button id="datePickerPrev" class="app-date-nav" type="button" aria-label="上個月">‹</button>
-          <div class="app-date-heading">
-            <button id="datePickerYearButton" class="app-date-year-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="datePickerYearGrid">
-              <span id="datePickerYearLabel">年份</span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 9 5 5 5-5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div id="datePickerMonthLabel" class="app-date-month-label"></div>
-          </div>
-          <button id="datePickerNext" class="app-date-nav" type="button" aria-label="下個月">›</button>
-        </div>
-        <div id="datePickerYearGrid" class="app-date-year-grid hidden" role="listbox" aria-label="年份"></div>
-        <div id="datePickerWeekdays" class="app-date-weekdays" aria-hidden="true">
-          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-        </div>
-        <div id="datePickerGrid" class="app-date-grid" role="grid" aria-label="日期"></div>
-        <div class="app-date-footer">
-          <button id="datePickerToday" class="press-btn app-date-today" type="button">今天</button>
-        </div>
+      <div class="all-player-section">
+        <h3>野手</h3>
+        <div id="allHitters" class="all-player-grid"></div>
       </div>
     </div>
   </dialog>
 
-  <div id="appToast" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
-    <span class="app-toast-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none"><path d="m6.5 12.5 3.4 3.4 7.6-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </span>
-    <span id="appToastText">已完成</span>
-  </div>
+  <dialog id="filterChoiceDialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2 id="filterChoiceTitle">選擇篩選</h2>
+        <button id="filterChoiceCloseBtn" class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
+      </div>
+      <div id="filterChoiceList" class="filter-choice-list"></div>
+    </div>
+  </dialog>
 
   <dialog id="deletePlayerDialog">
     <div class="dialog-body">
@@ -394,10 +304,7 @@
         <h2>刪除球員</h2>
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="small" style="line-height:1.65;margin-bottom:12px">
-        點選要刪除的球員後會進行兩次確認。刪除後會一併移除該球員的照片與所有日期戰報資料。
-      </div>
-      <div id="deletePlayerList" class="player-search-results"></div>
+      <div id="deletePlayerList" class="delete-player-list"></div>
     </div>
   </dialog>
 
@@ -407,24 +314,22 @@
         <h2>搜尋球員</h2>
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="player-search-box">
-        <input id="playerSearchInput" class="player-search-input" type="search" autocomplete="off" placeholder="輸入姓名、背號、球隊、位置…" />
-      </div>
-      <div class="player-search-hint">可輸入完整姓名、其中一個字、背號、球隊名稱、投手／打者或守備位置。</div>
+      <label class="field">搜尋
+        <input id="playerSearchInput" type="search" autocomplete="off" placeholder="輸入球員姓名" />
+      </label>
       <div id="playerSearchResults" class="player-search-results"></div>
     </div>
   </dialog>
 
   <dialog id="batchReportDialog">
-    <div class="dialog-body">
+    <div class="dialog-body batch-report-dialog-body">
       <div class="dialog-head">
-        <h2>批量生成戰報</h2>
+        <h2>批次戰報</h2>
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
-      <div class="small" style="line-height:1.65">
-        日期：<strong id="batchReportDate"></strong><br>
-        生成時會同步球員累積成績；按「下載」或「全部下載」前會再同步一次最新數據並重新產圖。本機沒有單場戰報時會自動查中職官網，優先一軍，若只有二軍出賽就生成二軍戰報。
-      </div>
+      <label class="field">日期
+        <input id="batchReportDate" type="date" />
+      </label>
       <div class="section-actions" style="margin-top:12px">
         <button id="batchReportSelectAllBtn" class="press-btn">全選</button>
         <button id="batchReportClearBtn" class="press-btn">取消全選</button>
@@ -457,9 +362,9 @@
       </div>
     </div>
   </dialog>
-  <script src="./live-static-update.js?v=v2.51-static2"></script>
+  <script src="./live-static-update.js?v=v2.51-static3"></script>
   <script src="./app.js?v=v2.51"></script>
-  <script src="./cpbl-cache-router.js?v=v2.51-cache1"></script>
+  <script src="./cpbl-cache-router.js?v=v2.51-cache2"></script>
   <script src="./game-detail-enhancement.js?v=v2.51-ui1"></script>
 </body>
 </html>
