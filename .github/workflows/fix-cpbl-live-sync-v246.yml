@@ -20,17 +20,19 @@ jobs:
           from pathlib import Path
 
           p = Path('js/11-home-international.js')
-          s = p.read_text(encoding='utf-8')
-          old = """                const verifiedStatus = String(verified?.status || '').toLowerCase();
-                if (verifiedStatus) item.status = verifiedStatus;
-                if (verified?.game?.awayScore !== undefined && verified.game.awayScore !== null) item.awayScore = verified.game.awayScore;
-                if (verified?.game?.homeScore !== undefined && verified.game.homeScore !== null) item.homeScore = verified.game.homeScore;
-                if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;"""
-          new = """                syncHomeDailyGameFromDetail('CPBL', date, item, verified);
-                if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;"""
-          if old not in s:
-              raise SystemExit('CPBL live verification block not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          lines = p.read_text(encoding='utf-8').splitlines()
+          start = next((i for i, line in enumerate(lines) if "const verifiedStatus = String(verified?.status || '').toLowerCase();" in line), None)
+          if start is None:
+              raise SystemExit('CPBL verifiedStatus line not found')
+          end = next((i for i in range(start, min(start + 12, len(lines))) if "if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;" in lines[i]), None)
+          if end is None:
+              raise SystemExit('CPBL inningLabel line not found')
+          indent = lines[start][:len(lines[start]) - len(lines[start].lstrip())]
+          lines[start:end + 1] = [
+              indent + "syncHomeDailyGameFromDetail('CPBL', date, item, verified);",
+              indent + "if (verified?.game?.inningLabel) item.inningLabel = verified.game.inningLabel;",
+          ]
+          p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
           for name in ['js/00-core-config.js', 'index.html', 'manifest.webmanifest', 'game-detail-enhancement.js', 'service-worker.js']:
               p = Path(name)
