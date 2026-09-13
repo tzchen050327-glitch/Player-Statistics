@@ -8,14 +8,25 @@
   let channel = null;
   let watch = null;
   let lastRevision = -1;
+  let dayChannel = null;
+  let dayWatch = '';
+  const dayRevisions = new Map();
   let loader = null;
 
   window.__cpblRealtimeConnected = false;
+  window.__cpblDayRealtimeConnected = false;
 
   function emitStatus(connected, reason = '') {
     window.__cpblRealtimeConnected = Boolean(connected);
     window.dispatchEvent(new CustomEvent('cpbl-live-realtime-status', {
       detail: { connected:Boolean(connected), reason, version:VERSION }
+    }));
+  }
+
+  function emitDayStatus(connected, reason = '') {
+    window.__cpblDayRealtimeConnected = Boolean(connected);
+    window.dispatchEvent(new CustomEvent('cpbl-live-day-realtime-status', {
+      detail: { connected:Boolean(connected), reason, date:dayWatch, version:VERSION }
     }));
   }
 
@@ -41,6 +52,7 @@
     }).catch(error => {
       loader = null;
       emitStatus(false, error?.message || String(error));
+      emitDayStatus(false, error?.message || String(error));
       throw error;
     });
     return loader;
@@ -97,6 +109,19 @@
     if (['final','cancelled','postponed'].includes(status)) stopWatch(false);
   }
 
+  function acceptDayRow(row) {
+    if (!dayWatch || !row || String(row.game_date || '') !== dayWatch) return;
+    const detail = publishedDetail(row);
+    if (!detail) return;
+    const gameId = String(row.game_id || detail?.game?.id || '');
+    if (!gameId) return;
+    const revision = Number(row.published_revision ?? -1);
+    const prev = Number(dayRevisions.get(gameId) ?? -1);
+    if (Number.isFinite(revision) && revision >= 0 && revision <= prev) return;
+    if (Number.isFinite(revision) && revision >= 0) dayRevisions.set(gameId, revision);
+    window.dispatchEvent(new CustomEvent('cpbl-live-day-update', { detail:{ row, detail, version:VERSION } }));
+  }
+
   async function stopWatch(emit = true) {
     const old = channel;
     channel = null;
@@ -133,6 +158,41 @@
     }
   }
 
+  async function stopDayWatch(emit = true) {
+    const old = dayChannel;
+    dayChannel = null;
+    dayWatch = '';
+    dayRevisions.clear();
+    if (old && client) {
+      try { await client.removeChannel(old); } catch {}
+    }
+    if (emit) emitDayStatus(false, 'unwatched');
+  }
+
+  async function startDayWatch(input = {}) {
+    const date = String(input.date || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    if (dayWatch === date && dayChannel) return;
+    await stopDayWatch(false);
+    dayWatch = date;
+    try {
+      const sb = await getClient();
+      if (dayWatch !== date) return;
+      dayChannel = sb.channel(`cpbl-day-${date}-${Math.random().toString(36).slice(2,8)}`)
+        .on('postgres_changes', {
+          event:'*', schema:'public', table:'cpbl_live_game_cache', filter:`game_date=eq.${date}`
+        }, payload => acceptDayRow(payload?.new))
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') emitDayStatus(true, 'subscribed');
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitDayStatus(false, status);
+        });
+    } catch (error) {
+      emitDayStatus(false, error?.message || String(error));
+    }
+  }
+
   window.addEventListener('cpbl-live-watch', event => startWatch(event?.detail || {}));
   window.addEventListener('cpbl-live-unwatch', () => stopWatch());
+  window.addEventListener('cpbl-live-watch-day', event => startDayWatch(event?.detail || {}));
+  window.addEventListener('cpbl-live-unwatch-day', () => stopDayWatch());
 })();
