@@ -1,0 +1,82 @@
+name: Apply v2.69 runner diamond size
+on:
+  push:
+    paths:
+      - '.github/v269-runner-diamond-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enlarge landscape runner diamond and sync v2.69
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          css = Path('game-detail-enhancement.css')
+          text = css.read_text(encoding='utf-8')
+          marker = '/* ===== v2.69 RUNNER DIAMOND SCALE ===== */'
+          if marker not in text:
+              text += r'''
+
+/* ===== v2.69 RUNNER DIAMOND SCALE ===== */
+@media (orientation:landscape) and (min-width:700px){
+  .gdx-runner-top{padding-top:10px!important;}
+  .gdx-runner-diamond{width:min(74%,190px)!important;}
+  .gdx-runner-base{width:22px;height:22px;}
+  .gdx-runner-second{margin-left:-11px;}
+  .gdx-runner-third,.gdx-runner-first{margin-top:-11px;}
+  .gdx-runner-home{width:20px;height:18px;margin-left:-10px;}
+}
+@media (orientation:landscape) and (min-width:700px) and (max-width:980px){
+  .gdx-runner-top{padding-top:8px!important;}
+  .gdx-runner-diamond{width:min(72%,156px)!important;}
+  .gdx-runner-base{width:20px;height:20px;}
+  .gdx-runner-second{margin-left:-10px;}
+  .gdx-runner-third,.gdx-runner-first{margin-top:-10px;}
+  .gdx-runner-home{width:18px;height:16px;margin-left:-9px;}
+}
+/* ===== v2.69 RUNNER DIAMOND SCALE END ===== */
+'''
+              css.write_text(text, encoding='utf-8')
+
+          files = [
+              'app.js','index.html','service-worker.js','game-detail-enhancement.js',
+              'game-detail-enhancement.css','report-layout.js','report-layout.css',
+              'cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest',
+              'rescue.html','styles.css'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              t = p.read_text(encoding='utf-8')
+              t = t.replace('v2.68','v2.69').replace('v268','v269').replace('V268','V269')
+              t = t.replace('pwa-v268','pwa-v269')
+              p.write_text(t, encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.69"}\n', encoding='utf-8')
+          PY
+      - name: Verify v2.69
+        shell: bash
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -q 'v2.69 RUNNER DIAMOND SCALE' game-detail-enhancement.css
+          grep -q 'width:min(72%,156px)!important' game-detail-enhancement.css
+          grep -q '"version":"v2.69"' version.json
+          grep -q "APP_VERSION = 'v2.69'" app.js
+          grep -q 'baseball-player-card-pwa-v269' service-worker.js
+          grep -q 'game-detail-enhancement.css?v=v2.69' index.html
+      - name: Commit v2.69
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css version.json
+          git commit -m 'Release v2.69 enlarge landscape runner diamond'
+          git push
