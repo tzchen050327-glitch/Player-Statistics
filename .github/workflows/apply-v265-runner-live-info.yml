@@ -1,0 +1,81 @@
+name: Apply v2.65 runner live info
+on:
+  push:
+    paths:
+      - '.github/v265-runner-live-info-trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v2.65 runner live info
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('game-detail-enhancement.js')
+          s = p.read_text(encoding='utf-8')
+
+          old = """  function renderRunnerDiamond(detail) {\n    const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'—'):'';\n    return `<div class=\"gdx-runner-card\"><div class=\"gdx-mini-title\">壘上</div><div class=\"gdx-runner-diamond\"><div class=\"gdx-runner-base gdx-runner-second ${state.second?'is-on':''}\"></div><div class=\"gdx-runner-base gdx-runner-third ${state.third?'is-on':''}\"></div><div class=\"gdx-runner-base gdx-runner-first ${state.first?'is-on':''}\"></div><span class=\"gdx-runner-name gdx-runner-name-second\">${label(state.second,names.second)}</span><span class=\"gdx-runner-name gdx-runner-name-third\">${label(state.third,names.third)}</span><span class=\"gdx-runner-name gdx-runner-name-first\">${label(state.first,names.first)}</span><div class=\"gdx-runner-home\"></div></div><div class=\"gdx-runner-outs\">${currentOuts(detail)}出局</div></div>`;\n  }\n"""
+
+          new = """  function shortPaResult(play) {\n    const text=compactName(play?.result||play?.raw||play?.description||'');\n    if(!text) return '—';\n    if(/四壞|保送|walk/i.test(text)) return '四壞';\n    if(/觸身|死球|hit by pitch/i.test(text)) return '觸身';\n    if(/三振|strikeout/i.test(text)) return '三振';\n    if(/全壘打|全塁打|home run/i.test(text)) return '全壘打';\n    if(/三壘安打|三塁打|triple/i.test(text)) return '三安';\n    if(/二壘安打|二塁打|double/i.test(text)) return '二安';\n    if(/安打|single/i.test(text)) return '一安';\n    if(/雙殺|併殺|double play|DP\\b/i.test(text)) return '雙殺';\n    if(/犧牲飛球|犠牲フライ|sacrifice fly/i.test(text)) return '犧飛';\n    if(/犧牲觸擊|犧牲短打|犠打|sacrifice bunt/i.test(text)) return '犧打';\n    if(/界外飛|邪飛/i.test(text)) return '界飛';\n    if(/飛球|飛出|flyout|フライ/i.test(text)) return '飛球';\n    if(/平飛|lineout|ライナー/i.test(text)) return '平飛';\n    if(/滾地|滾地球|groundout|ゴロ/i.test(text)) return '滾地';\n    return text.length>7?`${text.slice(0,7)}…`:text;\n  }\n\n  function currentBatterPaSummary(detail) {\n    const current=detail?.current?.batter||{};\n    const name=compactName(current.fullName||current.name||current.playerName||'');\n    const acnt=String(current.acnt||current.batterAcnt||current.playerAcnt||'').trim();\n    const plays=Array.isArray(detail?.plays)?detail.plays:[];\n    const matches=plays.filter(play=>{\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n      if(acnt&&paAcnt) return acnt===paAcnt;\n      const paName=compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||'');\n      return !!(name&&paName&&samePlayerName(name,paName));\n    });\n    return {name:name||'等待打者',results:matches.map(shortPaResult).filter(Boolean)};\n  }\n\n  function currentPitcherSummary(detail,side) {\n    const current=detail?.current?.pitcher||{};\n    const fallback=currentPitcherInfo(detail,side);\n    const stats=current.stats||current;\n    return {\n      name:compactName(current.fullName||current.name||current.playerName||fallback.name||'')||'投手資料讀取中',\n      pitches:safeCell(stats.pitches??stats.pitchCount??stats.pitchCnt??fallback.pitches??'')\n    };\n  }\n\n  function renderRunnerDiamond(detail,defenseSide) {\n    const state=normalizeBaseState(currentBaseState(detail)), names=currentRunnerNames(detail), label=(on,name)=>on?esc(name||'—'):'';\n    const pitcher=currentPitcherSummary(detail,defenseSide), batter=currentBatterPaSummary(detail);\n    const paHtml=batter.results.length?batter.results.map((result,i)=>`<span title=\"第${i+1}打席\">${esc(result)}</span>`).join(''):'<span class=\"is-empty\">尚未有打席</span>';\n    return `<div class=\"gdx-runner-card\"><div class=\"gdx-mini-title\">壘上</div><div class=\"gdx-runner-top\"><div class=\"gdx-runner-diamond\"><div class=\"gdx-runner-base gdx-runner-second ${state.second?'is-on':''}\"></div><div class=\"gdx-runner-base gdx-runner-third ${state.third?'is-on':''}\"></div><div class=\"gdx-runner-base gdx-runner-first ${state.first?'is-on':''}\"></div><span class=\"gdx-runner-name gdx-runner-name-second\">${label(state.second,names.second)}</span><span class=\"gdx-runner-name gdx-runner-name-third\">${label(state.third,names.third)}</span><span class=\"gdx-runner-name gdx-runner-name-first\">${label(state.first,names.first)}</span><div class=\"gdx-runner-home\"></div></div><div class=\"gdx-runner-outs\">${currentOuts(detail)}出局</div></div><div class=\"gdx-live-strip\"><div class=\"gdx-live-pitcher-row\"><span>投手</span><strong>${esc(pitcher.name)}</strong><b>用球 ${esc(pitcher.pitches||'—')}</b></div><div class=\"gdx-live-batter-row\"><div><span>打者</span><strong>${esc(batter.name)}</strong></div><div class=\"gdx-pa-results\">${paHtml}</div></div></div></div>`;\n  }\n"""
+
+          if old not in s:
+              raise SystemExit('renderRunnerDiamond target not found')
+          s = s.replace(old, new, 1)
+
+          old_call = '${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail)}'
+          new_call = '${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail,defense)}'
+          if old_call not in s:
+              raise SystemExit('renderRunnerDiamond call target not found')
+          s = s.replace(old_call, new_call, 1)
+          p.write_text(s, encoding='utf-8')
+
+          css = Path('game-detail-enhancement.css')
+          c = css.read_text(encoding='utf-8')
+          c += r'''\n\n/* ===== v2.65 RUNNER LIVE INFO ===== */\n@media (orientation:landscape) and (min-width:700px){\n  .gdx-runner-card{justify-content:flex-start!important;padding:0 9px 9px!important;}\n  .gdx-runner-top{width:100%;min-height:0;flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:24px;}\n  .gdx-runner-diamond{width:min(58%,156px)!important;margin-top:0!important;}\n  .gdx-runner-outs{margin-top:-1px!important;}\n  .gdx-live-strip{width:100%;flex:0 0 auto;margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.11);display:grid;gap:7px;}\n  .gdx-live-pitcher-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;}\n  .gdx-live-pitcher-row>span,.gdx-live-batter-row>div:first-child>span{font-size:8px;font-weight:900;letter-spacing:.08em;color:#86a6c7;}\n  .gdx-live-pitcher-row>strong,.gdx-live-batter-row>div:first-child>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:950;color:#fff;}\n  .gdx-live-pitcher-row>b{padding:3px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:rgba(255,255,255,.04);font-size:9px;font-weight:900;color:#dbeaff;white-space:nowrap;}\n  .gdx-live-batter-row{min-width:0;display:grid;gap:5px;}\n  .gdx-live-batter-row>div:first-child{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px;min-width:0;}\n  .gdx-pa-results{display:flex;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:none;padding-bottom:1px;}\n  .gdx-pa-results::-webkit-scrollbar{display:none;}\n  .gdx-pa-results>span{flex:0 0 auto;padding:3px 6px;border:1px solid rgba(121,184,247,.24);border-radius:999px;background:rgba(89,156,224,.10);font-size:8px;font-weight:900;color:#dcecff;white-space:nowrap;}\n  .gdx-pa-results>span.is-empty{border-color:rgba(255,255,255,.09);background:transparent;color:#7894af;}\n}\n@media (orientation:landscape) and (min-width:700px) and (max-width:980px){\n  .gdx-runner-card{padding:0 6px 6px!important;}\n  .gdx-runner-top{padding-top:19px;}\n  .gdx-runner-diamond{width:min(50%,116px)!important;}\n  .gdx-live-strip{margin-top:5px;padding-top:5px;gap:4px;}\n  .gdx-live-pitcher-row>strong,.gdx-live-batter-row>div:first-child>strong{font-size:9px;}\n  .gdx-live-pitcher-row>b,.gdx-pa-results>span{font-size:7px;padding:2px 4px;}\n}\n/* ===== v2.65 RUNNER LIVE INFO END ===== */\n'''
+          css.write_text(c, encoding='utf-8')
+
+          files = [
+              'app.js','index.html','service-worker.js','game-detail-enhancement.js',
+              'game-detail-enhancement.css','report-layout.js','report-layout.css',
+              'cpbl-realtime.js','live-static-update.js','cpbl-cache-router.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest',
+              'rescue.html','styles.css'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              t = p.read_text(encoding='utf-8')
+              t = t.replace('v2.64','v2.65').replace('v264','v265').replace('V264','V265')
+              t = t.replace('pwa-v264','pwa-v265')
+              p.write_text(t, encoding='utf-8')
+
+          Path('version.json').write_text('{"version":"v2.65"}\n', encoding='utf-8')
+          PY
+
+      - name: Verify v2.65
+        shell: bash
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          grep -q '"version":"v2.65"' version.json
+          grep -q "APP_VERSION = 'v2.65'" app.js
+          grep -q "baseball-player-card-pwa-v265" service-worker.js
+          grep -q 'function currentBatterPaSummary' game-detail-enhancement.js
+          grep -q 'renderRunnerDiamond(detail,defense)' game-detail-enhancement.js
+          grep -q 'gdx-live-pitcher-row' game-detail-enhancement.css
+
+      - name: Commit v2.65
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css version.json
+          git commit -m 'Release v2.65 add live pitcher and batter PA strip'
+          git push
