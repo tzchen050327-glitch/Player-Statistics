@@ -22,6 +22,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Repair patch runner escaping
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/scripts/apply_v298.py')
+          s = p.read_text(encoding='utf-8')
+          old = "out, n = re.subn(pattern, repl, text, count=1, flags=flags)"
+          new = "out, n = re.subn(pattern, lambda _m: repl, text, count=1, flags=flags)"
+          if old not in s:
+              raise SystemExit('sub_once replacement anchor missing')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Apply v2.98 patch
         run: python .github/scripts/apply_v298.py
       - name: Syntax checks
