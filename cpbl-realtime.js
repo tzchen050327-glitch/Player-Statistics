@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.77';
+  const VERSION = 'v2.86';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -96,7 +96,7 @@
     const row = Array.isArray(rows) ? rows[0] : null;
     const detail = publishedDetail(row);
     const status = String(detail?.status || row?.status || '').toLowerCase();
-    return { ok:Boolean(detail) && isLiveStatus(status), detail:isLiveStatus(status) ? detail : null, row, gameStatus:status };
+    return { ok:Boolean(detail), detail, row, gameStatus:status, isLive:isLiveStatus(status) };
   }
   window.__cpblRealtimeReadPublished = readPublished;
 
