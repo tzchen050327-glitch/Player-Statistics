@@ -450,7 +450,7 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
 /* ===== v2.77 RUNNER DIAMOND SCALE END ===== */
 
 
-/* ===== v3.01 PREVIOUS BATTER ===== */
+/* ===== v3.02 PREVIOUS BATTER ===== */
 @media (orientation:landscape) and (min-width:700px){
   .gdx-live-previous-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;padding-top:5px;border-top:1px solid rgba(255,255,255,.08)}
   .gdx-live-previous-row>span{font-size:8px;font-weight:900;letter-spacing:.08em;color:#86a6c7}
@@ -462,4 +462,4 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
   .gdx-live-previous-row>strong{font-size:8px}
   .gdx-live-previous-row>b{font-size:7px;padding:2px 4px}
 }
-/* ===== v3.01 PREVIOUS BATTER END ===== */
+/* ===== v3.02 PREVIOUS BATTER END ===== */
