@@ -245,18 +245,22 @@
       anchorPlay=[...plays].reverse().find(p=>String(p?.half||'')===info.half&&Number(p?.inning)<info.inning&&completedPlateAppearance(p))||null;
     }
 
-    let previousOrder=Number(anchorPlay?.battingOrder||0);
-    if(!(previousOrder>=1&&previousOrder<=9) && anchorPlay){
-      const acnt=String(anchorPlay?.batterAcnt||'').trim();
-      const name=compactName(anchorPlay?.batter?.fullName||anchorPlay?.batter?.name||anchorPlay?.batter||anchorPlay?.hitter||'');
-      const matched=roster.find(entry=>
-        (acnt&&String(entry?.acnt||'').trim()===acnt) || (name&&samePlayerName(entry?.name,name))
-      );
-      previousOrder=Number(matched?.order||0);
-    }
-    const nextOrder=previousOrder>=1&&previousOrder<=9 ? (previousOrder%9)+1 : 1;
-    const entry=roster.find(player=>Number(player?.order)===nextOrder) || roster[nextOrder-1] || null;
-    return entry ? {...entry,inferredFromCompletedPa:true} : null;
+    if(!anchorPlay) return roster.find(player=>Number(player?.order)===1) || roster[0] || null;
+
+    // IMPORTANT: CPBL play.battingOrder is the ordinal PA number inside the current
+    // half-inning, not the player's fixed lineup slot. Never use it to advance the lineup.
+    const acnt=String(anchorPlay?.batterAcnt||'').trim();
+    const name=compactName(anchorPlay?.batter?.fullName||anchorPlay?.batter?.name||anchorPlay?.batter||anchorPlay?.hitter||'');
+    const matched=roster.find(entry=>
+      (acnt&&String(entry?.acnt||'').trim()===acnt) || (name&&samePlayerName(entry?.name,name))
+    );
+    if(!matched) return null;
+
+    const previousOrder=Number(matched?.order||0);
+    if(!(previousOrder>=1&&previousOrder<=9)) return null;
+    const nextOrder=(previousOrder%9)+1;
+    const entry=roster.find(player=>Number(player?.order)===nextOrder) || null;
+    return entry ? {...entry,inferredFromCompletedPa:true,previousLineupOrder:previousOrder} : null;
   }
 
   function effectiveCurrentBatter(detail) {
@@ -273,9 +277,19 @@
 
     if(sameHalf && completedPlateAppearance(last)){
       const lastName=compactName(last?.batter?.fullName||last?.batter?.name||last?.batter||last?.hitter||'');
-      // A completed PA is stronger evidence than a current.batter field that still points at that hitter.
+      const offense=currentOffenseSide(detail);
+      const offenseRoster=lineupEntries(detail,offense);
+      const officialEntry=offenseRoster.find(p=>samePlayerName(p?.name,officialName));
+
+      // A completed PA defines exactly one next lineup slot. Keep that inferred hitter
+      // stable until CPBL current.batter catches up; this prevents visual 2->4->2 bouncing.
       if(lastName&&samePlayerName(officialName,lastName)) return expected;
-      return official;
+      if(officialEntry && Number(officialEntry?.order)===Number(expected?.order)) return official;
+      if(!officialEntry) {
+        // A name not present in the latest lineup can be a just-announced pinch hitter.
+        return official;
+      }
+      return expected;
     }
 
     if(!sameHalf){
