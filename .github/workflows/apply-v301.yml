@@ -22,10 +22,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Fix v3.01 patch script bootstrap
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/apply_v301.py')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          for i,line in enumerate(lines):
+              if line.startswith("old_tail="):
+                  lines[i] = "old_tail='<div class=\"gdx-pa-results\">${paHtml}</div></div></div></div>'; new_tail='<div class=\"gdx-pa-results\">${paHtml}</div></div>${prevHtml}</div></div>'"
+                  break
+          else:
+              raise SystemExit('old_tail bootstrap line missing')
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
       - name: Apply v3.01 patch
         run: python .github/scripts/apply_v301.py
       - name: Syntax checks
         run: |
+          python -m py_compile .github/scripts/apply_v301.py
           node --check app.js
           node --check cpbl-realtime.js
           node --check npb-realtime.js
