@@ -1,0 +1,33 @@
+name: Apply v2.80 postseason score safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v280.yml'
+      - '.github/scripts/apply_v280.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v2.80 patch
+        run: python3 .github/scripts/apply_v280.py
+      - name: Commit v2.80
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git add postseason-history.js app.js index.html service-worker.js version.json
+          git commit -m "Release v2.80 postseason score safety and backend cleanup"
+          git push
