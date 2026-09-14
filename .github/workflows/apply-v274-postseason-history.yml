@@ -1,0 +1,132 @@
+name: Apply v2.74 postseason history
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/v274-postseason-history-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply postseason history browser
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, got {count}')
+              return text.replace(old, new, 1)
+
+          Path('postseason-history.js').write_text(Path('.github/patches/v274-postseason-history.js').read_text())
+          Path('postseason-history.css').write_text(Path('.github/patches/v274-postseason-history.css').read_text())
+
+          index = Path('index.html').read_text()
+          index = replace_once(
+              index,
+              '  <link rel="stylesheet" href="./landscape-state.css?v=v2.73" />\n',
+              '  <link rel="stylesheet" href="./landscape-state.css?v=v2.73" />\n  <link rel="stylesheet" href="./postseason-history.css?v=v2.73" />\n',
+              'index postseason css'
+          )
+          index = replace_once(
+              index,
+              '        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>\n        <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>',
+              '        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>\n        <button class="press-btn tab-btn hidden" data-tab="postseason">季後賽</button>\n        <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>',
+              'index postseason tab'
+          )
+          index = replace_once(
+              index,
+              '  <script src="./app.js?v=v2.73"></script>\n',
+              '  <script src="./app.js?v=v2.73"></script>\n  <script src="./postseason-history.js?v=v2.73"></script>\n',
+              'index postseason script'
+          )
+          Path('index.html').write_text(index)
+
+          app = Path('app.js').read_text()
+          player_scope = """    function playerScope(player) {
+              const scope = String(player?.scope || '').trim();
+              return scope === 'international' || scope === 'overseas' ? scope : 'cpbl';
+            }
+          """
+          app = replace_once(
+              app,
+              player_scope,
+              player_scope + """
+            window.__getPlayerContext = () => ({ player:selectedPlayer(), selectedSeason, selectedTab });
+            window.addEventListener('postseason-open-game', event => {
+              const detail = event?.detail || {};
+              if (detail?.game && detail?.league && detail?.date) openHomeGameDetail(detail.game, detail.league, detail.date);
+            });
+          """,
+              'app player context bridge'
+          )
+          app = replace_once(
+              app,
+              "      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive));",
+              "      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive && selectedTab !== 'postseason'));",
+              'app postseason season picker'
+          )
+          Path('app.js').write_text(app)
+
+          sw = Path('service-worker.js').read_text()
+          sw = replace_once(
+              sw,
+              "  './npb-realtime.js?v=v2.73',\n  './app.js?v=v2.73',",
+              "  './npb-realtime.js?v=v2.73',\n  './postseason-history.css?v=v2.73',\n  './app.js?v=v2.73',\n  './postseason-history.js?v=v2.73',",
+              'service worker postseason assets'
+          )
+          Path('service-worker.js').write_text(sw)
+
+          files = [
+              'app.js','index.html','service-worker.js','game-detail-enhancement.js','game-detail-enhancement.css',
+              'report-layout.js','report-layout.css','cpbl-realtime.js','npb-realtime.js','live-static-update.js',
+              'cpbl-cache-router.js','landscape-state.js','landscape-state.css','manifest.webmanifest','rescue.html','styles.css',
+              'postseason-history.js','postseason-history.css'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              text = p.read_text()
+              text = text.replace('v2.73','v2.74').replace('v273','v274')
+              p.write_text(text)
+          Path('version.json').write_text('{"version":"v2.74"}\n')
+          PY
+
+      - name: Verify v2.74
+        run: |
+          node --check app.js
+          node --check postseason-history.js
+          node --check game-detail-enhancement.js
+          grep -q "const APP_VERSION = 'v2.74'" app.js
+          grep -q 'data-tab="postseason"' index.html
+          grep -q 'postseason-history.js?v=v2.74' index.html
+          grep -q 'postseason-history.css?v=v2.74' index.html
+          grep -q 'postseason-history.js?v=v2.74' service-worker.js
+          grep -q 'baseball-player-card-pwa-v274' service-worker.js
+          grep -q '"version":"v2.74"' version.json
+
+      - name: Commit release
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js version.json manifest.webmanifest rescue.html styles.css \
+            game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css \
+            cpbl-realtime.js npb-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css \
+            postseason-history.js postseason-history.css
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Release v2.74 add historical postseason browser'
+            git push origin HEAD:main
+          fi
