@@ -1,0 +1,139 @@
+name: Apply v2.72 NPB backend live cache
+
+on:
+  push:
+    paths:
+      - '.github/v272-npb-cache-trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch NPB Realtime integration and bump v2.72
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}: {old[:90]!r}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          # Load the NPB realtime client immediately after the existing CPBL client.
+          replace_once('index.html',
+              '  <script src="./cpbl-realtime.js?v=v2.71"></script>\n  <script src="./app.js?v=v2.71"></script>',
+              '  <script src="./cpbl-realtime.js?v=v2.71"></script>\n  <script src="./npb-realtime.js?v=v2.71"></script>\n  <script src="./app.js?v=v2.71"></script>')
+
+          # Keep the new client in the PWA application shell.
+          replace_once('service-worker.js',
+              "  './cpbl-realtime.js?v=v2.71',\n  './app.js?v=v2.71',",
+              "  './cpbl-realtime.js?v=v2.71',\n  './npb-realtime.js?v=v2.71',\n  './app.js?v=v2.71',")
+
+          # Closing a game must release both possible Realtime watches.
+          replace_once('app.js',
+              "      window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));\n      document.body.classList.remove('gdx-cpbl-landscape');",
+              "      window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));\n      window.dispatchEvent(new CustomEvent('npb-live-unwatch'));\n      document.body.classList.remove('gdx-cpbl-landscape');")
+
+          # Both CPBL and NPB can suppress browser polling while Realtime is healthy.
+          replace_once('app.js',
+              "      if (activeHomeGameDetail?.league === 'CPBL' && window.__cpblRealtimeConnected) {\n        el.textContent = '即時推送';\n        return;\n      }",
+              "      const realtimeConnected = activeHomeGameDetail?.league === 'CPBL'\n        ? window.__cpblRealtimeConnected\n        : activeHomeGameDetail?.league === 'NPB'\n          ? window.__npbRealtimeConnected\n          : false;\n      if (realtimeConnected) {\n        el.textContent = '即時推送';\n        return;\n      }")
+
+          replace_once('app.js',
+              "      let delay = 30 * 1000;\n      if (activeHomeGameDetail.league === 'CPBL') {\n        // v2.71: CPBL is pushed by Supabase Realtime. Poll only as a low-frequency\n        // safety net when the Realtime channel is unavailable.\n        if (window.__cpblRealtimeConnected) {\n          updateHomeGameDetailRefreshCountdown();\n          return;\n        }\n        delay = 5 * 60 * 1000;\n      }",
+              "      let delay = 30 * 1000;\n      if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {\n        // v2.72: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.\n        // Browser polling is only a five-minute safety net after a Realtime disconnect.\n        const connected = activeHomeGameDetail.league === 'CPBL'\n          ? window.__cpblRealtimeConnected\n          : window.__npbRealtimeConnected;\n        if (connected) {\n          updateHomeGameDetailRefreshCountdown();\n          return;\n        }\n        delay = 5 * 60 * 1000;\n      }")
+
+          # Start the matching single-game watch when a current-day detail page opens.
+          replace_once('app.js',
+              "      if (league === 'CPBL' && date === localISODate() && game?.id) {\n        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id) } }));\n      } else {\n        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));\n      }",
+              "      if (league === 'CPBL' && date === localISODate() && game?.id) {\n        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id) } }));\n      } else {\n        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));\n      }\n      if (league === 'NPB' && date === localISODate() && game?.id) {\n        window.dispatchEvent(new CustomEvent('npb-live-watch', { detail:{ date, gameId:String(game.id) } }));\n      } else {\n        window.dispatchEvent(new CustomEvent('npb-live-unwatch'));\n      }")
+
+          # Initial NPB detail reads the shared backend cache before hitting the scraper.
+          replace_once('app.js',
+              "        if (!detail) detail = await leagueGameDetailRequest(league, date, game);",
+              "        if (!detail && league === 'NPB' && date === localISODate() && game?.id && typeof window.__npbRealtimeReadPublished === 'function') {\n          try {\n            const published = await window.__npbRealtimeReadPublished(date, String(game.id));\n            detail = published?.detail || null;\n          } catch {}\n        }\n        if (!detail) detail = await leagueGameDetailRequest(league, date, game);")
+
+          # Feed NPB Realtime updates into the same page renderer/cache path as CPBL.
+          marker = "    window.addEventListener('cpbl-live-realtime-status', event => {"
+          npb_handlers = """    window.addEventListener('npb-live-cache-update', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'NPB') return;
+      const row = event?.detail?.row || null;
+      const detail = event?.detail?.detail || row?.published_payload || null;
+      if (!detail?.game) return;
+      const { date, game } = activeHomeGameDetail;
+      const expectedId = String(game?.id || '');
+      const incomingId = String(row?.game_id || detail?.game?.id || '');
+      if (expectedId && incomingId && expectedId !== incomingId) return;
+      const key = homeGameDetailKey('NPB', date, game);
+      homeGameDetailCache.set(key, { at:Date.now(), detail });
+      homeGameDetailErrorStreak = 0;
+      syncHomeDailyGameFromDetail('NPB', date, game, detail);
+      renderHomeGameDetail(detail, game);
+      scheduleHomeGameDetailRefresh(detail);
+    });
+
+    window.addEventListener('npb-live-realtime-status', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'NPB') return;
+      const cached = homeGameDetailCache.get(homeGameDetailKey('NPB', activeHomeGameDetail.date, activeHomeGameDetail.game));
+      if (event?.detail?.connected) {
+        stopHomeGameDetailRefresh();
+        updateHomeGameDetailRefreshCountdown();
+      } else if (cached?.detail) {
+        scheduleHomeGameDetailRefresh(cached.detail);
+      }
+    });
+
+"""
+          replace_once('app.js', marker, npb_handlers + marker)
+
+          # The enhanced landscape renderer must accept cache pushes, not only fetch responses.
+          replace_once('game-detail-enhancement.js',
+              "  new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});",
+              "  const acceptRealtimeDetail = event => {\n    const detail=event?.detail?.detail||event?.detail?.row?.published_payload||null;\n    if (!detail?.game) return;\n    latestDetail=detail;\n    scheduleEnhance();\n  };\n  window.addEventListener('cpbl-live-cache-update',acceptRealtimeDetail);\n  window.addEventListener('npb-live-cache-update',acceptRealtimeDetail);\n\n  new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});")
+
+          # Formal release version lock.
+          files = [
+              'app.js','index.html','styles.css','game-detail-enhancement.css','game-detail-enhancement.js',
+              'live-static-update.js','cpbl-cache-router.js','cpbl-realtime.js','npb-realtime.js',
+              'service-worker.js','rescue.html','report-layout.css','report-layout.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('v2.71','v2.72').replace('v271','v272')
+              p.write_text(s,encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.72"}\n',encoding='utf-8')
+
+          # Release guards.
+          checks = {
+              'app.js':["const APP_VERSION = 'v2.72'", '__npbRealtimeReadPublished', "npb-live-cache-update"],
+              'index.html':['meta name="app-version" content="v2.72"','npb-realtime.js?v=v2.72'],
+              'service-worker.js':["baseball-player-card-pwa-v272","npb-realtime.js?v=v2.72"],
+              'game-detail-enhancement.js':['npb-live-cache-update'],
+              'version.json':['v2.72']
+          }
+          for name, needles in checks.items():
+              text=Path(name).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'{name}: missing release guard {needle!r}')
+      - name: Commit v2.72
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js index.html styles.css game-detail-enhancement.css game-detail-enhancement.js live-static-update.js cpbl-cache-router.js cpbl-realtime.js npb-realtime.js service-worker.js rescue.html report-layout.css report-layout.js landscape-state.js landscape-state.css manifest.webmanifest version.json
+          git commit -m "Release v2.72 add NPB backend cache and Realtime" || exit 0
+          git push
