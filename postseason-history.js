@@ -123,8 +123,11 @@
     if (!ctx?.player || !league) return [];
     const key = playerKey(ctx, league);
     const visible = readVisibleYears();
+    const major = Array.isArray(ctx?.careerYears?.A) ? ctx.careerYears.A : [];
+    const minor = Array.isArray(ctx?.careerYears?.D) ? ctx.careerYears.D : [];
     const prior = candidateYearsCache.get(key) || [];
-    const merged = [...new Set([...prior, ...visible, Number(ctx.selectedSeason)])]
+    const merged = [...new Set([...prior, ...major, ...minor, ...visible, Number(ctx.selectedSeason)])]
+      .map(Number)
       .filter(year => Number.isInteger(year) && year >= 1990 && year <= 2100)
       .sort((a,b) => b-a);
     if (merged.length) candidateYearsCache.set(key, merged);
@@ -245,7 +248,7 @@
       </div>`;
   }
 
-  async function scanPostseasonYears(ctx, league, candidates) {
+  async function scanPostseasonYears(ctx, league, candidates, silent = false) {
     const key = playerKey(ctx, league);
     const stored = readStoredYears(key, candidates);
     if (stored) return { years:stored, failures:[] };
@@ -254,7 +257,7 @@
     let done = 0;
     const years = [];
     const failures = [];
-    showYearScanProgress(0, candidates.length);
+    if (!silent) showYearScanProgress(0, candidates.length);
 
     const worker = async () => {
       while (cursor < candidates.length) {
@@ -268,7 +271,7 @@
           failures.push(year);
         } finally {
           done += 1;
-          showYearScanProgress(done, candidates.length);
+          if (!silent) showYearScanProgress(done, candidates.length);
         }
       }
     };
@@ -280,23 +283,28 @@
     return { years, failures };
   }
 
-  async function preparePostseasonYears(ctx, league) {
+  async function preparePostseasonYears(ctx, league, { background = false } = {}) {
     const key = playerKey(ctx, league);
     let candidates = candidateYearsCache.get(key) || [];
-    if (!candidates.length) candidates = rememberCandidateYears(ctx, league);
+    const refreshedCandidates = rememberCandidateYears(ctx, league);
+    if (refreshedCandidates.length) candidates = refreshedCandidates;
 
     if (!candidates.length) {
-      applyYearOptions(ctx, league, []);
+      if (!background) applyYearOptions(ctx, league, []);
       return { year:0, failures:[] };
     }
 
     if (validYearsCache.has(key)) {
-      return { year:applyYearOptions(ctx, league, validYearsCache.get(key)), failures:[] };
+      const years = validYearsCache.get(key) || [];
+      return {
+        year: background ? 0 : applyYearOptions(ctx, league, years),
+        failures:[]
+      };
     }
 
     if (!scanPromises.has(key)) {
       const mySeq = ++scanSeq;
-      const promise = scanPostseasonYears(ctx, league, candidates)
+      const promise = scanPostseasonYears(ctx, league, candidates, background)
         .then(result => {
           if (mySeq !== scanSeq && getContext()?.selectedTab !== 'postseason') return result;
           validYearsCache.set(key, result.years);
@@ -307,6 +315,8 @@
     }
 
     const result = await scanPromises.get(key);
+    if (background) return { year:0, failures:result?.failures || [] };
+
     const fresh = getContext();
     if (!fresh?.player || fresh.selectedTab !== 'postseason' || playerKey(fresh, league) !== key) {
       return { year:0, failures:result?.failures || [] };
@@ -489,6 +499,11 @@
     if (ctx.selectedTab !== 'postseason') {
       rememberCandidateYears(ctx, league);
       setMode(false);
+      if (ctx.currentPage === 'player') {
+        // Validate postseason seasons immediately after entering a player page.
+        // This is silent and never replaces the current A/D page with scan progress.
+        void preparePostseasonYears(ctx, league, { background:true });
+      }
       return;
     }
 
