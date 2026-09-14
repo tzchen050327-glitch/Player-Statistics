@@ -1,0 +1,38 @@
+name: v2.75 release
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/v275-release-trigger'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply patch
+        run: python .github/scripts/apply_v275.py
+      - name: Verify JavaScript and versions
+        run: |
+          node --check app.js
+          node --check landscape-state.js
+          node --check game-detail-enhancement.js
+          node --check postseason-history.js
+          grep -q "const APP_VERSION = 'v2.75'" app.js
+          grep -q "baseball-player-card-pwa-v275" service-worker.js
+          grep -q "CPBL_POSTSEASON_DAILY_API_URL" app.js
+          grep -q "const levels = \['A','E','C','D'\]" app.js
+          grep -q "cpbl-postseason-detail" landscape-state.js
+          grep -q "npb-game-detail" landscape-state.js
+          test "$(cat version.json)" = '{"version":"v2.75"}'
+      - name: Commit release
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html service-worker.js game-detail-enhancement.js game-detail-enhancement.css report-layout.js report-layout.css cpbl-realtime.js npb-realtime.js live-static-update.js cpbl-cache-router.js landscape-state.js landscape-state.css manifest.webmanifest rescue.html styles.css postseason-history.js postseason-history.css version.json
+          git commit -m 'Release v2.75 fix postseason lineup and daily import'
+          git push
