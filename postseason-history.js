@@ -379,7 +379,7 @@
     let draws = 0;
 
     // NPB CS Final Stage gives the regular-season champion (the home club) a one-win advantage.
-    if (String(league || '').toUpperCase() === 'NPB' && comp?.key === 'climax_final' && teamB) {
+    if (String(league || '').toUpperCase() === 'NPB' && ['climax_final','climax_special'].includes(comp?.key) && teamB) {
       wins.set(teamB, 1);
     }
 
