@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.77';
+  const VERSION = 'v2.97';
   const DETAIL_RE = /\/(?:cpbl-game-detail|cpbl-postseason-detail|npb-game-detail|league-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let timer = 0;
@@ -104,7 +104,7 @@
       const url = typeof request === 'string' ? request : String(request?.url || '');
       if (DETAIL_RE.test(url)) {
         response.clone().json().then(data => {
-          if (data?.ok && data?.game && String(data?.league || '').toUpperCase() === 'CPBL') {
+          if (data?.ok && data?.game && ['CPBL','NPB'].includes(String(data?.league || '').toUpperCase())) {
             latestDetail = data;
             schedule();
           }
