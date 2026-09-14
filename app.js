@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.81';
+    const APP_VERSION = 'v2.82';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -16,8 +16,8 @@
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.81';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.81';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.82';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.82';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -1992,7 +1992,8 @@ bg2: {
           setSyncProgress(92, '正在整理季後賽歷史資料…');
           const postseason = await window.__prefetchPostseasonContext();
           const count = Array.isArray(postseason?.years) ? postseason.years.length : 0;
-          if (count) setSyncProgress(98, `季後賽 ${count} 個賽季已快取`);
+          const cached = Number(postseason?.cached || 0);
+          if (count) setSyncProgress(98, `季後賽 ${cached || count}/${count} 個賽季資料已快取`);
         }
       } catch (error) {
         console.warn('季後賽背景預抓失敗', error);
@@ -5990,6 +5991,16 @@ bg2: {
         data.status = 'final';
         if (data.game && typeof data.game === 'object') data.game.status = 'final';
       }
+      // A postseason card already knows its exact stage. Keep that context even if
+      // an old NPB page contains generic navigation text for other competitions.
+      if (game?.competition) {
+        data.competition = String(game.competition);
+        data.competitionLabel = String(game.competitionLabel || data.competitionLabel || '');
+        if (data.game && typeof data.game === 'object') {
+          data.game.competition = data.competition;
+          data.game.competitionLabel = data.competitionLabel;
+        }
+      }
       return data;
     }
 
@@ -6308,7 +6319,7 @@ bg2: {
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
       if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {
-        // v2.81: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
+        // v2.82: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
         // Browser polling is only a five-minute safety net after a Realtime disconnect.
         const connected = activeHomeGameDetail.league === 'CPBL'
           ? window.__cpblRealtimeConnected
@@ -12517,7 +12528,7 @@ bg2: {
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // v2.81: do not check/apply updates merely because the user returned
+        // v2.82: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
         // existing 15-minute timer remain responsible for update checks.
 

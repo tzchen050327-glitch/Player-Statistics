@@ -549,7 +549,7 @@
       button.addEventListener('click', () => {
         const game = games[Number(button.dataset.postseasonGame)];
         if (!game?.id) return;
-        window.dispatchEvent(new CustomEvent('postseason-open-game', { detail:{ game:{...game,status:'final'}, league:data.league, date:game.date, postseason:true } }));
+        window.dispatchEvent(new CustomEvent('postseason-open-game', { detail:{ game:{...game,status:'final',competition:comp.key,competitionLabel:comp.label}, league:data.league, date:game.date, postseason:true } }));
       });
     });
   }
@@ -700,13 +700,33 @@
 
   window.__prefetchPostseasonContext = async () => {
     const ctx = getContext();
-    if (!ctx?.player) return { years:[], failures:[] };
+    if (!ctx?.player) return { years:[], failures:[], cached:0 };
     const league = showAvailability(ctx);
-    if (!league) return { years:[], failures:[] };
+    if (!league) return { years:[], failures:[], cached:0 };
     rememberCandidateYears(ctx, league);
     const key = playerKey(ctx, league);
     const result = await preparePostseasonYears(ctx, league, { background:true });
-    return { years:(validYearsCache.get(key) || []).slice(), failures:result?.failures || [] };
+    const years = (validYearsCache.get(key) || []).slice();
+    const failures = [...(result?.failures || [])];
+
+    // The first player-page progress pass warms the complete postseason payload,
+    // not just the year list. Finished seasons will then come from IndexedDB.
+    let cursor = 0;
+    let cached = 0;
+    const worker = async () => {
+      while (cursor < years.length) {
+        const year = years[cursor++];
+        try {
+          await requestHistory(ctx, league, year);
+          cached += 1;
+        } catch (error) {
+          console.warn(`季後賽 ${year} 預抓失敗`, error);
+          if (!failures.includes(year)) failures.push(year);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length:Math.min(3, years.length) }, () => worker()));
+    return { years, failures, cached };
   };
 
   window.addEventListener('pageshow', scheduleSync);
