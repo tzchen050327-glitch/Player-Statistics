@@ -1,0 +1,100 @@
+name: Apply v2.73 postseason split
+
+on:
+  push:
+    paths:
+      - '.github/v273-postseason-trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch postseason routing and labels
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              n = s.count(old)
+              if n != 1:
+                  raise SystemExit(f'{path}: expected one match, got {n}: {old[:120]!r}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          # CPBL postseason uses a separate detail endpoint so regular-season totals
+          # never leak into playoff challenge / Taiwan Series lineup statistics.
+          replace_once('app.js',
+              "    const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';\n    const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';",
+              "    const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';\n    const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';\n    const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';")
+
+          replace_once('app.js',
+              "    async function leagueGameDetailRequest(league, date, game) {\n      const detailApiUrl = league === 'CPBL'\n        ? CPBL_GAME_DETAIL_API_URL\n        : league === 'NPB'\n          ? NPB_GAME_DETAIL_API_URL\n          : LEAGUE_GAME_DETAIL_API_URL;",
+              "    async function leagueGameDetailRequest(league, date, game) {\n      const cpblKindCode = String(game?.kindCode || 'A').trim().toUpperCase();\n      const detailApiUrl = league === 'CPBL'\n        ? (cpblKindCode === 'E' || cpblKindCode === 'C' ? CPBL_POSTSEASON_DETAIL_API_URL : CPBL_GAME_DETAIL_API_URL)\n        : league === 'NPB'\n          ? NPB_GAME_DETAIL_API_URL\n          : LEAGUE_GAME_DETAIL_API_URL;")
+
+          replace_once('app.js',
+              "          gameId:String(game?.id || ''),\n          away:String(game?.away || ''),\n          home:String(game?.home || ''),\n          venue:String(game?.venue || ''),\n          status:String(game?.status || '')",
+              "          gameId:String(game?.id || ''),\n          kindCode:String(game?.kindCode || ''),\n          competition:String(game?.competition || ''),\n          away:String(game?.away || ''),\n          home:String(game?.home || ''),\n          venue:String(game?.venue || ''),\n          status:String(game?.status || '')")
+
+          # The enhancement layer also needs to observe direct historical postseason fetches.
+          replace_once('game-detail-enhancement.js',
+              "  const DETAIL_URL_RE = /\\/(?:league-game-detail|cpbl-game-detail|npb-game-detail)(?:\\?|$)/i;",
+              "  const DETAIL_URL_RE = /\\/(?:league-game-detail|cpbl-game-detail|cpbl-postseason-detail|npb-game-detail)(?:\\?|$)/i;")
+
+          replace_once('game-detail-enhancement.js',
+              "  function renderLandscapeBoard(detail,board) {\n    const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};\n    const side=(which)=>{\n      const team=which==='away'?game.away||'客隊':game.home||'主隊';\n      return `<section class=\"gdx-landscape-side gdx-side-${which}\"><div class=\"gdx-landscape-team-head\"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>LINEUP</em></div>${renderLineupPanel(detail,which)}</section>`;\n    };",
+              "  function renderLandscapeBoard(detail,board) {\n    const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};\n    const competitionLabel=compactName(detail?.competitionLabel||game?.competitionLabel||'');\n    const competitionScoped=String(detail?.statsScope||detail?.authority?.statsScope||'')==='competition';\n    const lineupTag=competitionScoped&&competitionLabel?`LINEUP · ${competitionLabel}`:'LINEUP';\n    const side=(which)=>{\n      const team=which==='away'?game.away||'客隊':game.home||'主隊';\n      return `<section class=\"gdx-landscape-side gdx-side-${which}\"><div class=\"gdx-landscape-team-head\"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${esc(lineupTag)}</em></div>${renderLineupPanel(detail,which)}</section>`;\n    };")
+
+          replace_once('game-detail-enhancement.js',
+              "    return [detail?.league,detail?.date,detail?.status,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,",
+              "    return [detail?.league,detail?.date,detail?.status,detail?.competition,detail?.competitionLabel,detail?.statsScope,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,")
+
+          # Formal release version lock.
+          files = [
+              'app.js','index.html','styles.css','game-detail-enhancement.css','game-detail-enhancement.js',
+              'live-static-update.js','cpbl-cache-router.js','cpbl-realtime.js','npb-realtime.js',
+              'service-worker.js','rescue.html','report-layout.css','report-layout.js',
+              'landscape-state.js','landscape-state.css','manifest.webmanifest'
+          ]
+          for name in files:
+              p = Path(name)
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('v2.72','v2.73').replace('v272','v273')
+              p.write_text(s, encoding='utf-8')
+          Path('version.json').write_text('{"version":"v2.73"}\n', encoding='utf-8')
+
+          checks = {
+              'app.js': ["const APP_VERSION = 'v2.73'", 'CPBL_POSTSEASON_DETAIL_API_URL', "cpblKindCode === 'E'", 'kindCode:String(game?.kindCode'],
+              'index.html': ['meta name="app-version" content="v2.73"', 'npb-realtime.js?v=v2.73'],
+              'service-worker.js': ["baseball-player-card-pwa-v273", 'npb-realtime.js?v=v2.73'],
+              'game-detail-enhancement.js': ['cpbl-postseason-detail', 'LINEUP · ${competitionLabel}', "detail?.competitionLabel"],
+              'version.json': ['v2.73']
+          }
+          for name, needles in checks.items():
+              text = Path(name).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'{name}: missing release guard {needle!r}')
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check game-detail-enhancement.js
+          node --check cpbl-realtime.js
+          node --check npb-realtime.js
+          node --check service-worker.js
+      - name: Commit v2.73
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js index.html styles.css game-detail-enhancement.css game-detail-enhancement.js live-static-update.js cpbl-cache-router.js cpbl-realtime.js npb-realtime.js service-worker.js rescue.html report-layout.css report-layout.js landscape-state.js landscape-state.css manifest.webmanifest version.json
+          git commit -m "Release v2.73 split CPBL and NPB postseason stats" || exit 0
+          git push
