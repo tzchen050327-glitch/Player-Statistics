@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def replace_once(text, old, new, label):
@@ -6,6 +7,13 @@ def replace_once(text, old, new, label):
     if n != 1:
         raise SystemExit(f"{label}: expected 1 occurrence, found {n}")
     return text.replace(old, new, 1)
+
+
+def regex_once(text, pattern, repl, label, flags=0):
+    out, n = re.subn(pattern, repl, text, count=1, flags=flags)
+    if n != 1:
+        raise SystemExit(f"{label}: expected 1 regex occurrence, found {n}")
+    return out
 
 p = Path('app.js')
 s = p.read_text(encoding='utf-8')
@@ -17,10 +25,10 @@ s = replace_once(
     'postseason daily url',
 )
 
-s = replace_once(
+s = regex_once(
     s,
-    "    async function cpblRequest(action, payload = {}) {\n      const response = await fetch(CPBL_API_URL, {",
-    "    async function cpblRequest(action, payload = {}) {\n      const requestKindCode = String(payload?.kindCode || '').toUpperCase();\n      const requestUrl = action === 'daily' && ['E','C'].includes(requestKindCode)\n        ? CPBL_POSTSEASON_DAILY_API_URL\n        : CPBL_API_URL;\n      const response = await fetch(requestUrl, {",
+    r"(    async function cpblRequest\(action, payload = \{\}\) \{\s*)const response = await fetch\(CPBL_API_URL, \{",
+    r"\1const requestKindCode = String(payload?.kindCode || '').toUpperCase();\n      const requestUrl = action === 'daily' && ['E','C'].includes(requestKindCode)\n        ? CPBL_POSTSEASON_DAILY_API_URL\n        : CPBL_API_URL;\n      const response = await fetch(requestUrl, {",
     'cpbl request postseason routing',
 )
 
