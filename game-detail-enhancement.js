@@ -321,7 +321,8 @@
 
   function renderLineupPanel(detail,side) {
     const entries=lineupEntries(detail,side), current=compactName(detail?.current?.batter?.fullName||detail?.current?.batter?.name||'');
-    const rows=Array.from({length:9},(_,i)=>entries[i]||{number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
+    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
+    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
     return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
   }
 
@@ -496,7 +497,7 @@
 
   function enhanceGameDetail() {
     applyVersionLabel();
-    const detail=latestDetail; if (!detail?.game) return;
+    const detail=latestDetail || window.__latestHomeGameDetail || null; if (!detail?.game) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
     const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
     const supportsLandscape=isCpbl||isNpb;
@@ -560,6 +561,12 @@
   };
   window.addEventListener('cpbl-live-cache-update',acceptRealtimeDetail);
   window.addEventListener('npb-live-cache-update',acceptRealtimeDetail);
+  window.addEventListener('home-game-detail-state', event => {
+    const detail=event?.detail?.detail||null;
+    if (!detail?.game) return;
+    latestDetail=detail;
+    scheduleEnhance();
+  });
 
   new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',event=>{if(event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) setTimeout(scheduleEnhance,200);},true);
