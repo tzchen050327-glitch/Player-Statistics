@@ -1,0 +1,42 @@
+name: Apply v2.94 regression fixes
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v294.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply patch
+        run: python .github/scripts/apply_v294.py
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check cpbl-realtime.js
+          node --check postseason-history.js
+      - name: Verify v2.94 fixes
+        run: |
+          grep -q "CPBL_CURRENT_ROSTER_API_URL" app.js
+          grep -q "kindCode || 'A').toUpperCase() !== 'D'" app.js
+          grep -q "currentLevel === 'D'" app.js
+          grep -q '"version":"v2.94"' version.json
+          test ! -e .github/scripts/apply_v292.py
+          test ! -e .github/workflows/apply-v292.yml
+      - name: Commit release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release v2.94 fix historical games and CPBL current level" || exit 0
+          git push
