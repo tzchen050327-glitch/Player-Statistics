@@ -15,6 +15,61 @@
   let seasonMutationGuard = false;
   let syncTimer = 0;
 
+  const HISTORY_DB_NAME = 'postseason-history-cache-v1';
+  const HISTORY_STORE = 'history';
+  const HISTORY_CACHE_SCHEMA = 2;
+  const CURRENT_YEAR = new Date().getFullYear();
+  let historyDbPromise = null;
+
+  function openHistoryDb() {
+    if (!('indexedDB' in window)) return Promise.resolve(null);
+    if (historyDbPromise) return historyDbPromise;
+    historyDbPromise = new Promise(resolve => {
+      const req = indexedDB.open(HISTORY_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(HISTORY_STORE)) db.createObjectStore(HISTORY_STORE, { keyPath:'key' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+    return historyDbPromise;
+  }
+
+  async function readPersistentHistory(key, year) {
+    try {
+      const db = await openHistoryDb();
+      if (!db) return null;
+      const row = await new Promise(resolve => {
+        const tx = db.transaction(HISTORY_STORE, 'readonly');
+        const req = tx.objectStore(HISTORY_STORE).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+      if (!row || row.schema !== HISTORY_CACHE_SCHEMA || !row.data) return null;
+      // Finished seasons are immutable for this UI. Current season stays refreshable.
+      if (Number(year) < CURRENT_YEAR) return row.data;
+      if (Date.now() - Number(row.at || 0) <= 10 * 60 * 1000) return row.data;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function writePersistentHistory(key, year, data) {
+    try {
+      const db = await openHistoryDb();
+      if (!db) return;
+      await new Promise(resolve => {
+        const tx = db.transaction(HISTORY_STORE, 'readwrite');
+        tx.objectStore(HISTORY_STORE).put({ key, year:Number(year), at:Date.now(), schema:HISTORY_CACHE_SCHEMA, data });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      });
+    } catch {}
+  }
+
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const scoreCell = value => value === null || value === undefined || value === '' ? '—' : String(value);
@@ -167,23 +222,31 @@
     if (historyInflight.has(key)) return historyInflight.get(key);
 
     const player = ctx.player;
-    const request = fetch(API_URL, {
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify({
-        appKey:APP_KEY,
-        action:'player-history',
-        league,
-        year,
-        playerId:playerIdFor(player, league),
-        playerName:playerNameFor(player)
-      })
-    }).then(async response => {
+    const request = (async () => {
+      const stored = await readPersistentHistory(key, year);
+      if (stored) {
+        historyCache.set(key, stored);
+        return stored;
+      }
+
+      const response = await fetch(API_URL, {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          appKey:APP_KEY,
+          action:'player-history',
+          league,
+          year,
+          playerId:playerIdFor(player, league),
+          playerName:playerNameFor(player)
+        })
+      });
       const data = await response.json().catch(()=>({}));
       if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`);
       historyCache.set(key, data);
+      void writePersistentHistory(key, year, data);
       return data;
-    }).finally(() => historyInflight.delete(key));
+    })().finally(() => historyInflight.delete(key));
 
     historyInflight.set(key, request);
     return request;
@@ -444,26 +507,49 @@
       return;
     }
 
-    selectedCompetition = '';
-    const stageGames = competitions.map(comp => relevantGames(comp));
+    const comp = competitions.find(c => c.key === key) || competitions[0];
+    selectedCompetition = comp.key;
+    const games = relevantGames(comp);
+    const progress = seriesProgress(games, comp, data?.league);
+
     target.innerHTML = `
-      <div class="postseason-history postseason-history-parallel">
+      <div class="postseason-history">
         <div class="postseason-head">
-          <div><span class="postseason-kicker">POSTSEASON HISTORY</span><h2>${esc(data.year)} 季後賽</h2></div>
+          <div><span class="postseason-kicker">POSTSEASON HISTORY</span><h2>${esc(data.year)} ${esc(comp.label)}</h2></div>
           <div class="postseason-source">${esc(data.league)} 官方資料</div>
         </div>
-        <div class="postseason-stage-grid" style="--postseason-stage-count:${competitions.length}">
-          ${competitions.map((comp,index)=>renderStageCard(comp,data,index)).join('')}
+        <div class="postseason-stage-tabs" style="--postseason-stage-count:${competitions.length}">
+          ${competitions.map(c=>`<button type="button" class="press-btn postseason-stage-btn ${c.key===comp.key?'active':''}" data-postseason-stage="${esc(c.key)}">${esc(c.label)}</button>`).join('')}
         </div>
+        <div class="postseason-summary-wrap">
+          ${statGrid('系列打擊成績', comp.batting, 'batting')}
+          ${statGrid('系列投球成績', comp.pitching, 'pitching')}
+        </div>
+        <section class="postseason-games-section">
+          <div class="postseason-games-head"><strong>系列賽程</strong><span>${games.length} 場</span></div>
+          <div class="postseason-game-list">${games.map((g,index)=>{
+            const seriesText = progress[index]?.text || '—';
+            const playerLine = gamePlayerLine(g);
+            return `
+            <button type="button" class="postseason-game-row" data-postseason-game="${index}" ${g?.id?'':'disabled'}>
+              <div class="postseason-game-date">${esc(String(g.date||'').replaceAll('-','/'))}</div>
+              <div class="postseason-game-matchup"><span>${esc(g.away||'客隊')}</span><b>${esc(scoreCell(g.awayScore))} - ${esc(scoreCell(g.homeScore))}</b><span>${esc(g.home||'主隊')}</span></div>
+              <div class="postseason-series-score">大比分 ${esc(seriesText)}</div>
+              <div class="postseason-game-player ${playerLine==='未出賽'?'is-dnp':''}">${esc(playerLine)}</div>
+              <div class="postseason-game-open">查看逐打席 ›</div>
+            </button>`;
+          }).join('')}</div>
+        </section>
       </div>`;
 
+    target.querySelectorAll('[data-postseason-stage]').forEach(button => {
+      button.addEventListener('click', () => renderCompetition(data, String(button.dataset.postseasonStage || '')));
+    });
     target.querySelectorAll('[data-postseason-game]').forEach(button => {
       button.addEventListener('click', () => {
-        const stageIndex = Number(button.dataset.postseasonStageIndex);
-        const gameIndex = Number(button.dataset.postseasonGame);
-        const game = stageGames[stageIndex]?.[gameIndex];
+        const game = games[Number(button.dataset.postseasonGame)];
         if (!game?.id) return;
-        window.dispatchEvent(new CustomEvent('postseason-open-game', { detail:{ game, league:data.league, date:game.date } }));
+        window.dispatchEvent(new CustomEvent('postseason-open-game', { detail:{ game:{...game,status:'final'}, league:data.league, date:game.date, postseason:true } }));
       });
     });
   }
@@ -611,6 +697,17 @@
     normalizePrimaryTabs(supported);
   });
   if (tabsHost) tabsObserver.observe(tabsHost,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
+
+  window.__prefetchPostseasonContext = async () => {
+    const ctx = getContext();
+    if (!ctx?.player) return { years:[], failures:[] };
+    const league = showAvailability(ctx);
+    if (!league) return { years:[], failures:[] };
+    rememberCandidateYears(ctx, league);
+    const key = playerKey(ctx, league);
+    const result = await preparePostseasonYears(ctx, league, { background:true });
+    return { years:(validYearsCache.get(key) || []).slice(), failures:result?.failures || [] };
+  };
 
   window.addEventListener('pageshow', scheduleSync);
   setTimeout(syncFromApp,0);
