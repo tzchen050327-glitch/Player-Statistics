@@ -160,6 +160,45 @@
     return Math.min(2,after);
   }
 
+  function visibleInningCells(detail, values, side, innings, totalRuns) {
+    const raw=innings.map((_,i)=>values?.[i] ?? '');
+    const status=String(detail?.status||'').toLowerCase();
+    if(status==='final') return raw;
+    const info=currentHalfInfo(detail);
+    if(!info) return raw;
+
+    const last=Array.isArray(detail?.plays)?detail.plays.at(-1):null;
+    const currentHalfComplete=!!(last && playMatchesCurrentHalf(detail,last) && inferredOutsAfterPlay(last)>=3);
+    const sideHalf=side==='away'?'top':'bottom';
+    const numericTotal=Number(totalRuns);
+    const priorRuns=raw.reduce((sum,value,index)=>{
+      const label=String(innings[index]??index+1);
+      const inningNo=Number(label.match(/\d+/)?.[0]||index+1);
+      const cell=Number(safeCell(value));
+      return inningNo<info.inning && Number.isFinite(cell) ? sum+cell : sum;
+    },0);
+    const inferredCurrentRuns=Number.isFinite(numericTotal)?Math.max(0,numericTotal-priorRuns):0;
+
+    return raw.map((value,index)=>{
+      const label=String(innings[index]??index+1);
+      const inningNo=Number(label.match(/\d+/)?.[0]||index+1);
+      if(inningNo>info.inning) return '';
+      if(inningNo<info.inning) return value;
+
+      // In the current inning, the side that has not batted yet stays blank.
+      if(info.half==='top' && sideHalf==='bottom') return '';
+      // Once the top half is over and the bottom has begun, the away cell is final.
+      if(info.half==='bottom' && sideHalf==='top') return value;
+
+      // Active half-inning: show a score immediately if runs have been recorded,
+      // otherwise keep the cell blank until three outs make the zero official.
+      const cell=Number(safeCell(value));
+      if(Number.isFinite(cell) && cell>0) return value;
+      if(inferredCurrentRuns>0) return inferredCurrentRuns;
+      return currentHalfComplete ? 0 : '';
+    });
+  }
+
   function normalizedBoard(detail) {
     const game = detail?.game || {}, source = detail?.scoreboard || {};
     const innings = Array.isArray(source.innings) ? source.innings.map(String) : [];
@@ -172,8 +211,10 @@
     const pick = (primary, fallback='') => safeCell(primary) === '' ? fallback : primary;
     const awayRuns = pick(source?.awayTotals?.R, pick(game.awayScore, sum(away) ?? ''));
     const homeRuns = pick(source?.homeTotals?.R, pick(game.homeScore, sum(home) ?? ''));
+    const visibleAway=visibleInningCells(detail,away,'away',innings,awayRuns);
+    const visibleHome=visibleInningCells(detail,home,'home',innings,homeRuns);
     return {
-      innings, away, home,
+      innings, away:visibleAway, home:visibleHome,
       awayTotals:{R:awayRuns,H:pick(source?.awayTotals?.H,''),E:pick(source?.awayTotals?.E,'')},
       homeTotals:{R:homeRuns,H:pick(source?.homeTotals?.H,''),E:pick(source?.homeTotals?.E,'')}
     };

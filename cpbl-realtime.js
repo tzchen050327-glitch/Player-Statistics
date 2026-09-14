@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v3.05';
+  const VERSION = 'v3.06';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -13,6 +13,7 @@
   const dayRevisions = new Map();
   let loader = null;
   let watchdogTimer = 0;
+  let realtimeSignalSerial = 0;
 
   window.__cpblRealtimeConnected = false;
   window.__cpblDayRealtimeConnected = false;
@@ -163,6 +164,25 @@
     window.dispatchEvent(new CustomEvent('cpbl-live-cache-update', { detail:{ row, detail, version:VERSION } }));
   }
 
+  async function refreshFromRealtimeSignal(row) {
+    const current=watch?{...watch}:null;
+    if(!current || !row) return;
+    if(String(row.game_id||'')!==current.gameId || String(row.game_date||'')!==current.date) return;
+    if(String(row.kind_code||'A').toUpperCase()!==current.kindCode) return;
+    const signaledRevision=Number(row.published_revision??-1);
+    if(Number.isFinite(signaledRevision) && signaledRevision>=0 && signaledRevision<=lastRevision) return;
+
+    const serial=++realtimeSignalSerial;
+    try{
+      // The DB UPDATE is the push notification. Read the canonical published row immediately
+      // so the UI always receives the newest complete payload for that revision.
+      const published=await readPublished(current.date,current.gameId,current.kindCode);
+      if(serial!==realtimeSignalSerial || !watch) return;
+      if(watch.date!==current.date || watch.gameId!==current.gameId || watch.kindCode!==current.kindCode) return;
+      if(published?.row) acceptRow(published.row);
+    }catch{}
+  }
+
   function acceptDayRow(row) {
     if (!dayWatch || !row || String(row.game_date || '') !== dayWatch) return;
     const detail = publishedDetail(row);
@@ -184,6 +204,7 @@
     channel = null;
     watch = null;
     lastRevision = -1;
+    realtimeSignalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
     }
@@ -204,7 +225,7 @@
       channel = sb.channel(`cpbl-live-${kindCode}-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
         .on('postgres_changes', {
           event:'*', schema:'public', table:'cpbl_live_game_cache', filter:`game_id=eq.${gameId}`
-        }, payload => acceptRow(payload?.new))
+        }, payload => { void refreshFromRealtimeSignal(payload?.new); })
         .subscribe(status => {
           if (status === 'SUBSCRIBED') emitStatus(true, 'subscribed');
           else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitStatus(false, status);
