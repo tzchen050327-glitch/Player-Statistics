@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.99';
+  const VERSION = 'v3.00';
   const DETAIL_RE = /\/(?:cpbl-game-detail|cpbl-postseason-detail|npb-game-detail|league-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let timer = 0;

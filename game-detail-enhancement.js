@@ -199,8 +199,13 @@
     const rank={first:1,second:2,third:3};
     const keyOf=base=>base==='一壘'?'first':base==='二壘'?'second':'third';
     const destOf=text=>/一壘/.test(text)?'first':/二壘/.test(text)?'second':/三壘/.test(text)?'third':'';
+    const league=String(detail?.league||'').toUpperCase();
+    // CPBL baseState is the official situation BEFORE this plate appearance.
+    // NPB keeps using the explicit before-state fields when available.
     const stateForPlay=play=>normalizeBaseState(
-      play?.baseStateBefore ?? play?.basesBefore ?? play?.baseState ?? play?.bases ?? ''
+      league==='CPBL'
+        ? (play?.baseState ?? play?.bases ?? play?.baseStateBefore ?? play?.basesBefore ?? '')
+        : (play?.baseStateBefore ?? play?.basesBefore ?? play?.baseState ?? play?.bases ?? '')
     );
     const reconcileBefore=state=>{
       for(const key of keys) if(!state[key]) runners[key]='';
@@ -272,10 +277,9 @@
 
       const nextPlay=plays[i+1];
       const sameHalf=nextPlay&&Number(nextPlay?.inning)===Number(play?.inning)&&nextPlay?.half===play?.half;
-      const league=String(detail?.league||'').toUpperCase();
-      const officialAfter=league==='CPBL' && (play?.baseState!==undefined || play?.basesAfter!==undefined)
-        ? normalizeBaseState(play?.baseState ?? play?.basesAfter ?? '')
-        : sameHalf ? stateForPlay(nextPlay) : null;
+      // For CPBL, the next PA's official pre-PA state is this PA's authoritative after-state.
+      // This fixes the old off-by-one interpretation that lost runner identities.
+      const officialAfter=sameHalf ? stateForPlay(nextPlay) : null;
       const dest=destination(result,desc);
       const after=officialAfter || heuristicAfter(before,dest,result,play);
       assignToState(after,batter,dest);
@@ -292,7 +296,12 @@
       return {first:'',second:'',third:''};
     }
     const direct = directRunnerNames(detail), inferred = inferRunnerNames(detail);
-    return {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
+    const merged={first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
+    const hasOfficialState=detail?.current?.baseState!==undefined&&detail?.current?.baseState!==null
+      || (detail?.current?.bases!==undefined&&detail?.current?.bases!==null&&String(detail.current.bases).trim()!=='');
+    if(!hasOfficialState) return merged;
+    const state=normalizeBaseState(detail?.current?.baseState ?? detail?.current?.bases ?? '');
+    return {first:state.first?merged.first:'',second:state.second?merged.second:'',third:state.third?merged.third:''};
   }
 
   function detailStamp(detail) {
