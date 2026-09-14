@@ -1,6 +1,6 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.72';
-  const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|npb-game-detail)(?:\?|$)/i;
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.73';
+  const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|cpbl-postseason-detail|npb-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
 
@@ -234,7 +234,7 @@
 
   function detailStamp(detail) {
     const game=detail?.game||{}, last=Array.isArray(detail?.plays)&&detail.plays.length?detail.plays.at(-1):null;
-    return [detail?.league,detail?.date,detail?.status,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,
+    return [detail?.league,detail?.date,detail?.status,detail?.competition,detail?.competitionLabel,detail?.statsScope,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,
       detail?.current?.pitcher?.name,detail?.current?.batter?.name,JSON.stringify(detail?.scoreboard||{}),JSON.stringify(detail?.lineups||{}),
       JSON.stringify(detail?.current?.runners||{}),last?.inning,last?.half,last?.batter,last?.pitcher,last?.result,last?.bases,last?.rbi].map(v=>String(v??'')).join('|');
   }
@@ -354,9 +354,12 @@
 
   function renderLandscapeBoard(detail,board) {
     const offense=currentOffenseSide(detail), defense=offense==='away'?'home':'away', game=detail?.game||{};
+    const competitionLabel=compactName(detail?.competitionLabel||game?.competitionLabel||'');
+    const competitionScoped=String(detail?.statsScope||detail?.authority?.statsScope||'')==='competition';
+    const lineupTag=competitionScoped&&competitionLabel?`LINEUP · ${competitionLabel}`:'LINEUP';
     const side=(which)=>{
       const team=which==='away'?game.away||'客隊':game.home||'主隊';
-      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>LINEUP</em></div>${renderLineupPanel(detail,which)}</section>`;
+      return `<section class="gdx-landscape-side gdx-side-${which}"><div class="gdx-landscape-team-head"><span>${which==='away'?'AWAY':'HOME'}</span><strong>${esc(team)}</strong><em>${esc(lineupTag)}</em></div>${renderLineupPanel(detail,which)}</section>`;
     };
     return `<section class="gdx-landscape-board game-detail-enhanced-marker" data-gdx="landscape">${side('away')}<div class="gdx-landscape-center">${renderLandscapeScoreboard(detail,board)}<div class="gdx-landscape-lower">${renderDefenseField(detail,defense)}${renderRunnerDiamond(detail,defense)}</div></div>${side('home')}</section>`;
   }
