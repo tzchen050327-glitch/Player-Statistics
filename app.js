@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.92';
+    const APP_VERSION = 'v2.93';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -18,8 +18,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.92';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.92';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.93';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.93';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -3640,6 +3640,24 @@ bg2: {
           document.getElementById('cloudSyncDialog')?.showModal();
         });
         actions.insertBefore(button, actions.firstChild);
+        if (!document.getElementById('cacheDiagnosticsBtn')) {
+          const diagnosticsButton = document.createElement('button');
+          diagnosticsButton.id = 'cacheDiagnosticsBtn';
+          diagnosticsButton.className = 'cache-diagnostics-header-btn';
+          diagnosticsButton.type = 'button';
+          diagnosticsButton.setAttribute('aria-label', '快取診斷');
+          diagnosticsButton.title = '快取診斷';
+          diagnosticsButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M5.5 5.5v5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-5M5.5 10.5v5c0 1.4 2.9 2.5 6.5 2.5 1.15 0 2.23-.11 3.15-.31" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="m16.2 16.2 1.35 1.35 2.55-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+          diagnosticsButton.addEventListener('click', () => {
+            window.open('./diagnostics.html', '_blank', 'noopener');
+          });
+          button.insertAdjacentElement('afterend', diagnosticsButton);
+        }
       }
 
       if (!document.getElementById('cloudSyncDialog')) {
@@ -6419,9 +6437,9 @@ bg2: {
           } catch {}
         }
         if (!detail && staleDetail) detail = staleDetail;
-        if (!detail) detail = await leagueGameDetailRequest(league, date, game, force);
+        if (!detail) detail = await leagueGameDetailRequest(league, date, game, league === 'CPBL' ? false : force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB') && (!fromAnyCache || force)) {
+        if (String(detail?.status || '').toLowerCase() === 'scheduled' && league === 'NPB' && (!fromAnyCache || force)) {
           try {
             detail.pregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
           } catch (pregameError) {
