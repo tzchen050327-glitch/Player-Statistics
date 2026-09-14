@@ -1,4 +1,4 @@
-/* v2.75: responsive CPBL landscape board typography */
+/* v2.76: responsive CPBL landscape board typography */
 @media (orientation:landscape) and (min-width:981px){
   .gdx-landscape-board{
     --gdx-type-xs:clamp(10px,.62vw,14px);

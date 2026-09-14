@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.75';
+    const APP_VERSION = 'v2.76';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -16,8 +16,8 @@
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.75';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.75';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.76';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.76';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6279,7 +6279,7 @@ bg2: {
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
       if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {
-        // v2.75: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
+        // v2.76: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
         // Browser polling is only a five-minute safety net after a Realtime disconnect.
         const connected = activeHomeGameDetail.league === 'CPBL'
           ? window.__cpblRealtimeConnected
@@ -12488,7 +12488,7 @@ bg2: {
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // v2.75: do not check/apply updates merely because the user returned
+        // v2.76: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
         // existing 15-minute timer remain responsible for update checks.
 
