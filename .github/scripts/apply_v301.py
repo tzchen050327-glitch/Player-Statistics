@@ -136,7 +136,7 @@ new_runner_head="""    const pitcher=currentPitcherSummary(detail,defenseSide), 
 """
 if old_runner_head not in s: raise SystemExit('renderRunnerDiamond head anchor missing')
 s=s.replace(old_runner_head,new_runner_head,1)
-old_tail='<div class="gdx-pa-results">${paHtml}</div></div></div></div>`; new_tail='<div class="gdx-pa-results">${paHtml}</div></div>${prevHtml}</div></div>'
+old_tail='<div class="gdx-pa-results">${paHtml}</div></div></div></div>'; new_tail='<div class="gdx-pa-results">${paHtml}</div></div>${prevHtml}</div></div>'
 if old_tail not in s: raise SystemExit('renderRunnerDiamond tail anchor missing')
 s=s.replace(old_tail,new_tail,1)
 p.write_text(s,encoding='utf-8')
