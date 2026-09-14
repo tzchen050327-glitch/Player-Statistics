@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.87';
+  const VERSION = 'v2.89';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -77,14 +77,16 @@
     return detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
   }
 
-  async function readPublished(date, gameId) {
+  async function readPublished(date, gameId, kindCode = 'A') {
     const d = String(date || '').trim();
     const id = String(gameId || '').trim();
+    const kind = String(kindCode || 'A').trim().toUpperCase();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !id) return { ok:false, detail:null, row:null };
     const query = new URLSearchParams({
       game_date:`eq.${d}`,
       game_id:`eq.${id}`,
-      select:'game_date,game_id,status,published_payload,published_revision,published_at',
+      kind_code:`eq.${kind}`,
+      select:'game_date,game_id,kind_code,status,published_payload,published_revision,published_at',
       limit:'1'
     });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/cpbl_live_game_cache?${query}`, {
@@ -103,6 +105,7 @@
   function acceptRow(row) {
     if (!watch || !row) return;
     if (String(row.game_id || '') !== watch.gameId || String(row.game_date || '') !== watch.date) return;
+    if (String(row.kind_code || 'A').toUpperCase() !== watch.kindCode) return;
     const detail = publishedDetail(row);
     const status = String(detail?.status || row?.status || '').toLowerCase();
     if (isTerminalStatus(status)) {
@@ -122,10 +125,12 @@
     if (!detail) return;
     const gameId = String(row.game_id || detail?.game?.id || '');
     if (!gameId) return;
+    const kindCode = String(row?.kind_code || detail?.kindCode || detail?.game?.kindCode || 'A').toUpperCase();
+    const revisionKey = `${kindCode}|${gameId}`;
     const revision = Number(row.published_revision ?? -1);
-    const prev = Number(dayRevisions.get(gameId) ?? -1);
+    const prev = Number(dayRevisions.get(revisionKey) ?? -1);
     if (Number.isFinite(revision) && revision >= 0 && revision <= prev) return;
-    if (Number.isFinite(revision) && revision >= 0) dayRevisions.set(gameId, revision);
+    if (Number.isFinite(revision) && revision >= 0) dayRevisions.set(revisionKey, revision);
     window.dispatchEvent(new CustomEvent('cpbl-live-day-update', { detail:{ row, detail, version:VERSION } }));
   }
 
@@ -143,14 +148,15 @@
   async function startWatch(input = {}) {
     const date = String(input.date || '').trim();
     const gameId = String(input.gameId || '').trim();
+    const kindCode = String(input.kindCode || 'A').trim().toUpperCase();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !gameId) return;
-    if (watch?.date === date && watch?.gameId === gameId && channel) return;
+    if (watch?.date === date && watch?.gameId === gameId && watch?.kindCode === kindCode && channel) return;
     await stopWatch(false);
-    watch = { date, gameId };
+    watch = { date, gameId, kindCode };
     try {
       const sb = await getClient();
-      if (!watch || watch.date !== date || watch.gameId !== gameId) return;
-      channel = sb.channel(`cpbl-live-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
+      if (!watch || watch.date !== date || watch.gameId !== gameId || watch.kindCode !== kindCode) return;
+      channel = sb.channel(`cpbl-live-${kindCode}-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
         .on('postgres_changes', {
           event:'*', schema:'public', table:'cpbl_live_game_cache', filter:`game_id=eq.${gameId}`
         }, payload => acceptRow(payload?.new))
@@ -158,7 +164,7 @@
           if (status === 'SUBSCRIBED') emitStatus(true, 'subscribed');
           else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitStatus(false, status);
         });
-      const initial = await readPublished(date, gameId);
+      const initial = await readPublished(date, gameId, kindCode);
       if (initial?.row) acceptRow(initial.row);
     } catch (error) {
       emitStatus(false, error?.message || String(error));

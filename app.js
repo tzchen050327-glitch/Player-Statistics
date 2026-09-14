@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.88';
+    const APP_VERSION = 'v2.89';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -18,8 +18,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.88';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.88';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.89';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.89';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5937,7 +5937,7 @@ bg2: {
     }
 
     function homeGameDetailKey(league, date, game = {}) {
-      return [league, date, String(game?.id || ''), String(game?.away || ''), String(game?.home || '')].join('|');
+      return [league, date, String(game?.kindCode || ''), String(game?.id || ''), String(game?.away || ''), String(game?.home || '')].join('|');
     }
 
     function homeGameDetailBudget() {
@@ -6159,10 +6159,16 @@ bg2: {
       apply(game);
       const daily = homeDailyGamesCache.get(`${league}|${date}`);
       const games = Array.isArray(daily?.games) ? daily.games : [];
+      const expectedKind = league === 'CPBL'
+        ? String(info?.kindCode || game?.kindCode || 'A').toUpperCase()
+        : '';
+      const sameKind = item => league !== 'CPBL'
+        || String(item?.kindCode || 'A').toUpperCase() === expectedKind;
       const target = games.find(item =>
-        (info?.id && item?.id && String(info.id) === String(item.id))
-        || (String(item?.away || '') === String(info?.away || game?.away || '')
-          && String(item?.home || '') === String(info?.home || game?.home || ''))
+        (((info?.id && item?.id && String(info.id) === String(item.id))
+          || (String(item?.away || '') === String(info?.away || game?.away || '')
+            && String(item?.home || '') === String(info?.home || game?.home || '')))
+          && sameKind(item))
       );
       apply(target);
     }
@@ -6387,7 +6393,7 @@ bg2: {
         let fromPublishedCache = false;
         if (!force && league === 'CPBL' && date === localISODate() && game?.id && typeof window.__cpblRealtimeReadPublished === 'function') {
           try {
-            const published = await window.__cpblRealtimeReadPublished(date, String(game.id));
+            const published = await window.__cpblRealtimeReadPublished(date, String(game.id), String(game?.kindCode || 'A'));
             detail = published?.detail || null;
             fromPublishedCache = Boolean(detail);
           } catch {}
@@ -6438,7 +6444,7 @@ bg2: {
       const key = homeGameDetailKey(league, date, game);
       activeHomeGameDetail = { league, date, game, key, loading:false };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
-        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id) } }));
+        window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
         window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
       }
@@ -6464,7 +6470,10 @@ bg2: {
       if (String(row?.game_date || detail?.date || '') !== String(date || '')) return;
       const expectedId = String(game?.id || '');
       const incomingId = String(row?.game_id || detail?.game?.id || '');
+      const expectedKind = String(game?.kindCode || 'A').toUpperCase();
+      const incomingKind = String(row?.kind_code || detail?.kindCode || detail?.game?.kindCode || 'A').toUpperCase();
       if (expectedId && incomingId && expectedId !== incomingId) return;
+      if (expectedKind !== incomingKind) return;
       const key = homeGameDetailKey('CPBL', date, game);
       homeGameDetailCache.set(key, { at:Date.now(), detail });
       homeGameDetailErrorStreak = 0;
@@ -6522,7 +6531,11 @@ bg2: {
       const cached = homeDailyGamesCache.get(key);
       if (!cached || !Array.isArray(cached.games)) return;
       const incomingId = String(row?.game_id || detail?.game?.id || '');
-      const index = cached.games.findIndex(g => String(g?.id || '') === incomingId);
+      const incomingKind = String(row?.kind_code || detail?.kindCode || detail?.game?.kindCode || 'A').toUpperCase();
+      const index = cached.games.findIndex(g =>
+        String(g?.id || '') === incomingId
+        && String(g?.kindCode || 'A').toUpperCase() === incomingKind
+      );
       if (index < 0) return;
       const gameInfo = detail?.game || {};
       cached.games[index] = {
