@@ -1,0 +1,48 @@
+name: Apply v2.96 NPB live fixes
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v296.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply v2.96 patch
+        run: python .github/scripts/apply_v296.py
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check cpbl-realtime.js
+          node --check postseason-history.js
+          node --check .github/scripts/smoke_v296.mjs
+      - name: Verify release wiring
+        run: |
+          grep -q '"version":"v2.96"' version.json
+          test ! -e .github/scripts/apply_v294.py
+          test ! -e .github/workflows/apply-v294.yml
+          test -e .github/scripts/apply_v295.py
+          test -e .github/workflows/apply-v295.yml
+      - name: Production integration smoke
+        run: node .github/scripts/smoke_v296.mjs
+      - name: Commit release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release v2.96 fix NPB live cadence and pitcher batting order" || exit 0
+          git push
