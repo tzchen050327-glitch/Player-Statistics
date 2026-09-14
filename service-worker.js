@@ -1,4 +1,4 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v275';
+const CACHE_NAME = 'baseball-player-card-pwa-v275-postseason-years1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -63,6 +63,8 @@ self.addEventListener('fetch', event => {
     || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
+    || url.pathname.endsWith('/postseason-history.js')
+    || url.pathname.endsWith('/postseason-history.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
     || url.pathname.endsWith('/game-detail-enhancement.css')
     || url.pathname.endsWith('/report-layout.css')
