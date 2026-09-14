@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = 'v2.74';
-  const DETAIL_RE = /\/(?:cpbl-game-detail|league-game-detail)(?:\?|$)/i;
+  const VERSION = 'v2.75';
+  const DETAIL_RE = /\/(?:cpbl-game-detail|cpbl-postseason-detail|npb-game-detail|league-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let timer = 0;
 
@@ -59,7 +59,7 @@
   function renderLineup(detail, side) {
     const entries = lineupRows(detail, side);
     const rows = Array.from({length:9}, (_, index) => entries[index] || {});
-    return `<div class="gdx-landscape-lineup gdx-v274-lineup" data-v274-lineup="${side}">
+    return `<div class="gdx-landscape-lineup gdx-v275-lineup" data-v275-lineup="${side}">
       <div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>
       ${rows.map(entry => `<div class="gdx-lineup-row"><span>${esc(entry.number || '—')}</span><strong>${esc(entry.name || '—')}</strong><span>${esc(entry.avg || '—')}</span><span>${esc(entry.hits || '—')}</span><span>${esc(entry.homeRuns || '—')}</span><span>${esc(entry.rbi || '—')}</span></div>`).join('')}
     </div>`;
@@ -68,7 +68,8 @@
   function apply() {
     timer = 0;
     const detail = latestDetail;
-    if (!detail || String(detail?.league || '').toUpperCase() !== 'CPBL') return;
+    const league = String(detail?.league || '').toUpperCase();
+    if (!detail || !['CPBL','NPB'].includes(league)) return;
     const board = document.querySelector('.gdx-landscape-board');
     if (!board) return;
     if (!shouldShowBothLineups(detail)) return;
@@ -113,13 +114,15 @@
     return response;
   };
 
-  window.addEventListener('cpbl-live-cache-update', event => {
+  const acceptLiveCacheUpdate = event => {
     const detail = event?.detail?.detail || event?.detail?.row?.published_payload || null;
-    if (detail?.game) {
+    if (detail?.game && ['CPBL','NPB'].includes(String(detail?.league || '').toUpperCase())) {
       latestDetail = detail;
       schedule();
     }
-  });
+  };
+  window.addEventListener('cpbl-live-cache-update', acceptLiveCacheUpdate);
+  window.addEventListener('npb-live-cache-update', acceptLiveCacheUpdate);
 
   new MutationObserver(schedule).observe(document.documentElement, {childList:true, subtree:true});
   window.addEventListener('resize', schedule, {passive:true});

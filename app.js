@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.74';
+    const APP_VERSION = 'v2.75';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -6,6 +6,7 @@
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
+    const CPBL_POSTSEASON_DAILY_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-daily';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
     const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
     const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
@@ -15,8 +16,8 @@
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.74';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.74';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.75';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.75';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -875,7 +876,11 @@ bg2: {
     }
 
     async function cpblRequest(action, payload = {}) {
-      const response = await fetch(CPBL_API_URL, {
+      const requestKindCode = String(payload?.kindCode || '').toUpperCase();
+      const requestUrl = action === 'daily' && ['E','C'].includes(requestKindCode)
+        ? CPBL_POSTSEASON_DAILY_API_URL
+        : CPBL_API_URL;
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({
@@ -2364,7 +2369,7 @@ bg2: {
       if (!player?.cpblAcnt || !player?.cpblTeamCode) throw new Error('此球員尚未連結中職官網。');
 
       const gameYear = Number(els.gameDate.value?.slice(0, 4)) || CURRENT_YEAR;
-      const levels = ['A','D'];
+      const levels = ['A','E','C','D'];
       let daily = null;
       let kindCode = 'A';
       let lastReason = '';
@@ -2427,25 +2432,30 @@ bg2: {
       }
 
       // 找到哪個軍別就自動切到該軍別的本機紀錄，不需使用者手動選。
-      if (selectedLevel !== kindCode) {
+      const recordLevel = kindCode === 'D' ? 'D' : 'A';
+      if (selectedLevel !== recordLevel) {
         persistActiveStatsProfile(player);
-        selectedLevel = kindCode;
-        const years = availableSeasonYears(player, kindCode);
+        selectedLevel = recordLevel;
+        const years = availableSeasonYears(player, recordLevel);
         selectedSeason = years.includes(gameYear) ? gameYear : (years[0] || gameYear);
         activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
         await loadRecord();
       }
-      currentRecord.level = kindCode;
+      currentRecord.level = recordLevel;
 
       if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
+      currentRecord.cpblKindCode = kindCode;
+      currentRecord.competition = daily.competition || (kindCode === 'E' ? 'playoff_challenge' : kindCode === 'C' ? 'taiwan_series' : kindCode === 'D' ? 'minor' : 'regular');
+      currentRecord.competitionLabel = daily.competitionLabel || (kindCode === 'E' ? '季後挑戰賽' : kindCode === 'C' ? '總冠軍賽' : kindCode === 'D' ? '二軍' : '一軍例行賽');
 
       const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
       if (!appliedRoles) return false;
 
       const isToday = els.gameDate.value === localISODate();
-      currentRecord.cpblReadOnlyImport = !isToday;
+      const syncSeasonToday = isToday && !['E','C'].includes(kindCode);
+      currentRecord.cpblReadOnlyImport = !syncSeasonToday;
 
-      if (isToday) {
+      if (syncSeasonToday) {
         try {
           await updatePlayerFromCpbl(player, true, gameYear, kindCode);
           currentRecord.committedStats = player.type === 'hitter'
@@ -2463,14 +2473,19 @@ bg2: {
       }
 
       currentRecord.cpblImportedAt = Date.now();
-      currentRecord.syncMeta = { source: officialDataSourceLabel(player), updatedAt: currentRecord.cpblImportedAt };
+      const cpblImportSource = ['E','C'].includes(kindCode)
+        ? `CPBL 官方｜${currentRecord.competitionLabel}`
+        : officialDataSourceLabel(player);
+      currentRecord.syncMeta = { source: cpblImportSource, updatedAt: currentRecord.cpblImportedAt };
       await saveRecord();
       renderAll();
 
-      const levelLabel = kindCode === 'D' ? '二軍' : '一軍';
-      setStatus(isToday
+      const levelLabel = kindCode === 'D' ? '二軍' : kindCode === 'E' ? '季後挑戰賽' : kindCode === 'C' ? '總冠軍賽' : '一軍例行賽';
+      setStatus(syncSeasonToday
         ? `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料並同步今日累積數據。`
-        : `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；歷史日期不會寫入球員累積數據。`);
+        : isToday && ['E','C'].includes(kindCode)
+          ? `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；季後賽單場獨立保存，不會寫入例行賽累積數據。`
+          : `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；歷史日期不會寫入球員累積數據。`);
       return true;
     }
 
@@ -4734,14 +4749,18 @@ bg2: {
 
     function batchRecordFromCpblDaily(player, daily, level) {
       if (!daily?.found) return null;
+      const recordLevel = level === 'D' ? 'D' : 'A';
       const record = {
         ...defaultGameRecord(player),
-        key: `${els.gameDate.value}:${player.id}:${level}`,
+        key: `${els.gameDate.value}:${player.id}:${recordLevel}`,
         playerId: player.id,
         date: els.gameDate.value,
-        level,
+        level: recordLevel,
+        cpblKindCode: level,
+        competition: daily.competition || (level === 'E' ? 'playoff_challenge' : level === 'C' ? 'taiwan_series' : level === 'D' ? 'minor' : 'regular'),
+        competitionLabel: daily.competitionLabel || (level === 'E' ? '季後挑戰賽' : level === 'C' ? '總冠軍賽' : level === 'D' ? '二軍' : '一軍例行賽'),
         opponent: normalizeTeamName(daily.game?.opponent || ''),
-        cpblReadOnlyImport: els.gameDate.value !== localISODate(),
+        cpblReadOnlyImport: ['E','C'].includes(level) || els.gameDate.value !== localISODate(),
         cpblImportedAt: Date.now()
       };
 
@@ -4799,7 +4818,7 @@ bg2: {
         return { record:null, level:'A', reason:'此球員尚未連結中職官網' };
       }
 
-      const levels = ['A','D'];
+      const levels = ['A','E','C','D'];
       let lastReason = '';
       for (const level of levels) {
         const knownYears = player?.cpblAvailableYears?.[level];
@@ -4828,7 +4847,7 @@ bg2: {
           }
 
           await idbPut(STORES.games, record);
-          return { record, level, fetched:true };
+          return { record, level: level === 'D' ? 'D' : 'A', kindCode: level, fetched:true };
         } catch (error) {
           lastReason = error?.message || String(error);
         }
@@ -6260,7 +6279,7 @@ bg2: {
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
       if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {
-        // v2.74: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
+        // v2.75: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
         // Browser polling is only a five-minute safety net after a Realtime disconnect.
         const connected = activeHomeGameDetail.league === 'CPBL'
           ? window.__cpblRealtimeConnected
@@ -7271,7 +7290,7 @@ bg2: {
 
       const importButton = player.cpblAcnt
         ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職資料</button></div>
-           <div class="small" style="margin-top:6px">會先查一軍，當日一軍無出賽再自動查二軍；若同場有打擊與投球，兩邊會一次匯入。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
+           <div class="small" style="margin-top:6px">會自動查一軍例行賽、季後挑戰賽、總冠軍賽與二軍；若同場有打擊與投球，兩邊會一次匯入。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
         : linkedOverseas
           ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
              <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 若同場同時有打擊與投球，兩邊會一次匯入；單場資料不會重複累加到已同步的賽季成績。</div>`
@@ -12469,7 +12488,7 @@ bg2: {
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // v2.74: do not check/apply updates merely because the user returned
+        // v2.75: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
         // existing 15-minute timer remain responsible for update checks.
 

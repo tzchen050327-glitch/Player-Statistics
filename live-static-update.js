@@ -27,7 +27,7 @@
     showBootFailure(reason?.message || reason || 'Promise rejected');
   });
 
-  // v2.74 index.html and app.js drifted apart: the current HTML removed several
+  // v2.75 index.html and app.js drifted apart: the current HTML removed several
   // controls that app.js still binds synchronously during startup. Restore only
   // those controls before app.js executes so fresh browsers and cached browsers
   // use the same DOM contract.
@@ -60,7 +60,7 @@
 
   ensureV271DomCompatibility();
 
-  // v2.74 emergency mode: unregister old workers and return a harmless fake
+  // v2.75 emergency mode: unregister old workers and return a harmless fake
   // registration during startup. The web app continues to work online without
   // a Service Worker; PWA updating can be re-enabled after boot stability is confirmed.
   try {
