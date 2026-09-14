@@ -388,9 +388,13 @@
       const home = String(game?.home || '主隊');
       if (!wins.has(away)) wins.set(away,0);
       if (!wins.has(home)) wins.set(home,0);
-      const awayScore = Number(game?.awayScore);
-      const homeScore = Number(game?.homeScore);
-      const hasScore = Number.isFinite(awayScore) && Number.isFinite(homeScore);
+      const awayRaw = game?.awayScore;
+      const homeRaw = game?.homeScore;
+      const awayScore = Number(awayRaw);
+      const homeScore = Number(homeRaw);
+      const hasScore = awayRaw !== null && awayRaw !== undefined && awayRaw !== ''
+        && homeRaw !== null && homeRaw !== undefined && homeRaw !== ''
+        && Number.isFinite(awayScore) && Number.isFinite(homeScore);
       if (hasScore) {
         if (awayScore > homeScore) wins.set(away, (wins.get(away) || 0) + 1);
         else if (homeScore > awayScore) wins.set(home, (wins.get(home) || 0) + 1);
