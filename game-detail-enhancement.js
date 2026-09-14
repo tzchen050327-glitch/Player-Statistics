@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.71';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.72';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|npb-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
@@ -485,6 +485,15 @@
     clearTimeout(enhanceTimer);
     enhanceTimer=setTimeout(enhanceGameDetail,60);
   }
+
+  const acceptRealtimeDetail = event => {
+    const detail=event?.detail?.detail||event?.detail?.row?.published_payload||null;
+    if (!detail?.game) return;
+    latestDetail=detail;
+    scheduleEnhance();
+  };
+  window.addEventListener('cpbl-live-cache-update',acceptRealtimeDetail);
+  window.addEventListener('npb-live-cache-update',acceptRealtimeDetail);
 
   new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',event=>{if(event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) setTimeout(scheduleEnhance,200);},true);

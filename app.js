@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.71';
+    const APP_VERSION = 'v2.72';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -14,8 +14,8 @@
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.71';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.71';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.72';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.72';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6075,7 +6075,12 @@ bg2: {
     function updateHomeGameDetailRefreshCountdown() {
       const el = document.getElementById('homeGameDetailRefreshCountdown');
       if (!el) return;
-      if (activeHomeGameDetail?.league === 'CPBL' && window.__cpblRealtimeConnected) {
+      const realtimeConnected = activeHomeGameDetail?.league === 'CPBL'
+        ? window.__cpblRealtimeConnected
+        : activeHomeGameDetail?.league === 'NPB'
+          ? window.__npbRealtimeConnected
+          : false;
+      if (realtimeConnected) {
         el.textContent = '即時推送';
         return;
       }
@@ -6114,6 +6119,7 @@ bg2: {
     function closeHomeGameDetail() {
       stopHomeGameDetailRefresh();
       window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      window.dispatchEvent(new CustomEvent('npb-live-unwatch'));
       document.body.classList.remove('gdx-cpbl-landscape');
       activeHomeGameDetail = null;
       const overlay = document.getElementById('homeGameDetailOverlay');
@@ -6243,10 +6249,13 @@ bg2: {
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
-      if (activeHomeGameDetail.league === 'CPBL') {
-        // v2.71: CPBL is pushed by Supabase Realtime. Poll only as a low-frequency
-        // safety net when the Realtime channel is unavailable.
-        if (window.__cpblRealtimeConnected) {
+      if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {
+        // v2.72: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
+        // Browser polling is only a five-minute safety net after a Realtime disconnect.
+        const connected = activeHomeGameDetail.league === 'CPBL'
+          ? window.__cpblRealtimeConnected
+          : window.__npbRealtimeConnected;
+        if (connected) {
           updateHomeGameDetailRefreshCountdown();
           return;
         }
@@ -6283,6 +6292,12 @@ bg2: {
         if (league === 'CPBL' && date === localISODate() && game?.id && typeof window.__cpblRealtimeReadPublished === 'function') {
           try {
             const published = await window.__cpblRealtimeReadPublished(date, String(game.id));
+            detail = published?.detail || null;
+          } catch {}
+        }
+        if (!detail && league === 'NPB' && date === localISODate() && game?.id && typeof window.__npbRealtimeReadPublished === 'function') {
+          try {
+            const published = await window.__npbRealtimeReadPublished(date, String(game.id));
             detail = published?.detail || null;
           } catch {}
         }
@@ -6330,6 +6345,11 @@ bg2: {
       } else {
         window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
       }
+      if (league === 'NPB' && date === localISODate() && game?.id) {
+        window.dispatchEvent(new CustomEvent('npb-live-watch', { detail:{ date, gameId:String(game.id) } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('npb-live-unwatch'));
+      }
 
       const cached = homeGameDetailCache.get(key);
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
@@ -6354,6 +6374,34 @@ bg2: {
       syncHomeDailyGameFromDetail('CPBL', date, game, detail);
       renderHomeGameDetail(detail, game);
       scheduleHomeGameDetailRefresh(detail);
+    });
+
+    window.addEventListener('npb-live-cache-update', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'NPB') return;
+      const row = event?.detail?.row || null;
+      const detail = event?.detail?.detail || row?.published_payload || null;
+      if (!detail?.game) return;
+      const { date, game } = activeHomeGameDetail;
+      const expectedId = String(game?.id || '');
+      const incomingId = String(row?.game_id || detail?.game?.id || '');
+      if (expectedId && incomingId && expectedId !== incomingId) return;
+      const key = homeGameDetailKey('NPB', date, game);
+      homeGameDetailCache.set(key, { at:Date.now(), detail });
+      homeGameDetailErrorStreak = 0;
+      syncHomeDailyGameFromDetail('NPB', date, game, detail);
+      renderHomeGameDetail(detail, game);
+      scheduleHomeGameDetailRefresh(detail);
+    });
+
+    window.addEventListener('npb-live-realtime-status', event => {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'NPB') return;
+      const cached = homeGameDetailCache.get(homeGameDetailKey('NPB', activeHomeGameDetail.date, activeHomeGameDetail.game));
+      if (event?.detail?.connected) {
+        stopHomeGameDetailRefresh();
+        updateHomeGameDetailRefreshCountdown();
+      } else if (cached?.detail) {
+        scheduleHomeGameDetailRefresh(cached.detail);
+      }
     });
 
     window.addEventListener('cpbl-live-realtime-status', event => {
@@ -12411,7 +12459,7 @@ bg2: {
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        // v2.71: do not check/apply updates merely because the user returned
+        // v2.72: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
         // existing 15-minute timer remain responsible for update checks.
 
