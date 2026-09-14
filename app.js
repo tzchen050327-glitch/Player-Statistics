@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v2.90';
+    const APP_VERSION = 'v2.91';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -15,11 +15,11 @@
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail';
+    const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.90';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.90';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v2.91';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v2.91';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -879,11 +879,9 @@ bg2: {
 
     async function cpblRequest(action, payload = {}) {
       const requestKindCode = String(payload?.kindCode || 'A').toUpperCase();
-      const requestUrl = action === 'daily' && ['E','C'].includes(requestKindCode)
-        ? CPBL_POSTSEASON_DAILY_API_URL
-        : action === 'daily' && ['A','D'].includes(requestKindCode)
-          ? CPBL_DAILY_CACHE_API_URL
-          : CPBL_API_URL;
+      const requestUrl = action === 'daily' && ['A','D','E','C'].includes(requestKindCode)
+        ? CPBL_DAILY_CACHE_API_URL
+        : CPBL_API_URL;
       const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
@@ -5962,7 +5960,7 @@ bg2: {
       return true;
     }
 
-    async function leagueGameDetailRequest(league, date, game) {
+    async function leagueGameDetailRequest(league, date, game, force = false) {
       const cpblKindCode = String(game?.kindCode || 'A').trim().toUpperCase();
       const detailApiUrl = league === 'CPBL'
         ? (cpblKindCode === 'D'
@@ -5985,7 +5983,8 @@ bg2: {
           away:String(game?.away || ''),
           home:String(game?.home || ''),
           venue:String(game?.venue || ''),
-          status:String(game?.status || '')
+          status:String(game?.status || ''),
+          force:Boolean(force)
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -6369,7 +6368,7 @@ bg2: {
         homeGameDetailRefreshTimer = 0;
         stopHomeGameDetailRefreshCountdown();
         if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
-        refreshActiveHomeGameDetail({ force:true, automatic:true });
+        refreshActiveHomeGameDetail({ force:false, automatic:true });
       }, delay);
     }
 
@@ -6386,38 +6385,44 @@ bg2: {
       }
       if (activeHomeGameDetail.loading) return;
       activeHomeGameDetail.loading = true;
-      if (cached?.detail) renderHomeGameDetail(cached.detail, game, { loading:true });
+      if (cached?.detail) renderHomeGameDetail(cached.detail, game, { loading:false });
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       try {
         let detail = null;
+        const staleDetail = !force ? (cached?.detail || null) : null;
         let fromPublishedCache = false;
+        let fromAnyCache = Boolean(staleDetail);
         if (!force && league === 'CPBL' && date === localISODate() && game?.id && typeof window.__cpblRealtimeReadPublished === 'function') {
           try {
             const published = await window.__cpblRealtimeReadPublished(date, String(game.id), String(game?.kindCode || 'A'));
             detail = published?.detail || null;
             fromPublishedCache = Boolean(detail);
+            if (detail) fromAnyCache = true;
           } catch {}
         }
         if (!detail && league === 'NPB' && date === localISODate() && game?.id && typeof window.__npbRealtimeReadPublished === 'function') {
           try {
             const published = await window.__npbRealtimeReadPublished(date, String(game.id));
             detail = published?.detail || null;
+            if (detail) fromAnyCache = true;
           } catch {}
         }
-        if (!detail) detail = await leagueGameDetailRequest(league, date, game);
+        if (!detail && staleDetail) detail = staleDetail;
+        if (!detail) detail = await leagueGameDetailRequest(league, date, game, force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB') && (!fromPublishedCache || force)) {
+        if (String(detail?.status || '').toLowerCase() === 'scheduled' && (league === 'CPBL' || league === 'NPB') && (!fromAnyCache || force)) {
           try {
             detail.pregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
           } catch (pregameError) {
             detail.pregame = { awayStarter:null, homeStarter:null, error:pregameError?.message || '先發投手資料讀取失敗。' };
           }
         }
+        const detailChanged = !cached?.detail || JSON.stringify(cached.detail) !== JSON.stringify(detail);
         homeGameDetailCache.set(key, { at:Date.now(), detail });
         homeGameDetailErrorStreak = 0;
         syncHomeDailyGameFromDetail(league, date, game, detail);
         if (detail?.game?.id && !game.id) game.id = detail.game.id;
-        renderHomeGameDetail(detail, game);
+        if (detailChanged || force) renderHomeGameDetail(detail, game);
         scheduleHomeGameDetailRefresh(detail);
       } catch (error) {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
@@ -6430,7 +6435,7 @@ bg2: {
           startHomeGameDetailRefreshCountdown(retryDelay);
           homeGameDetailRefreshTimer = setTimeout(() => {
             homeGameDetailRefreshTimer = 0;
-            if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:true, automatic:true });
+            if (activeHomeGameDetail && document.visibilityState === 'visible') refreshActiveHomeGameDetail({ force:false, automatic:true });
           }, retryDelay);
         }
       } finally {
