@@ -21,30 +21,32 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          def replace_once(text, old, new, label):
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected exactly 1 match, got {count}')
-              return text.replace(old, new, 1)
+          def insert_once(text, marker, replacement, label):
+              if replacement in text:
+                  return text
+              if marker not in text:
+                  raise SystemExit(f'{label}: marker not found')
+              return text.replace(marker, replacement, 1)
 
           Path('postseason-history.js').write_text(Path('.github/patches/v274-postseason-history.js').read_text())
           Path('postseason-history.css').write_text(Path('.github/patches/v274-postseason-history.css').read_text())
 
           index = Path('index.html').read_text()
-          index = replace_once(
+          index = insert_once(
               index,
               '  <link rel="stylesheet" href="./landscape-state.css?v=v2.73" />\n',
               '  <link rel="stylesheet" href="./landscape-state.css?v=v2.73" />\n  <link rel="stylesheet" href="./postseason-history.css?v=v2.73" />\n',
               'index postseason css'
           )
-          index = replace_once(
+          index = insert_once(
               index,
               '        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>\n        <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>',
               '        <button class="press-btn tab-btn hidden" data-tab="secondary">其他成績</button>\n        <button class="press-btn tab-btn hidden" data-tab="postseason">季後賽</button>\n        <button class="press-btn tab-btn" data-tab="today">球員今日狀況</button>',
               'index postseason tab'
           )
-          index = replace_once(
+          index = insert_once(
               index,
               '  <script src="./app.js?v=v2.73"></script>\n',
               '  <script src="./app.js?v=v2.73"></script>\n  <script src="./postseason-history.js?v=v2.73"></script>\n',
@@ -53,38 +55,42 @@ jobs:
           Path('index.html').write_text(index)
 
           app = Path('app.js').read_text()
-          player_scope = """    function playerScope(player) {
-              const scope = String(player?.scope || '').trim();
-              return scope === 'international' || scope === 'overseas' ? scope : 'cpbl';
-            }
+          if 'window.__getPlayerContext' not in app:
+              pattern = re.compile(
+                  r"(\n\s*function playerScope\(player\)\s*\{\s*\n"
+                  r"\s*const scope = String\(player\?\.scope \|\| ''\)\.trim\(\);\s*\n"
+                  r"\s*return scope === 'international' \|\| scope === 'overseas' \? scope : 'cpbl';\s*\n"
+                  r"\s*\}\s*\n)"
+              )
+              matches = list(pattern.finditer(app))
+              if len(matches) != 1:
+                  raise SystemExit(f'app player context bridge: expected 1 playerScope function, got {len(matches)}')
+              bridge = """    window.__getPlayerContext = () => ({ player:selectedPlayer(), selectedSeason, selectedTab });
+              window.addEventListener('postseason-open-game', event => {
+                const detail = event?.detail || {};
+                if (detail?.game && detail?.league && detail?.date) openHomeGameDetail(detail.game, detail.league, detail.date);
+              });
+
           """
-          app = replace_once(
-              app,
-              player_scope,
-              player_scope + """
-            window.__getPlayerContext = () => ({ player:selectedPlayer(), selectedSeason, selectedTab });
-            window.addEventListener('postseason-open-game', event => {
-              const detail = event?.detail || {};
-              if (detail?.game && detail?.league && detail?.date) openHomeGameDetail(detail.game, detail.league, detail.date);
-            });
-          """,
-              'app player context bridge'
-          )
-          app = replace_once(
-              app,
-              "      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive));",
-              "      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive && selectedTab !== 'postseason'));",
-              'app postseason season picker'
-          )
+              m = matches[0]
+              app = app[:m.end()] + bridge + app[m.end():]
+
+          old_visibility = "els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive));"
+          new_visibility = "els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive && selectedTab !== 'postseason'));"
+          if new_visibility not in app:
+              count = app.count(old_visibility)
+              if count != 1:
+                  raise SystemExit(f'app postseason season picker: expected 1 match, got {count}')
+              app = app.replace(old_visibility, new_visibility, 1)
           Path('app.js').write_text(app)
 
           sw = Path('service-worker.js').read_text()
-          sw = replace_once(
-              sw,
-              "  './npb-realtime.js?v=v2.73',\n  './app.js?v=v2.73',",
-              "  './npb-realtime.js?v=v2.73',\n  './postseason-history.css?v=v2.73',\n  './app.js?v=v2.73',\n  './postseason-history.js?v=v2.73',",
-              'service worker postseason assets'
-          )
+          if "'./postseason-history.js?v=v2.73'" not in sw:
+              marker = "  './npb-realtime.js?v=v2.73',\n  './app.js?v=v2.73',"
+              replacement = "  './npb-realtime.js?v=v2.73',\n  './postseason-history.css?v=v2.73',\n  './app.js?v=v2.73',\n  './postseason-history.js?v=v2.73',"
+              if marker not in sw:
+                  raise SystemExit('service worker postseason assets: marker not found')
+              sw = sw.replace(marker, replacement, 1)
           Path('service-worker.js').write_text(sw)
 
           files = [
@@ -109,10 +115,12 @@ jobs:
           node --check postseason-history.js
           node --check game-detail-enhancement.js
           grep -q "const APP_VERSION = 'v2.74'" app.js
+          grep -q 'window.__getPlayerContext' app.js
           grep -q 'data-tab="postseason"' index.html
           grep -q 'postseason-history.js?v=v2.74' index.html
           grep -q 'postseason-history.css?v=v2.74' index.html
           grep -q 'postseason-history.js?v=v2.74' service-worker.js
+          grep -q 'postseason-history.css?v=v2.74' service-worker.js
           grep -q 'baseball-player-card-pwa-v274' service-worker.js
           grep -q '"version":"v2.74"' version.json
 
