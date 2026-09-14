@@ -50,11 +50,13 @@
       second: !!(value.second ?? value[2] ?? value.base2),
       third: !!(value.third ?? value[3] ?? value.base3)
     };
-    const raw = String(value || '');
+    const raw = String(value || '').normalize('NFKC');
+    const loaded = /滿壘|満塁|bases\s*loaded/i.test(raw);
+    const numbered = n => new RegExp(`(?:^|[^0-9])${n}(?=[^0-9]|$)`).test(raw);
     return {
-      first: /一壘|一塁|1塁|first/i.test(raw),
-      second: /二壘|二塁|2塁|second/i.test(raw),
-      third: /三壘|三塁|3塁|third/i.test(raw)
+      first: loaded || /一壘|一塁|first/i.test(raw) || numbered(1),
+      second: loaded || /二壘|二塁|second/i.test(raw) || numbered(2),
+      third: loaded || /三壘|三塁|third/i.test(raw) || numbered(3)
     };
   }
 
@@ -63,6 +65,13 @@
     const last = plays[plays.length - 1];
     const status = String(detail?.status || '').toLowerCase();
     if (status === 'final' || inferredOutsAfterPlay(last) >= 3) return [false,false,false];
+    if (String(detail?.league || '').toUpperCase() === 'NPB') {
+      const inferred = inferRunnerNames(detail);
+      if (inferred.first || inferred.second || inferred.third) {
+        return [!!inferred.first, !!inferred.second, !!inferred.third];
+      }
+      if (detail?.current?.bases !== undefined && detail?.current?.bases !== null) return detail.current.bases;
+    }
     if (detail?.current?.baseState) return detail.current.baseState;
     if (detail?.current?.bases) return detail.current.bases;
     return last?.baseState || last?.basesAfter || last?.bases || '';
@@ -186,18 +195,72 @@
     const gameInning=Number(String(detail?.game?.inningLabel||'').match(/(\d+)/)?.[1]||0);
     const plays=(Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>p?.half===wantedHalf&&(!gameInning||Number(p?.inning)===gameInning));
     let runners={first:'',second:'',third:''};
+    const keys=['first','second','third'];
+    const rank={first:1,second:2,third:3};
     const keyOf=base=>base==='一壘'?'first':base==='二壘'?'second':'third';
     const destOf=text=>/一壘/.test(text)?'first':/二壘/.test(text)?'second':/三壘/.test(text)?'third':'';
-    for(const play of plays){
+    const stateForPlay=play=>normalizeBaseState(
+      play?.baseStateBefore ?? play?.basesBefore ?? play?.baseState ?? play?.bases ?? ''
+    );
+    const reconcileBefore=state=>{
+      for(const key of keys) if(!state[key]) runners[key]='';
+    };
+    const destination=(result,desc)=>{
+      const text=`${result||''} ${desc||''}`;
+      if(/全壘打|全塁打|ホームラン|home\s*run/i.test(text)) return 'home';
+      if(/三壘安打|三塁打|スリーベース|triple/i.test(text)) return 'third';
+      if(/二壘安打|二塁打|ツーベース|double/i.test(text)) return 'second';
+      if(/一壘安打|安打|ヒット|四壞|四球|フォアボール|故意四壞|敬遠|觸身|死球|デッドボール|失誤上壘|野手選擇/i.test(text) || /趁傳上壘|打者[^。]*上壘/.test(desc||'')) return 'first';
+      return '';
+    };
+    const heuristicAfter=(before,dest,result,play)=>{
+      let after={first:!!before.first,second:!!before.second,third:!!before.third};
+      if(inferredOutsAfterPlay(play)>=3 || dest==='home') return {first:false,second:false,third:false};
+      if(dest==='third') return {first:false,second:false,third:true};
+      if(dest==='second') return {first:false,second:true,third:!!before.first};
+      if(dest==='first') {
+        const walk=/四壞|四球|フォアボール|故意四壞|敬遠|觸身|死球|デッドボール/i.test(result||'');
+        if(walk){
+          if(before.first){
+            if(before.second) after.third=true;
+            after.second=true;
+          }
+          after.first=true;
+          return after;
+        }
+        return {first:true,second:!!before.first,third:!!before.second};
+      }
+      if(/犧牲短打|犠打|sacrifice\s*bunt/i.test(result||'')) {
+        return {first:false,second:!!before.first,third:!!before.second || !!before.third};
+      }
+      return after;
+    };
+    const assignToState=(after,batter,dest)=>{
+      const old={...runners};
+      const next={first:'',second:'',third:''};
+      if(dest==='home'){ runners=next; return; }
+      if(dest && after[dest] && batter) next[dest]=batter;
+      const oldRunners=[['third',old.third],['second',old.second],['first',old.first]].filter(([,name])=>!!name);
+      for(const [from,name] of oldRunners){
+        const candidates=keys
+          .filter(key=>after[key]&&!next[key]&&rank[key]>=rank[from])
+          .sort((a,b)=>rank[b]-rank[a]);
+        if(candidates.length) next[candidates[0]]=name;
+      }
+      runners=next;
+    };
+    for(let i=0;i<plays.length;i++){
+      const play=plays[i];
       const desc=compactName(play?.description||'');
       const batter=compactName(play?.batter||play?.hitter||'');
       const result=`${play?.result||''} ${play?.raw||''}`;
+      const before=stateForPlay(play);
+      reconcileBefore(before);
 
       for(const m of desc.matchAll(/更換代跑[:：]\s*([^=〉>。]+?)\s*(?:=>|→|〉)\s*([^，。\s]+)/g)){
         const from=compactName(m[1]),to=compactName(m[2]);
-        for(const k of ['first','second','third']) if(runners[k]===from) runners[k]=to;
+        for(const k of keys) if(runners[k]===from) runners[k]=to;
       }
-
       for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*(上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
         const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];
         if(runners[from]===name||!runners[from]) runners[from]='';
@@ -207,15 +270,15 @@
         }
       }
 
-      if(/全壘打/.test(result)){
-        runners={first:'',second:'',third:''};
-      }else if(/三壘安打/.test(result)){
-        runners.third=batter;
-      }else if(/二壘安打/.test(result)){
-        runners.second=batter;
-      }else if(/(?:一壘安打|安打|四壞|故意四壞|觸身|失誤上壘|野手選擇)/.test(result)||/趁傳上壘|打者[^。]*上壘/.test(desc)){
-        runners.first=batter;
-      }
+      const nextPlay=plays[i+1];
+      const sameHalf=nextPlay&&Number(nextPlay?.inning)===Number(play?.inning)&&nextPlay?.half===play?.half;
+      const league=String(detail?.league||'').toUpperCase();
+      const officialAfter=league==='CPBL' && (play?.baseState!==undefined || play?.basesAfter!==undefined)
+        ? normalizeBaseState(play?.baseState ?? play?.basesAfter ?? '')
+        : sameHalf ? stateForPlay(nextPlay) : null;
+      const dest=destination(result,desc);
+      const after=officialAfter || heuristicAfter(before,dest,result,play);
+      assignToState(after,batter,dest);
 
       if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
     }
@@ -236,7 +299,7 @@
     const game=detail?.game||{}, last=Array.isArray(detail?.plays)&&detail.plays.length?detail.plays.at(-1):null;
     return [detail?.league,detail?.date,detail?.status,detail?.competition,detail?.competitionLabel,detail?.statsScope,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,
       detail?.current?.pitcher?.name,detail?.current?.batter?.name,JSON.stringify(detail?.scoreboard||{}),JSON.stringify(detail?.lineups||{}),
-      JSON.stringify(detail?.current?.runners||{}),last?.inning,last?.half,last?.batter,last?.pitcher,last?.result,last?.bases,last?.rbi].map(v=>String(v??'')).join('|');
+      JSON.stringify(detail?.current?.runners||{}),JSON.stringify(detail?.current?.baseState||{}),detail?.current?.bases,last?.inning,last?.half,last?.batter,last?.pitcher,last?.result,last?.bases,last?.rbi].map(v=>String(v??'')).join('|');
   }
 
   function renderDiamond(value, cls='gdx-diamond') {

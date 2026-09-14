@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v2.77';
+  const VERSION = 'v2.98';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -9,6 +9,7 @@
   let watch = null;
   let lastRevision = -1;
   let loader = null;
+  let watchdogTimer = 0;
 
   window.__npbRealtimeConnected = false;
 
@@ -88,6 +89,47 @@
   }
   window.__npbRealtimeReadPublished = readPublished;
 
+
+  async function readRevision(date, gameId) {
+    const d = String(date || '').trim();
+    const id = String(gameId || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !id) return null;
+    const query = new URLSearchParams({
+      game_date:`eq.${d}`,
+      game_id:`eq.${id}`,
+      select:'game_date,game_id,status,published_revision,published_at',
+      limit:'1'
+    });
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/npb_live_game_cache?${query}`, {
+      headers:{ apikey:ANON_KEY, authorization:`Bearer ${ANON_KEY}` },
+      cache:'no-store'
+    });
+    if (!response.ok) return null;
+    const rows = await response.json().catch(() => []);
+    return Array.isArray(rows) ? rows[0] || null : null;
+  }
+
+  function stopWatchdog() {
+    if (watchdogTimer) clearInterval(watchdogTimer);
+    watchdogTimer = 0;
+  }
+
+  function startWatchdog() {
+    stopWatchdog();
+    watchdogTimer = setInterval(async () => {
+      const current = watch ? { ...watch } : null;
+      if (!current || document.visibilityState !== 'visible') return;
+      try {
+        const meta = await readRevision(current.date, current.gameId);
+        if (!meta || !watch || watch.date !== current.date || watch.gameId !== current.gameId) return;
+        const revision = Number(meta.published_revision ?? -1);
+        if (!Number.isFinite(revision) || revision <= lastRevision) return;
+        const published = await readPublished(current.date, current.gameId);
+        if (published?.row && watch && watch.date === current.date && watch.gameId === current.gameId) acceptRow(published.row);
+      } catch {}
+    }, 12000);
+  }
+
   function acceptRow(row) {
     if (!watch || !row) return;
     if (String(row.game_id || '') !== watch.gameId || String(row.game_date || '') !== watch.date) return;
@@ -103,6 +145,7 @@
   }
 
   async function stopWatch(emit = true) {
+    stopWatchdog();
     const old = channel;
     channel = null;
     watch = null;
@@ -133,6 +176,7 @@
         });
       const initial = await readPublished(date, gameId);
       if (initial?.row) acceptRow(initial.row);
+      if (watch) startWatchdog();
     } catch (error) {
       emitStatus(false, error?.message || String(error));
     }

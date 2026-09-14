@@ -3,7 +3,7 @@ import json, re
 
 
 def sub_once(text, pattern, repl, label, flags=0):
-    out, n = re.subn(pattern, repl, text, count=1, flags=flags)
+    out, n = re.subn(pattern, lambda _m: repl, text, count=1, flags=flags)
     if n != 1:
         raise SystemExit(f'{label}: expected 1 replacement, got {n}')
     return out
