@@ -1,0 +1,56 @@
+name: Apply v3.03 CPBL live outs synchronization
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v303.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply v3.03 patch
+        run: python .github/scripts/apply_v303.py
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check cpbl-realtime.js
+          node --check npb-realtime.js
+          node --check game-detail-enhancement.js
+          node --check landscape-state.js
+          node --check postseason-history.js
+          node --check .github/scripts/smoke_v303.mjs
+      - name: Verify release wiring
+        run: |
+          grep -q '"version":"v3.03"' version.json
+          grep -q 'playMatchesCurrentHalf' game-detail-enhancement.js
+          grep -q 'Math.max(direct,after)' game-detail-enhancement.js
+          grep -q 'shouldUseCpblLastAfter' game-detail-enhancement.js
+          test ! -e .github/scripts/apply_v301.py
+          test ! -e .github/scripts/smoke_v301.mjs
+          test ! -e .github/workflows/apply-v301.yml
+          test -e .github/scripts/apply_v302.py
+          test -e .github/scripts/smoke_v302.mjs
+          test -e .github/workflows/apply-v302.yml
+      - name: Production integration smoke
+        run: node .github/scripts/smoke_v303.mjs
+      - name: Commit release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release v3.03 fix CPBL live outs synchronization" || exit 0
+          git push
