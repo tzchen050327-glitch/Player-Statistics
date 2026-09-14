@@ -1,6 +1,6 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.70';
-  const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail)(?:\?|$)/i;
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.71';
+  const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|npb-game-detail)(?:\?|$)/i;
   let latestDetail = null;
   let enhanceTimer = null;
 
@@ -433,14 +433,15 @@
     const detail=latestDetail; if (!detail?.game) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
     const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
-    const landscapeMode=isCpbl && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
+    const supportsLandscape=isCpbl||isNpb;
+    const landscapeMode=supportsLandscape && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
     if (!isCpbl && !isNpb) {
       document.body.classList.remove('gdx-cpbl-landscape');
       body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
       return;
     }
-    document.body.classList.toggle('gdx-cpbl-landscape',isCpbl);
-    if (!isCpbl) body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
+    document.body.classList.toggle('gdx-cpbl-landscape',supportsLandscape);
+    if (!supportsLandscape) body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
