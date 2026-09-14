@@ -48,3 +48,32 @@ body.postseason-history-mode .canvas-wrap{display:none!important;}
   .postseason-game-matchup{grid-column:1 / -1;grid-row:2;}
   .postseason-game-player{grid-column:1 / -1;grid-row:3;margin-top:2px;}
 }
+
+
+/* v2.78 parallel postseason stages */
+.postseason-stage-grid{display:grid;grid-template-columns:repeat(var(--postseason-stage-count,1),minmax(340px,1fr));gap:14px;align-items:start;overflow-x:auto;padding-bottom:4px;scrollbar-gutter:stable;}
+.postseason-stage-card{min-width:340px;border:1px solid rgba(120,130,150,.22);border-radius:18px;padding:14px;background:rgba(255,255,255,.025);display:grid;gap:12px;align-content:start;}
+.postseason-stage-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+.postseason-stage-title-row h3{margin:2px 0 0;font-size:18px;}
+.postseason-stage-kicker{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;opacity:.5;}
+.postseason-stage-count{font-size:11px;font-weight:700;opacity:.58;white-space:nowrap;}
+.postseason-stage-summary{display:grid;grid-template-columns:1fr;gap:8px;}
+.postseason-stage-card .postseason-summary-card{border-radius:13px;padding:10px;}
+.postseason-stage-card .postseason-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+.postseason-stage-card .postseason-stat{padding:6px 4px;}
+.postseason-stage-card .postseason-stat strong{font-size:14px;}
+.postseason-summary-empty{min-height:72px;display:grid;align-content:start;}
+.postseason-summary-none{display:flex;align-items:center;justify-content:center;min-height:32px;border-radius:10px;background:rgba(127,127,127,.07);font-size:13px;font-weight:800;opacity:.72;}
+.postseason-game-list-compact{gap:7px;}
+.postseason-game-row-compact{display:grid;grid-template-columns:1fr!important;gap:6px!important;padding:10px!important;}
+.postseason-game-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.postseason-game-row-compact .postseason-game-matchup{grid-column:auto!important;grid-row:auto!important;}
+.postseason-game-row-compact .postseason-game-player{grid-column:auto!important;grid-row:auto!important;margin-top:0!important;}
+.postseason-game-row-compact .postseason-game-open{grid-column:auto!important;grid-row:auto!important;}
+.postseason-series-score{font-size:11px;font-weight:800;opacity:.68;text-align:center;padding:5px 7px;border-radius:9px;background:rgba(127,127,127,.07);}
+.postseason-game-player.is-dnp{opacity:.58;font-weight:800;}
+@media(max-width:700px){
+  .postseason-stage-grid{grid-template-columns:repeat(var(--postseason-stage-count,1),minmax(300px,84vw));gap:10px;}
+  .postseason-stage-card{min-width:300px;padding:12px;}
+  .postseason-stage-card .postseason-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}

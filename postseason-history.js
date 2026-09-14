@@ -326,7 +326,7 @@
   }
 
   function statGrid(title, stats, type) {
-    if (!stats) return '';
+    if (!stats) return `<section class="postseason-summary-card postseason-summary-empty"><div class="postseason-summary-title">${esc(title)}</div><div class="postseason-summary-none">未出賽</div></section>`;
     const cells = type === 'pitching'
       ? [
           ['G', stats.games], ['IP', stats.ip], ['H', stats.hits], ['HR', stats.homeRuns],
@@ -367,6 +367,70 @@
     return games.filter(g => teams.has(String(g.away)) || teams.has(String(g.home)));
   }
 
+  function seriesProgress(games, comp, league) {
+    const ordered = (Array.isArray(games) ? games : []).slice().sort((a,b) =>
+      String(a?.date || '').localeCompare(String(b?.date || '')) || String(a?.id || '').localeCompare(String(b?.id || ''))
+    );
+    if (!ordered.length) return [];
+    const first = ordered[0];
+    const teamA = String(first?.away || '客隊');
+    const teamB = String(first?.home || '主隊');
+    const wins = new Map([[teamA,0],[teamB,0]]);
+    let draws = 0;
+
+    // NPB CS Final Stage gives the regular-season champion (the home club) a one-win advantage.
+    if (String(league || '').toUpperCase() === 'NPB' && comp?.key === 'climax_final' && teamB) {
+      wins.set(teamB, 1);
+    }
+
+    return ordered.map(game => {
+      const away = String(game?.away || '客隊');
+      const home = String(game?.home || '主隊');
+      if (!wins.has(away)) wins.set(away,0);
+      if (!wins.has(home)) wins.set(home,0);
+      const awayScore = Number(game?.awayScore);
+      const homeScore = Number(game?.homeScore);
+      const hasScore = Number.isFinite(awayScore) && Number.isFinite(homeScore);
+      if (hasScore) {
+        if (awayScore > homeScore) wins.set(away, (wins.get(away) || 0) + 1);
+        else if (homeScore > awayScore) wins.set(home, (wins.get(home) || 0) + 1);
+        else draws += 1;
+      }
+      const aWins = wins.get(teamA) || 0;
+      const bWins = wins.get(teamB) || 0;
+      return {
+        game,
+        seriesText: hasScore ? `${teamA} ${aWins}–${bWins} ${teamB}${draws ? `（${draws}和）` : ''}` : '大比分 —'
+      };
+    });
+  }
+
+  function renderStageCard(comp, data, stageIndex) {
+    const games = relevantGames(comp);
+    const progress = seriesProgress(games, comp, data?.league);
+    return `
+      <section class="postseason-stage-card" data-stage-key="${esc(comp.key || '')}">
+        <div class="postseason-stage-title-row">
+          <div><span class="postseason-stage-kicker">SERIES</span><h3>${esc(comp.label || '')}</h3></div>
+          <span class="postseason-stage-count">${games.length} 場</span>
+        </div>
+        <div class="postseason-stage-summary">
+          ${statGrid('系列打擊成績', comp.batting, 'batting')}
+          ${statGrid('系列投球成績', comp.pitching, 'pitching')}
+        </div>
+        <div class="postseason-game-list postseason-game-list-compact">${progress.map(({game:g,seriesText},index)=>`
+          <button type="button" class="postseason-game-row postseason-game-row-compact" data-postseason-stage-index="${stageIndex}" data-postseason-game="${index}" ${g?.id?'':'disabled'}>
+            <div class="postseason-game-topline">
+              <span class="postseason-game-date">${esc(String(g.date||'').replaceAll('-','/'))}</span>
+              <span class="postseason-game-open">查看單場 ›</span>
+            </div>
+            <div class="postseason-game-matchup"><span>${esc(g.away||'客隊')}</span><b>${esc(scoreCell(g.awayScore))} - ${esc(scoreCell(g.homeScore))}</b><span>${esc(g.home||'主隊')}</span></div>
+            <div class="postseason-series-score">大比分 ${esc(seriesText)}</div>
+            <div class="postseason-game-player ${gamePlayerLine(g)==='未出賽'?'is-dnp':''}">${esc(gamePlayerLine(g))}</div>
+          </button>`).join('')}</div>
+      </section>`;
+  }
+
   function renderCompetition(data, key) {
     const target = host();
     if (!target) return;
@@ -375,38 +439,25 @@
       target.innerHTML = `<div class="postseason-empty"><strong>${esc(data?.year || '')} 沒有找到這位球員的季後賽出賽紀錄</strong><span>若球員當年沒有實際出賽，這個年份不會保留在季後賽年份選單。</span></div>`;
       return;
     }
-    const comp = competitions.find(c => c.key === key) || competitions[0];
-    selectedCompetition = comp.key;
-    const games = relevantGames(comp);
+
+    selectedCompetition = '';
+    const stageGames = competitions.map(comp => relevantGames(comp));
     target.innerHTML = `
-      <div class="postseason-history">
+      <div class="postseason-history postseason-history-parallel">
         <div class="postseason-head">
-          <div><span class="postseason-kicker">POSTSEASON HISTORY</span><h2>${esc(data.year)} ${esc(comp.label)}</h2></div>
+          <div><span class="postseason-kicker">POSTSEASON HISTORY</span><h2>${esc(data.year)} 季後賽</h2></div>
           <div class="postseason-source">${esc(data.league)} 官方資料</div>
         </div>
-        <div class="postseason-stage-tabs">${competitions.map(c=>`<button type="button" class="press-btn postseason-stage-btn ${c.key===comp.key?'active':''}" data-postseason-stage="${esc(c.key)}">${esc(c.label)}</button>`).join('')}</div>
-        <div class="postseason-summary-wrap">
-          ${statGrid('系列打擊成績', comp.batting, 'batting')}
-          ${statGrid('系列投球成績', comp.pitching, 'pitching')}
+        <div class="postseason-stage-grid" style="--postseason-stage-count:${competitions.length}">
+          ${competitions.map((comp,index)=>renderStageCard(comp,data,index)).join('')}
         </div>
-        <section class="postseason-games-section">
-          <div class="postseason-games-head"><strong>系列賽程</strong><span>${games.length} 場</span></div>
-          <div class="postseason-game-list">${games.map((g,index)=>`
-            <button type="button" class="postseason-game-row" data-postseason-game="${index}" ${g?.id?'':'disabled'}>
-              <div class="postseason-game-date">${esc(String(g.date||'').replaceAll('-','/'))}</div>
-              <div class="postseason-game-matchup"><span>${esc(g.away||'客隊')}</span><b>${esc(scoreCell(g.awayScore))} - ${esc(scoreCell(g.homeScore))}</b><span>${esc(g.home||'主隊')}</span></div>
-              <div class="postseason-game-player">${esc(gamePlayerLine(g))}</div>
-              <div class="postseason-game-open">查看單場 ›</div>
-            </button>`).join('')}</div>
-        </section>
       </div>`;
 
-    target.querySelectorAll('[data-postseason-stage]').forEach(button => {
-      button.addEventListener('click', () => renderCompetition(data, String(button.dataset.postseasonStage || '')));
-    });
     target.querySelectorAll('[data-postseason-game]').forEach(button => {
       button.addEventListener('click', () => {
-        const game = games[Number(button.dataset.postseasonGame)];
+        const stageIndex = Number(button.dataset.postseasonStageIndex);
+        const gameIndex = Number(button.dataset.postseasonGame);
+        const game = stageGames[stageIndex]?.[gameIndex];
         if (!game?.id) return;
         window.dispatchEvent(new CustomEvent('postseason-open-game', { detail:{ game, league:data.league, date:game.date } }));
       });
