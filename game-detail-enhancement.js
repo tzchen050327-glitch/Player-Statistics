@@ -126,20 +126,35 @@
     let added = 0;
     if (/三殺|トリプルプレー/i.test(resultText)) added = 3;
     else if (/雙殺|併殺|ダブルプレー|DP\b/i.test(resultText)) added = 2;
-    else if (/三振|ゴロ|滾地|一滾|二滾|三滾|游滾|遊滾|投滾|捕滾|フライ|飛球|界飛|ライナー|平飛|犧牲|犠牲|犠打|犧飛|アウト|出局/i.test(resultText)) added = 1;
+    else if (/三振|ゴロ|滾地|一滾|二滾|三滾|游滾|遊滾|投滾|捕滾|フライ|飛球|界飛|邪飛|ライナー|平飛|犧牲|犠牲|犠打|犧飛|アウト|出局|[一二三游遊左中右投捕](?:飛|直)/i.test(resultText)) added = 1;
     else if (/打者[^。]*(刺殺|接殺|封殺|出局)/i.test(description)) added = 1;
     return Math.min(3, before + added);
+  }
+
+  function playMatchesCurrentHalf(detail,play) {
+    if(!play) return false;
+    const label=String(detail?.game?.inningLabel||'');
+    const m=label.match(/(\d+)\s*局?\s*([上下])/);
+    if(!m) return true;
+    const inning=Number(m[1]);
+    const half=m[2]==='上'?'top':'bottom';
+    return Number(play?.inning)===inning && String(play?.half||'')===half;
   }
 
   function currentOuts(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
-    const after = inferredOutsAfterPlay(last);
     if (String(detail?.status || '').toLowerCase() === 'final') return 3;
-    if (after >= 3) return 3;
     const direct = parseOutNumber(detail?.current?.outs);
-    if (direct !== null) return Math.min(2, direct);
-    return after;
+    const sameHalf=playMatchesCurrentHalf(detail,last);
+    if(!sameHalf) return direct===null?0:Math.min(2,direct);
+
+    const after=inferredOutsAfterPlay(last);
+    // CPBL current.outs can lag one completed PA behind. Within the same half-inning,
+    // never let that stale value overwrite the official completed-PA out count.
+    if(after>=3) return 3;
+    if(direct!==null) return Math.min(2,Math.max(direct,after));
+    return Math.min(2,after);
   }
 
   function normalizedBoard(detail) {
