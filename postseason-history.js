@@ -9,6 +9,7 @@
   const nextGamePolicyCache = new Map();
   const candidateYearsCache = new Map();
   const validYearsCache = new Map();
+  const validYearsSignatureCache = new Map();
   const selectedYearCache = new Map();
   const scanPromises = new Map();
   let activeKey = '';
@@ -103,7 +104,9 @@
 
   function scheduleTeamName(player, league) {
     if (!player) return '';
-    return String(league === 'CPBL' ? (player.cpblTeam || '') : (player.externalTeam || '')).trim();
+    return String(league === 'CPBL'
+      ? (player.cpblTeam || '')
+      : (player.externalCurrentTeam || player.externalTeam || '')).trim();
   }
 
   function normalizeScheduleTeam(value) {
@@ -164,15 +167,21 @@
     try { localStorage.setItem(policyStorageKey(league, team), JSON.stringify(value)); } catch {}
   }
 
-  async function fetchDailySchedule(league, date) {
+  async function fetchNextGameSchedule(league, team) {
     const response = await fetch(DAILY_GAMES_API_URL, {
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({ appKey:APP_KEY, action:'daily-games', league, date })
+      body:JSON.stringify({
+        appKey:APP_KEY,
+        action:'next-game',
+        league,
+        team,
+        ...(league === 'CPBL' ? { kindCodes:['A','E','C'] } : {})
+      })
     });
     const data = await response.json().catch(()=>({}));
-    if (!response.ok || !data?.ok) throw new Error(data?.error || `schedule HTTP ${response.status}`);
-    return Array.isArray(data.games) ? data.games : [];
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `next-game HTTP ${response.status}`);
+    return data?.nextGame || null;
   }
 
   async function currentSeasonCachePolicy(ctx, league) {
@@ -188,34 +197,30 @@
     }
 
     const now = Date.now();
-    const today = leagueToday(league);
+    let game = null;
+    try { game = await fetchNextGameSchedule(league, team); }
+    catch (error) { console.warn(`下一場賽程 ${league} ${team} 讀取失敗`, error); }
+
     let policy = null;
-    for (let day = 0; day < 7 && !policy; day += 1) {
-      const date = addIsoDays(today, day);
-      let games = [];
-      try { games = await fetchDailySchedule(league, date); }
-      catch (error) { console.warn(`下一場賽程 ${league} ${date} 讀取失敗`, error); continue; }
-      const matches = games.filter(game => sameScheduleTeam(game?.away, team) || sameScheduleTeam(game?.home, team));
-      for (const game of matches) {
-        const status = String(game?.status || '').toLowerCase();
-        if (status === 'live' || status === 'suspended') {
-          policy = { mode:'supabase-live', cacheUntil:new Date(now).toISOString(), nextGameAt:null, recheckAt:now + 2*60*1000 };
-          break;
+    if (game) {
+      const status = String(game?.status || '').toLowerCase();
+      if (status === 'live' || status === 'suspended') {
+        policy = { mode:'supabase-live', cacheUntil:new Date(now).toISOString(), nextGameAt:game?.nextGameAt || null, recheckAt:now + 2*60*1000 };
+      } else if (!['final','cancelled','postponed'].includes(status)) {
+        let start = Date.parse(String(game?.nextGameAt || ''));
+        if (!Number.isFinite(start)) start = gameStartMs(league, String(game?.date || leagueToday(league)), game);
+        if (Number.isFinite(start) && start > now) {
+          const takeover = start - 60*60*1000;
+          policy = {
+            mode: takeover > now ? 'local-until-tminus-1h' : 'supabase-pregame',
+            cacheUntil:new Date(Math.max(now, takeover)).toISOString(),
+            nextGameAt:new Date(start).toISOString(),
+            recheckAt: takeover > now ? takeover : now + 2*60*1000
+          };
         }
-        if (status === 'final' || status === 'cancelled' || status === 'postponed') continue;
-        const start = gameStartMs(league, date, game);
-        if (!Number.isFinite(start) || start <= now) continue;
-        const takeover = start - 60*60*1000;
-        policy = {
-          mode: takeover > now ? 'local-until-tminus-1h' : 'supabase-pregame',
-          cacheUntil:new Date(Math.max(now, takeover)).toISOString(),
-          nextGameAt:new Date(start).toISOString(),
-          recheckAt: takeover > now ? takeover : now + 2*60*1000
-        };
-        break;
       }
     }
-    if (!policy) policy = { mode:'no-game-next-7d', cacheUntil:new Date(now+24*60*60*1000).toISOString(), nextGameAt:null, recheckAt:now+24*60*60*1000 };
+    if (!policy) policy = { mode:'no-upcoming-game', cacheUntil:new Date(now+24*60*60*1000).toISOString(), nextGameAt:null, recheckAt:now+24*60*60*1000 };
     nextGamePolicyCache.set(memKey, policy);
     writeStoredPolicy(league, team, policy);
     return policy;
@@ -513,6 +518,13 @@
       return { year:0, failures:[] };
     }
 
+    const candidateSignature = candidates.join(',');
+    if (validYearsCache.has(key) && validYearsSignatureCache.get(key) !== candidateSignature) {
+      validYearsCache.delete(key);
+      validYearsSignatureCache.delete(key);
+      scanPromises.delete(key);
+    }
+
     if (validYearsCache.has(key)) {
       const years = validYearsCache.get(key) || [];
       return {
@@ -527,6 +539,7 @@
         .then(result => {
           if (mySeq !== scanSeq && getContext()?.selectedTab !== 'postseason') return result;
           validYearsCache.set(key, result.years);
+          validYearsSignatureCache.set(key, candidateSignature);
           return result;
         })
         .finally(() => scanPromises.delete(key));
@@ -762,6 +775,7 @@
         document.getElementById('retryPostseasonYears')?.addEventListener('click', () => {
           const key = playerKey(fresh, league);
           validYearsCache.delete(key);
+          validYearsSignatureCache.delete(key);
           scanPromises.delete(key);
           scanSeq += 1;
           void openPostseason(fresh, league);
