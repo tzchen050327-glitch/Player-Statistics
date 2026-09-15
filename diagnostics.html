@@ -126,7 +126,9 @@ async function probePwa(state){
   const normalized=v.replace(/^v/i,'').replace(/\./g,'');
   const currentCaches=p.cacheNames.filter(x=>normalized&&x.includes(`v${normalized}`));
   const appCaches=p.cacheNames.filter(x=>x.startsWith('baseball-player-card-pwa-'));
-  if(location.protocol==='https:'&&p.supported&&!p.controller) pushIssue(state,'warning','PWA','目前頁面沒有 Service Worker controller','首次開啟或剛更新時可能暫時正常');
+  const activeRegistration=p.registrations.find(r=>r.active&&location.href.startsWith(r.scope));
+  p.controlState=p.controller?'controlled':activeRegistration?'active-uncontrolled':'unregistered';
+  if(location.protocol==='https:'&&p.supported&&!p.controller&&!activeRegistration) pushIssue(state,'warning','PWA','目前頁面沒有可用的 Service Worker','此 scope 沒有 active registration；PWA 離線與快取能力可能失效');
   if(v&&p.cacheNames.length&&!currentCaches.length) pushIssue(state,'error','PWA',`找不到 ${v} 對應的 PWA cache`,appCaches.join(', '));
   if(appCaches.length>1) pushIssue(state,'warning','PWA',`偵測到 ${appCaches.length} 個舊版 PWA cache`,appCaches.join(', '));
   if(p.storage?.quota&&p.storage?.usage/p.storage.quota>.85) pushIssue(state,'warning','儲存空間','瀏覽器儲存空間使用率超過 85%');
@@ -190,7 +192,7 @@ function render(state){
 
   $('#resourcesWrap').innerHTML=tableHtml(['類型','資源','版本','HTTP','Content-Type','時間','判定'],state.resources.map(x=>`<tr><td>${esc(x.kind)}</td><td class="mono">${esc(x.path)}</td><td>${esc(x.declared||'—')}</td><td>${esc(x.status||'—')}</td><td class="mono">${esc(x.contentType||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${esc(x.level)}">${esc(x.message)}</span></td></tr>`));
 
-  const p=state.pwa,usage=p.storage?.usage||0,quota=p.storage?.quota||0;$('#pwa').innerHTML=[['Service Worker 支援',p.supported?'是':'否'],['目前被 SW 控制',p.controller?'是':'否'],['Controller',p.controllerUrl||'—'],['Registrations',p.registrations.length],['Cache 名稱',p.cacheNames.join('\n')||'—'],['Cache 筆數',Object.entries(p.cacheEntries).map(([k,n])=>`${k}: ${n}`).join('\n')||'—'],['儲存空間',quota?`${(usage/1024/1024).toFixed(1)} / ${(quota/1024/1024).toFixed(1)} MB`:'—']].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono" style="white-space:pre-wrap">${esc(b)}</strong></div>`).join('');
+  const p=state.pwa,usage=p.storage?.usage||0,quota=p.storage?.quota||0;$('#pwa').innerHTML=[['Service Worker 支援',p.supported?'是':'否'],['目前被 SW 控制',p.controller?'是':p.controlState==='active-uncontrolled'?'尚未接管（active registration 正常）':'否'],['Controller',p.controllerUrl||'—'],['Registrations',p.registrations.length],['Cache 名稱',p.cacheNames.join('\n')||'—'],['Cache 筆數',Object.entries(p.cacheEntries).map(([k,n])=>`${k}: ${n}`).join('\n')||'—'],['儲存空間',quota?`${(usage/1024/1024).toFixed(1)} / ${(quota/1024/1024).toFixed(1)} MB`:'—']].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono" style="white-space:pre-wrap">${esc(b)}</strong></div>`).join('');
 
   $('#apisWrap').innerHTML=tableHtml(['常數','端點','HTTP','時間','狀態'],state.apis.map(x=>`<tr><td class="mono">${esc(x.name)}</td><td class="mono">${esc(new URL(x.url).pathname)}</td><td>${esc(x.status||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${x.ok?'ok':'error'}">${esc(x.ok?'可達':x.error||'失敗')}</span></td></tr>`));
 
