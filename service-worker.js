@@ -1,4 +1,4 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v310-postseason-years1';
+const CACHE_NAME = 'baseball-player-card-pwa-v310-scoreboard-rhe1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -68,7 +68,8 @@ self.addEventListener('fetch', event => {
     || url.pathname.endsWith('/game-detail-enhancement.js')
     || url.pathname.endsWith('/game-detail-enhancement.css')
     || url.pathname.endsWith('/report-layout.css')
-    || url.pathname.endsWith('/report-layout.js');
+    || url.pathname.endsWith('/report-layout.js')
+    || url.pathname.endsWith('/landscape-state.css');
 
   if (isDocument || isCoreAsset) {
     event.respondWith((async () => {
