@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.28';
+    const APP_VERSION = 'v3.29';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.28';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.28';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.29';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.29';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -11638,7 +11638,8 @@ bg2: {
 
     function seasonStatsForOutputRole(player, role) {
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
-      const projection = currentRecord?.cpblSeasonProjection;
+      const projection = currentRecord?.cpblSeasonProjectionByRole?.[role]
+        || (currentRecord?.cpblSeasonProjection?.role === role ? currentRecord.cpblSeasonProjection : null);
       if (
         role === 'hitter'
         && level === 'A'
@@ -11647,6 +11648,44 @@ bg2: {
         && projection?.stats
       ) {
         return mergeStats(projection.stats, hitterDefaults);
+      }
+      if (
+        role === 'pitcher'
+        && level === 'A'
+        && playerScope(player) === 'cpbl'
+        && projection?.complete
+        && projection?.stats
+      ) {
+        const projected = mergeStats(projection.stats, pitcherDefaults);
+        const pregame = projection?.pregame ? mergeStats(projection.pregame, pitcherDefaults) : null;
+        const game = currentRecord?.pitcherGame || null;
+        if (pregame && game) {
+          // Season counting/rate stats still come from Supabase's pregame snapshot + Box.
+          // Only the result counters are re-based on the pregame snapshot and the
+          // current Today-panel selection, so manual W/L/SV/HLD controls take effect
+          // immediately without double-counting the Box result.
+          projected.w = Number(pregame.w) || 0;
+          projected.l = Number(pregame.l) || 0;
+          projected.sv = Number(pregame.sv) || 0;
+          projected.hld = Number(pregame.hld) || 0;
+          projected.bsv = Number(pregame.bsv) || 0;
+          projected.cg = Number(pregame.cg) || 0;
+          projected.sho = Number(pregame.sho) || 0;
+          projected.noWalkHbp = Number(pregame.noWalkHbp) || 0;
+
+          const result = String(
+            game.result || (game.sv ? 'SV' : game.hld ? 'HLD' : game.decision || 'ND')
+          ).toUpperCase();
+          if (result === 'W') projected.w += 1;
+          else if (result === 'L') projected.l += 1;
+          else if (result === 'SV') projected.sv += 1;
+          else if (result === 'HLD') projected.hld += 1;
+          if (game.bsv) projected.bsv += 1;
+          if (game.cg) projected.cg += 1;
+          if (game.sho) projected.sho += 1;
+          if (game.noWalkHbp) projected.noWalkHbp += 1;
+        }
+        return projected;
       }
       const pair = roleStatsPair(player, selectedSeason, level);
       if (role === 'hitter') {
