@@ -1,4 +1,5 @@
 // Site-wide runtime diagnostics recorder.
+// PWA controller handoff is interpreted separately by diagnostics.html to avoid transient false warnings.
 (() => {
   'use strict';
 
