@@ -363,6 +363,68 @@
       .slice(0,9);
   }
 
+  function lineupDisplayEntries(detail, side) {
+    const fallback=lineupEntries(detail,side);
+    if(String(detail?.league||'').toUpperCase()!=='CPBL') return fallback;
+    const raw=detail?.lineups?.[side]||{};
+    const source=Array.isArray(raw?.roster)?raw.roster:[];
+    if(!source.length) return fallback;
+
+    const roster=source.map((entry,index)=>{
+      const stats=reconciledBattingStats(detail,entry);
+      return {
+        order:Number(entry?.order)||index+1,
+        number:safeCell(entry?.number||entry?.uniformNumber||entry?.jersey||''),
+        name:compactName(entry?.name||entry?.fullName||entry?.playerName||''),
+        position:compactName(entry?.position||entry?.pos||''),
+        pinch:compactName(entry?.pinch||entry?.pinchRole||''),
+        acnt:safeCell(entry?.acnt||entry?.playerId||entry?.id||''),
+        ab:stats.ab,avg:stats.avg,hits:stats.hits,homeRuns:stats.homeRuns,rbi:stats.rbi
+      };
+    }).filter(entry=>entry.name&&positionKey(entry.position)!=='p');
+    if(!roster.length) return fallback;
+
+    const wantedHalf=side==='away'?'top':'bottom';
+    const plays=(Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>String(p?.half||'')===wantedHalf);
+    const seen=new Set(), starterByAcnt=new Map(), starterByName=new Map();
+    let pa=0;
+    for(let i=0;i<plays.length&&pa<9;i++){
+      const p=plays[i], local=Number(p?.battingOrder||0), inning=Number(p?.inning||0);
+      const key=inning>0&&local>0?`${inning}|${local}`:`fallback|${i}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      pa++;
+      const acnt=String(p?.batterAcnt||'').trim();
+      const name=compactName(p?.batter?.fullName||p?.batter?.name||p?.batter||p?.hitter||'').replace(/^(代打|代跑)[：:・･\s]*/, '');
+      if(acnt) starterByAcnt.set(acnt,pa);
+      if(name) starterByName.set(normName(name),pa);
+    }
+
+    if(pa<9){
+      for(const entry of fallback){
+        const slot=Number(entry?.order||0);
+        if(!(slot>=1&&slot<=9)) continue;
+        if(entry.acnt) starterByAcnt.set(String(entry.acnt),slot);
+        if(entry.name) starterByName.set(normName(entry.name),slot);
+      }
+    }
+
+    let anchor=0;
+    const rows=[];
+    const starterSlots=new Set();
+    for(const entry of roster){
+      const slot=(entry.acnt&&starterByAcnt.get(String(entry.acnt))) || starterByName.get(normName(entry.name)) || 0;
+      if(slot>=1&&slot<=9){
+        anchor=slot;
+        starterSlots.add(slot);
+        rows.push({...entry,order:slot,isSubstitute:false});
+      }else if(anchor>=1&&anchor<=9){
+        rows.push({...entry,order:anchor,isSubstitute:true});
+      }
+    }
+    return starterSlots.size>=9&&rows.length>=9 ? rows : fallback;
+  }
+
   function completedPlateAppearance(play) {
     if(!play) return false;
     const result=compactName(`${play?.result||''} ${play?.raw||''}`);
@@ -649,10 +711,9 @@
 
   function renderLineupPanel(detail,side) {
     const effective=effectiveCurrentBatter(detail);
-    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
-    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
-    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
-    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
+    const entries=lineupDisplayEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    const rows=entries.length?entries:Array.from({length:9},(_,i)=>({order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''}));
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>{const role=e.isSubstitute?compactName(e.pinch||e.position||''):'';const displayName=`${e.isSubstitute?'↳ ':''}${e.name||'—'}${role?` (${role})`:''}`;return `<div class="gdx-lineup-row ${e.isSubstitute?'is-substitute ':''}${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(displayName)}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`;}).join('')}</div>`;
   }
 
   function currentPitcherInfo(detail,side) {
