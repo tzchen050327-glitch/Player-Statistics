@@ -113,3 +113,5 @@
   .gdx-scoreboard th:nth-last-child(2),
   .gdx-scoreboard td:nth-last-child(2){right:42px;}
 }
+
+/* Versioning is now managed automatically after code changes. */
