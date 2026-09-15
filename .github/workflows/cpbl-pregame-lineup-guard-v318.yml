@@ -1,0 +1,70 @@
+name: CPBL pregame lineup guard v3.18
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cpbl-pregame-lineup-guard-v318.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard incomplete pregame lineups and bump version
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          g = Path('game-detail-enhancement.js')
+          text = g.read_text(encoding='utf-8')
+          text = text.replace(
+              "if (r.ok && payload?.ok) cpblPregameLineupCache.set(key, payload);",
+              "if (r.ok && payload?.ok && Number(payload?.counts?.away) >= 9 && Number(payload?.counts?.home) >= 9) cpblPregameLineupCache.set(key, payload);"
+          )
+          text = text.replace(
+              "if (!incoming.length) continue;",
+              "if (incoming.length < 9) continue;"
+          )
+          g.write_text(text, encoding='utf-8')
+
+          vp = Path('version.json')
+          data = json.loads(vp.read_text(encoding='utf-8'))
+          old = str(data['version'])
+          m = re.fullmatch(r'v(\d+)\.(\d+)', old)
+          if not m: raise SystemExit(old)
+          new = f"v{int(m.group(1))}.{int(m.group(2))+1}"
+          cache_tag = f"v{m.group(1)}{int(m.group(2))+1}"
+          vp.write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',',':'))+'\n', encoding='utf-8')
+
+          index = Path('index.html').read_text(encoding='utf-8')
+          index = re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', index, count=1)
+          index = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', index)
+          index = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', index, count=1)
+          Path('index.html').write_text(index, encoding='utf-8')
+
+          app = Path('app.js').read_text(encoding='utf-8')
+          app = re.sub(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", app, count=1)
+          app = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', app)
+          Path('app.js').write_text(app, encoding='utf-8')
+
+          sw = Path('service-worker.js').read_text(encoding='utf-8')
+          sw = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', sw)
+          sw = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", sw, count=1)
+          Path('service-worker.js').write_text(sw, encoding='utf-8')
+          print(old, '->', new)
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game-detail-enhancement.js version.json index.html app.js service-worker.js
+          git commit -m "Fix incomplete CPBL pregame lineup fallback [skip version bump]" || exit 0
+          git push
