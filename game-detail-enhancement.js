@@ -26,14 +26,14 @@
           cache: 'no-store'
         });
         payload = await r.json();
-        if (r.ok && payload?.ok) cpblPregameLineupCache.set(key, payload);
+        if (r.ok && payload?.ok && Number(payload?.counts?.away) >= 9 && Number(payload?.counts?.home) >= 9) cpblPregameLineupCache.set(key, payload);
       } catch { return data; }
     }
     if (!payload?.ok || !payload?.lineups) return data;
     data.lineups ||= {};
     for (const side of ['away','home']) {
       const incoming = Array.isArray(payload.lineups?.[side]) ? payload.lineups[side] : [];
-      if (!incoming.length) continue;
+      if (incoming.length < 9) continue;
       data.lineups[side] ||= {};
       const current = Array.isArray(data.lineups[side].batters) ? data.lineups[side].batters : [];
       if (current.length < incoming.length) data.lineups[side].batters = incoming;
