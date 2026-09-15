@@ -1,3 +1,4 @@
+// Site-wide runtime diagnostics recorder.
 (() => {
   'use strict';
 
