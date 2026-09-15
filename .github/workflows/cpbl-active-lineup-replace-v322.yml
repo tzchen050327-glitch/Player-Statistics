@@ -22,23 +22,21 @@ jobs:
         run: |
           import json, re
           from pathlib import Path
-
           js = Path('game-detail-enhancement.js')
           text = js.read_text(encoding='utf-8')
-
-          pattern = re.compile(r'''  function renderLineupPanel\(detail,side\) \{\n.*?\n  \}\n\n  function currentPitcherInfo''', re.S)
-          replacement = '''  function renderLineupPanel(detail,side) {
-    const effective=effectiveCurrentBatter(detail);
-    // lineups.*.batters is the canonical CURRENT nine-player batting order.
-    // A pinch hitter / defensive replacement replaces that slot instead of
-    // being appended below the player who left the game.
-    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
-    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
-    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
-    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
-  }
-
-  function currentPitcherInfo'''
+          pattern = re.compile(r"  function renderLineupPanel\(detail,side\) \{\n.*?\n  \}\n\n  function currentPitcherInfo", re.S)
+          replacement = (
+              "  function renderLineupPanel(detail,side) {\n"
+              "    const effective=effectiveCurrentBatter(detail);\n"
+              "    // lineups.*.batters is the canonical CURRENT nine-player batting order.\n"
+              "    // A substitution replaces that lineup slot instead of being appended.\n"
+              "    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');\n"
+              "    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));\n"
+              "    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});\n"
+              "    return `<div class=\"gdx-landscape-lineup\">${`<div class=\"gdx-lineup-head\"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class=\"gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}\"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;\n"
+              "  }\n\n"
+              "  function currentPitcherInfo"
+          )
           new_text, n = pattern.subn(replacement, text, count=1)
           if n != 1:
               raise SystemExit(f'renderLineupPanel patch count={n}')
