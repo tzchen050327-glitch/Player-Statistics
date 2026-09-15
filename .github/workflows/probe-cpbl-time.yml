@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/probe-cpbl-time.yml'
+      - '.github/scripts/probe_cpbl_time.py'
 
 jobs:
   probe:
