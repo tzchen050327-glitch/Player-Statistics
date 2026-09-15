@@ -711,9 +711,12 @@
 
   function renderLineupPanel(detail,side) {
     const effective=effectiveCurrentBatter(detail);
-    const entries=lineupDisplayEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
-    const rows=entries.length?entries:Array.from({length:9},(_,i)=>({order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''}));
-    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>{const role=e.isSubstitute?compactName(e.pinch||e.position||''):'';const displayName=`${e.isSubstitute?'↳ ':''}${e.name||'—'}${role?` (${role})`:''}`;return `<div class="gdx-lineup-row ${e.isSubstitute?'is-substitute ':''}${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(displayName)}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`;}).join('')}</div>`;
+    // lineups.*.batters is the canonical CURRENT nine-player batting order.
+    // A substitution replaces that lineup slot instead of being appended.
+    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
+    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
   }
 
   function currentPitcherInfo(detail,side) {
