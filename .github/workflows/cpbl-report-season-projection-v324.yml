@@ -21,47 +21,49 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           path = Path('app.js')
           text = path.read_text(encoding='utf-8')
 
-          old = """    function seasonStatsForOutputRole(player, role) {
-      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
-      const pair = roleStatsPair(player, selectedSeason, level);
-"""
-          new = """    function seasonStatsForOutputRole(player, role) {
-      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
-      const projection = currentRecord?.cpblSeasonProjection;
-      if (
-        role === 'hitter'
-        && level === 'A'
-        && playerScope(player) === 'cpbl'
-        && projection?.complete
-        && projection?.stats
-      ) {
-        return mergeStats(projection.stats, hitterDefaults);
-      }
-      const pair = roleStatsPair(player, selectedSeason, level);
-"""
+          old = (
+              "    function seasonStatsForOutputRole(player, role) {\n"
+              "      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';\n"
+              "      const pair = roleStatsPair(player, selectedSeason, level);\n"
+          )
+          new = (
+              "    function seasonStatsForOutputRole(player, role) {\n"
+              "      const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';\n"
+              "      const projection = currentRecord?.cpblSeasonProjection;\n"
+              "      if (\n"
+              "        role === 'hitter'\n"
+              "        && level === 'A'\n"
+              "        && playerScope(player) === 'cpbl'\n"
+              "        && projection?.complete\n"
+              "        && projection?.stats\n"
+              "      ) {\n"
+              "        return mergeStats(projection.stats, hitterDefaults);\n"
+              "      }\n"
+              "      const pair = roleStatsPair(player, selectedSeason, level);\n"
+          )
           if old not in text:
               raise SystemExit('seasonStatsForOutputRole marker not found')
           text = text.replace(old, new, 1)
 
-          old2 = """      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
-      if (!appliedRoles) return false;
-
-      const isToday = els.gameDate.value === localISODate();
-"""
-          new2 = """      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
-      if (!appliedRoles) return false;
-      currentRecord.cpblSeasonProjection = daily?.seasonProjection || null;
-
-      const isToday = els.gameDate.value === localISODate();
-"""
+          old2 = (
+              "      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });\n"
+              "      if (!appliedRoles) return false;\n"
+              "\n"
+              "      const isToday = els.gameDate.value === localISODate();\n"
+          )
+          new2 = (
+              "      const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });\n"
+              "      if (!appliedRoles) return false;\n"
+              "      currentRecord.cpblSeasonProjection = daily?.seasonProjection || null;\n"
+              "\n"
+              "      const isToday = els.gameDate.value === localISODate();\n"
+          )
           if old2 not in text:
               raise SystemExit('daily import marker not found')
           text = text.replace(old2, new2, 1)
-
           path.write_text(text, encoding='utf-8')
 
       - name: Commit
