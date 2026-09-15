@@ -1,0 +1,86 @@
+name: CPBL roster-order lineup fallback v3.19
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cpbl-roster-order-lineup-v319.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch CPBL scheduled lineup fallback and bump version
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          g = Path('game-detail-enhancement.js')
+          text = g.read_text(encoding='utf-8')
+          old = """  function rawRoster(detail, side) {
+    const raw = detail?.lineups?.[side];
+    const list = Array.isArray(raw?.batters) ? raw.batters : Array.isArray(raw?.order) ? raw.order : Array.isArray(raw) ? raw : [];
+    return list.map((entry,index)=>{
+"""
+          new = """  function rawRoster(detail, side) {
+    const raw = detail?.lineups?.[side];
+    const directBatters = Array.isArray(raw?.batters) ? raw.batters : [];
+    const rosterFallback = Array.isArray(raw?.roster)
+      ? raw.roster.filter(entry => !/^(P|投|投手|PITCHER)$/i.test(String(entry?.position || entry?.pos || '').trim())).slice(0, 9)
+      : [];
+    const useRosterFallback = directBatters.length < 9 && rosterFallback.length === 9;
+    const list = useRosterFallback ? rosterFallback : directBatters.length ? directBatters : Array.isArray(raw?.order) ? raw.order : Array.isArray(raw) ? raw : [];
+    return list.map((entry,index)=>{
+"""
+          if old not in text:
+              raise SystemExit('rawRoster header not found')
+          text = text.replace(old, new, 1)
+          marker = "        order:Number(entry?.order)||index+1,"
+          if marker not in text:
+              raise SystemExit('rawRoster order line not found')
+          text = text.replace(marker, "        order:useRosterFallback ? index+1 : (Number(entry?.order)||index+1),", 1)
+          g.write_text(text, encoding='utf-8')
+
+          vp = Path('version.json')
+          data = json.loads(vp.read_text(encoding='utf-8'))
+          oldv = str(data['version'])
+          m = re.fullmatch(r'v(\d+)\.(\d+)', oldv)
+          if not m:
+              raise SystemExit(oldv)
+          major = int(m.group(1)); rev = int(m.group(2)) + 1
+          newv = f'v{major}.{rev}'
+          cache_tag = f'v{major}{rev}'
+          vp.write_text(json.dumps({'version': newv}, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+
+          index = Path('index.html').read_text(encoding='utf-8')
+          index = re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{newv}\2', index, count=1)
+          index = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', index)
+          index = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{newv}\2', index, count=1)
+          Path('index.html').write_text(index, encoding='utf-8')
+
+          app = Path('app.js').read_text(encoding='utf-8')
+          app = re.sub(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{newv}';", app, count=1)
+          app = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', app)
+          Path('app.js').write_text(app, encoding='utf-8')
+
+          sw = Path('service-worker.js').read_text(encoding='utf-8')
+          sw = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', sw)
+          sw = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", sw, count=1)
+          Path('service-worker.js').write_text(sw, encoding='utf-8')
+          print(oldv, '->', newv)
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game-detail-enhancement.js version.json index.html app.js service-worker.js
+          git commit -m "Use CPBL roster source order for scheduled batting lineup [skip version bump]" || exit 0
+          git push
