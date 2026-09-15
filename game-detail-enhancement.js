@@ -1,5 +1,5 @@
 (() => {
-  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.77';
+  const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.78';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|cpbl-postseason-detail|npb-game-detail)(?:\?|$)/i;
   const CPBL_PREGAME_LINEUP_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-pregame-lineup';
   const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
@@ -9,6 +9,9 @@
 
   async function hydrateCpblPregameLineup(data) {
     if (String(data?.league || '').toUpperCase() !== 'CPBL') return data;
+    const hasLivePlays = Array.isArray(data?.plays) && data.plays.length > 0;
+    const liveStatus = String(data?.status || data?.game?.status || '').toLowerCase();
+    if (hasLivePlays || ['live','playing','inprogress','in_progress','final'].includes(liveStatus)) return data;
     const awayCount = Array.isArray(data?.lineups?.away?.batters) ? data.lineups.away.batters.length : 0;
     const homeCount = Array.isArray(data?.lineups?.home?.batters) ? data.lineups.home.batters.length : 0;
     if (awayCount >= 9 && homeCount >= 9) return data;
@@ -107,10 +110,6 @@
     if(String(detail?.league||'').toUpperCase()!=='CPBL' || !last) return false;
     const hasAfter=last?.baseStateAfter!==undefined&&last?.baseStateAfter!==null || !!last?.basesAfter;
     if(!hasAfter) return false;
-    const currentName=compactName(detail?.current?.batter?.fullName||detail?.current?.batter?.name||'');
-    const lastName=compactName(last?.batter?.fullName||last?.batter?.name||last?.batter||last?.hitter||'');
-    if(currentName && lastName && samePlayerName(currentName,lastName)) return true;
-
     const beforeValue=last?.baseState ?? last?.bases ?? '';
     const afterValue=last?.baseStateAfter ?? last?.basesAfter ?? '';
     const currentValue=detail?.current?.baseState ?? detail?.current?.bases ?? '';
@@ -119,7 +118,9 @@
     // CPBL can advance current.batter before current.baseState catches up.
     // If current still equals the completed PA's pre-PA state while the post-PA
     // state changed, the post-PA state is the authoritative live situation.
-    return beforeKey!==afterKey && currentKey===beforeKey;
+    const hasCurrent = detail?.current?.baseState !== undefined && detail?.current?.baseState !== null
+      || detail?.current?.bases !== undefined && detail?.current?.bases !== null;
+    return hasCurrent && beforeKey!==afterKey && currentKey===beforeKey;
   }
 
   function currentBaseState(detail) {
