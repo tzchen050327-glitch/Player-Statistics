@@ -1,5 +1,6 @@
 // Site-wide runtime diagnostics recorder.
 // PWA controller handoff is interpreted separately by diagnostics.html to avoid transient false warnings.
+// Startup splash keeps a direct diagnostics escape hatch even if the main app fails before boot completes.
 (() => {
   'use strict';
 
