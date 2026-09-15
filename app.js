@@ -2466,6 +2466,7 @@ bg2: {
 
       const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
       if (!appliedRoles) return false;
+      currentRecord.cpblSeasonProjection = daily?.seasonProjection || null;
 
       const isToday = els.gameDate.value === localISODate();
       const syncSeasonToday = isToday && !['E','C'].includes(kindCode);
@@ -11574,6 +11575,16 @@ bg2: {
 
     function seasonStatsForOutputRole(player, role) {
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+      const projection = currentRecord?.cpblSeasonProjection;
+      if (
+        role === 'hitter'
+        && level === 'A'
+        && playerScope(player) === 'cpbl'
+        && projection?.complete
+        && projection?.stats
+      ) {
+        return mergeStats(projection.stats, hitterDefaults);
+      }
       const pair = roleStatsPair(player, selectedSeason, level);
       if (role === 'hitter') {
         if (hitterRoleHasData(pair?.hitter)) return { ...pair.hitter };
