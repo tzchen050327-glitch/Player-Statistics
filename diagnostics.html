@@ -1,22 +1,217 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>快取診斷｜球員戰績圖片</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>全站診斷｜球員戰績圖片</title>
 <style>
-:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#172033;background:#f3f5f8}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1320px;margin:auto;padding:24px}.head{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:18px}.head h1{margin:0;font-size:26px}.sub{color:#667085;font-size:13px}.actions{display:flex;gap:8px}.btn{border:1px solid #cbd5e1;background:#fff;padding:9px 13px;border-radius:10px;cursor:pointer;text-decoration:none;color:inherit}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:14px 0}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px}.card b{display:block;font-size:22px;margin-top:5px}.ok{color:#067647}.warning{color:#b54708}.error{color:#b42318}.section{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-top:14px;overflow:auto}.section h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.mini{padding:10px;border:1px solid #e2e8f0;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}th,td{text-align:left;border-bottom:1px solid #edf0f4;padding:9px 8px}th{color:#475467;background:#f8fafc;position:sticky;top:0}.muted{color:#98a2b3}.err{color:#b42318;max-width:340px;white-space:normal}.pill{display:inline-block;padding:3px 8px;border-radius:99px;background:#eef2f6;font-size:12px}.issue{padding:9px 10px;border-left:3px solid #f79009;background:#fffaeb;margin:6px 0;border-radius:6px}.issue.error{border-color:#f04438;background:#fef3f2;color:#b42318}@media(max-width:700px){.wrap{padding:14px}.head{align-items:flex-start;flex-direction:column}table{font-size:12px}}
+:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#172033;background:#f3f5f8}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1380px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}.head h1{margin:0;font-size:27px}.sub{color:#667085;font-size:13px;line-height:1.55}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid #cbd5e1;background:#fff;padding:9px 13px;border-radius:10px;cursor:pointer;text-decoration:none;color:inherit;font:inherit}.btn.primary{background:#173f5f;color:#fff;border-color:#173f5f}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin:14px 0}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px}.card b{display:block;font-size:22px;margin-top:5px}.ok{color:#067647}.warning{color:#b54708}.error{color:#b42318}.section{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-top:14px;overflow:auto}.section h2{font-size:17px;margin:0 0 12px}.section h3{font-size:14px;margin:16px 0 8px;color:#344054}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px}.mini{padding:11px;border:1px solid #e2e8f0;border-radius:10px;line-height:1.6}.mini strong{display:block;margin-bottom:3px}.pill{display:inline-block;padding:3px 8px;border-radius:99px;background:#eef2f6;font-size:12px}.pill.ok{background:#ecfdf3}.pill.warning{background:#fffaeb}.pill.error{background:#fef3f2}.issue{padding:9px 10px;border-left:3px solid #f79009;background:#fffaeb;margin:6px 0;border-radius:6px;line-height:1.5}.issue.error{border-color:#f04438;background:#fef3f2;color:#b42318}.issue.ok{border-color:#12b76a;background:#ecfdf3;color:#067647}.muted{color:#98a2b3}.err{color:#b42318;max-width:420px;white-space:normal}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}th,td{text-align:left;border-bottom:1px solid #edf0f4;padding:9px 8px;vertical-align:top}th{color:#475467;background:#f8fafc;position:sticky;top:0;z-index:1}.statusline{padding:10px 12px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;line-height:1.5}.section details{border-top:1px solid #edf0f4;padding-top:10px;margin-top:10px}.section summary{cursor:pointer;font-weight:700}.runtime-msg{max-width:520px;white-space:normal;word-break:break-word}.small{font-size:12px}.health-banner{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:12px;background:#fff;border:1px solid #e2e8f0}.health-dot{width:12px;height:12px;border-radius:50%;background:#98a2b3;flex:0 0 auto}.health-banner.ok .health-dot{background:#12b76a}.health-banner.warning .health-dot{background:#f79009}.health-banner.error .health-dot{background:#f04438}@media(max-width:700px){.wrap{padding:13px}.head{flex-direction:column}.head h1{font-size:23px}.section{padding:12px}table{font-size:12px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.actions{width:100%}.btn{flex:1;text-align:center}}
 </style>
 </head>
 <body><main class="wrap">
-<div class="head"><div><h1>CPBL 快取診斷</h1><div class="sub">v3.10｜單一 Publisher → Supabase published cache → 前端</div></div><div class="actions"><a class="btn" href="./">返回主程式</a><button id="refresh" class="btn">重新整理</button></div></div>
-<div id="status" class="sub">讀取中…</div><div id="summary" class="cards"></div>
-<section class="section"><h2>異常</h2><div id="issues"></div></section>
-<section class="section"><h2>Scheduler</h2><div id="schedulers" class="grid"></div></section>
-<section class="section"><h2>今日比賽快取</h2><table><thead><tr><th>軍別</th><th>比賽</th><th>狀態</th><th>Revision</th><th>Lineup 客/主</th><th>Plays</th><th>Snapshot</th><th>Published</th><th>下次刷新</th><th>錯誤</th></tr></thead><tbody id="games"></tbody></table></section>
-</main><script>
-const API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cache-diagnostics';
-const time=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+<div class="head">
+  <div><h1>全站診斷</h1><div class="sub">前端資源、版本、PWA 快取、API、前台執行錯誤與 CPBL 後台資料一次檢查。</div></div>
+  <div class="actions"><a class="btn" href="./">返回主程式</a><button id="clearRuntime" class="btn">清除錯誤紀錄</button><button id="refresh" class="btn primary">重新診斷</button></div>
+</div>
+<div id="healthBanner" class="health-banner"><span class="health-dot"></span><div><b id="healthTitle">正在診斷…</b><div id="healthSub" class="sub">請稍候</div></div></div>
+<div id="summary" class="cards"></div>
+<section class="section"><h2>異常總覽</h2><div id="issues"><div class="muted">診斷中…</div></div></section>
+<section class="section"><h2>版本一致性</h2><div id="versions" class="grid"></div></section>
+<section class="section"><h2>前端靜態資源</h2><div class="sub">會實際抓取 index 內的 CSS、JS、manifest，檢查 HTTP、內容類型、版本參數與是否誤回 HTML。</div><div id="resourcesWrap" style="margin-top:10px"></div></section>
+<section class="section"><h2>PWA / Service Worker / Cache</h2><div id="pwa" class="grid"></div></section>
+<section class="section"><h2>API / Edge Functions</h2><div class="sub">自動從 app.js 掃描 Supabase Functions 端點，再用 OPTIONS 做可達性檢查；新增 API 後不必手動補名單。</div><div id="apisWrap" style="margin-top:10px"></div></section>
+<section class="section"><h2>前台執行錯誤</h2><div class="sub">主程式會記錄 JavaScript 錯誤、資源載入失敗、未處理 Promise、網路層 5xx 與本地資源 4xx。最多保留 120 筆／7 天。</div><div id="runtimeWrap" style="margin-top:10px"></div></section>
+<section class="section"><h2>CPBL 後台資料健康</h2><div id="cpblStatus" class="sub">讀取中…</div><div id="cpblIssues" style="margin-top:8px"></div><h3>Scheduler</h3><div id="schedulers" class="grid"></div><h3>今日比賽快取</h3><div id="gamesWrap"></div></section>
+<section class="section"><h2>瀏覽器 / 裝置環境</h2><div id="environment" class="grid"></div></section>
+</main>
+<script>
+'use strict';
+const CACHE_DIAG_API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cache-diagnostics';
+const RUNTIME_KEY='baseball-site-diagnostics-runtime-v1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function load(){document.querySelector('#status').textContent='讀取中…';try{const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:'{}',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||`HTTP ${r.status}`);const games=d.games||[],issues=d.issues||[],complete=games.filter(g=>Number(g.awayLineup)>=9&&Number(g.homeLineup)>=9).length,live=games.filter(g=>['live','suspended'].includes(String(g.status))).length;document.querySelector('#status').innerHTML=`${esc(d.today)}｜產生時間 ${esc(time(d.generatedAt))}｜健康狀態 <b class="${esc(d.health)}">${esc(String(d.health).toUpperCase())}</b>`;document.querySelector('#summary').innerHTML=[['今日比賽',games.length],['進行中',live],['完整 Lineup',complete],['異常',issues.length]].map(x=>`<div class="card"><span class="sub">${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join('');document.querySelector('#issues').innerHTML=issues.length?issues.map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.key)}</b>｜${esc(x.message)}</div>`).join(''):'<div class="muted">目前沒有偵測到異常。</div>';const sch=d.schedulers||{};document.querySelector('#schedulers').innerHTML=['major','minor'].map(k=>{const s=sch[k]||{};return `<div class="mini"><b>${k==='major'?'A/E/C Scheduler':'D Scheduler'}</b><div>上次賽程檢查：${esc(time(s.lastScheduleCheckAt))}</div><div>下次賽程檢查：${esc(time(s.nextScheduleCheckAt))}</div><div class="err">${esc(s.lastError||'')}</div></div>`}).join('');document.querySelector('#games').innerHTML=games.map(g=>`<tr><td><span class="pill">${esc(g.kindCode)}</span></td><td>${esc(g.away)} vs ${esc(g.home)}<div class="muted">#${esc(g.gameId)}</div></td><td>${esc(g.status)}</td><td>${esc(g.publishedRevision)}</td><td>${esc(g.awayLineup)} / ${esc(g.homeLineup)}</td><td>${esc(g.plays)}</td><td>${esc(g.snapshots)}</td><td>${esc(time(g.publishedAt))}</td><td>${esc(time(g.nextRefreshAt))}</td><td class="err">${esc(g.lastError||'')}</td></tr>`).join('')||'<tr><td colspan="10" class="muted">今日沒有快取比賽。</td></tr>';}catch(e){document.querySelector('#status').innerHTML=`<span class="error">讀取失敗：${esc(e.message||e)}</span>`;}}
-document.querySelector('#refresh').addEventListener('click',load);load();setInterval(()=>{if(document.visibilityState==='visible')load()},30000);
-</script></body></html>
+const time=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+const ms=v=>Number.isFinite(Number(v))?`${Math.round(Number(v))} ms`:'—';
+const $=s=>document.querySelector(s);
+let lastState=null;
+
+function levelRank(v){return v==='error'?2:v==='warning'?1:0;}
+function pushIssue(state,level,area,message,detail=''){state.issues.push({level,area,message,detail});}
+function bust(url){const u=new URL(url,location.href);u.searchParams.set('__diag',`${Date.now()}-${Math.random().toString(36).slice(2,7)}`);return u.href;}
+async function getText(url,init={}){const started=performance.now();const r=await fetch(bust(url),{cache:'no-store',...init});const text=await r.text();return{ok:r.ok,status:r.status,text,contentType:r.headers.get('content-type')||'',duration:performance.now()-started,url:r.url};}
+function tableHtml(headers,rows){return `<div style="overflow:auto"><table><thead><tr>${headers.map(x=>`<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${headers.length}" class="muted">沒有資料</td></tr>`}</tbody></table></div>`;}
+
+async function probeCore(state){
+  const [ver,index,app,sw]=await Promise.all([
+    getText('./version.json').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
+    getText('./index.html').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
+    getText('./app.js').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
+    getText('./service-worker.js').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e}))
+  ]);
+  state.raw={ver,index,app,sw};
+  for(const [name,res] of Object.entries({version:ver,index,app,serviceWorker:sw})) if(!res.ok) pushIssue(state,'error','版本',`${name} 無法讀取`,res.error?.message||`HTTP ${res.status}`);
+  let versionJson='';
+  try{versionJson=JSON.parse(ver.text||'{}').version||'';}catch{pushIssue(state,'error','版本','version.json 不是有效 JSON');}
+  const indexMeta=(index.text.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i)||[])[1]||'';
+  const appVersion=(app.text.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
+  const swAssetVersion=(sw.text.match(/styles\.css\?v=([^'",\s]+)/i)||[])[1]||'';
+  const cacheName=(sw.text.match(/const\s+CACHE_NAME\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
+  state.versions={versionJson,indexMeta,appVersion,swAssetVersion,cacheName};
+  const vals=[versionJson,indexMeta,appVersion,swAssetVersion].filter(Boolean);
+  if(vals.length<4) pushIssue(state,'error','版本','版本來源不完整',JSON.stringify(state.versions));
+  else if(new Set(vals).size!==1) pushIssue(state,'error','版本','version.json / index / app.js / service-worker.js 版本不一致',vals.join(' / '));
+
+  const doc=new DOMParser().parseFromString(index.text||'','text/html');
+  const assets=[];
+  doc.querySelectorAll('link[rel="stylesheet"][href],script[src],link[rel="manifest"][href]').forEach(el=>{
+    const url=el.getAttribute('href')||el.getAttribute('src');
+    if(!url)return;
+    const kind=el.tagName==='SCRIPT'?'js':el.getAttribute('rel')==='stylesheet'?'css':'manifest';
+    assets.push({kind,url});
+  });
+  state.assetDefs=assets;
+  state.apiDefs=[...app.text.matchAll(/const\s+([A-Z0-9_]+_API_URL)\s*=\s*['"]([^'"]+)['"]/g)].map(m=>({name:m[1],url:m[2]})).filter(x=>/\/functions\/v1\//.test(x.url));
+}
+
+async function probeResources(state){
+  const expectedVersion=state.versions.versionJson||state.versions.indexMeta||'';
+  const signatures={
+    'styles.css':['--','body'],
+    'game-detail-enhancement.css':['gdx-scoreboard'],
+    'app.js':['APP_VERSION'],
+    'diagnostic-runtime.js':['baseball-site-diagnostics-runtime-v1'],
+    'game-detail-enhancement.js':['gdx-scoreboard']
+  };
+  const defs=state.assetDefs||[];
+  const results=[];
+  for(let i=0;i<defs.length;i+=6){
+    const batch=defs.slice(i,i+6);
+    const part=await Promise.all(batch.map(async def=>{
+      try{
+        const res=await getText(def.url);
+        const path=new URL(def.url,location.href).pathname.split('/').pop()||'';
+        const looksHtml=/^\s*(?:<!doctype\s+html|<html\b)/i.test(res.text);
+        let level=res.ok?'ok':'error',message=res.ok?'正常':`HTTP ${res.status}`;
+        if(res.ok&&looksHtml&&def.kind!=='manifest'){level='error';message='回傳 HTML，疑似快取 fallback 錯誤';}
+        if(res.ok&&def.kind==='css'&&!/text\/css/i.test(res.contentType)){level=levelRank(level)<1?'warning':level;message=message==='正常'?'Content-Type 不是 text/css':message;}
+        if(res.ok&&def.kind==='js'&&!/(javascript|ecmascript)/i.test(res.contentType)){level=levelRank(level)<1?'warning':level;message=message==='正常'?'JavaScript Content-Type 異常':message;}
+        const sigs=signatures[path]||[];
+        if(res.ok&&sigs.length&&!sigs.every(s=>res.text.includes(s))){level='error';message='檔案內容缺少預期識別字';}
+        const declared=new URL(def.url,location.href).searchParams.get('v')||'';
+        if(expectedVersion&&['css','js'].includes(def.kind)&&declared!==expectedVersion){level='error';message=`版本參數 ${declared||'缺少'} ≠ ${expectedVersion}`;}
+        return{...def,path,...res,level,message,declared};
+      }catch(e){return{...def,path:def.url,ok:false,status:0,contentType:'',duration:0,level:'error',message:e.message||String(e),declared:''};}
+    }));
+    results.push(...part);
+  }
+  state.resources=results;
+  results.filter(x=>x.level!=='ok').forEach(x=>pushIssue(state,x.level,'靜態資源',`${x.path}：${x.message}`,x.contentType));
+}
+
+async function probePwa(state){
+  const p={supported:'serviceWorker' in navigator,controller:Boolean(navigator.serviceWorker?.controller),controllerUrl:navigator.serviceWorker?.controller?.scriptURL||'',registrations:[],cacheNames:[],cacheEntries:{},storage:null};
+  try{
+    if(p.supported){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      p.registrations=regs.map(r=>({scope:r.scope,active:r.active?.scriptURL||'',waiting:r.waiting?.scriptURL||'',installing:r.installing?.scriptURL||''}));
+    }
+  }catch(e){pushIssue(state,'warning','PWA','無法讀取 Service Worker registration',e.message||String(e));}
+  try{
+    if('caches' in window){
+      p.cacheNames=await caches.keys();
+      for(const name of p.cacheNames){const c=await caches.open(name);p.cacheEntries[name]=(await c.keys()).length;}
+    }
+  }catch(e){pushIssue(state,'warning','PWA','無法讀取 Cache Storage',e.message||String(e));}
+  try{if(navigator.storage?.estimate)p.storage=await navigator.storage.estimate();}catch{}
+  const v=state.versions.versionJson||'';
+  const normalized=v.replace(/^v/i,'').replace(/\./g,'');
+  const currentCaches=p.cacheNames.filter(x=>normalized&&x.includes(`v${normalized}`));
+  const appCaches=p.cacheNames.filter(x=>x.startsWith('baseball-player-card-pwa-'));
+  if(location.protocol==='https:'&&p.supported&&!p.controller) pushIssue(state,'warning','PWA','目前頁面沒有 Service Worker controller','首次開啟或剛更新時可能暫時正常');
+  if(v&&p.cacheNames.length&&!currentCaches.length) pushIssue(state,'error','PWA',`找不到 ${v} 對應的 PWA cache`,appCaches.join(', '));
+  if(appCaches.length>1) pushIssue(state,'warning','PWA',`偵測到 ${appCaches.length} 個舊版 PWA cache`,appCaches.join(', '));
+  if(p.storage?.quota&&p.storage?.usage/p.storage.quota>.85) pushIssue(state,'warning','儲存空間','瀏覽器儲存空間使用率超過 85%');
+  state.pwa=p;
+}
+
+async function probeApis(state){
+  const unique=[];const seen=new Set();
+  for(const x of state.apiDefs||[]){if(seen.has(x.url))continue;seen.add(x.url);unique.push(x);}
+  const out=[];
+  for(let i=0;i<unique.length;i+=6){
+    const batch=unique.slice(i,i+6);
+    const part=await Promise.all(batch.map(async item=>{
+      const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),8000);const started=performance.now();
+      try{const r=await fetch(item.url,{method:'OPTIONS',cache:'no-store',signal:ctrl.signal});return{...item,status:r.status,ok:r.ok,duration:performance.now()-started,error:''};}
+      catch(e){return{...item,status:0,ok:false,duration:performance.now()-started,error:e.name==='AbortError'?'逾時 8 秒':(e.message||String(e))};}
+      finally{clearTimeout(timer);}
+    }));out.push(...part);
+  }
+  state.apis=out;
+  out.filter(x=>!x.ok).forEach(x=>pushIssue(state,'error','API',`${x.name} 無法連線`,x.error||`HTTP ${x.status}`));
+}
+
+function probeRuntime(state){
+  let rows=[];try{const p=JSON.parse(localStorage.getItem(RUNTIME_KEY)||'[]');rows=Array.isArray(p)?p:[];}catch{}
+  rows=rows.filter(x=>Date.now()-Number(x?.at||0)<=7*86400000).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
+  state.runtime=rows;
+  const recentHour=rows.filter(x=>Date.now()-Number(x.at||0)<=3600000&&x.level==='error');
+  const recentDay=rows.filter(x=>Date.now()-Number(x.at||0)<=86400000&&x.level==='error');
+  if(recentHour.length) pushIssue(state,'error','前台執行',`最近 1 小時記錄到 ${recentHour.length} 個前台錯誤`,'請看「前台執行錯誤」區塊');
+  else if(recentDay.length) pushIssue(state,'warning','前台執行',`最近 24 小時記錄到 ${recentDay.length} 個前台錯誤`,'目前未必仍在發生');
+}
+
+async function probeCpbl(state){
+  try{
+    const r=await fetch(CACHE_DIAG_API,{method:'POST',headers:{'content-type':'application/json'},body:'{}',cache:'no-store'}),d=await r.json();
+    if(!r.ok||!d.ok)throw new Error(d.error||`HTTP ${r.status}`);
+    state.cpbl=d;
+    for(const x of d.issues||[])pushIssue(state,x.level==='error'?'error':'warning','CPBL 後台',`${x.key}：${x.message}`);
+  }catch(e){state.cpbl={ok:false,error:e.message||String(e)};pushIssue(state,'error','CPBL 後台','cache-diagnostics 讀取失敗',e.message||String(e));}
+}
+
+function probeEnvironment(state){
+  const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection||null;
+  state.environment={online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,viewport:`${innerWidth} × ${innerHeight}`,dpr:devicePixelRatio||1,connection:c?`${c.effectiveType||'—'} / ${c.downlink||'—'} Mbps`:'不支援',origin:location.origin,time:new Date().toLocaleString('zh-TW',{hour12:false})};
+  if(!navigator.onLine)pushIssue(state,'error','網路','瀏覽器目前為離線狀態');
+}
+
+function render(state){
+  lastState=state;
+  const errors=state.issues.filter(x=>x.level==='error').length,warnings=state.issues.filter(x=>x.level==='warning').length;
+  const health=errors?'error':warnings?'warning':'ok';
+  $('#healthBanner').className=`health-banner ${health}`;
+  $('#healthTitle').textContent=health==='ok'?'全站診斷正常':health==='warning'?'偵測到警告':'偵測到錯誤';
+  $('#healthSub').textContent=`產生時間 ${new Date().toLocaleString('zh-TW',{hour12:false})}｜錯誤 ${errors}｜警告 ${warnings}`;
+  const okResources=state.resources.filter(x=>x.level==='ok').length,okApis=state.apis.filter(x=>x.ok).length;
+  $('#summary').innerHTML=[['版本',state.versions.versionJson||'—'],['錯誤',errors],['警告',warnings],['靜態資源',`${okResources}/${state.resources.length}`],['API',`${okApis}/${state.apis.length}`],['前台錯誤',state.runtime.length]].map(([a,b])=>`<div class="card"><span class="sub">${esc(a)}</span><b class="${a==='錯誤'&&errors?'error':a==='警告'&&warnings?'warning':''}">${esc(b)}</b></div>`).join('');
+  $('#issues').innerHTML=state.issues.length?state.issues.sort((a,b)=>levelRank(b.level)-levelRank(a.level)).map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.area)}</b>｜${esc(x.message)}${x.detail?`<div class="small mono">${esc(x.detail)}</div>`:''}</div>`).join(''):'<div class="issue ok"><b>OK</b>｜目前沒有偵測到異常。</div>';
+
+  const v=state.versions;$('#versions').innerHTML=[['version.json',v.versionJson],['index meta',v.indexMeta],['app.js APP_VERSION',v.appVersion],['SW 資源版本',v.swAssetVersion],['SW cache name',v.cacheName]].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono">${esc(b||'—')}</strong></div>`).join('');
+
+  $('#resourcesWrap').innerHTML=tableHtml(['類型','資源','版本','HTTP','Content-Type','時間','判定'],state.resources.map(x=>`<tr><td>${esc(x.kind)}</td><td class="mono">${esc(x.path)}</td><td>${esc(x.declared||'—')}</td><td>${esc(x.status||'—')}</td><td class="mono">${esc(x.contentType||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${esc(x.level)}">${esc(x.message)}</span></td></tr>`));
+
+  const p=state.pwa,usage=p.storage?.usage||0,quota=p.storage?.quota||0;$('#pwa').innerHTML=[['Service Worker 支援',p.supported?'是':'否'],['目前被 SW 控制',p.controller?'是':'否'],['Controller',p.controllerUrl||'—'],['Registrations',p.registrations.length],['Cache 名稱',p.cacheNames.join('\n')||'—'],['Cache 筆數',Object.entries(p.cacheEntries).map(([k,n])=>`${k}: ${n}`).join('\n')||'—'],['儲存空間',quota?`${(usage/1024/1024).toFixed(1)} / ${(quota/1024/1024).toFixed(1)} MB`:'—']].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono" style="white-space:pre-wrap">${esc(b)}</strong></div>`).join('');
+
+  $('#apisWrap').innerHTML=tableHtml(['常數','端點','HTTP','時間','狀態'],state.apis.map(x=>`<tr><td class="mono">${esc(x.name)}</td><td class="mono">${esc(new URL(x.url).pathname)}</td><td>${esc(x.status||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${x.ok?'ok':'error'}">${esc(x.ok?'可達':x.error||'失敗')}</span></td></tr>`));
+
+  $('#runtimeWrap').innerHTML=tableHtml(['時間','等級','類型','頁面','訊息','URL/HTTP'],state.runtime.slice(0,120).map(x=>`<tr><td>${esc(time(x.at))}</td><td><span class="pill ${esc(x.level||'error')}">${esc(x.level||'error')}</span></td><td>${esc(x.kind||'')}</td><td class="mono runtime-msg">${esc(x.page||'')}</td><td class="runtime-msg">${esc(x.message||'')}${x.extra?`<div class="small mono muted">${esc(x.extra)}</div>`:''}</td><td class="mono runtime-msg">${esc(x.url||'')}${x.status?`<div>HTTP ${esc(x.status)}</div>`:''}</td></tr>`));
+
+  const d=state.cpbl||{};$('#cpblStatus').innerHTML=d.ok!==false?`${esc(d.today||'—')}｜健康狀態 <b class="${esc(d.health||'')}">${esc(String(d.health||'unknown').toUpperCase())}</b>｜產生時間 ${esc(time(d.generatedAt))}`:`<span class="error">讀取失敗：${esc(d.error||'unknown')}</span>`;
+  $('#cpblIssues').innerHTML=(d.issues||[]).length?(d.issues||[]).map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.key)}</b>｜${esc(x.message)}</div>`).join(''):'<div class="muted">CPBL 後台沒有回報資料異常。</div>';
+  const sch=d.schedulers||{};$('#schedulers').innerHTML=['major','minor'].map(k=>{const s=sch[k]||{};return `<div class="mini"><strong>${k==='major'?'A/E/C Scheduler':'D Scheduler'}</strong><div>上次：${esc(time(s.lastScheduleCheckAt))}</div><div>下次：${esc(time(s.nextScheduleCheckAt))}</div><div class="err">${esc(s.lastError||'')}</div></div>`}).join('');
+  $('#gamesWrap').innerHTML=tableHtml(['軍別','比賽','狀態','Revision','Lineup 客/主','Plays','Snapshot','Published','下次刷新','錯誤'],(d.games||[]).map(g=>`<tr><td><span class="pill">${esc(g.kindCode)}</span></td><td>${esc(g.away)} vs ${esc(g.home)}<div class="muted">#${esc(g.gameId)}</div></td><td>${esc(g.status)}</td><td>${esc(g.publishedRevision)}</td><td>${esc(g.awayLineup)} / ${esc(g.homeLineup)}</td><td>${esc(g.plays)}</td><td>${esc(g.snapshots)}</td><td>${esc(time(g.publishedAt))}</td><td>${esc(time(g.nextRefreshAt))}</td><td class="err">${esc(g.lastError||'')}</td></tr>`));
+
+  $('#environment').innerHTML=Object.entries(state.environment).map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono">${esc(b)}</strong></div>`).join('');
+}
+
+async function run(){
+  $('#healthTitle').textContent='正在診斷…';$('#healthSub').textContent='檢查版本與前端資源';
+  const state={issues:[],versions:{},resources:[],apis:[],runtime:[],pwa:{},cpbl:null,environment:{}};
+  try{await probeCore(state);$('#healthSub').textContent='檢查 CSS / JS / manifest';await probeResources(state);$('#healthSub').textContent='檢查 PWA / Cache';await probePwa(state);$('#healthSub').textContent='檢查 API';await probeApis(state);probeRuntime(state);$('#healthSub').textContent='檢查 CPBL 後台';await probeCpbl(state);probeEnvironment(state);}catch(e){pushIssue(state,'error','診斷器','診斷流程本身發生錯誤',e.stack||e.message||String(e));}render(state);
+}
+$('#refresh').addEventListener('click',run);
+$('#clearRuntime').addEventListener('click',()=>{try{localStorage.removeItem(RUNTIME_KEY);}catch{}run();});
+run();
+</script>
+</body>
+</html>
