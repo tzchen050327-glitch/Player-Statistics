@@ -1,4 +1,5 @@
 const CACHE_NAME = 'baseball-player-card-pwa-v311-auto';
+// Runtime/app-shell versions are kept in lockstep by auto-version-bump.yml.
 const APP_SHELL = [
   './',
   './index.html',
