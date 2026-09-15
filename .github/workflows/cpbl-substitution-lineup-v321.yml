@@ -1,0 +1,160 @@
+name: CPBL substitution lineup v3.21
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cpbl-substitution-lineup-v321.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch substitution-aware lineup rendering
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          js = Path('game-detail-enhancement.js')
+          text = js.read_text(encoding='utf-8')
+
+          needle = '''  function lineupEntries(detail, side) {
+    return rawRoster(detail, side)
+      .sort((a,b)=>(Number(a.order)||99)-(Number(b.order)||99))
+      .slice(0,9);
+  }
+'''
+          insert = needle + '''
+  function lineupDisplayEntries(detail, side) {
+    const fallback=lineupEntries(detail,side);
+    if(String(detail?.league||'').toUpperCase()!=='CPBL') return fallback;
+    const raw=detail?.lineups?.[side]||{};
+    const source=Array.isArray(raw?.roster)?raw.roster:[];
+    if(!source.length) return fallback;
+
+    const roster=source.map((entry,index)=>{
+      const stats=reconciledBattingStats(detail,entry);
+      return {
+        order:Number(entry?.order)||index+1,
+        number:safeCell(entry?.number||entry?.uniformNumber||entry?.jersey||''),
+        name:compactName(entry?.name||entry?.fullName||entry?.playerName||''),
+        position:compactName(entry?.position||entry?.pos||''),
+        pinch:compactName(entry?.pinch||entry?.pinchRole||''),
+        acnt:safeCell(entry?.acnt||entry?.playerId||entry?.id||''),
+        ab:stats.ab,avg:stats.avg,hits:stats.hits,homeRuns:stats.homeRuns,rbi:stats.rbi
+      };
+    }).filter(entry=>entry.name&&positionKey(entry.position)!=='p');
+    if(!roster.length) return fallback;
+
+    const wantedHalf=side==='away'?'top':'bottom';
+    const plays=(Array.isArray(detail?.plays)?detail.plays:[]).filter(p=>String(p?.half||'')===wantedHalf);
+    const seen=new Set(), starterByAcnt=new Map(), starterByName=new Map();
+    let pa=0;
+    for(let i=0;i<plays.length&&pa<9;i++){
+      const p=plays[i], local=Number(p?.battingOrder||0), inning=Number(p?.inning||0);
+      const key=inning>0&&local>0?`${inning}|${local}`:`fallback|${i}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      pa++;
+      const acnt=String(p?.batterAcnt||'').trim();
+      const name=compactName(p?.batter?.fullName||p?.batter?.name||p?.batter||p?.hitter||'').replace(/^(代打|代跑)[：:・･\\s]*/, '');
+      if(acnt) starterByAcnt.set(acnt,pa);
+      if(name) starterByName.set(normName(name),pa);
+    }
+
+    if(pa<9){
+      for(const entry of fallback){
+        const slot=Number(entry?.order||0);
+        if(!(slot>=1&&slot<=9)) continue;
+        if(entry.acnt) starterByAcnt.set(String(entry.acnt),slot);
+        if(entry.name) starterByName.set(normName(entry.name),slot);
+      }
+    }
+
+    let anchor=0;
+    const rows=[];
+    const starterSlots=new Set();
+    for(const entry of roster){
+      const slot=(entry.acnt&&starterByAcnt.get(String(entry.acnt))) || starterByName.get(normName(entry.name)) || 0;
+      if(slot>=1&&slot<=9){
+        anchor=slot;
+        starterSlots.add(slot);
+        rows.push({...entry,order:slot,isSubstitute:false});
+      }else if(anchor>=1&&anchor<=9){
+        rows.push({...entry,order:anchor,isSubstitute:true});
+      }
+    }
+    return starterSlots.size>=9&&rows.length>=9 ? rows : fallback;
+  }
+'''
+          if 'function lineupDisplayEntries(detail, side)' not in text:
+              if needle not in text: raise SystemExit('lineupEntries block not found')
+              text = text.replace(needle, insert, 1)
+
+          old_render = '''  function renderLineupPanel(detail,side) {
+    const effective=effectiveCurrentBatter(detail);
+    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
+    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
+  }
+'''
+          new_render = '''  function renderLineupPanel(detail,side) {
+    const effective=effectiveCurrentBatter(detail);
+    const entries=lineupDisplayEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    const rows=entries.length?entries:Array.from({length:9},(_,i)=>({order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''}));
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>{const role=e.isSubstitute?compactName(e.pinch||e.position||''):'';const displayName=`${e.isSubstitute?'↳ ':''}${e.name||'—'}${role?` (${role})`:''}`;return `<div class="gdx-lineup-row ${e.isSubstitute?'is-substitute ':''}${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(displayName)}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`;}).join('')}</div>`;
+  }
+'''
+          if old_render not in text: raise SystemExit('renderLineupPanel block not found')
+          text = text.replace(old_render,new_render,1)
+          js.write_text(text,encoding='utf-8')
+
+          css = Path('game-detail-enhancement.css')
+          c = css.read_text(encoding='utf-8')
+          old = '.gdx-landscape-lineup{flex:1;min-height:0;display:grid;grid-template-rows:26px repeat(9,minmax(0,1fr));padding:5px 6px 7px;gap:2px}'
+          new = '.gdx-landscape-lineup{flex:1;min-height:0;display:grid;grid-template-rows:26px;grid-auto-rows:minmax(34px,1fr);padding:5px 6px 7px;gap:2px;overflow-y:auto;scrollbar-width:thin}.gdx-lineup-row.is-substitute strong{padding-left:3px;color:#b9d8f7}.gdx-lineup-row.is-substitute{background:rgba(255,255,255,.025)}'
+          if old not in c: raise SystemExit('landscape lineup css block not found')
+          c = c.replace(old,new,1)
+          css.write_text(c,encoding='utf-8')
+
+          # Explicit bump because this workflow's commit is authored by github-actions[bot].
+          vp=Path('version.json'); data=json.loads(vp.read_text(encoding='utf-8')); oldv=data['version']
+          m=re.fullmatch(r'v(\\d+)\\.(\\d+)',oldv)
+          if not m: raise SystemExit(oldv)
+          newv=f'v{m.group(1)}.{int(m.group(2))+1}'
+          cache_tag=f'v{m.group(1)}{int(m.group(2))+1}'
+          vp.write_text(json.dumps({'version':newv},ensure_ascii=False,separators=(',',':'))+'\\n',encoding='utf-8')
+
+          index=Path('index.html').read_text(encoding='utf-8')
+          index=re.sub(r'(<meta\\s+name="app-version"\\s+content=")v\\d+\\.\\d+("\\s*/?>)',rf'\\g<1>{newv}\\2',index,count=1)
+          index=re.sub(r'\\?v=v\\d+\\.\\d+',f'?v={newv}',index)
+          index=re.sub(r'(id="appVersionBadge"[^>]*>)v\\d+\\.\\d+(</button>)',rf'\\g<1>{newv}\\2',index,count=1)
+          Path('index.html').write_text(index,encoding='utf-8')
+
+          app=Path('app.js').read_text(encoding='utf-8')
+          app=re.sub(r"const APP_VERSION = 'v\\d+\\.\\d+';",f"const APP_VERSION = '{newv}';",app,count=1)
+          app=re.sub(r'\\?v=v\\d+\\.\\d+',f'?v={newv}',app)
+          Path('app.js').write_text(app,encoding='utf-8')
+
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          sw=re.sub(r'\\?v=v\\d+\\.\\d+',f'?v={newv}',sw)
+          sw=re.sub(r"const CACHE_NAME = '[^']+';",f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';",sw,count=1)
+          Path('service-worker.js').write_text(sw,encoding='utf-8')
+          print(oldv,'->',newv)
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game-detail-enhancement.js game-detail-enhancement.css version.json index.html app.js service-worker.js
+          git commit -m "Fix CPBL substitutions in lineup table [skip version bump]" || exit 0
+          git push
