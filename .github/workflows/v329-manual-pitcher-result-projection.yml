@@ -1,0 +1,122 @@
+name: Apply v3.29 manual pitcher result projection
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v329-manual-pitcher-result-projection.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch pitcher manual result projection and bump v3.29
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          old = '''    function seasonStatsForOutputRole(player, role) {
+                const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+                const projection = currentRecord?.cpblSeasonProjection;
+                if (
+                  role === 'hitter'
+                  && level === 'A'
+                  && playerScope(player) === 'cpbl'
+                  && projection?.complete
+                  && projection?.stats
+                ) {
+                  return mergeStats(projection.stats, hitterDefaults);
+                }
+                const pair = roleStatsPair(player, selectedSeason, level);'''
+          new = '''    function seasonStatsForOutputRole(player, role) {
+                const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+                const projection = currentRecord?.cpblSeasonProjectionByRole?.[role]
+                  || (currentRecord?.cpblSeasonProjection?.role === role ? currentRecord.cpblSeasonProjection : null);
+                if (
+                  role === 'hitter'
+                  && level === 'A'
+                  && playerScope(player) === 'cpbl'
+                  && projection?.complete
+                  && projection?.stats
+                ) {
+                  return mergeStats(projection.stats, hitterDefaults);
+                }
+                if (
+                  role === 'pitcher'
+                  && level === 'A'
+                  && playerScope(player) === 'cpbl'
+                  && projection?.complete
+                  && projection?.stats
+                ) {
+                  const projected = mergeStats(projection.stats, pitcherDefaults);
+                  const pregame = projection?.pregame ? mergeStats(projection.pregame, pitcherDefaults) : null;
+                  const game = currentRecord?.pitcherGame || null;
+                  if (pregame && game) {
+                    // Season counting/rate stats still come from Supabase's pregame snapshot + Box.
+                    // Only the result counters are re-based on the pregame snapshot and the
+                    // current Today-panel selection, so manual W/L/SV/HLD controls take effect
+                    // immediately without double-counting the Box result.
+                    projected.w = Number(pregame.w) || 0;
+                    projected.l = Number(pregame.l) || 0;
+                    projected.sv = Number(pregame.sv) || 0;
+                    projected.hld = Number(pregame.hld) || 0;
+                    projected.bsv = Number(pregame.bsv) || 0;
+                    projected.cg = Number(pregame.cg) || 0;
+                    projected.sho = Number(pregame.sho) || 0;
+                    projected.noWalkHbp = Number(pregame.noWalkHbp) || 0;
+
+                    const result = String(
+                      game.result || (game.sv ? 'SV' : game.hld ? 'HLD' : game.decision || 'ND')
+                    ).toUpperCase();
+                    if (result === 'W') projected.w += 1;
+                    else if (result === 'L') projected.l += 1;
+                    else if (result === 'SV') projected.sv += 1;
+                    else if (result === 'HLD') projected.hld += 1;
+                    if (game.bsv) projected.bsv += 1;
+                    if (game.cg) projected.cg += 1;
+                    if (game.sho) projected.sho += 1;
+                    if (game.noWalkHbp) projected.noWalkHbp += 1;
+                  }
+                  return projected;
+                }
+                const pair = roleStatsPair(player, selectedSeason, level);'''
+          if old not in s:
+              raise SystemExit('seasonStatsForOutputRole anchor not found')
+          s = s.replace(old, new, 1)
+
+          new_version = 'v3.29'
+          s = re.sub(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new_version}';", s, count=1)
+          s = re.sub(r'\?v=v\d+\.\d+', f'?v={new_version}', s)
+          p.write_text(s, encoding='utf-8')
+
+          Path('version.json').write_text(json.dumps({'version':new_version}, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new_version}\2', s, count=1)
+          s = re.sub(r'\?v=v\d+\.\d+', f'?v={new_version}', s)
+          s = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new_version}\2', s, count=1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('service-worker.js')
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(r'\?v=v\d+\.\d+', f'?v={new_version}', s)
+          s = re.sub(r"const CACHE_NAME = '[^']+';", "const CACHE_NAME = 'baseball-player-card-pwa-v329-auto';", s, count=1)
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js index.html version.json service-worker.js
+          git commit -m "Use manual pitcher results in season projection v3.29 [skip version bump]" || exit 0
+          git push
