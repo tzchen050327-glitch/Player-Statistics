@@ -1,0 +1,100 @@
+name: Fix CPBL live lineup and base state
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-cpbl-live-lineup-base-v320.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch CPBL live state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('game-detail-enhancement.js')
+          s = p.read_text(encoding='utf-8')
+
+          # Pregame fallback is only valid before play begins. Once plays exist,
+          # the live game-detail lineup is authoritative and must never be replaced
+          # by the pregame roster (which can re-introduce starters/substituted players).
+          old = """  async function hydrateCpblPregameLineup(data) {
+            if (String(data?.league || '').toUpperCase() !== 'CPBL') return data;
+            const awayCount = Array.isArray(data?.lineups?.away?.batters) ? data.lineups.away.batters.length : 0;
+          """
+          new = """  async function hydrateCpblPregameLineup(data) {
+            if (String(data?.league || '').toUpperCase() !== 'CPBL') return data;
+            const hasLivePlays = Array.isArray(data?.plays) && data.plays.length > 0;
+            const status = String(data?.status || data?.game?.status || '').toLowerCase();
+            if (hasLivePlays || ['live','playing','inprogress','in_progress','final'].includes(status)) return data;
+            const awayCount = Array.isArray(data?.lineups?.away?.batters) ? data.lineups.away.batters.length : 0;
+          """
+          if old not in s:
+              raise SystemExit('pregame hydration anchor not found')
+          s = s.replace(old, new, 1)
+
+          # Do not prefer last.baseStateAfter merely because current.batter still names
+          # the completed PA hitter. CPBL can publish a newer current base state first.
+          old = """    const currentName=compactName(detail?.current?.batter?.fullName||detail?.current?.batter?.name||'');
+            const lastName=compactName(last?.batter?.fullName||last?.batter?.name||last?.batter||last?.hitter||'');
+            if(currentName && lastName && samePlayerName(currentName,lastName)) return true;
+
+            const beforeValue=last?.baseState ?? last?.bases ?? '';
+          """
+          new = """    const beforeValue=last?.baseState ?? last?.bases ?? '';
+          """
+          if old not in s:
+              raise SystemExit('stale current-batter base-state shortcut anchor not found')
+          s = s.replace(old, new, 1)
+
+          # Treat explicit current base-state presence as authoritative unless it is
+          # demonstrably the unchanged pre-PA state. This preserves a newly published
+          # third-base runner instead of overwriting it with an older play snapshot.
+          old = """    const beforeKey=baseStateKey(beforeValue), afterKey=baseStateKey(afterValue), currentKey=baseStateKey(currentValue);
+
+            // CPBL can advance current.batter before current.baseState catches up.
+            // If current still equals the completed PA's pre-PA state while the post-PA
+            // state changed, the post-PA state is the authoritative live situation.
+            return beforeKey!==afterKey && currentKey===beforeKey;
+          """
+          new = """    const beforeKey=baseStateKey(beforeValue), afterKey=baseStateKey(afterValue), currentKey=baseStateKey(currentValue);
+            const hasCurrent = detail?.current?.baseState !== undefined && detail?.current?.baseState !== null
+              || detail?.current?.bases !== undefined && detail?.current?.bases !== null;
+
+            // Only fall back to the completed PA's after-state when current is provably
+            // still the pre-PA snapshot. Any different explicit current state is newer.
+            return hasCurrent && beforeKey!==afterKey && currentKey===beforeKey;
+          """
+          if old not in s:
+              raise SystemExit('base-state precedence anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Syntax check
+        run: node --check game-detail-enhancement.js
+
+      - name: Verify hotfix
+        run: |
+          grep -q "hasLivePlays" game-detail-enhancement.js
+          grep -q "Any different explicit current state is newer" game-detail-enhancement.js
+          ! grep -q "samePlayerName(currentName,lastName)) return true" game-detail-enhancement.js
+
+      - name: Commit hotfix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game-detail-enhancement.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Fix CPBL live lineup duplication and stale base state"
+          git push
