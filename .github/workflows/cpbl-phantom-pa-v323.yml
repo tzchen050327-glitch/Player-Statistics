@@ -1,0 +1,100 @@
+name: CPBL phantom PA filter v3.23
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cpbl-phantom-pa-v323.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch phantom CPBL plate appearances
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          app_path = Path('app.js')
+          app = app_path.read_text(encoding='utf-8')
+
+          marker = "    function homeGameDetailGroups(plays = []) {"
+          helper = '''    function homeGameDetailDisplayPlay(play = {}) {
+      const description = String(play?.description || '').trim();
+      const batter = String(play?.batter || play?.hitter || '').trim();
+      const result = String(play?.result || play?.raw || '').trim();
+      if (!description) return Boolean(batter && result);
+      const hasChange = /更換(?:代打|代跑|選手|守備|投手)/.test(description);
+      const hasAction = /(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(description);
+      if (hasChange && !hasAction) return false;
+      return Boolean(batter && (result || hasAction));
+    }
+
+'''
+          if 'function homeGameDetailDisplayPlay(play = {})' not in app:
+              if marker not in app: raise SystemExit('homeGameDetailGroups marker not found')
+              app = app.replace(marker, helper + marker, 1)
+
+          old_groups = "      const groups = homeGameDetailGroups(detail?.plays || []);"
+          new_groups = "      const displayPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);\n      const groups = homeGameDetailGroups(displayPlays);"
+          if old_groups not in app: raise SystemExit('groups line not found')
+          app = app.replace(old_groups, new_groups, 1)
+
+          old_count = "<div class=\"game-detail-section-title\"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>"
+          new_count = "<div class=\"game-detail-section-title\"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>"
+          if old_count not in app: raise SystemExit('play count line not found')
+          app = app.replace(old_count, new_count, 1)
+          app_path.write_text(app, encoding='utf-8')
+
+          enh_path = Path('game-detail-enhancement.js')
+          enh = enh_path.read_text(encoding='utf-8')
+          old_pa = """    const result=compactName(`${play?.result||''} ${play?.raw||''}`);\n    const desc=compactName(play?.description||'');\n    if(!result && !desc) return false;\n"""
+          new_pa = """    const result=compactName(`${play?.result||''} ${play?.raw||''}`);\n    const desc=compactName(play?.description||'');\n    if(!result && !desc) return false;\n    const hasChange=/更換(?:代打|代跑|選手|守備|投手)/.test(desc);\n    const hasAction=/(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(desc);\n    if(hasChange&&!hasAction) return false;\n"""
+          if old_pa not in enh: raise SystemExit('completedPlateAppearance marker not found')
+          enh = enh.replace(old_pa, new_pa, 1)
+
+          summary_marker = """    const matches=plays.filter(play=>{\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"""
+          summary_repl = """    const matches=plays.filter(play=>{\n      if(!completedPlateAppearance(play)) return false;\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"""
+          if summary_marker not in enh: raise SystemExit('PA summary filter marker not found')
+          enh = enh.replace(summary_marker, summary_repl, 1)
+          enh_path.write_text(enh, encoding='utf-8')
+
+          vp=Path('version.json'); data=json.loads(vp.read_text(encoding='utf-8')); oldv=data['version']
+          m=re.fullmatch(r'v(\d+)\.(\d+)',oldv)
+          if not m: raise SystemExit(oldv)
+          newv=f'v{m.group(1)}.{int(m.group(2))+1}'
+          cache_tag=f'v{m.group(1)}{int(m.group(2))+1}'
+          vp.write_text(json.dumps({'version':newv},ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+
+          index=Path('index.html').read_text(encoding='utf-8')
+          index=re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)',rf'\g<1>{newv}\2',index,count=1)
+          index=re.sub(r'\?v=v\d+\.\d+',f'?v={newv}',index)
+          index=re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)',rf'\g<1>{newv}\2',index,count=1)
+          Path('index.html').write_text(index,encoding='utf-8')
+
+          app=app_path.read_text(encoding='utf-8')
+          app=re.sub(r"const APP_VERSION = 'v\d+\.\d+';",f"const APP_VERSION = '{newv}';",app,count=1)
+          app=re.sub(r'\?v=v\d+\.\d+',f'?v={newv}',app)
+          app_path.write_text(app,encoding='utf-8')
+
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          sw=re.sub(r'\?v=v\d+\.\d+',f'?v={newv}',sw)
+          sw=re.sub(r"const CACHE_NAME = '[^']+';",f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';",sw,count=1)
+          Path('service-worker.js').write_text(sw,encoding='utf-8')
+          print(oldv,'->',newv)
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js game-detail-enhancement.js version.json index.html service-worker.js
+          git commit -m "Filter CPBL substitution phantom plate appearances [skip version bump]" || exit 0
+          git push
