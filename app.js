@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.27';
+    const APP_VERSION = 'v3.28';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -7,6 +7,7 @@
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
     const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
     const CPBL_DAILY_CACHE_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-daily-cache';
+    const CPBL_OFFICIAL_REFRESH_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-official-season-refresh';
     const CPBL_CURRENT_ROSTER_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-current-roster';
     const CPBL_POSTSEASON_DAILY_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-daily';
     const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
@@ -19,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.27';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.27';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.28';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.28';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -2063,6 +2064,63 @@ bg2: {
       if (!silent) setStatus(`已更新 ${year} 年中職官網${cpblLevelLabel(kindCode)}累積成績。`);
       return data;
     }
+
+    async function forceOfficialSeasonRefresh() {
+      const player = selectedPlayer();
+      if (!player || playerScope(player) !== 'cpbl') return;
+      if (!player.cpblAcnt) {
+        setStatus('此球員尚未連結中職官網。', true);
+        return;
+      }
+      const btn = document.getElementById('forceOfficialRefreshBtn');
+      const original = btn?.textContent || '重新抓官方個人頁';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '抓取中…';
+      }
+      try {
+        const response = await fetch(CPBL_OFFICIAL_REFRESH_API_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            appKey: CPBL_APP_KEY,
+            acnt: player.cpblAcnt,
+            year: selectedSeason,
+            kindCode: selectedLevel,
+            date: String(els.gameDate?.value || ''),
+            teamCode: player.cpblTeamCode || ''
+          })
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.ok || !data?.stats) {
+          throw new Error(data?.error || `官方個人頁更新失敗（${response.status}）`);
+        }
+        applyCpblSeasonStatsToPlayer(player, data.stats, selectedSeason, selectedLevel);
+        await savePlayer(player);
+        await markSuccessfulSeasonSyncMeta();
+        try { await loadRecord(); } catch (error) { console.warn('手動官方更新後重新載入單場失敗', error); }
+        renderAll();
+        if (data.officialCaughtUp === false) {
+          setStatus('CPBL 個人選手頁尚未完成結算；已保留 Supabase 暫算值，單場 Box 的勝敗／救援／中繼仍會套用。');
+        } else {
+          setStatus('CPBL 個人選手頁已完成結算，已切換為官方正式累積成績。');
+        }
+      } catch (error) {
+        console.warn('手動抓取 CPBL 官方個人頁失敗', error);
+        setStatus(error?.message || '手動抓取官方個人頁失敗。', true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      }
+    }
+
+    document.addEventListener('click', event => {
+      const btn = event.target?.closest?.('#forceOfficialRefreshBtn');
+      if (!btn) return;
+      forceOfficialSeasonRefresh();
+    });
 
     function applyCpblSeasonStatsToPlayer(player, stats, year, kindCode = selectedLevel) {
       kindCode = kindCode === 'D' ? 'D' : 'A';
@@ -8443,6 +8501,11 @@ bg2: {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
+      const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
+      if (forceOfficialRefreshBtn) {
+        const showOfficialRefresh = playerPageActive && playerScope(player) === 'cpbl' && Boolean(player?.cpblAcnt);
+        forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
+      }
 
       els.homePage?.classList.toggle('hidden', playerPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
