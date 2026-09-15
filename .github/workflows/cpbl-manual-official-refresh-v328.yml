@@ -18,8 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Add manual CPBL official refresh and bump version
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           import json, re
           from pathlib import Path
 
@@ -126,6 +127,7 @@ jobs:
           Path('version.json').write_text(json.dumps({'version':new},ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
           p=Path('index.html'); s=p.read_text(encoding='utf-8'); s=re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)',rf'\g<1>{new}\2',s,count=1); s=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',s); s=re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)',rf'\g<1>{new}\2',s,count=1); p.write_text(s,encoding='utf-8')
           p=Path('service-worker.js'); s=p.read_text(encoding='utf-8'); s=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',s); s=re.sub(r"const CACHE_NAME = '[^']+';","const CACHE_NAME = 'baseball-player-card-pwa-v328-auto';",s,count=1); p.write_text(s,encoding='utf-8')
+          PY
 
       - name: Commit
         run: |
