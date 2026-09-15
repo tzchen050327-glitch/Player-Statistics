@@ -25,20 +25,21 @@ jobs:
 
           app_path = Path('app.js')
           app = app_path.read_text(encoding='utf-8')
-
           marker = "    function homeGameDetailGroups(plays = []) {"
-          helper = '''    function homeGameDetailDisplayPlay(play = {}) {
-      const description = String(play?.description || '').trim();
-      const batter = String(play?.batter || play?.hitter || '').trim();
-      const result = String(play?.result || play?.raw || '').trim();
-      if (!description) return Boolean(batter && result);
-      const hasChange = /更換(?:代打|代跑|選手|守備|投手)/.test(description);
-      const hasAction = /(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(description);
-      if (hasChange && !hasAction) return false;
-      return Boolean(batter && (result || hasAction));
-    }
-
-'''
+          helper = "\n".join([
+              "    function homeGameDetailDisplayPlay(play = {}) {",
+              "      const description = String(play?.description || '').trim();",
+              "      const batter = String(play?.batter || play?.hitter || '').trim();",
+              "      const result = String(play?.result || play?.raw || '').trim();",
+              "      if (!description) return Boolean(batter && result);",
+              "      const hasChange = /更換(?:代打|代跑|選手|守備|投手)/.test(description);",
+              "      const hasAction = /(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(description);",
+              "      if (hasChange && !hasAction) return false;",
+              "      return Boolean(batter && (result || hasAction));",
+              "    }",
+              "",
+              ""
+          ])
           if 'function homeGameDetailDisplayPlay(play = {})' not in app:
               if marker not in app: raise SystemExit('homeGameDetailGroups marker not found')
               app = app.replace(marker, helper + marker, 1)
@@ -48,21 +49,21 @@ jobs:
           if old_groups not in app: raise SystemExit('groups line not found')
           app = app.replace(old_groups, new_groups, 1)
 
-          old_count = "<div class=\"game-detail-section-title\"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>"
-          new_count = "<div class=\"game-detail-section-title\"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>"
+          old_count = '<div class="game-detail-section-title"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>'
+          new_count = '<div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>'
           if old_count not in app: raise SystemExit('play count line not found')
           app = app.replace(old_count, new_count, 1)
           app_path.write_text(app, encoding='utf-8')
 
           enh_path = Path('game-detail-enhancement.js')
           enh = enh_path.read_text(encoding='utf-8')
-          old_pa = """    const result=compactName(`${play?.result||''} ${play?.raw||''}`);\n    const desc=compactName(play?.description||'');\n    if(!result && !desc) return false;\n"""
-          new_pa = """    const result=compactName(`${play?.result||''} ${play?.raw||''}`);\n    const desc=compactName(play?.description||'');\n    if(!result && !desc) return false;\n    const hasChange=/更換(?:代打|代跑|選手|守備|投手)/.test(desc);\n    const hasAction=/(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(desc);\n    if(hasChange&&!hasAction) return false;\n"""
+          old_pa = "    const result=compactName(`${play?.result||''} ${play?.raw||''}`);\n    const desc=compactName(play?.description||'');\n    if(!result && !desc) return false;\n"
+          new_pa = old_pa + "    const hasChange=/更換(?:代打|代跑|選手|守備|投手)/.test(desc);\n    const hasAction=/(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(desc);\n    if(hasChange&&!hasAction) return false;\n"
           if old_pa not in enh: raise SystemExit('completedPlateAppearance marker not found')
           enh = enh.replace(old_pa, new_pa, 1)
 
-          summary_marker = """    const matches=plays.filter(play=>{\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"""
-          summary_repl = """    const matches=plays.filter(play=>{\n      if(!completedPlateAppearance(play)) return false;\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"""
+          summary_marker = "    const matches=plays.filter(play=>{\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"
+          summary_repl = "    const matches=plays.filter(play=>{\n      if(!completedPlateAppearance(play)) return false;\n      const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();\n"
           if summary_marker not in enh: raise SystemExit('PA summary filter marker not found')
           enh = enh.replace(summary_marker, summary_repl, 1)
           enh_path.write_text(enh, encoding='utf-8')
