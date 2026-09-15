@@ -430,6 +430,9 @@
     const result=compactName(`${play?.result||''} ${play?.raw||''}`);
     const desc=compactName(play?.description||'');
     if(!result && !desc) return false;
+    const hasChange=/更換(?:代打|代跑|選手|守備|投手)/.test(desc);
+    const hasAction=/(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(desc);
+    if(hasChange&&!hasAction) return false;
     return /全壘打|三壘安打|二壘安打|一壘安打|安打|三振|四壞|保送|故意四壞|觸身|死球|失誤上壘|野手選擇|趁傳|雙殺|併殺|三殺|犧牲|犠牲|犠打|犧飛|滾地|ゴロ|飛球|界飛|邪飛|平飛|ライナー|アウト|出局|[一二三游遊左中右投捕](?:飛|直|滾)/i.test(result)
       || /打者[^。]*(?:出局|上壘)|[0-3]\s*人出局|四壞|保送|觸身|死球|安打|全壘打/i.test(desc);
   }
@@ -761,6 +764,7 @@
     const acnt=String(current.acnt||current.batterAcnt||current.playerAcnt||'').trim();
     const plays=Array.isArray(detail?.plays)?detail.plays:[];
     const matches=plays.filter(play=>{
+      if(!completedPlateAppearance(play)) return false;
       const paAcnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();
       if(acnt&&paAcnt) return acnt===paAcnt;
       const paName=compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||'');

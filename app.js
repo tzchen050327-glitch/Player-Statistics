@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.22';
+    const APP_VERSION = 'v3.23';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -19,8 +19,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.22';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.22';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.23';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.23';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6143,6 +6143,17 @@ bg2: {
       ].map(v => String(v || '').trim()).filter(Boolean).join('｜');
     }
 
+    function homeGameDetailDisplayPlay(play = {}) {
+      const description = String(play?.description || '').trim();
+      const batter = String(play?.batter || play?.hitter || '').trim();
+      const result = String(play?.result || play?.raw || '').trim();
+      if (!description) return Boolean(batter && result);
+      const hasChange = /更換(?:代打|代跑|選手|守備|投手)/.test(description);
+      const hasAction = /(好球|壞球|揮棒|擊出|打者出局|安打|四壞|故意四壞|觸身|死球|三振|雙殺|三殺|犧牲|犧短|犧飛|失誤|趁傳|全壘打|野手選擇|飛球|滾地球)/.test(description);
+      if (hasChange && !hasAction) return false;
+      return Boolean(batter && (result || hasAction));
+    }
+
     function homeGameDetailGroups(plays = []) {
       const map = new Map();
       for (const play of Array.isArray(plays) ? plays : []) {
@@ -6316,7 +6327,8 @@ bg2: {
       const status = String(detail?.status || game?.status || 'scheduled').toLowerCase();
       const currentBatter = String(detail?.current?.batter?.name || '').trim();
       const currentPitcher = String(detail?.current?.pitcher?.name || '').trim();
-      const groups = homeGameDetailGroups(detail?.plays || []);
+      const displayPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
+      const groups = homeGameDetailGroups(displayPlays);
       const gameInfo = detail?.game || game || {};
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
@@ -6370,7 +6382,7 @@ bg2: {
           ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
           ${starterSection}
           <section class="game-detail-play-section">
-            <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${detail?.plays?.length || 0} 筆</span></div>
+            <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>
             ${playsHtml}
           </section>
         </main>`;
