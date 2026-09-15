@@ -20,7 +20,7 @@
 <section class="section"><h2>前端靜態資源</h2><div class="sub">會實際抓取 index 內的 CSS、JS、manifest，檢查 HTTP、內容類型、版本參數與是否誤回 HTML。</div><div id="resourcesWrap" style="margin-top:10px"></div></section>
 <section class="section"><h2>PWA / Service Worker / Cache</h2><div id="pwa" class="grid"></div></section>
 <section class="section"><h2>API / Edge Functions</h2><div class="sub">自動從 app.js 掃描 Supabase Functions 端點，再用 OPTIONS 做可達性檢查；新增 API 後不必手動補名單。</div><div id="apisWrap" style="margin-top:10px"></div></section>
-<section class="section"><h2>前台執行錯誤</h2><div class="sub">主程式會記錄 JavaScript 錯誤、資源載入失敗、未處理 Promise、網路層 5xx 與本地資源 4xx。最多保留 120 筆／7 天。</div><div id="runtimeWrap" style="margin-top:10px"></div></section>
+<section class="section"><h2>前台執行錯誤</h2><div class="sub">主程式會記錄 JavaScript 錯誤、資源載入失敗、未處理 Promise、網路層 5xx 與本地資源 4xx。最多保留 120 筆／7 天；舊版本紀錄保留供追查，但不影響目前版本健康狀態。</div><div id="runtimeWrap" style="margin-top:10px"></div></section>
 <section class="section"><h2>CPBL 後台資料健康</h2><div id="cpblStatus" class="sub">讀取中…</div><div id="cpblIssues" style="margin-top:8px"></div><h3>Scheduler</h3><div id="schedulers" class="grid"></div><h3>今日比賽快取</h3><div id="gamesWrap"></div></section>
 <section class="section"><h2>瀏覽器 / 裝置環境</h2><div id="environment" class="grid"></div></section>
 </main>
@@ -108,28 +108,58 @@ async function probeResources(state){
 }
 
 async function probePwa(state){
-  const p={supported:'serviceWorker' in navigator,controller:Boolean(navigator.serviceWorker?.controller),controllerUrl:navigator.serviceWorker?.controller?.scriptURL||'',registrations:[],cacheNames:[],cacheEntries:{},storage:null};
-  try{
-    if(p.supported){
-      const regs=await navigator.serviceWorker.getRegistrations();
-      p.registrations=regs.map(r=>({scope:r.scope,active:r.active?.scriptURL||'',waiting:r.waiting?.scriptURL||'',installing:r.installing?.scriptURL||''}));
-    }
-  }catch(e){pushIssue(state,'warning','PWA','無法讀取 Service Worker registration',e.message||String(e));}
-  try{
-    if('caches' in window){
-      p.cacheNames=await caches.keys();
-      for(const name of p.cacheNames){const c=await caches.open(name);p.cacheEntries[name]=(await c.keys()).length;}
-    }
-  }catch(e){pushIssue(state,'warning','PWA','無法讀取 Cache Storage',e.message||String(e));}
-  try{if(navigator.storage?.estimate)p.storage=await navigator.storage.estimate();}catch{}
-  const v=state.versions.versionJson||'';
+  async function collect(){
+    const p={supported:'serviceWorker' in navigator,controller:Boolean(navigator.serviceWorker?.controller),controllerUrl:navigator.serviceWorker?.controller?.scriptURL||'',registrations:[],cacheNames:[],cacheEntries:{},storage:null,repairAttempted:false,repairError:'',repairResult:''};
+    try{
+      if(p.supported){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        p.registrations=regs.map(r=>({scope:r.scope,active:r.active?.scriptURL||'',waiting:r.waiting?.scriptURL||'',installing:r.installing?.scriptURL||''}));
+      }
+    }catch(e){p.registrationReadError=e.message||String(e);}
+    try{
+      if('caches' in window){
+        p.cacheNames=await caches.keys();
+        for(const name of p.cacheNames){const c=await caches.open(name);p.cacheEntries[name]=(await c.keys()).length;}
+      }
+    }catch(e){p.cacheReadError=e.message||String(e);}
+    try{if(navigator.storage?.estimate)p.storage=await navigator.storage.estimate();}catch{}
+    return p;
+  }
+
+  const v=state.versions.versionJson||state.versions.indexMeta||'';
   const normalized=v.replace(/^v/i,'').replace(/\./g,'');
-  const currentCaches=p.cacheNames.filter(x=>normalized&&x.includes(`v${normalized}`));
+  let p=await collect();
+  let currentCaches=p.cacheNames.filter(x=>normalized&&x.includes(`v${normalized}`));
+  let activeRegistration=p.registrations.find(r=>r.active&&location.href.startsWith(r.scope));
+  const needsRepair=location.protocol==='https:'&&p.supported&&(!activeRegistration||(v&&!currentCaches.length));
+
+  if(needsRepair){
+    try{
+      p.repairAttempted=true;
+      const swUrl=`./service-worker.js?v=${encodeURIComponent(v||Date.now())}`;
+      const reg=await navigator.serviceWorker.register(swUrl,{updateViaCache:'none'});
+      try{await reg.update();}catch{}
+      try{await Promise.race([navigator.serviceWorker.ready,new Promise(resolve=>setTimeout(resolve,6000))]);}catch{}
+      await new Promise(resolve=>setTimeout(resolve,700));
+      const repaired=await collect();
+      repaired.repairAttempted=true;
+      repaired.repairResult='已自動重新註冊目前版本 Service Worker';
+      p=repaired;
+    }catch(e){
+      p.repairAttempted=true;
+      p.repairError=e.message||String(e);
+    }
+  }
+
+  currentCaches=p.cacheNames.filter(x=>normalized&&x.includes(`v${normalized}`));
   const appCaches=p.cacheNames.filter(x=>x.startsWith('baseball-player-card-pwa-'));
-  const activeRegistration=p.registrations.find(r=>r.active&&location.href.startsWith(r.scope));
+  activeRegistration=p.registrations.find(r=>r.active&&location.href.startsWith(r.scope));
   p.controlState=p.controller?'controlled':activeRegistration?'active-uncontrolled':'unregistered';
-  if(location.protocol==='https:'&&p.supported&&!p.controller&&!activeRegistration) pushIssue(state,'warning','PWA','目前頁面沒有可用的 Service Worker','此 scope 沒有 active registration；PWA 離線與快取能力可能失效');
-  if(v&&p.cacheNames.length&&!currentCaches.length) pushIssue(state,'error','PWA',`找不到 ${v} 對應的 PWA cache`,appCaches.join(', '));
+
+  if(p.registrationReadError) pushIssue(state,'warning','PWA','無法讀取 Service Worker registration',p.registrationReadError);
+  if(p.cacheReadError) pushIssue(state,'warning','PWA','無法讀取 Cache Storage',p.cacheReadError);
+  if(location.protocol==='https:'&&p.supported&&!p.controller&&!activeRegistration) pushIssue(state,'warning','PWA','目前頁面沒有可用的 Service Worker',p.repairError||'已自動嘗試重新註冊；若仍失敗，請重新整理診斷頁');
+  if(v&&!currentCaches.length) pushIssue(state,'error','PWA',`找不到 ${v} 對應的 PWA cache`,p.repairError||appCaches.join(', ')||'已自動嘗試建立目前版本 cache');
   if(appCaches.length>1) pushIssue(state,'warning','PWA',`偵測到 ${appCaches.length} 個舊版 PWA cache`,appCaches.join(', '));
   if(p.storage?.quota&&p.storage?.usage/p.storage.quota>.85) pushIssue(state,'warning','儲存空間','瀏覽器儲存空間使用率超過 85%');
   state.pwa=p;
@@ -154,12 +184,24 @@ async function probeApis(state){
 
 function probeRuntime(state){
   let rows=[];try{const p=JSON.parse(localStorage.getItem(RUNTIME_KEY)||'[]');rows=Array.isArray(p)?p:[];}catch{}
-  rows=rows.filter(x=>Date.now()-Number(x?.at||0)<=7*86400000).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
+  const currentVersion=state.versions.versionJson||state.versions.indexMeta||'';
+  const inferVersion=x=>{
+    if(x?.version)return String(x.version);
+    const page=String(x?.page||'');
+    const m=page.match(/[?&](?:__app_version|v)=(v\d+\.\d+)/i);
+    return m?.[1]||'';
+  };
+  rows=rows.filter(x=>Date.now()-Number(x?.at||0)<=7*86400000)
+    .map(x=>({...x,_diagVersion:inferVersion(x)}))
+    .sort((a,b)=>Number(b.at||0)-Number(a.at||0));
   state.runtime=rows;
-  const recentHour=rows.filter(x=>Date.now()-Number(x.at||0)<=3600000&&x.level==='error');
-  const recentDay=rows.filter(x=>Date.now()-Number(x.at||0)<=86400000&&x.level==='error');
-  if(recentHour.length) pushIssue(state,'error','前台執行',`最近 1 小時記錄到 ${recentHour.length} 個前台錯誤`,'請看「前台執行錯誤」區塊');
-  else if(recentDay.length) pushIssue(state,'warning','前台執行',`最近 24 小時記錄到 ${recentDay.length} 個前台錯誤`,'目前未必仍在發生');
+  state.runtimeCurrent=rows.filter(x=>currentVersion&&x._diagVersion===currentVersion);
+  state.runtimeHistorical=rows.filter(x=>x._diagVersion&&x._diagVersion!==currentVersion);
+  state.runtimeUnknown=rows.filter(x=>!x._diagVersion);
+  const recentHour=state.runtimeCurrent.filter(x=>Date.now()-Number(x.at||0)<=3600000&&x.level==='error');
+  const recentDay=state.runtimeCurrent.filter(x=>Date.now()-Number(x.at||0)<=86400000&&x.level==='error');
+  if(recentHour.length) pushIssue(state,'error','前台執行',`目前版本最近 1 小時記錄到 ${recentHour.length} 個前台錯誤`,'請看「前台執行錯誤」區塊');
+  else if(recentDay.length) pushIssue(state,'warning','前台執行',`目前版本最近 24 小時記錄到 ${recentDay.length} 個前台錯誤`,'目前未必仍在發生');
 }
 
 async function probeCpbl(state){
@@ -185,18 +227,18 @@ function render(state){
   $('#healthTitle').textContent=health==='ok'?'全站診斷正常':health==='warning'?'偵測到警告':'偵測到錯誤';
   $('#healthSub').textContent=`產生時間 ${new Date().toLocaleString('zh-TW',{hour12:false})}｜錯誤 ${errors}｜警告 ${warnings}`;
   const okResources=state.resources.filter(x=>x.level==='ok').length,okApis=state.apis.filter(x=>x.ok).length;
-  $('#summary').innerHTML=[['版本',state.versions.versionJson||'—'],['錯誤',errors],['警告',warnings],['靜態資源',`${okResources}/${state.resources.length}`],['API',`${okApis}/${state.apis.length}`],['前台錯誤',state.runtime.length]].map(([a,b])=>`<div class="card"><span class="sub">${esc(a)}</span><b class="${a==='錯誤'&&errors?'error':a==='警告'&&warnings?'warning':''}">${esc(b)}</b></div>`).join('');
+  const currentRuntimeErrors=(state.runtimeCurrent||[]).filter(x=>x.level==='error').length,historicalRuntimeErrors=(state.runtimeHistorical||[]).filter(x=>x.level==='error').length;$('#summary').innerHTML=[['版本',state.versions.versionJson||'—'],['錯誤',errors],['警告',warnings],['靜態資源',`${okResources}/${state.resources.length}`],['API',`${okApis}/${state.apis.length}`],['前台錯誤',currentRuntimeErrors],['歷史錯誤',historicalRuntimeErrors]].map(([a,b])=>`<div class="card"><span class="sub">${esc(a)}</span><b class="${a==='錯誤'&&errors?'error':a==='警告'&&warnings?'warning':''}">${esc(b)}</b></div>`).join('');
   $('#issues').innerHTML=state.issues.length?state.issues.sort((a,b)=>levelRank(b.level)-levelRank(a.level)).map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.area)}</b>｜${esc(x.message)}${x.detail?`<div class="small mono">${esc(x.detail)}</div>`:''}</div>`).join(''):'<div class="issue ok"><b>OK</b>｜目前沒有偵測到異常。</div>';
 
   const v=state.versions;$('#versions').innerHTML=[['version.json',v.versionJson],['index meta',v.indexMeta],['app.js APP_VERSION',v.appVersion],['SW 資源版本',v.swAssetVersion],['SW cache name',v.cacheName]].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono">${esc(b||'—')}</strong></div>`).join('');
 
   $('#resourcesWrap').innerHTML=tableHtml(['類型','資源','版本','HTTP','Content-Type','時間','判定'],state.resources.map(x=>`<tr><td>${esc(x.kind)}</td><td class="mono">${esc(x.path)}</td><td>${esc(x.declared||'—')}</td><td>${esc(x.status||'—')}</td><td class="mono">${esc(x.contentType||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${esc(x.level)}">${esc(x.message)}</span></td></tr>`));
 
-  const p=state.pwa,usage=p.storage?.usage||0,quota=p.storage?.quota||0;$('#pwa').innerHTML=[['Service Worker 支援',p.supported?'是':'否'],['目前被 SW 控制',p.controller?'是':p.controlState==='active-uncontrolled'?'尚未接管（active registration 正常）':'否'],['Controller',p.controllerUrl||'—'],['Registrations',p.registrations.length],['Cache 名稱',p.cacheNames.join('\n')||'—'],['Cache 筆數',Object.entries(p.cacheEntries).map(([k,n])=>`${k}: ${n}`).join('\n')||'—'],['儲存空間',quota?`${(usage/1024/1024).toFixed(1)} / ${(quota/1024/1024).toFixed(1)} MB`:'—']].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono" style="white-space:pre-wrap">${esc(b)}</strong></div>`).join('');
+  const p=state.pwa,usage=p.storage?.usage||0,quota=p.storage?.quota||0;$('#pwa').innerHTML=[['Service Worker 支援',p.supported?'是':'否'],['目前被 SW 控制',p.controller?'是':p.controlState==='active-uncontrolled'?'尚未接管（active registration 正常）':'否'],['自動修復',p.repairAttempted?(p.repairError?`失敗：${p.repairError}`:(p.repairResult||'已執行')):'不需要'],['Controller',p.controllerUrl||'—'],['Registrations',p.registrations.length],['Cache 名稱',p.cacheNames.join('\n')||'—'],['Cache 筆數',Object.entries(p.cacheEntries).map(([k,n])=>`${k}: ${n}`).join('\n')||'—'],['儲存空間',quota?`${(usage/1024/1024).toFixed(1)} / ${(quota/1024/1024).toFixed(1)} MB`:'—']].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono" style="white-space:pre-wrap">${esc(b)}</strong></div>`).join('');
 
   $('#apisWrap').innerHTML=tableHtml(['常數','端點','HTTP','時間','狀態'],state.apis.map(x=>`<tr><td class="mono">${esc(x.name)}</td><td class="mono">${esc(new URL(x.url).pathname)}</td><td>${esc(x.status||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${x.ok?'ok':'error'}">${esc(x.ok?'可達':x.error||'失敗')}</span></td></tr>`));
 
-  $('#runtimeWrap').innerHTML=tableHtml(['時間','等級','類型','頁面','訊息','URL/HTTP'],state.runtime.slice(0,120).map(x=>`<tr><td>${esc(time(x.at))}</td><td><span class="pill ${esc(x.level||'error')}">${esc(x.level||'error')}</span></td><td>${esc(x.kind||'')}</td><td class="mono runtime-msg">${esc(x.page||'')}</td><td class="runtime-msg">${esc(x.message||'')}${x.extra?`<div class="small mono muted">${esc(x.extra)}</div>`:''}</td><td class="mono runtime-msg">${esc(x.url||'')}${x.status?`<div>HTTP ${esc(x.status)}</div>`:''}</td></tr>`));
+  $('#runtimeWrap').innerHTML=tableHtml(['時間','版本','範圍','等級','類型','頁面','訊息','URL/HTTP'],state.runtime.slice(0,120).map(x=>{const current=x._diagVersion&&x._diagVersion===state.versions.versionJson;return `<tr><td>${esc(time(x.at))}</td><td><span class="pill">${esc(x._diagVersion||'未知')}</span></td><td><span class="pill ${current?'ok':'warning'}">${esc(current?'目前':'歷史')}</span></td><td><span class="pill ${esc(x.level||'error')}">${esc(x.level||'error')}</span></td><td>${esc(x.kind||'')}</td><td class="mono runtime-msg">${esc(x.page||'')}</td><td class="runtime-msg">${esc(x.message||'')}${x.extra?`<div class="small mono muted">${esc(x.extra)}</div>`:''}</td><td class="mono runtime-msg">${esc(x.url||'')}${x.status?`<div>HTTP ${esc(x.status)}</div>`:''}</td></tr>`;}));
 
   const d=state.cpbl||{};$('#cpblStatus').innerHTML=d.ok!==false?`${esc(d.today||'—')}｜健康狀態 <b class="${esc(d.health||'')}">${esc(String(d.health||'unknown').toUpperCase())}</b>｜產生時間 ${esc(time(d.generatedAt))}`:`<span class="error">讀取失敗：${esc(d.error||'unknown')}</span>`;
   $('#cpblIssues').innerHTML=(d.issues||[]).length?(d.issues||[]).map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.key)}</b>｜${esc(x.message)}</div>`).join(''):'<div class="muted">CPBL 後台沒有回報資料異常。</div>';

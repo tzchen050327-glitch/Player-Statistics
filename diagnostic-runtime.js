@@ -47,6 +47,7 @@
       level: level === 'warning' ? 'warning' : 'error',
       kind: String(kind || 'unknown').slice(0, 80),
       page: `${location.pathname}${location.search}`.slice(0, 500),
+      version: document.querySelector('meta[name="app-version"]')?.getAttribute('content') || new URLSearchParams(location.search).get('__app_version') || new URLSearchParams(location.search).get('v') || '',
       message: safeText(detail.message || detail.error || ''),
       url: cleanUrl(detail.url || detail.source || ''),
       status: Number(detail.status) || 0,
