@@ -3,6 +3,7 @@ const CACHE_NAME = 'baseball-player-card-pwa-v314-auto';
 const APP_SHELL = [
   './',
   './index.html',
+  './diagnostics.html',
   './styles.css?v=v3.14',
   './diagnostic-runtime.js?v=v3.14',
   './live-static-update.js?v=v3.14',
@@ -60,7 +61,8 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html');
-  const isCoreAsset = url.pathname.endsWith('/diagnostic-runtime.js')
+  const isCoreAsset = url.pathname.endsWith('/diagnostics.html')
+    || url.pathname.endsWith('/diagnostic-runtime.js')
     || url.pathname.endsWith('/cpbl-realtime.js')
     || url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/app.js')
