@@ -4,6 +4,7 @@ const APP_SHELL = [
   './',
   './index.html',
   './styles.css?v=v3.12',
+  './diagnostic-runtime.js?v=v3.12',
   './live-static-update.js?v=v3.12',
   './cpbl-realtime.js?v=v3.12',
   './npb-realtime.js?v=v3.12',
@@ -59,7 +60,8 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html');
-  const isCoreAsset = url.pathname.endsWith('/cpbl-realtime.js')
+  const isCoreAsset = url.pathname.endsWith('/diagnostic-runtime.js')
+    || url.pathname.endsWith('/cpbl-realtime.js')
     || url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
