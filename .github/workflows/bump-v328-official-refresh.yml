@@ -1,0 +1,81 @@
+name: Bump v3.28 official refresh
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bump-v328-official-refresh.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch manual official refresh and set v3.28
+        shell: python
+        run: |
+          import base64, json, re
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          if 'id="forceOfficialRefreshBtn"' not in s:
+              marker='        <div class="player-page-right">\n          <div class="season-field">'
+              repl='        <div class="player-page-right">\n          <button id="forceOfficialRefreshBtn" class="press-btn hidden" type="button">重新抓官方個人頁</button>\n          <div class="season-field">'
+              if marker not in s: raise SystemExit('player page right marker missing')
+              s=s.replace(marker,repl,1)
+          p.write_text(s,encoding='utf-8')
+          p=Path('app.js'); s=p.read_text(encoding='utf-8')
+          if 'CPBL_OFFICIAL_REFRESH_API_URL' not in s:
+              marker="    const CPBL_DAILY_CACHE_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-daily-cache';"
+              if marker not in s: raise SystemExit('daily cache const marker missing')
+              s=s.replace(marker,marker+"\n    const CPBL_OFFICIAL_REFRESH_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-official-season-refresh';",1)
+          if 'async function forceOfficialSeasonRefresh' not in s:
+              marker='    function applyCpblSeasonStatsToPlayer(player, stats, year, kindCode = selectedLevel) {'
+              if marker not in s: raise SystemExit('apply stats marker missing')
+              block=base64.b64decode('ICAgIGFzeW5jIGZ1bmN0aW9uIGZvcmNlT2ZmaWNpYWxTZWFzb25SZWZyZXNoKCkgewogICAgICBjb25zdCBwbGF5ZXIgPSBzZWxlY3RlZFBsYXllcigpOwogICAgICBpZiAoIXBsYXllciB8fCBwbGF5ZXJTY29wZShwbGF5ZXIpICE9PSAnY3BibCcpIHJldHVybjsKICAgICAgaWYgKCFwbGF5ZXIuY3BibEFjbnQpIHsKICAgICAgICBzZXRTdGF0dXMoJ+atpOeQg+WTo+WwmuacqumAoOe1k+S4reiBt+aeq+e2s+OAgScsIHRydWUpOwogICAgICAgIHJldHVybjsKICAgICAgfQogICAgICBjb25zdCBidG4gPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZm9yY2VPZmZpY2lhbFJlZnJlc2hCdG4nKTsKICAgICAgY29uc3Qgb3JpZ2luYWwgPSBidG4/LnRleHRDb250ZW50IHx8ICfph43mlrDmipPlrpjmlrnlgIvkurrpoIHnmoQnOwogICAgICBpZiAoYnRuKSB7CiAgICAgICAgYnRuLmRpc2FibGVkID0gdHJ1ZTsKICAgICAgICBidG4udGV4dENvbnRlbnQgPSAn5oqT5Y+W5Lit4oCmJzsKICAgICAgfQogICAgICB0cnkgewogICAgICAgIGNvbnN0IHJlc3BvbnNlID0gYXdhaXQgZmV0Y2goQ1BCTF9PRkZJQ0lBTF9SRUZSRVNIX0FQSV9VUkwsIHsKICAgICAgICAgIG1ldGhvZDogJ1BPU1QnLAogICAgICAgICAgaGVhZGVyczogeyAnY29udGVudC10eXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nIH0sCiAgICAgICAgICBib2R5OiBKU09OLnN0cmluZ2lmeSh7CiAgICAgICAgICAgIGFwcEtleTogQ1BCTF9BUFBfS0VZLAogICAgICAgICAgICBhY250OiBwbGF5ZXIuY3BibEFjbnQsCiAgICAgICAgICAgIHllYXI6IHNlbGVjdGVkU2Vhc29uLAogICAgICAgICAgICBraW5kQ29kZTogc2VsZWN0ZWRMZXZlbCwKICAgICAgICAgICAgZGF0ZTogU3RyaW5nKGVscy5nYW1lRGF0ZT8udmFsdWUgfHwgJycpLAogICAgICAgICAgICB0ZWFtQ29kZTogcGxheWVyLmNwYmxUZWFtQ29kZSB8fCAnJwogICAgICAgICAgfSkKICAgICAgICB9KTsKICAgICAgICBjb25zdCBkYXRhID0gYXdhaXQgcmVzcG9uc2UuanNvbigpLmNhdGNoKCgpID0+IG51bGwpOwogICAgICAgIGlmICghcmVzcG9uc2Uub2sgfHwgIWRhdGE/Lm9rIHx8ICFkYXRhPy5zdGF0cykgewogICAgICAgICAgdGhyb3cgbmV3IEVycm9yKGRhdGE/LmVycm9yIHx8IGDlrpjmlrnlgIvkurrpoIHmm7TmlrDl¤±5pWX77yIJHtyZXNwb25zZS5zdGF0dXN977yJYCk7CiAgICAgICAgfQogICAgICAgIGFwcGx5Q3BibFNlYXNvblN0YXRzVG9QbGF5ZXIocGxheWVyLCBkYXRhLnN0YXRzLCBzZWxlY3RlZFNlYXNvbiwgc2VsZWN0ZWRMZXZlbCk7CiAgICAgICAgYXdhaXQgc2F2ZVBsYXllcihwbGF5ZXIpOwogICAgICAgIGF3YWl0IG1hcmtTdWNjZXNzZnVsU2Vhc29uU3luY01ldGEoKTsKICAgICAgICB0cnkgeyBhd2FpdCBsb2FkUmVjb3JkKCk7IH0gY2F0Y2ggKGVycm9yKSB7IGNvbnNvbGUud2Fybign5omL5YuV5a6Y5pa55pu05paw5b6M6YeN5paw6LyJ5YWl5Zau5aC05aSx5pWXJywgZXJyb3IpOyB9CiAgICAgICAgcmVuZGVyQWxsKCk7CiAgICAgICAgaWYgKGRhdGEub2ZmaWNpYWxDYXVnaHRVcCA9PT0gZmFsc2UpIHsKICAgICAgICAgIHNldFN0YXR1cygnQ1BCTCDlgIvkurrpgbjmiavmnIDlsJrmnKr 完成結算；已保留 Supabase 暫算值，單場 Box 的勝敗／救援／中繼仍會套用。');
+        } else {
+          setStatus('CPBL 個人選手頁已完成結算，已切換為官方正式累積成績。');
+        }
+      } catch (error) {
+        console.warn('手動抓取 CPBL 官方個人頁失敗', error);
+        setStatus(error?.message || '手動抓取官方個人頁失敗。', true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      }
+    }
+
+    document.addEventListener('click', event => {
+      const btn = event.target?.closest?.('#forceOfficialRefreshBtn');
+      if (!btn) return;
+      forceOfficialSeasonRefresh();
+    });
+
+'.encode('utf-8')).decode('utf-8')
+              s=s.replace(marker,block+marker,1)
+          marker="      const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';"
+          area=s[s.find('    function renderAll()'):s.find('    function renderAll()')+1500]
+          if 'forceOfficialRefreshBtn' not in area:
+              if marker not in s: raise SystemExit('renderAll marker missing')
+              repl=marker+"\n      const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');\n      if (forceOfficialRefreshBtn) {\n        const showOfficialRefresh = playerPageActive && playerScope(player) === 'cpbl' && Boolean(player?.cpblAcnt);\n        forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);\n      }"
+              s=s.replace(marker,repl,1)
+          new='v3.28'
+          s=re.sub(r"const APP_VERSION = 'v\d+\.\d+';",f"const APP_VERSION = '{new}';",s,count=1)
+          s=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',s)
+          p.write_text(s,encoding='utf-8')
+          Path('version.json').write_text(json.dumps({'version':new},ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          p=Path('index.html'); s=p.read_text(encoding='utf-8'); s=re.sub(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)',rf'\g<1>{new}\2',s,count=1); s=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',s); s=re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)',rf'\g<1>{new}\2',s,count=1); p.write_text(s,encoding='utf-8')
+          p=Path('service-worker.js'); s=p.read_text(encoding='utf-8'); s=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',s); s=re.sub(r"const CACHE_NAME = '[^']+';","const CACHE_NAME = 'baseball-player-card-pwa-v328-auto';",s,count=1); p.write_text(s,encoding='utf-8')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json index.html app.js service-worker.js
+          git commit -m "Add safe manual CPBL official refresh v3.28 [skip version bump]" || exit 0
+          git push
