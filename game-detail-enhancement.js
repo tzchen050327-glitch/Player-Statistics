@@ -1,8 +1,45 @@
 (() => {
   const UI_VERSION = document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'v2.77';
   const DETAIL_URL_RE = /\/(?:league-game-detail|cpbl-game-detail|cpbl-postseason-detail|npb-game-detail)(?:\?|$)/i;
+  const CPBL_PREGAME_LINEUP_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-pregame-lineup';
+  const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
+  const cpblPregameLineupCache = new Map();
   let latestDetail = null;
   let enhanceTimer = null;
+
+  async function hydrateCpblPregameLineup(data) {
+    if (String(data?.league || '').toUpperCase() !== 'CPBL') return data;
+    const awayCount = Array.isArray(data?.lineups?.away?.batters) ? data.lineups.away.batters.length : 0;
+    const homeCount = Array.isArray(data?.lineups?.home?.batters) ? data.lineups.home.batters.length : 0;
+    if (awayCount >= 9 && homeCount >= 9) return data;
+    const date = String(data?.date || '');
+    const gameId = String(data?.game?.id || data?.gameId || '');
+    if (!date || !gameId) return data;
+    const key = `${date}|${gameId}`;
+    let payload = cpblPregameLineupCache.get(key);
+    if (!payload) {
+      try {
+        const r = await originalFetch(CPBL_PREGAME_LINEUP_URL, {
+          method: 'POST',
+          headers: {'content-type':'application/json'},
+          body: JSON.stringify({appKey: CPBL_APP_KEY, date, gameId}),
+          cache: 'no-store'
+        });
+        payload = await r.json();
+        if (r.ok && payload?.ok) cpblPregameLineupCache.set(key, payload);
+      } catch { return data; }
+    }
+    if (!payload?.ok || !payload?.lineups) return data;
+    data.lineups ||= {};
+    for (const side of ['away','home']) {
+      const incoming = Array.isArray(payload.lineups?.[side]) ? payload.lineups[side] : [];
+      if (!incoming.length) continue;
+      data.lineups[side] ||= {};
+      const current = Array.isArray(data.lineups[side].batters) ? data.lineups[side].batters : [];
+      if (current.length < incoming.length) data.lineups[side].batters = incoming;
+    }
+    return data;
+  }
 
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (...args) => {
@@ -11,8 +48,9 @@
       const request = args[0];
       const url = typeof request === 'string' ? request : String(request?.url || '');
       if (DETAIL_URL_RE.test(url)) {
-        response.clone().json().then(data => {
+        response.clone().json().then(async data => {
           if (data?.ok && data?.game) {
+            data = await hydrateCpblPregameLineup(data);
             latestDetail = data;
             scheduleEnhance();
           }
@@ -298,7 +336,8 @@
 
   function rawRoster(detail, side) {
     const raw = detail?.lineups?.[side];
-    const list = Array.isArray(raw?.batters) ? raw.batters : Array.isArray(raw?.order) ? raw.order : Array.isArray(raw) ? raw : [];
+    const rosterWithOrder = Array.isArray(raw?.roster) ? raw.roster.filter(entry => Number(entry?.order) >= 1 && Number(entry?.order) <= 9) : [];
+    const list = Array.isArray(raw?.batters) && raw.batters.length ? raw.batters : Array.isArray(raw?.order) && raw.order.length ? raw.order : rosterWithOrder.length ? rosterWithOrder : Array.isArray(raw) ? raw : [];
     return list.map((entry,index)=>{
       const stats=reconciledBattingStats(detail,entry);
       return {
