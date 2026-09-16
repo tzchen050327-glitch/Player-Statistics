@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.32';
+    const APP_VERSION = 'v3.33';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.32';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.32';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.33';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.33';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -12044,6 +12044,31 @@ bg2: {
         npbSeasonBridgePollBusy = false;
       }
     }, 60_000);
+    // Verified NPB bridge endpoint. Kept separate so the bridge module can stay focused on state/calculation logic.
+    const NPB_SEASON_BRIDGE_V2_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-season-bridge-v2';
+
+    npbSeasonBridgeRequest = async function(player, {
+      year = selectedSeason,
+      date = npbBridgeViewDate()
+    } = {}) {
+      const response = await fetch(NPB_SEASON_BRIDGE_V2_API_URL, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          action:'status',
+          id:String(player.externalPlayerId || ''),
+          year:Number(year) || CURRENT_YEAR,
+          date:String(date || npbBridgeTokyoDate()),
+          team:String(player.externalTeam || player.externalCurrentTeam || ''),
+          name:String(player.externalOfficialName || player.name || '')
+        })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data?.stats) {
+        throw new Error(data?.error || `NPB 賽前橋接查詢失敗（${response.status}）`);
+      }
+      return data;
+    };
     function annualTextFit(ctx, text, maxWidth, startSize, minSize = 18, weight = 900, family = '"Microsoft JhengHei", Arial, sans-serif') {
       let size = Number(startSize) || 30;
       ctx.font = `${weight} ${size}px ${family}`;
