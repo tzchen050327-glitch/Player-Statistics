@@ -1,22 +1,21 @@
 (() => {
   const VERSION = 'v3.43';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
   const SIGNAL_TABLE = 'cpbl_live_revision_signal';
 
   let client = null;
+  let loader = null;
   let channel = null;
   let watch = null;
   let lastRevision = -1;
+  let watchdogTimer = 0;
+  let realtimeSignalSerial = 0;
   let dayChannel = null;
   let dayWatch = '';
   const dayRevisions = new Map();
   const inflightPublished = new Map();
-  let loader = null;
-  let watchdogTimer = 0;
-  let realtimeSignalSerial = 0;
-  let daySignalSerial = 0;
 
   window.__cpblRealtimeConnected = false;
   window.__cpblDayRealtimeConnected = false;
@@ -27,14 +26,14 @@
   function emitStatus(connected, reason = '') {
     window.__cpblRealtimeConnected = Boolean(connected);
     window.dispatchEvent(new CustomEvent('cpbl-live-realtime-status', {
-      detail: { connected:Boolean(connected), reason, version:VERSION }
+      detail:{ connected:Boolean(connected), reason, version:VERSION }
     }));
   }
 
   function emitDayStatus(connected, reason = '') {
     window.__cpblDayRealtimeConnected = Boolean(connected);
     window.dispatchEvent(new CustomEvent('cpbl-live-day-realtime-status', {
-      detail: { connected:Boolean(connected), reason, date:dayWatch, version:VERSION }
+      detail:{ connected:Boolean(connected), reason, date:dayWatch, version:VERSION }
     }));
   }
 
@@ -70,8 +69,8 @@
     if (client) return client;
     const sdk = await loadSupabase();
     client = sdk.createClient(SUPABASE_URL, ANON_KEY, {
-      auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false },
-      realtime: { params:{ eventsPerSecond:10 } }
+      auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false },
+      realtime:{ params:{ eventsPerSecond:10 } }
     });
     return client;
   }
@@ -95,7 +94,7 @@
       limit:'1'
     });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/cpbl_live_game_cache?${query}`, {
-      headers: { apikey:ANON_KEY, authorization:`Bearer ${ANON_KEY}` },
+      headers:{ apikey:ANON_KEY, authorization:`Bearer ${ANON_KEY}` },
       cache:'no-store'
     });
     if (!response.ok) return { ok:false, detail:null, row:null, status:response.status };
@@ -181,58 +180,55 @@
     if (!current || !signal) return;
     if (String(signal.game_id || '') !== current.gameId || String(signal.game_date || '') !== current.date) return;
     if (String(signal.kind_code || 'A').toUpperCase() !== current.kindCode) return;
-    const signaledRevision = Number(signal.published_revision ?? -1);
-    if (Number.isFinite(signaledRevision) && signaledRevision >= 0 && signaledRevision <= lastRevision) return;
-
+    const revision = Number(signal.published_revision ?? -1);
+    if (Number.isFinite(revision) && revision >= 0 && revision <= lastRevision) return;
     const serial = ++realtimeSignalSerial;
     try {
-      const published = await readPublishedForRevision(current.date, current.gameId, current.kindCode, signaledRevision);
+      const published = await readPublishedForRevision(current.date, current.gameId, current.kindCode, revision);
       if (serial !== realtimeSignalSerial || !watch) return;
       if (watch.date !== current.date || watch.gameId !== current.gameId || watch.kindCode !== current.kindCode) return;
       if (published?.row) acceptRow(published.row);
     } catch {}
   }
 
-  function acceptDayRow(row) {
-    if (!dayWatch || !row || String(row.game_date || '') !== dayWatch) return;
-    const detail = publishedDetail(row);
-    if (!detail) return;
-    const gameId = String(row.game_id || detail?.game?.id || '');
-    if (!gameId) return;
-    const kindCode = String(row?.kind_code || detail?.kindCode || detail?.game?.kindCode || 'A').toUpperCase();
-    if (kindCode !== 'A') return;
-    const revisionKey = `${kindCode}|${gameId}`;
-    const revision = Number(row.published_revision ?? -1);
-    const prev = Number(dayRevisions.get(revisionKey) ?? -1);
-    if (Number.isFinite(revision) && revision >= 0 && revision <= prev) return;
-    if (Number.isFinite(revision) && revision >= 0) dayRevisions.set(revisionKey, revision);
-    window.dispatchEvent(new CustomEvent('cpbl-live-day-update', { detail:{ row, detail, version:VERSION } }));
+  function compactDayDetail(signal) {
+    const kindCode = String(signal?.kind_code || 'A').toUpperCase();
+    const game = { id:String(signal?.game_id || ''), kindCode };
+    if (signal?.away_name) game.away = String(signal.away_name);
+    if (signal?.home_name) game.home = String(signal.home_name);
+    if (String(signal?.away_score ?? '').trim() !== '') game.awayScore = Number(signal.away_score);
+    if (String(signal?.home_score ?? '').trim() !== '') game.homeScore = Number(signal.home_score);
+    if (signal?.inning_label) game.inningLabel = String(signal.inning_label);
+    return {
+      status:String(signal?.status || '').toLowerCase(),
+      date:String(signal?.game_date || ''),
+      kindCode,
+      game
+    };
   }
 
-  async function refreshDayFromRealtimeSignal(signal) {
-    const date = dayWatch;
-    if (!date || !signal || watch) return;
-    if (String(signal.game_date || '') !== date) return;
+  function acceptDaySignal(signal) {
+    if (!dayWatch || !signal || String(signal.game_date || '') !== dayWatch || watch) return;
     const kindCode = String(signal.kind_code || 'A').toUpperCase();
     if (kindCode !== 'A') return;
     const gameId = String(signal.game_id || '');
     if (!gameId) return;
-    const revision = Number(signal.published_revision ?? -1);
     const revisionKey = `${kindCode}|${gameId}`;
+    const revision = Number(signal.published_revision ?? -1);
     const prev = Number(dayRevisions.get(revisionKey) ?? -1);
     if (Number.isFinite(revision) && revision >= 0 && revision <= prev) return;
-    const serial = ++daySignalSerial;
-    try {
-      const published = await readPublishedForRevision(date, gameId, kindCode, revision);
-      if (serial < daySignalSerial - 32 || dayWatch !== date || watch) return;
-      if (published?.row) acceptDayRow(published.row);
-    } catch {}
+    if (Number.isFinite(revision) && revision >= 0) dayRevisions.set(revisionKey, revision);
+    const detail = compactDayDetail(signal);
+    window.dispatchEvent(new CustomEvent('cpbl-live-day-update', { detail:{ row:signal, detail, version:VERSION } }));
+  }
+
+  function refreshDayFromRealtimeSignal(signal) {
+    acceptDaySignal(signal);
   }
 
   async function pauseDayChannel(reason = 'paused-for-game') {
     const old = dayChannel;
     dayChannel = null;
-    daySignalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
     }
@@ -247,7 +243,7 @@
     dayChannel = sb.channel(`cpbl-day-signal-${date}-${Math.random().toString(36).slice(2,8)}`)
       .on('postgres_changes', {
         event:'*', schema:'public', table:SIGNAL_TABLE, filter:`day_kind_key=eq.${key}`
-      }, payload => { void refreshDayFromRealtimeSignal(payload?.new); })
+      }, payload => refreshDayFromRealtimeSignal(payload?.new))
       .subscribe(status => {
         if (status === 'SUBSCRIBED') emitDayStatus(true, 'subscribed');
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitDayStatus(false, status);
@@ -303,7 +299,6 @@
     dayChannel = null;
     dayWatch = '';
     dayRevisions.clear();
-    daySignalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
     }
