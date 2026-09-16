@@ -1,0 +1,371 @@
+name: Architecture cleanup v3.30
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/architecture-v330-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Restore js modules as canonical source
+        shell: python
+        run: |
+          from pathlib import Path
+          from difflib import SequenceMatcher
+
+          root = Path('.')
+          order = [x.strip() for x in (root/'js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+          boundaries = [0]
+          old_lines = []
+          for name in order:
+              old_lines.extend((root/'js'/name).read_text(encoding='utf-8').splitlines(keepends=True))
+              boundaries.append(len(old_lines))
+
+          new_lines = (root/'app.js').read_text(encoding='utf-8').splitlines(keepends=True)
+          opcodes = SequenceMatcher(None, old_lines, new_lines, autojunk=False).get_opcodes()
+
+          def map_boundary(pos):
+              for tag, i1, i2, j1, j2 in opcodes:
+                  if tag == 'equal' and i1 <= pos <= i2:
+                      return j1 + (pos - i1)
+              exact = []
+              for tag, i1, i2, j1, j2 in opcodes:
+                  if pos == i1: exact.append(j1)
+                  if pos == i2: exact.append(j2)
+              if exact and len(set(exact)) == 1:
+                  return exact[0]
+              raise SystemExit(f'cannot safely map module boundary at old line {pos}')
+
+          mapped = [map_boundary(pos) for pos in boundaries]
+          if mapped[0] != 0 or mapped[-1] != len(new_lines):
+              raise SystemExit('mapped module edges are invalid')
+          if any(a > b for a, b in zip(mapped, mapped[1:])):
+              raise SystemExit('mapped module boundaries are not monotonic')
+
+          for idx, name in enumerate(order):
+              (root/'js'/name).write_text(''.join(new_lines[mapped[idx]:mapped[idx+1]]), encoding='utf-8')
+
+          rebuilt = ''.join((root/'js'/name).read_text(encoding='utf-8') for name in order)
+          current = (root/'app.js').read_text(encoding='utf-8')
+          if rebuilt != current:
+              raise SystemExit('recovered modules do not reproduce current app.js')
+          print(f'recovered {len(order)} modules; preserved {len(current)} production characters')
+
+      - name: Install source-first tooling
+        shell: python
+        run: |
+          from pathlib import Path
+          from textwrap import dedent
+
+          Path('scripts/build-app.py').write_text(dedent(r'''\
+          from pathlib import Path
+          import argparse
+          import difflib
+          import re
+
+          ROOT = Path(__file__).resolve().parents[1]
+          order_file = ROOT / 'js' / 'module-order.txt'
+
+          parser = argparse.ArgumentParser(description='Build app.js from canonical js/ modules.')
+          parser.add_argument('--check', action='store_true', help='verify without writing app.js')
+          args = parser.parse_args()
+
+          if not order_file.exists():
+              raise SystemExit('missing js/module-order.txt')
+          order = [line.strip() for line in order_file.read_text(encoding='utf-8').splitlines() if line.strip()]
+          if not order:
+              raise SystemExit('empty module order')
+
+          parts = []
+          for name in order:
+              path = ROOT / 'js' / name
+              if not path.exists():
+                  raise SystemExit(f'missing module: {name}')
+              parts.append(path.read_text(encoding='utf-8'))
+
+          bundle = ''.join(parts)
+          versions = re.findall(r"const APP_VERSION = '([^']+)';", bundle)
+          if len(versions) != 1:
+              raise SystemExit(f'expected exactly one APP_VERSION, found {len(versions)}')
+          version = versions[0].strip()
+          if not re.fullmatch(r'v\d+\.\d+', version):
+              raise SystemExit(f'invalid APP_VERSION: {version!r}')
+
+          target = ROOT / 'app.js'
+          if args.check:
+              current = target.read_text(encoding='utf-8') if target.exists() else ''
+              if current != bundle:
+                  diff = difflib.unified_diff(current.splitlines(), bundle.splitlines(), fromfile='committed app.js', tofile='generated app.js', n=2)
+                  preview = '\n'.join(list(diff)[:80])
+                  raise SystemExit('app.js is not reproducible from js/ modules.\n' + preview)
+              print(f'app.js matches {len(order)} source modules ({version}, {len(bundle)} chars)')
+          else:
+              target.write_text(bundle, encoding='utf-8')
+              print(f'built app.js {version} from {len(order)} modules, {len(bundle)} chars')
+          '''), encoding='utf-8')
+
+          Path('.github/workflows/auto-version-bump.yml').write_text(dedent(r'''\
+          name: Auto bump app version
+
+          on:
+            push:
+              branches: [main]
+              paths:
+                - '*.js'
+                - '*.css'
+                - '*.html'
+                - 'js/**'
+                - 'scripts/build-app.py'
+                - 'manifest.webmanifest'
+
+          permissions:
+            contents: write
+
+          jobs:
+            bump-version:
+              if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version bump]')
+              runs-on: ubuntu-latest
+              timeout-minutes: 5
+              steps:
+                - uses: actions/checkout@v4
+                  with:
+                    fetch-depth: 2
+
+                - name: Reject app.js-only source edits
+                  shell: bash
+                  run: |
+                    CHANGED="$(git diff --name-only HEAD^ HEAD || true)"
+                    if printf '%s\n' "$CHANGED" | grep -qx 'app.js'; then
+                      if ! printf '%s\n' "$CHANGED" | grep -Eq '^js/.*\.js$'; then
+                        echo 'app.js is generated. Edit js/*.js instead.' >&2
+                        exit 1
+                      fi
+                    fi
+
+                - name: Bump source version
+                  shell: python
+                  run: |
+                    import json, re
+                    from pathlib import Path
+                    data = json.loads(Path('version.json').read_text(encoding='utf-8'))
+                    old = str(data.get('version', '')).strip()
+                    m = re.fullmatch(r'v(\d+)\.(\d+)', old)
+                    if not m: raise SystemExit(f'Unsupported version format: {old!r}')
+                    new = f'v{int(m.group(1))}.{int(m.group(2))+1}'
+                    cache_tag = new.replace('.', '')
+                    Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+
+                    order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+                    found = 0
+                    for name in order:
+                        p = Path('js') / name
+                        text = p.read_text(encoding='utf-8')
+                        text, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", text)
+                        found += n
+                        text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+                        p.write_text(text, encoding='utf-8')
+                    if found != 1: raise SystemExit(f'expected one source APP_VERSION, found {found}')
+
+                    p = Path('index.html')
+                    text = p.read_text(encoding='utf-8')
+                    text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', text, count=1)
+                    text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+                    text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', text, count=1)
+                    if not n: raise SystemExit('app-version meta not found')
+                    p.write_text(text, encoding='utf-8')
+
+                    p = Path('service-worker.js')
+                    text = p.read_text(encoding='utf-8')
+                    text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+                    text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
+                    p.write_text(text, encoding='utf-8')
+                    print(f'{old} -> {new}')
+
+                - name: Generate and verify app.js
+                  run: |
+                    python3 scripts/build-app.py
+                    python3 scripts/build-app.py --check
+                    node --check app.js
+
+                - name: Verify version consistency
+                  shell: python
+                  run: |
+                    import json
+                    from pathlib import Path
+                    v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
+                    app = Path('app.js').read_text(encoding='utf-8')
+                    html = Path('index.html').read_text(encoding='utf-8')
+                    sw = Path('service-worker.js').read_text(encoding='utf-8')
+                    assert f"const APP_VERSION = '{v}'" in app
+                    assert f'content="{v}"' in html
+                    assert f'?v={v}' in html
+                    assert f'?v={v}' in sw
+
+                - name: Commit generated release files
+                  run: |
+                    git config user.name "github-actions[bot]"
+                    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                    git add version.json index.html service-worker.js app.js js
+                    git commit -m "chore: auto bump app version [skip version bump]" || exit 0
+                    git push
+          '''), encoding='utf-8')
+
+          Path('.github/workflows/validate-modular.yml').write_text(dedent(r'''\
+          name: Validate canonical app source
+
+          on:
+            push:
+              branches: [main]
+              paths:
+                - 'js/**'
+                - 'app.js'
+                - 'index.html'
+                - 'service-worker.js'
+                - 'scripts/build-app.py'
+                - '.github/workflows/auto-version-bump.yml'
+                - '.github/workflows/validate-modular.yml'
+            pull_request:
+              paths:
+                - 'js/**'
+                - 'app.js'
+                - 'index.html'
+                - 'service-worker.js'
+                - 'scripts/build-app.py'
+
+          permissions:
+            contents: read
+
+          jobs:
+            validate:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - name: Validate modules and syntax
+                  shell: bash
+                  run: |
+                    test -s js/module-order.txt
+                    while IFS= read -r f; do
+                      [ -z "$f" ] && continue
+                      test -f "js/$f"
+                      node --check "js/$f"
+                    done < js/module-order.txt
+                    node --check app.js
+                - name: Verify generated bundle
+                  run: python3 scripts/build-app.py --check
+                - name: Validate version wiring and core guards
+                  shell: python
+                  run: |
+                    import json, re
+                    from pathlib import Path
+                    bundle = Path('app.js').read_text(encoding='utf-8')
+                    html = Path('index.html').read_text(encoding='utf-8')
+                    sw = Path('service-worker.js').read_text(encoding='utf-8')
+                    v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
+                    m = re.search(r"const APP_VERSION = '([^']+)';", bundle)
+                    assert m and m.group(1) == v
+                    assert f'<meta name="app-version" content="{v}" />' in html
+                    assert f'./app.js?v={v}' in html
+                    assert f'./app.js?v={v}' in sw
+                    for needle in ['function setSyncUiLocked(locked)', 'async function importCpblDaily(player)', 'function seasonStatsForOutputRole(player, role)', 'bootApp();']:
+                        assert needle in bundle, f'missing guard: {needle}'
+                    print('validated canonical source', v)
+          '''), encoding='utf-8')
+
+      - name: Remove completed patch workflows and helpers
+        shell: python
+        run: |
+          from pathlib import Path
+          keep = {'auto-version-bump.yml','validate-modular.yml','international-data-bots.yml','international-diagnostics.yml','asian-games-e2e.yml','u18-e2e.yml','architecture-v330-cleanup.yml'}
+          removed = []
+          for p in Path('.github/workflows').glob('*.yml'):
+              if p.name not in keep:
+                  removed.append(str(p)); p.unlink()
+          helper = Path('.github/scripts')
+          if helper.exists():
+              for p in helper.iterdir():
+                  if p.is_file(): removed.append(str(p)); p.unlink()
+          print(f'removed {len(removed)} completed patch files')
+          print('\n'.join(removed))
+
+      - name: Bump architecture release to v3.30
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+          new = 'v3.30'
+          order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+          found = 0
+          for name in order:
+              p = Path('js') / name
+              text = p.read_text(encoding='utf-8')
+              text, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", text)
+              found += n
+              text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+              p.write_text(text, encoding='utf-8')
+          if found != 1: raise SystemExit(f'expected one APP_VERSION, found {found}')
+          Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+
+          p = Path('index.html'); text = p.read_text(encoding='utf-8')
+          text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', text, count=1)
+          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', text, count=1)
+          if not n: raise SystemExit('index version meta missing')
+          p.write_text(text, encoding='utf-8')
+
+          p = Path('service-worker.js'); text = p.read_text(encoding='utf-8')
+          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r"const CACHE_NAME = '[^']+';", "const CACHE_NAME = 'baseball-player-card-pwa-v330-auto';", text, count=1)
+          p.write_text(text, encoding='utf-8')
+
+          p = Path('js/README.md'); text = p.read_text(encoding='utf-8')
+          text = re.sub(r'^# JavaScript architecture.*$', '# JavaScript architecture — canonical modular source', text, count=1, flags=re.M)
+          text = text.replace('**Do not edit `app.js` as the primary source.**', '**`app.js` is generated output. Do not edit it directly.**')
+          p.write_text(text, encoding='utf-8')
+
+      - name: Rebuild and verify
+        shell: bash
+        run: |
+          python3 scripts/build-app.py
+          python3 scripts/build-app.py --check
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            node --check "js/$f"
+          done < js/module-order.txt
+          node --check app.js
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
+          app = Path('app.js').read_text(encoding='utf-8')
+          html = Path('index.html').read_text(encoding='utf-8')
+          sw = Path('service-worker.js').read_text(encoding='utf-8')
+          assert v == 'v3.30'
+          assert f"const APP_VERSION = '{v}'" in app
+          assert f'content="{v}"' in html
+          assert f'./app.js?v={v}' in html
+          assert f'./app.js?v={v}' in sw
+          assert 'cpblSeasonProjectionByRole' in app
+          assert 'CPBL_OFFICIAL_REFRESH_API_URL' in app
+          print('v3.30 source/bundle/version checks passed')
+          PY
+
+      - name: Commit cleanup and remove this migration workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/architecture-v330-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Architecture cleanup: canonical modules and workflows v3.30 [skip version bump]"
+          git push
