@@ -1,0 +1,80 @@
+import json, re
+from pathlib import Path
+
+p = Path('js/13-daily-editor.js')
+s = p.read_text(encoding='utf-8')
+
+marker = "    function renderHitterToday() {"
+helper = """    function paDisplayLabel(pa) {
+      const official = String(pa?.cpblOfficialAction || '').trim();
+      if (official) return official;
+      if (pa?.code === 'GO' && pa?.position) return `${pa.position}滾`;
+      if (pa?.code === 'FO' && pa?.position) return `${pa.position}飛`;
+      return paLabel(pa);
+    }
+
+    function renderHitterToday() {"""
+if marker not in s:
+    raise SystemExit('renderHitterToday marker not found')
+s = s.replace(marker, helper, 1)
+
+old = '          <div class="pa-result">${escapeHtml(paLabel(pa))}</div>'
+new = '          <div class="pa-result">${escapeHtml(paDisplayLabel(pa))}</div>'
+if old not in s:
+    raise SystemExit('PA row label not found')
+s = s.replace(old, new, 1)
+
+old = """          if (heading) heading.textContent = `編輯第 ${index + 1} 打席`;
+          if (confirm) confirm.textContent = '儲存修改';
+          cancel?.classList.remove('hidden');
+          heading?.scrollIntoView({ behavior:'smooth', block:'center' });"""
+new = """          if (heading) heading.textContent = `編輯第 ${index + 1} 打席`;
+          if (confirm) confirm.textContent = '儲存修改';
+          cancel?.classList.remove('hidden');
+          const row = btn.closest('.pa-row');
+          const formPanel = heading?.closest('.panel');
+          if (row && formPanel) row.insertAdjacentElement('afterend', formPanel);
+          formPanel?.scrollIntoView({ behavior:'smooth', block:'nearest' });"""
+if old not in s:
+    raise SystemExit('edit scroll block not found')
+s = s.replace(old, new, 1)
+p.write_text(s, encoding='utf-8')
+
+data = json.loads(Path('version.json').read_text(encoding='utf-8'))
+oldv = str(data['version'])
+m = re.fullmatch(r'v(\d+)\.(\d+)', oldv)
+if not m:
+    raise SystemExit(f'unsupported version {oldv}')
+newv = f'v{int(m.group(1))}.{int(m.group(2))+1}'
+if newv != 'v3.40':
+    raise SystemExit(f'expected v3.40 from {oldv}, got {newv}')
+cache_tag = newv.replace('.', '')
+Path('version.json').write_text(json.dumps({'version':newv}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+
+order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+found = 0
+for name in order:
+    q = Path('js') / name
+    text = q.read_text(encoding='utf-8')
+    text, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{newv}';", text)
+    found += n
+    text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
+    q.write_text(text, encoding='utf-8')
+if found != 1:
+    raise SystemExit(f'expected one APP_VERSION, found {found}')
+
+q = Path('index.html')
+text = q.read_text(encoding='utf-8')
+text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{newv}\2', text, count=1)
+text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
+text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{newv}\2', text, count=1)
+if not n:
+    raise SystemExit('app-version meta not found')
+q.write_text(text, encoding='utf-8')
+
+q = Path('service-worker.js')
+text = q.read_text(encoding='utf-8')
+text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
+text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
+q.write_text(text, encoding='utf-8')
+print(f'{oldv} -> {newv}')
