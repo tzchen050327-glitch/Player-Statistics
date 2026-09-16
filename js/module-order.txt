@@ -20,6 +20,7 @@
 18-canvas-utils.js
 19-forms-events.js
 20-output-core.js
+20a-npb-season-bridge.js
 21-annual-report.js
 22-output-actions.js
 23-bootstrap.js
