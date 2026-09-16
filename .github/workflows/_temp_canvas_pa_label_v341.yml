@@ -25,33 +25,21 @@ jobs:
 
           p = Path('js/16-daily-canvas.js')
           s = p.read_text(encoding='utf-8')
-
-          old = '''            ctx.textAlign = 'left';
-            ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
-            ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-            ctx.fillText(paLabel(pa), textX, y + (positioned ? 11 : 14));
-            if (pa.rbi) {
-              const width = ctx.measureText(paLabel(pa)).width;'''
-          new = '''            ctx.textAlign = 'left';
-            ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
-            ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-            const paText = paDisplayLabel(pa);
-            ctx.fillText(paText, textX, y + (positioned ? 11 : 14));
-            if (pa.rbi) {
-              const width = ctx.measureText(paText).width;'''
-          if old not in s:
-              raise SystemExit('canvas PA label block not found')
-          s = s.replace(old, new, 1)
+          a = "            ctx.fillText(paLabel(pa), textX, y + (positioned ? 11 : 14));"
+          b = "            const paText = paDisplayLabel(pa);\n            ctx.fillText(paText, textX, y + (positioned ? 11 : 14));"
+          c = "              const width = ctx.measureText(paLabel(pa)).width;"
+          d = "              const width = ctx.measureText(paText).width;"
+          if a not in s: raise SystemExit('canvas fillText not found')
+          if c not in s: raise SystemExit('canvas measureText not found')
+          s = s.replace(a, b, 1).replace(c, d, 1)
           p.write_text(s, encoding='utf-8')
 
           data = json.loads(Path('version.json').read_text(encoding='utf-8'))
           oldv = str(data['version'])
           m = re.fullmatch(r'v(\d+)\.(\d+)', oldv)
-          if not m:
-              raise SystemExit(f'unsupported version {oldv}')
+          if not m: raise SystemExit(f'unsupported version {oldv}')
           newv = f'v{int(m.group(1))}.{int(m.group(2))+1}'
-          if newv != 'v3.41':
-              raise SystemExit(f'expected v3.41 from {oldv}, got {newv}')
+          if newv != 'v3.41': raise SystemExit(f'expected v3.41 from {oldv}, got {newv}')
           cache_tag = newv.replace('.', '')
           Path('version.json').write_text(json.dumps({'version':newv}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
 
@@ -64,16 +52,14 @@ jobs:
               found += n
               text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
               q.write_text(text, encoding='utf-8')
-          if found != 1:
-              raise SystemExit(f'expected one APP_VERSION, found {found}')
+          if found != 1: raise SystemExit(f'expected one APP_VERSION, found {found}')
 
           q = Path('index.html')
           text = q.read_text(encoding='utf-8')
           text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{newv}\2', text, count=1)
           text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
           text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{newv}\2', text, count=1)
-          if not n:
-              raise SystemExit('app-version meta not found')
+          if not n: raise SystemExit('app-version meta not found')
           q.write_text(text, encoding='utf-8')
 
           q = Path('service-worker.js')
@@ -81,7 +67,6 @@ jobs:
           text = re.sub(r'\?v=v\d+\.\d+', f'?v={newv}', text)
           text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
           q.write_text(text, encoding='utf-8')
-          print(f'{oldv} -> {newv}')
 
       - name: Build and verify
         run: |
