@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.38';
+    const APP_VERSION = 'v3.39';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.38';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.38';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.39';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.39';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7776,7 +7776,7 @@ bg2: {
         <div class="pa-list">${rows || '<div class="small" style="padding:8px 2px 12px">目前沒有逐打席，可直接在下方新增。</div>'}</div>
         ${kboRbiNote}
         <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
-          <h3 style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
+          <h3 id="paFormHeading" style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
           <div class="grid four">
             <label class="field">大分類
               <select id="paMajor">
@@ -7796,6 +7796,7 @@ bg2: {
           </div>
           <div class="section-actions">
             <button id="confirmPaBtn" class="press-btn primary">確定此打席</button>
+            <button id="cancelPaEditBtn" class="press-btn hidden" type="button">取消編輯</button>
           </div>
         </div>`;
 
@@ -7804,6 +7805,7 @@ bg2: {
       const posWrap = document.getElementById('paPositionWrap');
       const pos = document.getElementById('paPosition');
       const rbi = document.getElementById('paRbi');
+      let editingPaIndex = -1;
 
       function selectedPaParts() {
         const [code, ...officialParts] = String(result.value || '').split('::');
@@ -7841,7 +7843,11 @@ bg2: {
           ['CI::礙打','礙打'],['KREACH::不死三振','不死三振'],['OBS','礙跑']
         ];
         const out = [
-          ['K','三振'],['GO','滾地出局'],['FO','飛球出局'],['FO::內飛','內飛'],['FO::界飛','界飛'],
+          ['K','三振'],
+          ['GO::投滾','投滾'],['GO::捕滾','捕滾'],['GO::一滾','一滾'],['GO::二滾','二滾'],['GO::三滾','三滾'],['GO::游滾','游滾'],['GO::左滾','左滾'],['GO::中滾','中滾'],['GO::右滾','右滾'],
+          ['FO::投飛','投飛'],['FO::捕飛','捕飛'],['FO::一飛','一飛'],['FO::二飛','二飛'],['FO::三飛','三飛'],['FO::游飛','游飛'],['FO::左飛','左飛'],['FO::中飛','中飛'],['FO::右飛','右飛'],
+          ['FO::內飛','內飛'],['FO::界飛','界飛'],
+          ['FO::投邪飛','投邪飛'],['FO::捕邪飛','捕邪飛'],['FO::一邪飛','一邪飛'],['FO::二邪飛','二邪飛'],['FO::三邪飛','三邪飛'],['FO::游邪飛','游邪飛'],['FO::左邪飛','左邪飛'],['FO::右邪飛','右邪飛'],
           ['DP','雙殺'],['TP','三殺'],
           ['SH','犧牲短打'],['SH::犧短','犧短'],['SH::犧短誤','犧短誤'],['SH::犧選','犧選'],['SH::犧選誤','犧選誤'],
           ['SF','犧牲高飛'],['SF::犧飛','犧飛'],['SF::界犧飛','界犧飛'],['SF::犧飛誤','犧飛誤'],
@@ -7886,12 +7892,15 @@ bg2: {
           await showAppAlert('此出局／特殊結果不可設定打點。', { title: '打點設定有誤', tone: 'warning' });
           return;
         }
-        currentRecord.hitterPAs.push({
-          id: uid(), code,
+        const existing = editingPaIndex >= 0 ? currentRecord.hitterPAs[editingPaIndex] : null;
+        const nextPa = {
+          id: existing?.id || uid(), code,
           position: ((code === 'GO' || code === 'FO') && !officialAction) ? pos.value : '',
           rbi: rbiValue,
           cpblOfficialAction: officialAction
-        });
+        };
+        if (editingPaIndex >= 0 && existing) currentRecord.hitterPAs.splice(editingPaIndex, 1, nextPa);
+        else currentRecord.hitterPAs.push(nextPa);
         await saveRecord();
         renderAll();
       });
@@ -7905,14 +7914,25 @@ bg2: {
       });
 
       host.querySelectorAll('[data-edit-pa]').forEach(btn => {
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', () => {
           const index = Number(btn.dataset.editPa);
           const pa = currentRecord.hitterPAs[index];
-          currentRecord.hitterPAs.splice(index, 1);
-          await saveRecord();
-          renderAll();
-          setTimeout(() => fillPaForm(pa), 0);
+          if (!pa) return;
+          editingPaIndex = index;
+          fillPaForm(pa);
+          const heading = document.getElementById('paFormHeading');
+          const confirm = document.getElementById('confirmPaBtn');
+          const cancel = document.getElementById('cancelPaEditBtn');
+          if (heading) heading.textContent = `編輯第 ${index + 1} 打席`;
+          if (confirm) confirm.textContent = '儲存修改';
+          cancel?.classList.remove('hidden');
+          heading?.scrollIntoView({ behavior:'smooth', block:'center' });
         });
+      });
+
+      document.getElementById('cancelPaEditBtn')?.addEventListener('click', () => {
+        editingPaIndex = -1;
+        renderHitterToday();
       });
     }
 
@@ -7923,8 +7943,20 @@ bg2: {
       if (!major || !result) return;
       major.value = onbaseCodes.includes(pa.code) ? 'onbase' : 'out';
       major.dispatchEvent(new Event('change'));
-      const officialValue = pa.cpblOfficialAction ? `${pa.code}::${pa.cpblOfficialAction}` : pa.code;
-      result.value = Array.from(result.options).some(option => option.value === officialValue) ? officialValue : pa.code;
+      let officialValue = pa.cpblOfficialAction ? `${pa.code}::${pa.cpblOfficialAction}` : pa.code;
+      if (!pa.cpblOfficialAction && pa.position && (pa.code === 'GO' || pa.code === 'FO')) {
+        officialValue = `${pa.code}::${pa.position}${pa.code === 'GO' ? '滾' : '飛'}`;
+      }
+      const hasOfficialValue = Array.from(result.options).some(option => option.value === officialValue);
+      if (!hasOfficialValue && pa.cpblOfficialAction) {
+        result.add(new Option(pa.cpblOfficialAction, officialValue));
+      }
+      if (Array.from(result.options).some(option => option.value === officialValue)) {
+        result.value = officialValue;
+      } else {
+        const sameCode = Array.from(result.options).find(option => option.value === pa.code || option.value.startsWith(`${pa.code}::`));
+        if (sameCode) result.value = sameCode.value;
+      }
       result.dispatchEvent(new Event('change'));
       const pos = document.getElementById('paPosition');
       if (pos && pa.position) pos.value = pa.position;
