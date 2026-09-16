@@ -267,6 +267,14 @@
       return summary.official > 0 && summary.unattributed > 0;
     }
 
+    function paDisplayLabel(pa) {
+      const official = String(pa?.cpblOfficialAction || '').trim();
+      if (official) return official;
+      if (pa?.code === 'GO' && pa?.position) return `${pa.position}滾`;
+      if (pa?.code === 'FO' && pa?.position) return `${pa.position}飛`;
+      return paLabel(pa);
+    }
+
     function renderHitterToday() {
       const player = selectedPlayer();
       const appearance = ensureHitterAppearance();
@@ -291,7 +299,7 @@
       const rows = currentRecord.hitterPAs.map((pa, index) => `
         <div class="pa-row">
           <div class="pa-no">${index + 1}</div>
-          <div class="pa-result">${escapeHtml(paLabel(pa))}</div>
+          <div class="pa-result">${escapeHtml(paDisplayLabel(pa))}</div>
           <div class="pa-rbi">${pa.rbi ? `${pa.rbi} 打點` : ''}</div>
           <button class="press-btn edit-btn" data-edit-pa="${index}">編輯</button>
           <button class="press-btn danger" data-delete-pa="${index}">刪除</button>
@@ -458,7 +466,10 @@
           if (heading) heading.textContent = `編輯第 ${index + 1} 打席`;
           if (confirm) confirm.textContent = '儲存修改';
           cancel?.classList.remove('hidden');
-          heading?.scrollIntoView({ behavior:'smooth', block:'center' });
+          const row = btn.closest('.pa-row');
+          const formPanel = heading?.closest('.panel');
+          if (row && formPanel) row.insertAdjacentElement('afterend', formPanel);
+          formPanel?.scrollIntoView({ behavior:'smooth', block:'nearest' });
         });
       });
 

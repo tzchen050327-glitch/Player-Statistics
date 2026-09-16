@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.39';
+    const APP_VERSION = 'v3.40';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.39';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.39';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.40';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.40';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7735,6 +7735,14 @@ bg2: {
       return summary.official > 0 && summary.unattributed > 0;
     }
 
+    function paDisplayLabel(pa) {
+      const official = String(pa?.cpblOfficialAction || '').trim();
+      if (official) return official;
+      if (pa?.code === 'GO' && pa?.position) return `${pa.position}滾`;
+      if (pa?.code === 'FO' && pa?.position) return `${pa.position}飛`;
+      return paLabel(pa);
+    }
+
     function renderHitterToday() {
       const player = selectedPlayer();
       const appearance = ensureHitterAppearance();
@@ -7759,7 +7767,7 @@ bg2: {
       const rows = currentRecord.hitterPAs.map((pa, index) => `
         <div class="pa-row">
           <div class="pa-no">${index + 1}</div>
-          <div class="pa-result">${escapeHtml(paLabel(pa))}</div>
+          <div class="pa-result">${escapeHtml(paDisplayLabel(pa))}</div>
           <div class="pa-rbi">${pa.rbi ? `${pa.rbi} 打點` : ''}</div>
           <button class="press-btn edit-btn" data-edit-pa="${index}">編輯</button>
           <button class="press-btn danger" data-delete-pa="${index}">刪除</button>
@@ -7926,7 +7934,10 @@ bg2: {
           if (heading) heading.textContent = `編輯第 ${index + 1} 打席`;
           if (confirm) confirm.textContent = '儲存修改';
           cancel?.classList.remove('hidden');
-          heading?.scrollIntoView({ behavior:'smooth', block:'center' });
+          const row = btn.closest('.pa-row');
+          const formPanel = heading?.closest('.panel');
+          if (row && formPanel) row.insertAdjacentElement('afterend', formPanel);
+          formPanel?.scrollIntoView({ behavior:'smooth', block:'nearest' });
         });
       });
 
