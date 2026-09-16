@@ -1,8 +1,9 @@
 (() => {
-  const VERSION = 'v3.10';
+  const VERSION = 'v3.43';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
+  const SIGNAL_TABLE = 'cpbl_live_revision_signal';
 
   let client = null;
   let channel = null;
@@ -11,9 +12,11 @@
   let dayChannel = null;
   let dayWatch = '';
   const dayRevisions = new Map();
+  const inflightPublished = new Map();
   let loader = null;
   let watchdogTimer = 0;
   let realtimeSignalSerial = 0;
+  let daySignalSerial = 0;
 
   window.__cpblRealtimeConnected = false;
   window.__cpblDayRealtimeConnected = false;
@@ -104,6 +107,17 @@
   }
   window.__cpblRealtimeReadPublished = readPublished;
 
+  function publishedFetchKey(date, gameId, kindCode, revision) {
+    return `${date}|${kindCode}|${gameId}|${Number(revision ?? -1)}`;
+  }
+
+  async function readPublishedForRevision(date, gameId, kindCode, revision) {
+    const key = publishedFetchKey(date, gameId, kindCode, revision);
+    if (inflightPublished.has(key)) return inflightPublished.get(key);
+    const task = readPublished(date, gameId, kindCode).finally(() => inflightPublished.delete(key));
+    inflightPublished.set(key, task);
+    return task;
+  }
 
   async function readRevision(date, gameId, kindCode = 'A') {
     const d = String(date || '').trim();
@@ -111,13 +125,11 @@
     const kind = String(kindCode || 'A').trim().toUpperCase();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !id) return null;
     const query = new URLSearchParams({
-      game_date:`eq.${d}`,
-      game_id:`eq.${id}`,
-      kind_code:`eq.${kind}`,
-      select:'game_date,game_id,kind_code,status,published_revision,published_at',
+      cache_key:`eq.CPBL|${kind}|${d}|${id}`,
+      select:'cache_key,game_date,game_id,kind_code,status,published_revision,published_at,changed_at',
       limit:'1'
     });
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/cpbl_live_game_cache?${query}`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SIGNAL_TABLE}?${query}`, {
       headers:{ apikey:ANON_KEY, authorization:`Bearer ${ANON_KEY}` },
       cache:'no-store'
     });
@@ -141,7 +153,7 @@
         if (!meta || !watch || watch.date !== current.date || watch.gameId !== current.gameId || watch.kindCode !== current.kindCode) return;
         const revision = Number(meta.published_revision ?? -1);
         if (!Number.isFinite(revision) || revision <= lastRevision) return;
-        const published = await readPublished(current.date, current.gameId, current.kindCode);
+        const published = await readPublishedForRevision(current.date, current.gameId, current.kindCode, revision);
         if (published?.row && watch && watch.date === current.date && watch.gameId === current.gameId && watch.kindCode === current.kindCode) acceptRow(published.row);
       } catch {}
     }, 12000);
@@ -154,7 +166,7 @@
     const detail = publishedDetail(row);
     const status = String(detail?.status || row?.status || '').toLowerCase();
     if (isTerminalStatus(status)) {
-      stopWatch(false);
+      stopWatch(false, true);
       return;
     }
     if (!isLiveStatus(status) || !detail) return;
@@ -164,23 +176,21 @@
     window.dispatchEvent(new CustomEvent('cpbl-live-cache-update', { detail:{ row, detail, version:VERSION } }));
   }
 
-  async function refreshFromRealtimeSignal(row) {
-    const current=watch?{...watch}:null;
-    if(!current || !row) return;
-    if(String(row.game_id||'')!==current.gameId || String(row.game_date||'')!==current.date) return;
-    if(String(row.kind_code||'A').toUpperCase()!==current.kindCode) return;
-    const signaledRevision=Number(row.published_revision??-1);
-    if(Number.isFinite(signaledRevision) && signaledRevision>=0 && signaledRevision<=lastRevision) return;
+  async function refreshFromRealtimeSignal(signal) {
+    const current = watch ? { ...watch } : null;
+    if (!current || !signal) return;
+    if (String(signal.game_id || '') !== current.gameId || String(signal.game_date || '') !== current.date) return;
+    if (String(signal.kind_code || 'A').toUpperCase() !== current.kindCode) return;
+    const signaledRevision = Number(signal.published_revision ?? -1);
+    if (Number.isFinite(signaledRevision) && signaledRevision >= 0 && signaledRevision <= lastRevision) return;
 
-    const serial=++realtimeSignalSerial;
-    try{
-      // The DB UPDATE is the push notification. Read the canonical published row immediately
-      // so the UI always receives the newest complete payload for that revision.
-      const published=await readPublished(current.date,current.gameId,current.kindCode);
-      if(serial!==realtimeSignalSerial || !watch) return;
-      if(watch.date!==current.date || watch.gameId!==current.gameId || watch.kindCode!==current.kindCode) return;
-      if(published?.row) acceptRow(published.row);
-    }catch{}
+    const serial = ++realtimeSignalSerial;
+    try {
+      const published = await readPublishedForRevision(current.date, current.gameId, current.kindCode, signaledRevision);
+      if (serial !== realtimeSignalSerial || !watch) return;
+      if (watch.date !== current.date || watch.gameId !== current.gameId || watch.kindCode !== current.kindCode) return;
+      if (published?.row) acceptRow(published.row);
+    } catch {}
   }
 
   function acceptDayRow(row) {
@@ -190,6 +200,7 @@
     const gameId = String(row.game_id || detail?.game?.id || '');
     if (!gameId) return;
     const kindCode = String(row?.kind_code || detail?.kindCode || detail?.game?.kindCode || 'A').toUpperCase();
+    if (kindCode !== 'A') return;
     const revisionKey = `${kindCode}|${gameId}`;
     const revision = Number(row.published_revision ?? -1);
     const prev = Number(dayRevisions.get(revisionKey) ?? -1);
@@ -198,7 +209,52 @@
     window.dispatchEvent(new CustomEvent('cpbl-live-day-update', { detail:{ row, detail, version:VERSION } }));
   }
 
-  async function stopWatch(emit = true) {
+  async function refreshDayFromRealtimeSignal(signal) {
+    const date = dayWatch;
+    if (!date || !signal || watch) return;
+    if (String(signal.game_date || '') !== date) return;
+    const kindCode = String(signal.kind_code || 'A').toUpperCase();
+    if (kindCode !== 'A') return;
+    const gameId = String(signal.game_id || '');
+    if (!gameId) return;
+    const revision = Number(signal.published_revision ?? -1);
+    const revisionKey = `${kindCode}|${gameId}`;
+    const prev = Number(dayRevisions.get(revisionKey) ?? -1);
+    if (Number.isFinite(revision) && revision >= 0 && revision <= prev) return;
+    const serial = ++daySignalSerial;
+    try {
+      const published = await readPublishedForRevision(date, gameId, kindCode, revision);
+      if (serial < daySignalSerial - 32 || dayWatch !== date || watch) return;
+      if (published?.row) acceptDayRow(published.row);
+    } catch {}
+  }
+
+  async function pauseDayChannel(reason = 'paused-for-game') {
+    const old = dayChannel;
+    dayChannel = null;
+    daySignalSerial += 1;
+    if (old && client) {
+      try { await client.removeChannel(old); } catch {}
+    }
+    if (dayWatch) emitDayStatus(false, reason);
+  }
+
+  async function subscribeDay(date) {
+    if (!date || watch) return;
+    const sb = await getClient();
+    if (dayWatch !== date || watch) return;
+    const key = `${date}|A`;
+    dayChannel = sb.channel(`cpbl-day-signal-${date}-${Math.random().toString(36).slice(2,8)}`)
+      .on('postgres_changes', {
+        event:'*', schema:'public', table:SIGNAL_TABLE, filter:`day_kind_key=eq.${key}`
+      }, payload => { void refreshDayFromRealtimeSignal(payload?.new); })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') emitDayStatus(true, 'subscribed');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitDayStatus(false, status);
+      });
+  }
+
+  async function stopWatch(emit = true, resumeDay = true) {
     stopWatchdog();
     const old = channel;
     channel = null;
@@ -209,6 +265,9 @@
       try { await client.removeChannel(old); } catch {}
     }
     if (emit) emitStatus(false, 'unwatched');
+    if (resumeDay && dayWatch && !dayChannel) {
+      try { await subscribeDay(dayWatch); } catch (error) { emitDayStatus(false, error?.message || String(error)); }
+    }
   }
 
   async function startWatch(input = {}) {
@@ -217,14 +276,15 @@
     const kindCode = String(input.kindCode || 'A').trim().toUpperCase();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !gameId) return;
     if (watch?.date === date && watch?.gameId === gameId && watch?.kindCode === kindCode && channel) return;
-    await stopWatch(false);
+    await stopWatch(false, false);
+    await pauseDayChannel();
     watch = { date, gameId, kindCode };
     try {
       const sb = await getClient();
       if (!watch || watch.date !== date || watch.gameId !== gameId || watch.kindCode !== kindCode) return;
-      channel = sb.channel(`cpbl-live-${kindCode}-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
+      channel = sb.channel(`cpbl-live-signal-${kindCode}-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
         .on('postgres_changes', {
-          event:'*', schema:'public', table:'cpbl_live_game_cache', filter:`game_id=eq.${gameId}`
+          event:'*', schema:'public', table:SIGNAL_TABLE, filter:`game_id=eq.${gameId}`
         }, payload => { void refreshFromRealtimeSignal(payload?.new); })
         .subscribe(status => {
           if (status === 'SUBSCRIBED') emitStatus(true, 'subscribed');
@@ -243,6 +303,7 @@
     dayChannel = null;
     dayWatch = '';
     dayRevisions.clear();
+    daySignalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
     }
@@ -255,17 +316,12 @@
     if (dayWatch === date && dayChannel) return;
     await stopDayWatch(false);
     dayWatch = date;
+    if (watch) {
+      emitDayStatus(false, 'deferred-while-game');
+      return;
+    }
     try {
-      const sb = await getClient();
-      if (dayWatch !== date) return;
-      dayChannel = sb.channel(`cpbl-day-${date}-${Math.random().toString(36).slice(2,8)}`)
-        .on('postgres_changes', {
-          event:'*', schema:'public', table:'cpbl_live_game_cache', filter:`game_date=eq.${date}`
-        }, payload => acceptDayRow(payload?.new))
-        .subscribe(status => {
-          if (status === 'SUBSCRIBED') emitDayStatus(true, 'subscribed');
-          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitDayStatus(false, status);
-        });
+      await subscribeDay(date);
     } catch (error) {
       emitDayStatus(false, error?.message || String(error));
     }
