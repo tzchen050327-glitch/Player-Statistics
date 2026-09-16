@@ -1,0 +1,59 @@
+name: Temporary finalize v3.36
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_temp_finalize_v336.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Bump to v3.36 and rebuild
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+          data=json.loads(Path('version.json').read_text(encoding='utf-8'))
+          old=str(data.get('version','')).strip()
+          if old!='v3.35': raise SystemExit(f'expected v3.35, got {old}')
+          new='v3.36'; cache_tag=new.replace('.','')
+          Path('version.json').write_text(json.dumps({'version':new},ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          order=[x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+          found=0
+          for name in order:
+              p=Path('js')/name
+              text=p.read_text(encoding='utf-8')
+              text,n=re.subn(r"const APP_VERSION = 'v\d+\.\d+';",f"const APP_VERSION = '{new}';",text)
+              found+=n
+              text=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',text)
+              p.write_text(text,encoding='utf-8')
+          if found!=1: raise SystemExit(f'expected one APP_VERSION, found {found}')
+          p=Path('index.html'); text=p.read_text(encoding='utf-8')
+          text,n=re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)',rf'\g<1>{new}\2',text,count=1)
+          text=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',text)
+          text=re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)',rf'\g<1>{new}\2',text,count=1)
+          if not n: raise SystemExit('app-version meta not found')
+          p.write_text(text,encoding='utf-8')
+          p=Path('service-worker.js'); text=p.read_text(encoding='utf-8')
+          text=re.sub(r'\?v=v\d+\.\d+',f'?v={new}',text)
+          text=re.sub(r"const CACHE_NAME = '[^']+';",f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';",text,count=1)
+          p.write_text(text,encoding='utf-8')
+      - name: Build and verify
+        run: |
+          python3 scripts/build-app.py
+          python3 scripts/build-app.py --check
+          node --check app.js
+      - name: Commit v3.36
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add version.json index.html service-worker.js app.js js
+          git commit -m 'Finalize CPBL live lineup fixes v3.36 [skip version bump]'
+          git push
