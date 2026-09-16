@@ -658,10 +658,10 @@
         const from=compactName(m[1]),to=compactName(m[2]);
         for(const k of keys) if(runners[k]===from) runners[k]=to;
       }
-      for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*(上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
+      for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*((?:趁傳(?:進壘)?\s*)?上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
         const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];
         if(runners[from]===name||!runners[from]) runners[from]='';
-        if(/^上/.test(action)){
+        if(/上(?:一壘|二壘|三壘)$/.test(action)){
           const to=destOf(action);
           if(to) runners[to]=name;
         }
