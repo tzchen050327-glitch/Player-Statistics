@@ -1,0 +1,74 @@
+name: Temporary CPBL PA v3.38
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/_temp_cpbl_pa_v338.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Bump v3.38
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          data = json.loads(Path('version.json').read_text(encoding='utf-8'))
+          old = str(data['version'])
+          m = re.fullmatch(r'v(\d+)\.(\d+)', old)
+          if not m:
+              raise SystemExit(f'unsupported version {old}')
+          new = f'v{int(m.group(1))}.{int(m.group(2))+1}'
+          if new != 'v3.38':
+              raise SystemExit(f'expected v3.38 from {old}, got {new}')
+          cache_tag = new.replace('.', '')
+          Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+
+          order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+          found = 0
+          for name in order:
+              q = Path('js') / name
+              s = q.read_text(encoding='utf-8')
+              s, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", s)
+              found += n
+              s = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', s)
+              q.write_text(s, encoding='utf-8')
+          if found != 1:
+              raise SystemExit(f'expected one APP_VERSION, found {found}')
+
+          q = Path('index.html')
+          s = q.read_text(encoding='utf-8')
+          s, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', s, count=1)
+          s = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', s)
+          s = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', s, count=1)
+          if not n:
+              raise SystemExit('app-version meta not found')
+          q.write_text(s, encoding='utf-8')
+
+          q = Path('service-worker.js')
+          s = q.read_text(encoding='utf-8')
+          s = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', s)
+          s = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", s, count=1)
+          q.write_text(s, encoding='utf-8')
+      - name: Build canonical app bundle
+        run: |
+          python3 scripts/build-app.py
+          python3 scripts/build-app.py --check
+          node --check app.js
+      - name: Remove temporary workflow and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/_temp_cpbl_pa_v338.yml
+          git add version.json index.html service-worker.js app.js js
+          git commit -m "Fix CPBL plate appearance source v3.38 [skip version bump]"
+          git push
