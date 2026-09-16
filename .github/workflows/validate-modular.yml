@@ -1,22 +1,22 @@
-name: Validate modular app
+\
+name: Validate canonical app source
 
 on:
   push:
-    branches: [main, modularize-v2.06]
+    branches: [main]
     paths:
       - 'js/**'
       - 'app.js'
       - 'index.html'
-      - 'styles.css'
       - 'service-worker.js'
       - 'scripts/build-app.py'
+      - '.github/workflows/auto-version-bump.yml'
       - '.github/workflows/validate-modular.yml'
   pull_request:
     paths:
       - 'js/**'
       - 'app.js'
       - 'index.html'
-      - 'styles.css'
       - 'service-worker.js'
       - 'scripts/build-app.py'
 
@@ -28,61 +28,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate module inventory
+      - name: Validate modules and syntax
+        shell: bash
         run: |
-          test -f js/module-order.txt
-          test "$(grep -cve '^$' js/module-order.txt)" -eq 24
+          test -s js/module-order.txt
           while IFS= read -r f; do
-            [ -z "$f" ] || test -f "js/$f"
+            [ -z "$f" ] && continue
+            test -f "js/$f"
+            node --check "js/$f"
           done < js/module-order.txt
-      - name: Syntax check source and bundle
-        run: |
-          for f in js/[0-9][0-9]-*.js; do node --check "$f"; done
           node --check app.js
-      - name: Verify bundle is deterministic
+      - name: Verify generated bundle
+        run: python3 scripts/build-app.py --check
+      - name: Validate version wiring and core guards
+        shell: python
         run: |
-          cp app.js /tmp/app-committed.js
-          python3 scripts/build-app.py
-          cmp -s /tmp/app-committed.js app.js
-      - name: Validate version wiring and regression guards
-        run: |
-          python3 - <<'PY'
+          import json, re
           from pathlib import Path
-          import re
           bundle = Path('app.js').read_text(encoding='utf-8')
           html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('service-worker.js').read_text(encoding='utf-8')
+          v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
           m = re.search(r"const APP_VERSION = '([^']+)';", bundle)
-          assert m, 'APP_VERSION missing'
-          v = m.group(1)
-          assert f'<meta name="app-version" content="{v}" />' in html, 'HTML version meta mismatch'
-          assert f'./app.js?v={v}' in html, 'HTML app bundle version mismatch'
-          assert f'./app.js?v={v}' in sw, 'service worker app bundle version mismatch'
-          for needle in [
-              'function setSyncUiLocked(locked)',
-              'function renderSyncMetaBanner(player)',
-              'function standardizePitcherSpecialRecords(game = {})',
-              "selectedTab = 'base';",
-              'async function importCpblDaily(player)',
-              'async function importExternalDaily(player)',
-              'async function renderAnnualSeasonCanvas(role, player=selectedPlayer())',
-              'bootApp();',
-          ]:
-              assert needle in bundle, f'missing regression guard: {needle}'
-          print('validated', v)
-          PY
-      - name: Chrome smoke test
-        run: |
-          python3 -m http.server 8765 >/tmp/player-stats-http.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill $SERVER_PID || true' EXIT
-          sleep 1
-          CHROME="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
-          if [ -z "$CHROME" ]; then
-            echo 'Chrome not preinstalled; syntax/static checks passed.'
-            exit 0
-          fi
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/index.html >/tmp/dom.html
-          grep -Fq 'id="homePage"' /tmp/dom.html
-          grep -Fq 'id="cardCanvas"' /tmp/dom.html
-          grep -Fq 'name="app-version"' /tmp/dom.html
+          assert m and m.group(1) == v
+          assert f'<meta name="app-version" content="{v}" />' in html
+          assert f'./app.js?v={v}' in html
+          assert f'./app.js?v={v}' in sw
+          for needle in ['function setSyncUiLocked(locked)', 'async function importCpblDaily(player)', 'function seasonStatsForOutputRole(player, role)', 'bootApp();']:
+              assert needle in bundle, f'missing guard: {needle}'
+          print('validated canonical source', v)

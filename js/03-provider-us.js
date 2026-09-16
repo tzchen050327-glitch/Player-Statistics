@@ -1,5 +1,11 @@
     async function cpblRequest(action, payload = {}) {
-      const response = await fetch(CPBL_API_URL, {
+      const requestKindCode = String(payload?.kindCode || 'A').toUpperCase();
+      const requestUrl = ['current-roster','current-rosters'].includes(action)
+        ? CPBL_CURRENT_ROSTER_API_URL
+        : action === 'daily' && ['A','D','E','C'].includes(requestKindCode)
+          ? CPBL_DAILY_CACHE_API_URL
+          : CPBL_API_URL;
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({

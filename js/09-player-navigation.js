@@ -158,7 +158,12 @@
 
         const majorYears = result?.majorYears?.length ? result.majorYears : availableSeasonYears(player, 'A');
         const minorYears = result?.minorYears?.length ? result.minorYears : availableSeasonYears(player, 'D');
-        selectedLevel = majorYears.length ? 'A' : (minorYears.length ? 'D' : 'A');
+        const currentLevel = String(player.cpblCurrentLevel || '').toUpperCase();
+        selectedLevel = currentLevel === 'D' && minorYears.length
+          ? 'D'
+          : currentLevel === 'A' && majorYears.length
+            ? 'A'
+            : (majorYears.length ? 'A' : (minorYears.length ? 'D' : 'A'));
         const preferredYears = selectedLevel === 'D' ? minorYears : majorYears;
         selectedSeason = preferredYears[0] || CURRENT_YEAR;
         activatePlayerStatsProfile(player, selectedSeason, selectedLevel);

@@ -66,14 +66,18 @@
 
     function batchRecordFromCpblDaily(player, daily, level) {
       if (!daily?.found) return null;
+      const recordLevel = level === 'D' ? 'D' : 'A';
       const record = {
         ...defaultGameRecord(player),
-        key: `${els.gameDate.value}:${player.id}:${level}`,
+        key: `${els.gameDate.value}:${player.id}:${recordLevel}`,
         playerId: player.id,
         date: els.gameDate.value,
-        level,
+        level: recordLevel,
+        cpblKindCode: level,
+        competition: daily.competition || (level === 'E' ? 'playoff_challenge' : level === 'C' ? 'taiwan_series' : level === 'D' ? 'minor' : 'regular'),
+        competitionLabel: daily.competitionLabel || (level === 'E' ? '季後挑戰賽' : level === 'C' ? '總冠軍賽' : level === 'D' ? '二軍' : '一軍例行賽'),
         opponent: normalizeTeamName(daily.game?.opponent || ''),
-        cpblReadOnlyImport: els.gameDate.value !== localISODate(),
+        cpblReadOnlyImport: ['E','C'].includes(level) || els.gameDate.value !== localISODate(),
         cpblImportedAt: Date.now()
       };
 
@@ -131,7 +135,7 @@
         return { record:null, level:'A', reason:'此球員尚未連結中職官網' };
       }
 
-      const levels = ['A','D'];
+      const levels = ['A','E','C','D'];
       let lastReason = '';
       for (const level of levels) {
         const knownYears = player?.cpblAvailableYears?.[level];
@@ -160,7 +164,7 @@
           }
 
           await idbPut(STORES.games, record);
-          return { record, level, fetched:true };
+          return { record, level: level === 'D' ? 'D' : 'A', kindCode: level, fetched:true };
         } catch (error) {
           lastReason = error?.message || String(error);
         }

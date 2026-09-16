@@ -35,7 +35,7 @@
 
       const importButton = player.cpblAcnt
         ? `<div class="section-actions" style="margin-top:8px"><button id="importCpblDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} 中職資料</button></div>
-           <div class="small" style="margin-top:6px">會先查一軍，當日一軍無出賽再自動查二軍；若同場有打擊與投球，兩邊會一次匯入。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
+           <div class="small" style="margin-top:6px">會自動查一軍例行賽、季後挑戰賽、總冠軍賽與二軍；若同場有打擊與投球，兩邊會一次匯入。${els.gameDate.value !== localISODate() ? ' 歷史日期只匯入該場資料，不會寫入球員累積數據。' : ''}</div>`
         : linkedOverseas
           ? `<div class="section-actions" style="margin-top:8px"><button id="importExternalDailyBtn" class="press-btn primary">抓取 ${escapeHtml(els.gameDate.value.replaceAll('-', '/'))} ${escapeHtml(overseasProviderLabel(player.externalProvider))} 資料</button></div>
              <div class="small" style="margin-top:6px">${['NPB','KBO'].includes(String(player.externalProvider||'').toUpperCase()) ? '會先查一軍，當日一軍無出賽再自動查二軍。' : ''} 若同場同時有打擊與投球，兩邊會一次匯入；單場資料不會重複累加到已同步的賽季成績。</div>`

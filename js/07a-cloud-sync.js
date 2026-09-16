@@ -537,6 +537,24 @@
           document.getElementById('cloudSyncDialog')?.showModal();
         });
         actions.insertBefore(button, actions.firstChild);
+        if (!document.getElementById('cacheDiagnosticsBtn')) {
+          const diagnosticsButton = document.createElement('button');
+          diagnosticsButton.id = 'cacheDiagnosticsBtn';
+          diagnosticsButton.className = 'cache-diagnostics-header-btn';
+          diagnosticsButton.type = 'button';
+          diagnosticsButton.setAttribute('aria-label', '快取診斷');
+          diagnosticsButton.title = '快取診斷';
+          diagnosticsButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M5.5 5.5v5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-5M5.5 10.5v5c0 1.4 2.9 2.5 6.5 2.5 1.15 0 2.23-.11 3.15-.31" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="m16.2 16.2 1.35 1.35 2.55-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+          diagnosticsButton.addEventListener('click', () => {
+            window.open('./diagnostics.html', '_blank', 'noopener');
+          });
+          button.insertAdjacentElement('afterend', diagnosticsButton);
+        }
       }
 
       if (!document.getElementById('cloudSyncDialog')) {

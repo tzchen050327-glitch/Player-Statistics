@@ -119,6 +119,23 @@
       return false;
     }
 
+    function parseAppVersion(value) {
+      const match = String(value || '').trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/i);
+      if (!match) return null;
+      return [Number(match[1]), Number(match[2]), Number(match[3] || 0)];
+    }
+
+    function isRemoteVersionNewer(remote, current = APP_VERSION) {
+      const r = parseAppVersion(remote);
+      const c = parseAppVersion(current);
+      if (!r || !c) return false;
+      for (let i = 0; i < 3; i += 1) {
+        if (r[i] > c[i]) return true;
+        if (r[i] < c[i]) return false;
+      }
+      return false;
+    }
+
     async function checkAppUpdate({ manual = false, showProgress = false, keepProgressOpen = false } = {}) {
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (showProgress) {
@@ -152,7 +169,7 @@
           if (markerResponse.ok) {
             const marker = await markerResponse.json().catch(() => ({}));
             const remoteVersion = String(marker?.version || '').trim();
-            if (remoteVersion && remoteVersion !== APP_VERSION) {
+            if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
@@ -178,7 +195,7 @@
             const metaMatch = remoteHtml.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
             const legacyMatch = remoteHtml.match(/const APP_VERSION = '([^']+)'/);
             const remoteVersion = String(metaMatch?.[1] || legacyMatch?.[1] || '').trim();
-            if (remoteVersion && remoteVersion !== APP_VERSION) {
+            if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
@@ -308,9 +325,9 @@
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
 
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') checkAppUpdate();
-        });
+        // v2.82: do not check/apply updates merely because the user returned
+        // to this browser tab. Startup, manual version-badge checks, and the
+        // existing 15-minute timer remain responsible for update checks.
 
         if (updateResult?.activated) {
           // controllerchange 正常會立刻重新載入；留一個 fallback 避免瀏覽器漏事件。

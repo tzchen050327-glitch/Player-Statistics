@@ -1,15 +1,15 @@
+\
 name: Auto bump app version
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - '*.js'
       - '*.css'
       - '*.html'
       - 'js/**'
-      - '.github/scripts/**'
+      - 'scripts/build-app.py'
       - 'manifest.webmanifest'
 
 permissions:
@@ -23,81 +23,82 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
-      - name: Bump visible app version
+      - name: Reject app.js-only source edits
+        shell: bash
+        run: |
+          CHANGED="$(git diff --name-only HEAD^ HEAD || true)"
+          if printf '%s\n' "$CHANGED" | grep -qx 'app.js'; then
+            if ! printf '%s\n' "$CHANGED" | grep -Eq '^js/.*\.js$'; then
+              echo 'app.js is generated. Edit js/*.js instead.' >&2
+              exit 1
+            fi
+          fi
+
+      - name: Bump source version
         shell: python
         run: |
-          import json
-          import re
+          import json, re
           from pathlib import Path
-
-          version_path = Path('version.json')
-          index_path = Path('index.html')
-          app_path = Path('app.js')
-          sw_path = Path('service-worker.js')
-
-          data = json.loads(version_path.read_text(encoding='utf-8'))
+          data = json.loads(Path('version.json').read_text(encoding='utf-8'))
           old = str(data.get('version', '')).strip()
           m = re.fullmatch(r'v(\d+)\.(\d+)', old)
-          if not m:
-              raise SystemExit(f'Unsupported version format: {old!r}')
+          if not m: raise SystemExit(f'Unsupported version format: {old!r}')
+          new = f'v{int(m.group(1))}.{int(m.group(2))+1}'
+          cache_tag = new.replace('.', '')
+          Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
 
-          major = int(m.group(1))
-          revision = int(m.group(2)) + 1
-          new = f'v{major}.{revision}'
-          cache_tag = f'v{major}{revision}'
+          order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
+          found = 0
+          for name in order:
+              p = Path('js') / name
+              text = p.read_text(encoding='utf-8')
+              text, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", text)
+              found += n
+              text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+              p.write_text(text, encoding='utf-8')
+          if found != 1: raise SystemExit(f'expected one source APP_VERSION, found {found}')
 
-          version_path.write_text(json.dumps({'version': new}, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', text, count=1)
+          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', text, count=1)
+          if not n: raise SystemExit('app-version meta not found')
+          p.write_text(text, encoding='utf-8')
 
-          index = index_path.read_text(encoding='utf-8')
-          index, n_meta = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', index, count=1)
-          index = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', index)
-          index = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', index, count=1)
-          if not n_meta:
-              raise SystemExit('app-version meta not found in index.html')
-          index_path.write_text(index, encoding='utf-8')
-
-          app = app_path.read_text(encoding='utf-8')
-          app, n_app = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", app, count=1)
-          app = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', app)
-          if not n_app:
-              raise SystemExit('APP_VERSION declaration not found in app.js')
-          app_path.write_text(app, encoding='utf-8')
-
-          sw = sw_path.read_text(encoding='utf-8')
-          sw = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', sw)
-          sw = re.sub(
-              r"const CACHE_NAME = '[^']+';",
-              f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';",
-              sw,
-              count=1,
-          )
-          sw_path.write_text(sw, encoding='utf-8')
-
+          p = Path('service-worker.js')
+          text = p.read_text(encoding='utf-8')
+          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
+          p.write_text(text, encoding='utf-8')
           print(f'{old} -> {new}')
+
+      - name: Generate and verify app.js
+        run: |
+          python3 scripts/build-app.py
+          python3 scripts/build-app.py --check
+          node --check app.js
 
       - name: Verify version consistency
         shell: python
         run: |
           import json
           from pathlib import Path
-
-          version = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
-          index = Path('index.html').read_text(encoding='utf-8')
+          v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
           app = Path('app.js').read_text(encoding='utf-8')
+          html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('service-worker.js').read_text(encoding='utf-8')
+          assert f"const APP_VERSION = '{v}'" in app
+          assert f'content="{v}"' in html
+          assert f'?v={v}' in html
+          assert f'?v={v}' in sw
 
-          assert f'content="{version}"' in index
-          assert f"const APP_VERSION = '{version}'" in app
-          assert f'?v={version}' in index
-          assert f'?v={version}' in sw
-          print('version consistency ok:', version)
-
-      - name: Commit version bump
+      - name: Commit generated release files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.json index.html app.js service-worker.js
+          git add version.json index.html service-worker.js app.js js
           git commit -m "chore: auto bump app version [skip version bump]" || exit 0
           git push

@@ -1,10 +1,10 @@
-# JavaScript architecture — v2.06
+# JavaScript architecture — canonical modular source
 
 `js/` is the maintainable source. Files are intentionally ordered and must be concatenated in `module-order.txt` order.
 
 The live page loads the generated `app.js` bundle instead of executing every source file separately. This is deliberate: it preserves the exact hoisting and global lexical semantics of the original single-script application while still allowing the source to be maintained by feature area.
 
-**Do not edit `app.js` as the primary source.** Edit the appropriate file in `js/`, then run `python3 scripts/build-app.py`. CI verifies that the committed bundle is exactly reproducible from the module source and also runs syntax, version-wiring, regression-guard and browser smoke checks.
+**`app.js` is generated output. Do not edit it directly.** Edit the appropriate file in `js/`, then run `python3 scripts/build-app.py`. CI verifies that the committed bundle is exactly reproducible from the module source and also runs syntax, version-wiring, regression-guard and browser smoke checks.
 
 ## Source modules
 

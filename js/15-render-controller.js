@@ -37,6 +37,11 @@
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
+      const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
+      if (forceOfficialRefreshBtn) {
+        const showOfficialRefresh = playerPageActive && playerScope(player) === 'cpbl' && Boolean(player?.cpblAcnt);
+        forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
+      }
 
       els.homePage?.classList.toggle('hidden', playerPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
@@ -142,7 +147,7 @@
       const statsTabActive = selectedTab === 'base' || selectedTab === 'minor' || selectedTab === 'secondary';
       const seasonReportActive = statsTabActive && (playerScopeCode !== 'international' || selectedTab === 'base');
       const dailyReportActive = selectedTab === 'today';
-      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive));
+      els.seasonSelect?.closest('.season-field')?.classList.toggle('hidden', errorPageActive || (levelTabs && !statsTabActive && selectedTab !== 'postseason'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
 
       els.downloadBtn?.classList.toggle('hidden', !dailyReportActive);

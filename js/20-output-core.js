@@ -35,6 +35,55 @@
 
     function seasonStatsForOutputRole(player, role) {
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
+      const projection = currentRecord?.cpblSeasonProjectionByRole?.[role]
+        || (currentRecord?.cpblSeasonProjection?.role === role ? currentRecord.cpblSeasonProjection : null);
+      if (
+        role === 'hitter'
+        && level === 'A'
+        && playerScope(player) === 'cpbl'
+        && projection?.complete
+        && projection?.stats
+      ) {
+        return mergeStats(projection.stats, hitterDefaults);
+      }
+      if (
+        role === 'pitcher'
+        && level === 'A'
+        && playerScope(player) === 'cpbl'
+        && projection?.complete
+        && projection?.stats
+      ) {
+        const projected = mergeStats(projection.stats, pitcherDefaults);
+        const pregame = projection?.pregame ? mergeStats(projection.pregame, pitcherDefaults) : null;
+        const game = currentRecord?.pitcherGame || null;
+        if (pregame && game) {
+          // Season counting/rate stats still come from Supabase's pregame snapshot + Box.
+          // Only the result counters are re-based on the pregame snapshot and the
+          // current Today-panel selection, so manual W/L/SV/HLD controls take effect
+          // immediately without double-counting the Box result.
+          projected.w = Number(pregame.w) || 0;
+          projected.l = Number(pregame.l) || 0;
+          projected.sv = Number(pregame.sv) || 0;
+          projected.hld = Number(pregame.hld) || 0;
+          projected.bsv = Number(pregame.bsv) || 0;
+          projected.cg = Number(pregame.cg) || 0;
+          projected.sho = Number(pregame.sho) || 0;
+          projected.noWalkHbp = Number(pregame.noWalkHbp) || 0;
+
+          const result = String(
+            game.result || (game.sv ? 'SV' : game.hld ? 'HLD' : game.decision || 'ND')
+          ).toUpperCase();
+          if (result === 'W') projected.w += 1;
+          else if (result === 'L') projected.l += 1;
+          else if (result === 'SV') projected.sv += 1;
+          else if (result === 'HLD') projected.hld += 1;
+          if (game.bsv) projected.bsv += 1;
+          if (game.cg) projected.cg += 1;
+          if (game.sho) projected.sho += 1;
+          if (game.noWalkHbp) projected.noWalkHbp += 1;
+        }
+        return projected;
+      }
       const pair = roleStatsPair(player, selectedSeason, level);
       if (role === 'hitter') {
         if (hitterRoleHasData(pair?.hitter)) return { ...pair.hitter };

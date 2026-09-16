@@ -31,7 +31,7 @@
           player.cpblTeam = normalizeTeamName(current.team);
           if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
           if (current.number) player.number = String(current.number);
-          player.cpblCurrentLevel = current.level === 'D' ? 'D' : 'A';
+          if (['A','D'].includes(String(current.level || '').toUpperCase())) player.cpblCurrentLevel = String(current.level).toUpperCase();
 
           const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
           player.cpblRosterUpdatedAt = Date.now();
@@ -110,6 +110,17 @@
     }
 
     async function finishSyncProgress(status = '同步完成') {
+      try {
+        if (currentPage === 'player' && typeof window.__prefetchPostseasonContext === 'function') {
+          setSyncProgress(92, '正在整理季後賽歷史資料…');
+          const postseason = await window.__prefetchPostseasonContext();
+          const count = Array.isArray(postseason?.years) ? postseason.years.length : 0;
+          const cached = Number(postseason?.cached || 0);
+          if (count) setSyncProgress(98, `季後賽 ${cached || count}/${count} 個賽季資料已快取`);
+        }
+      } catch (error) {
+        console.warn('季後賽背景預抓失敗', error);
+      }
       setSyncProgress(100, status);
       await markSuccessfulSeasonSyncMeta();
       await new Promise(resolve => setTimeout(resolve, 420));
@@ -170,6 +181,63 @@
       if (!silent) setStatus(`已更新 ${year} 年中職官網${cpblLevelLabel(kindCode)}累積成績。`);
       return data;
     }
+
+    async function forceOfficialSeasonRefresh() {
+      const player = selectedPlayer();
+      if (!player || playerScope(player) !== 'cpbl') return;
+      if (!player.cpblAcnt) {
+        setStatus('此球員尚未連結中職官網。', true);
+        return;
+      }
+      const btn = document.getElementById('forceOfficialRefreshBtn');
+      const original = btn?.textContent || '重新抓官方個人頁';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '抓取中…';
+      }
+      try {
+        const response = await fetch(CPBL_OFFICIAL_REFRESH_API_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            appKey: CPBL_APP_KEY,
+            acnt: player.cpblAcnt,
+            year: selectedSeason,
+            kindCode: selectedLevel,
+            date: String(els.gameDate?.value || ''),
+            teamCode: player.cpblTeamCode || ''
+          })
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.ok || !data?.stats) {
+          throw new Error(data?.error || `官方個人頁更新失敗（${response.status}）`);
+        }
+        applyCpblSeasonStatsToPlayer(player, data.stats, selectedSeason, selectedLevel);
+        await savePlayer(player);
+        await markSuccessfulSeasonSyncMeta();
+        try { await loadRecord(); } catch (error) { console.warn('手動官方更新後重新載入單場失敗', error); }
+        renderAll();
+        if (data.officialCaughtUp === false) {
+          setStatus('CPBL 個人選手頁尚未完成結算；已保留 Supabase 暫算值，單場 Box 的勝敗／救援／中繼仍會套用。');
+        } else {
+          setStatus('CPBL 個人選手頁已完成結算，已切換為官方正式累積成績。');
+        }
+      } catch (error) {
+        console.warn('手動抓取 CPBL 官方個人頁失敗', error);
+        setStatus(error?.message || '手動抓取官方個人頁失敗。', true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      }
+    }
+
+    document.addEventListener('click', event => {
+      const btn = event.target?.closest?.('#forceOfficialRefreshBtn');
+      if (!btn) return;
+      forceOfficialSeasonRefresh();
+    });
 
     function applyCpblSeasonStatsToPlayer(player, stats, year, kindCode = selectedLevel) {
       kindCode = kindCode === 'D' ? 'D' : 'A';
@@ -492,7 +560,7 @@
       if (!player?.cpblAcnt || !player?.cpblTeamCode) throw new Error('此球員尚未連結中職官網。');
 
       const gameYear = Number(els.gameDate.value?.slice(0, 4)) || CURRENT_YEAR;
-      const levels = ['A','D'];
+      const levels = ['A','E','C','D'];
       let daily = null;
       let kindCode = 'A';
       let lastReason = '';
@@ -555,25 +623,31 @@
       }
 
       // 找到哪個軍別就自動切到該軍別的本機紀錄，不需使用者手動選。
-      if (selectedLevel !== kindCode) {
+      const recordLevel = kindCode === 'D' ? 'D' : 'A';
+      if (selectedLevel !== recordLevel) {
         persistActiveStatsProfile(player);
-        selectedLevel = kindCode;
-        const years = availableSeasonYears(player, kindCode);
+        selectedLevel = recordLevel;
+        const years = availableSeasonYears(player, recordLevel);
         selectedSeason = years.includes(gameYear) ? gameYear : (years[0] || gameYear);
         activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
         await loadRecord();
       }
-      currentRecord.level = kindCode;
+      currentRecord.level = recordLevel;
 
       if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
+      currentRecord.cpblKindCode = kindCode;
+      currentRecord.competition = daily.competition || (kindCode === 'E' ? 'playoff_challenge' : kindCode === 'C' ? 'taiwan_series' : kindCode === 'D' ? 'minor' : 'regular');
+      currentRecord.competitionLabel = daily.competitionLabel || (kindCode === 'E' ? '季後挑戰賽' : kindCode === 'C' ? '總冠軍賽' : kindCode === 'D' ? '二軍' : '一軍例行賽');
 
       const appliedRoles = await applyOfficialDailyRolesToRecord(daily, { confirmHitterOverwrite:true });
       if (!appliedRoles) return false;
+      currentRecord.cpblSeasonProjection = daily?.seasonProjection || null;
 
       const isToday = els.gameDate.value === localISODate();
-      currentRecord.cpblReadOnlyImport = !isToday;
+      const syncSeasonToday = isToday && !['E','C'].includes(kindCode);
+      currentRecord.cpblReadOnlyImport = !syncSeasonToday;
 
-      if (isToday) {
+      if (syncSeasonToday) {
         try {
           await updatePlayerFromCpbl(player, true, gameYear, kindCode);
           currentRecord.committedStats = player.type === 'hitter'
@@ -591,14 +665,19 @@
       }
 
       currentRecord.cpblImportedAt = Date.now();
-      currentRecord.syncMeta = { source: officialDataSourceLabel(player), updatedAt: currentRecord.cpblImportedAt };
+      const cpblImportSource = ['E','C'].includes(kindCode)
+        ? `CPBL 官方｜${currentRecord.competitionLabel}`
+        : officialDataSourceLabel(player);
+      currentRecord.syncMeta = { source: cpblImportSource, updatedAt: currentRecord.cpblImportedAt };
       await saveRecord();
       renderAll();
 
-      const levelLabel = kindCode === 'D' ? '二軍' : '一軍';
-      setStatus(isToday
+      const levelLabel = kindCode === 'D' ? '二軍' : kindCode === 'E' ? '季後挑戰賽' : kindCode === 'C' ? '總冠軍賽' : '一軍例行賽';
+      setStatus(syncSeasonToday
         ? `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料並同步今日累積數據。`
-        : `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；歷史日期不會寫入球員累積數據。`);
+        : isToday && ['E','C'].includes(kindCode)
+          ? `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；季後賽單場獨立保存，不會寫入例行賽累積數據。`
+          : `已匯入 ${els.gameDate.value} 的中職${levelLabel}資料；歷史日期不會寫入球員累積數據。`);
       return true;
     }
 
@@ -690,7 +769,7 @@
           cpblAcnt: acnt,
           cpblTeam: normalizeTeamName(official?.team || item?.teamName || ''),
           cpblTeamCode: String(official?.teamCode || item?.teamCode || '').trim(),
-          cpblCurrentLevel: 'A',
+          cpblCurrentLevel: '',
           cpblPosition: position,
           createdAt: now,
           updatedAt: now,

@@ -935,7 +935,7 @@
             player.cpblTeam = normalizeTeamName(roster.player.team);
             if (roster.player.teamCode) player.cpblTeamCode = String(roster.player.teamCode);
             if (roster.player.number) player.number = String(roster.player.number);
-            player.cpblCurrentLevel = roster.player.level === 'D' ? 'D' : 'A';
+            if (['A','D'].includes(String(roster.player.level || '').toUpperCase())) player.cpblCurrentLevel = String(roster.player.level).toUpperCase();
             repairStoredCpblPlayerType(player, roster.player.position || official.position || '');
             player.cpblRosterUpdatedAt = Date.now();
             await savePlayer(player);
