@@ -211,9 +211,10 @@
             ctx.textAlign = 'left';
             ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
             ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-            ctx.fillText(paLabel(pa), textX, y + (positioned ? 11 : 14));
+            const paText = paDisplayLabel(pa);
+            ctx.fillText(paText, textX, y + (positioned ? 11 : 14));
             if (pa.rbi) {
-              const width = ctx.measureText(paLabel(pa)).width;
+              const width = ctx.measureText(paText).width;
               ctx.fillStyle = positioned ? (detail.rbiColor || '#b5811b') : '#b5811b';
               ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
               ctx.fillText(String(pa.rbi), textX + 8 + width, y - (positioned ? 11 : 13));

@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.40';
+    const APP_VERSION = 'v3.41';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.40';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.40';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.41';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.41';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9064,9 +9064,10 @@ bg2: {
             ctx.textAlign = 'left';
             ctx.fillStyle = positioned ? (detail.textColor || '#172033') : '#172033';
             ctx.font = `900 ${layout.fonts.paResult}px "Microsoft JhengHei", sans-serif`;
-            ctx.fillText(paLabel(pa), textX, y + (positioned ? 11 : 14));
+            const paText = paDisplayLabel(pa);
+            ctx.fillText(paText, textX, y + (positioned ? 11 : 14));
             if (pa.rbi) {
-              const width = ctx.measureText(paLabel(pa)).width;
+              const width = ctx.measureText(paText).width;
               ctx.fillStyle = positioned ? (detail.rbiColor || '#b5811b') : '#b5811b';
               ctx.font = `900 ${layout.fonts.paRbi}px Arial, sans-serif`;
               ctx.fillText(String(pa.rbi), textX + 8 + width, y - (positioned ? 11 : 13));
