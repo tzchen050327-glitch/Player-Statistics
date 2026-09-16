@@ -1,4 +1,5 @@
     const NPB_SEASON_BRIDGE_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-season-bridge';
+    const NPB_POSTGAME_OFFICIAL_POLL_MS = 20 * 60_000;
 
     function npbBridgeTokyoDate() {
       try {
@@ -262,4 +263,4 @@
       } finally {
         npbSeasonBridgePollBusy = false;
       }
-    }, 60_000);
+    }, NPB_POSTGAME_OFFICIAL_POLL_MS);
