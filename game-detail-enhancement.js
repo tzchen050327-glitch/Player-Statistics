@@ -279,61 +279,82 @@
   }
 
   function reconciledBattingStats(detail,entry) {
-    const directAb=numericOrNull(entry?.ab??entry?.atBats);
-    const directHits=numericOrNull(entry?.hits??entry?.h);
-    const directHr=numericOrNull(entry?.homeRuns??entry?.hr);
-    const directRbi=numericOrNull(entry?.rbi??entry?.rbis);
-    const sourceAvg=safeCell(entry?.avg??entry?.average??entry?.battingAverage??'');
+  const directAb=numericOrNull(entry?.ab??entry?.atBats);
+  const directHits=numericOrNull(entry?.hits??entry?.h);
+  const directHr=numericOrNull(entry?.homeRuns??entry?.hr);
+  const directRbi=numericOrNull(entry?.rbi??entry?.rbis);
+  const sourceAvg=safeCell(entry?.avg??entry?.average??entry?.battingAverage??'');
 
-    const isCpbl=String(detail?.league||'').toUpperCase()==='CPBL';
-    const isFinal=String(detail?.status||'').toLowerCase()==='final';
-    if(!isCpbl||!isFinal){
-      return {
-        ab:directAb,
-        avg:sourceAvg,
-        hits:directHits??0,
-        homeRuns:directHr??0,
-        rbi:directRbi??0,
-        finalStatsReconciled:false
-      };
-    }
+  const isCpbl=String(detail?.league||'').toUpperCase()==='CPBL';
+  const status=String(detail?.status||'').toLowerCase();
+  const gameAb=numericOrNull(entry?.gameAb);
+  const gameHits=numericOrNull(entry?.gameHits);
+  const gameHr=numericOrNull(entry?.gameHomeRuns);
+  const gameRbi=numericOrNull(entry?.gameRbi);
+  const pregameAb=numericOrNull(entry?.pregameAb);
+  const pregameHits=numericOrNull(entry?.pregameHits);
+  const pregameHr=numericOrNull(entry?.pregameHomeRuns);
+  const pregameRbi=numericOrNull(entry?.pregameRbi);
 
-    const gameAb=numericOrNull(entry?.gameAb);
-    const gameHits=numericOrNull(entry?.gameHits);
-    const gameHr=numericOrNull(entry?.gameHomeRuns);
-    const gameRbi=numericOrNull(entry?.gameRbi);
-    const pregameAb=numericOrNull(entry?.pregameAb);
-
-    // CPBL final payloads can revert season totals to the pregame snapshot while
-    // preserving gameAb/gameHits/gameHomeRuns/gameRbi. Re-apply the game line so
-    // the landscape lineup does not lose statistics after the game becomes final.
-    // If explicit pregameAb exists and the season AB is already beyond it, assume
-    // the source already incorporated the game and do not double-add.
-    const shouldAddGame = gameAb!==null && (pregameAb===null || directAb===null || directAb<=pregameAb);
-    if(!shouldAddGame){
-      return {
-        ab:directAb,
-        avg:sourceAvg,
-        hits:directHits??0,
-        homeRuns:directHr??0,
-        rbi:directRbi??0,
-        finalStatsReconciled:false
-      };
-    }
-
-    const ab=(directAb??0)+(gameAb??0);
-    const hits=(directHits??0)+(gameHits??0);
-    const homeRuns=(directHr??0)+(gameHr??0);
-    const rbi=(directRbi??0)+(gameRbi??0);
+  // During a CPBL game, the pregame snapshot + current game line is the
+  // authoritative source.  This makes H/AVG/HR/RBI move immediately with
+  // the live box instead of waiting for the season page to settle.
+  if(isCpbl && ['live','suspended'].includes(status) && pregameAb!==null && pregameHits!==null){
+    const ab=pregameAb+(gameAb??0);
+    const hits=pregameHits+(gameHits??0);
+    const homeRuns=(pregameHr??0)+(gameHr??0);
+    const rbi=(pregameRbi??0)+(gameRbi??0);
     return {
       ab,
       avg:formatAverage(hits,ab,sourceAvg),
       hits,
       homeRuns,
       rbi,
-      finalStatsReconciled:true
+      finalStatsReconciled:false
     };
   }
+
+  if(!isCpbl||status!=='final'){
+    return {
+      ab:directAb,
+      avg:sourceAvg,
+      hits:directHits??0,
+      homeRuns:directHr??0,
+      rbi:directRbi??0,
+      finalStatsReconciled:false
+    };
+  }
+
+  // CPBL final payloads can revert season totals to the pregame snapshot while
+  // preserving gameAb/gameHits/gameHomeRuns/gameRbi. Re-apply the game line so
+  // the landscape lineup does not lose statistics after the game becomes final.
+  // If explicit pregameAb exists and the season AB is already beyond it, assume
+  // the source already incorporated the game and do not double-add.
+  const shouldAddGame = gameAb!==null && (pregameAb===null || directAb===null || directAb<=pregameAb);
+  if(!shouldAddGame){
+    return {
+      ab:directAb,
+      avg:sourceAvg,
+      hits:directHits??0,
+      homeRuns:directHr??0,
+      rbi:directRbi??0,
+      finalStatsReconciled:false
+    };
+  }
+
+  const ab=(directAb??0)+(gameAb??0);
+  const hits=(directHits??0)+(gameHits??0);
+  const homeRuns=(directHr??0)+(gameHr??0);
+  const rbi=(directRbi??0)+(gameRbi??0);
+  return {
+    ab,
+    avg:formatAverage(hits,ab,sourceAvg),
+    hits,
+    homeRuns,
+    rbi,
+    finalStatsReconciled:true
+  };
+}
 
   function rawRoster(detail, side) {
     const raw = detail?.lineups?.[side];
@@ -719,7 +740,7 @@
     const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
     const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
     const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
-    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.order||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
   }
 
   function currentPitcherInfo(detail,side) {
