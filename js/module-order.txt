@@ -21,6 +21,7 @@
 11d-npb-home-inning-dom.js
 11e-cpbl-pregame-starter-stats.js
 11f-cpbl-live-fallback.js
+11g-cpbl-runner-name-fix.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
