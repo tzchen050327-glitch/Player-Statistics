@@ -17,6 +17,7 @@
 11a-home-cpbl-level-label.js
 12-player-pages.js
 13-daily-editor.js
+13a-daily-sync-progress.js
 14-photo-template-ui.js
 15-render-controller.js
 15a-cpbl-level-consistency.js
