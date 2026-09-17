@@ -1,8 +1,9 @@
 (() => {
-  const VERSION = 'v3.10';
+  const VERSION = 'v3.11';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
+  const SIGNAL_TABLE = 'npb_live_revision_signal';
 
   let client = null;
   let channel = null;
@@ -10,6 +11,8 @@
   let lastRevision = -1;
   let loader = null;
   let watchdogTimer = 0;
+  let signalSerial = 0;
+  const inflightPublished = new Map();
 
   window.__npbRealtimeConnected = false;
 
@@ -89,7 +92,6 @@
   }
   window.__npbRealtimeReadPublished = readPublished;
 
-
   async function readRevision(date, gameId) {
     const d = String(date || '').trim();
     const id = String(gameId || '').trim();
@@ -97,16 +99,28 @@
     const query = new URLSearchParams({
       game_date:`eq.${d}`,
       game_id:`eq.${id}`,
-      select:'game_date,game_id,status,published_revision,published_at',
+      select:'game_date,game_id,status,published_revision,published_at,changed_at',
       limit:'1'
     });
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/npb_live_game_cache?${query}`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SIGNAL_TABLE}?${query}`, {
       headers:{ apikey:ANON_KEY, authorization:`Bearer ${ANON_KEY}` },
       cache:'no-store'
     });
     if (!response.ok) return null;
     const rows = await response.json().catch(() => []);
     return Array.isArray(rows) ? rows[0] || null : null;
+  }
+
+  function publishedKey(date, gameId, revision) {
+    return `${date}|${gameId}|${Number(revision ?? -1)}`;
+  }
+
+  async function readPublishedForRevision(date, gameId, revision) {
+    const key = publishedKey(date, gameId, revision);
+    if (inflightPublished.has(key)) return inflightPublished.get(key);
+    const task = readPublished(date, gameId).finally(() => inflightPublished.delete(key));
+    inflightPublished.set(key, task);
+    return task;
   }
 
   function stopWatchdog() {
@@ -124,7 +138,7 @@
         if (!meta || !watch || watch.date !== current.date || watch.gameId !== current.gameId) return;
         const revision = Number(meta.published_revision ?? -1);
         if (!Number.isFinite(revision) || revision <= lastRevision) return;
-        const published = await readPublished(current.date, current.gameId);
+        const published = await readPublishedForRevision(current.date, current.gameId, revision);
         if (published?.row && watch && watch.date === current.date && watch.gameId === current.gameId) acceptRow(published.row);
       } catch {}
     }, 12000);
@@ -144,12 +158,28 @@
     if (terminalStatus(status)) stopWatch(false);
   }
 
+  async function acceptSignal(signal) {
+    const current = watch ? { ...watch } : null;
+    if (!current || !signal) return;
+    if (String(signal.game_id || '') !== current.gameId || String(signal.game_date || '') !== current.date) return;
+    const revision = Number(signal.published_revision ?? -1);
+    if (!Number.isFinite(revision) || revision <= lastRevision) return;
+    const serial = ++signalSerial;
+    try {
+      const published = await readPublishedForRevision(current.date, current.gameId, revision);
+      if (serial !== signalSerial || !watch) return;
+      if (watch.date !== current.date || watch.gameId !== current.gameId) return;
+      if (published?.row) acceptRow(published.row);
+    } catch {}
+  }
+
   async function stopWatch(emit = true) {
     stopWatchdog();
     const old = channel;
     channel = null;
     watch = null;
     lastRevision = -1;
+    signalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
     }
@@ -166,10 +196,10 @@
     try {
       const sb = await getClient();
       if (!watch || watch.date !== date || watch.gameId !== gameId) return;
-      channel = sb.channel(`npb-live-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
+      channel = sb.channel(`npb-live-signal-${date}-${gameId}-${Math.random().toString(36).slice(2,8)}`)
         .on('postgres_changes', {
-          event:'*', schema:'public', table:'npb_live_game_cache', filter:`game_id=eq.${gameId}`
-        }, payload => acceptRow(payload?.new))
+          event:'*', schema:'public', table:SIGNAL_TABLE, filter:`game_id=eq.${gameId}`
+        }, payload => { void acceptSignal(payload?.new); })
         .subscribe(status => {
           if (status === 'SUBSCRIBED') emitStatus(true, 'subscribed');
           else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitStatus(false, status);
