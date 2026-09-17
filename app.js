@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.74';
+    const APP_VERSION = 'v3.75';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.74';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.74';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.75';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.75';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7807,8 +7807,12 @@ bg2: {
   let timer = 0;
   let countdown = 0;
   let latest = null;
-  let lastRevision = -1;
   let nextAt = 0;
+  const lastRevisionByGame = new Map();
+
+  const keyOf = value => value
+    ? `${String(value.date || '')}|${String(value.kindCode || 'A').toUpperCase()}|${String(value.gameId || '')}`
+    : '';
 
   function stop() {
     if (timer) clearInterval(timer);
@@ -7826,19 +7830,28 @@ bg2: {
     if (el.textContent !== text) el.textContent = text;
   }
 
-  async function poll() {
-    if (!latest || document.visibilityState !== 'visible' || window.__cpblRealtimeConnected) return;
+  async function poll(forceApply = false) {
+    if (!latest || document.visibilityState !== 'visible') return;
+    if (window.__cpblRealtimeConnected && !forceApply) return;
     const read = window.__cpblRealtimeReadPublished;
     if (typeof read !== 'function') return;
+
+    const target = { ...latest };
+    const key = keyOf(target);
     try {
-      const result = await read(latest.date, latest.gameId, latest.kindCode || 'A');
+      const result = await read(target.date, target.gameId, target.kindCode || 'A');
+      if (!latest || keyOf(latest) !== key) return;
       const row = result?.row || null;
       const detail = result?.detail || null;
       const rev = Number(row?.published_revision ?? -1);
-      if (!detail?.game || !Number.isFinite(rev) || rev <= lastRevision) return;
-      lastRevision = rev;
+      if (!detail?.game || !Number.isFinite(rev)) return;
+
+      const previous = Number(lastRevisionByGame.get(key) ?? -1);
+      if (!forceApply && rev <= previous) return;
+      if (rev > previous) lastRevisionByGame.set(key, rev);
+
       window.dispatchEvent(new CustomEvent('cpbl-live-cache-update', {
-        detail:{ row, detail, version:'v3.72-fallback45' }
+        detail:{ row, detail, version:'v3.75-fallback45' }
       }));
     } catch {}
   }
@@ -7850,14 +7863,14 @@ bg2: {
     updateLabel();
     countdown = setInterval(() => updateLabel(), 1000);
     timer = setInterval(async () => {
-      await poll();
+      await poll(false);
       nextAt = Date.now() + INTERVAL;
       updateLabel();
     }, INTERVAL);
-    void poll();
+    void poll(false);
   }
 
-  // The legacy detail scheduler still owns a five-minute fallback timer.  Keep its
+  // The legacy detail scheduler still owns a five-minute fallback timer. Keep its
   // text from overwriting the real 45-second REST fallback while Realtime is down.
   const observer = new MutationObserver(mutations => {
     if (!latest || window.__cpblRealtimeConnected || !nextAt) return;
@@ -7890,14 +7903,29 @@ bg2: {
   });
 
   window.addEventListener('cpbl-live-realtime-status', event => {
-    if (event?.detail?.connected) stop();
-    else start();
+    if (event?.detail?.connected) {
+      stop();
+      // Reconcile once on (re)connect in case a mobile browser slept through updates.
+      void poll(true);
+    } else {
+      start();
+    }
   });
 
+  function reconcileVisiblePage() {
+    if (!latest || document.visibilityState !== 'visible') return;
+    // Mobile browsers can keep a stale "connected" flag after backgrounding.
+    // Always compare with the published cache immediately when the page wakes.
+    void poll(true);
+    if (!window.__cpblRealtimeConnected) start();
+  }
+
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') start();
+    if (document.visibilityState === 'visible') reconcileVisiblePage();
     else stop();
   });
+  window.addEventListener('focus', reconcileVisiblePage);
+  window.addEventListener('pageshow', reconcileVisiblePage);
 })();
 (() => {
   // CPBL live runner fix: keep occupied bases and runner identities in sync when current.* lags one PA.
