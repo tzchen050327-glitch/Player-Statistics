@@ -31,12 +31,14 @@ jobs:
         shell: bash
         run: |
           test -s js/module-order.txt
+          node --check js/module-loader.js
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             test -f "js/$f"
             node --check "js/$f"
           done < js/module-order.txt
           node --check app.js
+          node --check service-worker.js
       - name: Verify generated bundle
         run: python3 scripts/build-app.py --check
       - name: Validate version wiring and core guards
@@ -47,12 +49,16 @@ jobs:
           bundle = Path('app.js').read_text(encoding='utf-8')
           html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('service-worker.js').read_text(encoding='utf-8')
+          loader = Path('js/module-loader.js').read_text(encoding='utf-8')
           v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
           m = re.search(r"const APP_VERSION = '([^']+)';", bundle)
           assert m and m.group(1) == v
           assert f'<meta name="app-version" content="{v}" />' in html
-          assert f'./app.js?v={v}' in html
-          assert f'./app.js?v={v}' in sw
+          assert f'./js/module-loader.js?v={v}' in html
+          assert './app.js?v=' not in html
+          assert './app.js?v=' not in sw
+          assert "const MODULE_ORDER_URL = './js/module-order.txt';" in sw
+          assert './js/module-order.txt' in loader
           for needle in ['function setSyncUiLocked(locked)', 'async function importCpblDaily(player)', 'function seasonStatsForOutputRole(player, role)', 'bootApp();']:
               assert needle in bundle, f'missing guard: {needle}'
-          print('validated canonical source', v)
+          print('validated modular runtime', v)
