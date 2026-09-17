@@ -16,6 +16,7 @@
 13-daily-editor.js
 14-photo-template-ui.js
 15-render-controller.js
+15a-cpbl-level-consistency.js
 16-daily-canvas.js
 17-canvas-backgrounds.js
 18-canvas-utils.js
