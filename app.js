@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.73';
+    const APP_VERSION = 'v3.74';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.73';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.73';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.74';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.74';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7900,8 +7900,8 @@ bg2: {
   });
 })();
 (() => {
-  // CPBL runner-name live fix: keep occupied-base identities when current.runners lags.
-  const RUNNER_FIX_VERSION = 'runner-fix-v1';
+  // CPBL live runner fix: keep occupied bases and runner identities in sync when current.* lags one PA.
+  const RUNNER_FIX_VERSION = 'runner-fix-v2';
   let latest = null;
   let timer = 0;
 
@@ -7927,35 +7927,40 @@ bg2: {
     return Number(play?.inning) === Number(m[1]) && txt(play?.half) === (m[2] === '上' ? 'top' : 'bottom');
   }
 
-  function namesFor(detail) {
-    const direct = detail?.current?.runners || {};
-    let names = {
-      first:txt(direct.first || direct.firstBase || direct[1] || direct.base1),
-      second:txt(direct.second || direct.secondBase || direct[2] || direct.base2),
-      third:txt(direct.third || direct.thirdBase || direct[3] || direct.base3)
-    };
-    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
-    const last = plays.at(-1) || null;
-    const after = sameCurrentHalf(detail,last) ? (last?.runnersAfter || {}) : {};
-    for (const key of ['first','second','third']) {
-      if (!names[key]) names[key] = txt(after?.[key]);
-    }
-    return names;
-  }
-
-  function stateFor(detail) {
+  function stateInfo(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays.at(-1) || null;
     const current = boolState(detail?.current?.baseState ?? detail?.current?.bases ?? '');
-    if (!last || !sameCurrentHalf(detail,last)) return current;
+    if (!last || !sameCurrentHalf(detail,last)) return { state:current, useAfter:false, last };
+
     const afterRaw = last?.baseStateAfter ?? last?.basesAfter;
-    if (afterRaw === undefined || afterRaw === null) return current;
-    const before = boolState(last?.baseState ?? last?.bases ?? last?.baseStateBefore ?? last?.basesBefore ?? '');
+    if (afterRaw === undefined || afterRaw === null) return { state:current, useAfter:false, last };
+
+    // IMPORTANT: CPBL play.baseState / play.bases can already be the post-PA state.
+    // Prefer the explicit *Before fields when deciding whether current.* is one PA behind.
+    const beforeRaw = last?.baseStateBefore ?? last?.basesBefore ?? last?.baseState ?? last?.bases ?? '';
+    const before = boolState(beforeRaw);
     const after = boolState(afterRaw);
     const currentKey = `${+current.first}${+current.second}${+current.third}`;
     const beforeKey = `${+before.first}${+before.second}${+before.third}`;
     const afterKey = `${+after.first}${+after.second}${+after.third}`;
-    return currentKey === beforeKey && beforeKey !== afterKey ? after : current;
+    const useAfter = currentKey === beforeKey && beforeKey !== afterKey;
+    return { state:useAfter ? after : current, useAfter, last };
+  }
+
+  function namesFor(detail, info) {
+    const direct = detail?.current?.runners || {};
+    const after = info?.last && sameCurrentHalf(detail, info.last) ? (info.last?.runnersAfter || {}) : {};
+    const names = {
+      first:txt(direct.first || direct.firstBase || direct[1] || direct.base1),
+      second:txt(direct.second || direct.secondBase || direct[2] || direct.base2),
+      third:txt(direct.third || direct.thirdBase || direct[3] || direct.base3)
+    };
+    for (const key of ['first','second','third']) {
+      if (info?.useAfter && txt(after?.[key])) names[key] = txt(after[key]);
+      else if (!names[key]) names[key] = txt(after?.[key]);
+    }
+    return names;
   }
 
   function patch() {
@@ -7964,12 +7969,15 @@ bg2: {
     if (!detail || txt(detail?.league).toUpperCase() !== 'CPBL') return;
     const root = document.querySelector('#homeGameDetailBody');
     if (!root) return;
-    const state = stateFor(detail);
-    const names = namesFor(detail);
+
+    const info = stateInfo(detail);
+    const state = info.state;
+    const names = namesFor(detail, info);
     for (const key of ['first','second','third']) {
-      const el = root.querySelector(`.gdx-runner-name-${key}`);
-      if (!el || !state[key]) continue;
-      if ((!txt(el.textContent) || txt(el.textContent) === '—') && names[key]) el.textContent = names[key];
+      const base = root.querySelector(`.gdx-runner-base.gdx-runner-${key}`);
+      const name = root.querySelector(`.gdx-runner-name-${key}`);
+      if (base) base.classList.toggle('is-on', !!state[key]);
+      if (name) name.textContent = state[key] ? (names[key] || '—') : '';
     }
   }
 
