@@ -3,8 +3,12 @@
   let timer = 0;
   let countdown = 0;
   let latest = null;
-  let lastRevision = -1;
   let nextAt = 0;
+  const lastRevisionByGame = new Map();
+
+  const keyOf = value => value
+    ? `${String(value.date || '')}|${String(value.kindCode || 'A').toUpperCase()}|${String(value.gameId || '')}`
+    : '';
 
   function stop() {
     if (timer) clearInterval(timer);
@@ -22,19 +26,28 @@
     if (el.textContent !== text) el.textContent = text;
   }
 
-  async function poll() {
-    if (!latest || document.visibilityState !== 'visible' || window.__cpblRealtimeConnected) return;
+  async function poll(forceApply = false) {
+    if (!latest || document.visibilityState !== 'visible') return;
+    if (window.__cpblRealtimeConnected && !forceApply) return;
     const read = window.__cpblRealtimeReadPublished;
     if (typeof read !== 'function') return;
+
+    const target = { ...latest };
+    const key = keyOf(target);
     try {
-      const result = await read(latest.date, latest.gameId, latest.kindCode || 'A');
+      const result = await read(target.date, target.gameId, target.kindCode || 'A');
+      if (!latest || keyOf(latest) !== key) return;
       const row = result?.row || null;
       const detail = result?.detail || null;
       const rev = Number(row?.published_revision ?? -1);
-      if (!detail?.game || !Number.isFinite(rev) || rev <= lastRevision) return;
-      lastRevision = rev;
+      if (!detail?.game || !Number.isFinite(rev)) return;
+
+      const previous = Number(lastRevisionByGame.get(key) ?? -1);
+      if (!forceApply && rev <= previous) return;
+      if (rev > previous) lastRevisionByGame.set(key, rev);
+
       window.dispatchEvent(new CustomEvent('cpbl-live-cache-update', {
-        detail:{ row, detail, version:'v3.72-fallback45' }
+        detail:{ row, detail, version:'v3.75-fallback45' }
       }));
     } catch {}
   }
@@ -46,14 +59,14 @@
     updateLabel();
     countdown = setInterval(() => updateLabel(), 1000);
     timer = setInterval(async () => {
-      await poll();
+      await poll(false);
       nextAt = Date.now() + INTERVAL;
       updateLabel();
     }, INTERVAL);
-    void poll();
+    void poll(false);
   }
 
-  // The legacy detail scheduler still owns a five-minute fallback timer.  Keep its
+  // The legacy detail scheduler still owns a five-minute fallback timer. Keep its
   // text from overwriting the real 45-second REST fallback while Realtime is down.
   const observer = new MutationObserver(mutations => {
     if (!latest || window.__cpblRealtimeConnected || !nextAt) return;
@@ -86,12 +99,27 @@
   });
 
   window.addEventListener('cpbl-live-realtime-status', event => {
-    if (event?.detail?.connected) stop();
-    else start();
+    if (event?.detail?.connected) {
+      stop();
+      // Reconcile once on (re)connect in case a mobile browser slept through updates.
+      void poll(true);
+    } else {
+      start();
+    }
   });
 
+  function reconcileVisiblePage() {
+    if (!latest || document.visibilityState !== 'visible') return;
+    // Mobile browsers can keep a stale "connected" flag after backgrounding.
+    // Always compare with the published cache immediately when the page wakes.
+    void poll(true);
+    if (!window.__cpblRealtimeConnected) start();
+  }
+
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') start();
+    if (document.visibilityState === 'visible') reconcileVisiblePage();
     else stop();
   });
+  window.addEventListener('focus', reconcileVisiblePage);
+  window.addEventListener('pageshow', reconcileVisiblePage);
 })();
