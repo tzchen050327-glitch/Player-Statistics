@@ -249,6 +249,27 @@
   scheduleImmediateHeartbeat();
 })();
 
+// Pregame rule: once the next scheduled game is more than one hour away,
+// both auto-refresh and switch-back cooldown become exactly one hour.
+(() => {
+  if (typeof homeDailyGamesRefreshDelay !== 'function' || typeof homeDailyGamesStartMs !== 'function') return;
+  const previousRefreshDelay = homeDailyGamesRefreshDelay;
+  homeDailyGamesRefreshDelay = function(league, date, games = []) {
+    const list = Array.isArray(games) ? games : [];
+    const hasLive = list.some(game => ['live','suspended'].includes(String(game?.status || '').toLowerCase()));
+    if (!hasLive) {
+      const starts = list
+        .filter(game => String(game?.status || '').toLowerCase() === 'scheduled')
+        .map(game => homeDailyGamesStartMs(league, date, game?.time))
+        .filter(Number.isFinite);
+      if (starts.length && Math.min(...starts) - Date.now() > 60 * 60 * 1000) {
+        return 60 * 60 * 1000;
+      }
+    }
+    return previousRefreshDelay(league, date, games);
+  };
+})();
+
 // Preserve the user's exact homepage game-list position across automatic rerenders.
 // Applies to CPBL / NPB / KBO / MLB and keeps separate state for each league + date.
 (() => {
