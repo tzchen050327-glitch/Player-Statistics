@@ -9,6 +9,7 @@
 07a-cloud-sync.js
 08-stats-search.js
 09-player-navigation.js
+09a-cpbl-current-level.js
 10-batch-reports.js
 11-home-international.js
 12-player-pages.js
