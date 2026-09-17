@@ -1,5 +1,5 @@
 (() => {
-  const REPORT_LAYOUT_VERSION = 'v2.78';
+  const REPORT_LAYOUT_VERSION = 'v2.79';
 
   function ensureFieldOverlay(root = document) {
     const cards = root.querySelectorAll?.('.gdx-field-card') || [];
@@ -94,7 +94,7 @@
 (() => {
   const HEARTBEAT_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-live-heartbeat';
   const HEARTBEAT_MS = 60_000;
-  const SCOREBOARD_COOLDOWN = {
+  const LIVE_SCOREBOARD_COOLDOWN = {
     CPBL:45_000,
     NPB:45_000,
     KBO:60_000,
@@ -109,6 +109,23 @@
     return Array.isArray(games)
       && games.length > 0
       && games.every(game => TERMINAL_STATUSES.has(String(game?.status || '').toLowerCase()));
+  }
+
+  function requestCooldownMs(league, date, games = []) {
+    const lg = String(league || '').toUpperCase();
+    const liveCooldown = Number(LIVE_SCOREBOARD_COOLDOWN[lg] || 0);
+    const list = Array.isArray(games) ? games : [];
+    if (!list.length) return liveCooldown;
+    if (allTerminal(list)) return Infinity;
+    if (list.some(game => ['live','suspended'].includes(String(game?.status || '').toLowerCase()))) {
+      return liveCooldown;
+    }
+    if (list.some(game => String(game?.status || '').toLowerCase() === 'scheduled')
+        && typeof homeDailyGamesRefreshDelay === 'function') {
+      const delay = Number(homeDailyGamesRefreshDelay(lg, date, list));
+      if (Number.isFinite(delay) && delay > 0) return delay;
+    }
+    return liveCooldown;
   }
 
   function currentLeagueAndDate() {
@@ -150,19 +167,20 @@
     } catch {}
   }
 
-  // All four leagues get a browser-side cooldown. NPB/KBO/MLB share the
-  // persistent league_schedule_cache so rapid country switching cannot fan out
-  // into repeated official-source requests. Completed days stay frozen locally.
+  // Live games keep the short per-league lock. Before first pitch, the browser
+  // lock follows the exact same delay as the existing pregame auto-refresh rule.
+  // NPB/KBO/MLB share the persistent league_schedule_cache; completed days stay frozen.
   if (typeof leagueDailyGamesRequest === 'function' && typeof LEAGUE_GAMES_API_URL !== 'undefined') {
     const originalDailyRequest = leagueDailyGamesRequest;
     leagueDailyGamesRequest = async function(league, date) {
       const lg = String(league || '').toUpperCase();
-      const cooldown = Number(SCOREBOARD_COOLDOWN[lg] || 0);
-      if (!cooldown) return originalDailyRequest(league, date);
+      const baseCooldown = Number(LIVE_SCOREBOARD_COOLDOWN[lg] || 0);
+      if (!baseCooldown) return originalDailyRequest(league, date);
 
       const key = `${lg}|${date}`;
       const now = Date.now();
       const cached = requestCache.get(key);
+      const cooldown = requestCooldownMs(lg, date, cached?.games || []);
       if (cached?.terminal && cached?.games) return cached.games;
       if (cached?.games && now - Number(cached.at || 0) < cooldown) return cached.games;
       if (cached?.promise) return cached.promise;
