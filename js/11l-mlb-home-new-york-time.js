@@ -76,41 +76,17 @@
     return changed;
   }
 
-  function paintScheduledTimes() {
-    if (currentPage !== 'home' || homeDailyGamesLeague() !== 'MLB') return;
-    const date = String(els.gameDate?.value || localISODate());
-    const cached = homeDailyGamesCache.get(`MLB|${date}`);
-    const games = Array.isArray(cached?.games) ? cached.games : [];
-    const cards = els.homeDailyGames?.querySelectorAll?.('.home-game-card') || [];
-
-    cards.forEach((card, index) => {
-      const game = games[index];
-      const time = String(game?.time || '').trim();
-      if (!time) return;
-      const top = card.querySelector('.home-game-card-top');
-      if (!top) return;
-      let node = top.querySelector('.home-game-time');
-      if (!node) {
-        node = document.createElement('span');
-        node.className = 'home-game-time';
-        top.appendChild(node);
-      }
-      node.textContent = time;
-      node.title = '紐約時間';
-    });
-  }
-
   const renderBeforeMlbTime = renderHomeDailyGames;
   renderHomeDailyGames = function renderHomeDailyGamesWithMlbNewYorkTime(options = {}) {
     const result = renderBeforeMlbTime(options);
     if (currentPage === 'home' && homeDailyGamesLeague() === 'MLB') {
       const date = String(els.gameDate?.value || localISODate());
-      paintScheduledTimes();
       void hydrateCachedMlbTimes(date).then(changed => {
         if (!changed) return;
         if (currentPage === 'home' && homeDailyGamesLeague() === 'MLB' && String(els.gameDate?.value || '') === date) {
+          // The base renderer already shows scheduled game time in the status pill,
+          // so do not append a second time label to the right.
           renderBeforeMlbTime({ skipLoad:true });
-          paintScheduledTimes();
           scheduleHomeDailyGamesAutoRefresh();
         }
       });
