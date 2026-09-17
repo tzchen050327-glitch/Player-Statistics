@@ -17,6 +17,7 @@
 11-home-international.js
 11a-home-cpbl-level-label.js
 11b-home-live-inning-label.js
+11c-npb-live-state-fix.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
