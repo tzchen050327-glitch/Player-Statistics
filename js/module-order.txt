@@ -8,6 +8,7 @@
 06a-cpbl-roster-home.js
 07-storage.js
 07a-cloud-sync.js
+07b-cloud-sync-delta.js
 08-stats-search.js
 09-player-navigation.js
 09a-cpbl-current-level.js
