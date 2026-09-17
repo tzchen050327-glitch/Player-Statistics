@@ -26,6 +26,7 @@
 11h-league-schedule-realtime.js
 11i-cpbl-home-inning.js
 11j-cpbl-realtime-rescue.js
+11k-cpbl-defense-substitutions.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
