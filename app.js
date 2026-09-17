@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.85';
+    const APP_VERSION = 'v3.86';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.85';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.85';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.86';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.86';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -2845,6 +2845,19 @@ bg2: {
         console.warn('目前一二軍名單更新失敗，沿用最近一次成功判定', error);
       }
     };
+(() => {
+  const ORIGINAL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
+  const HYDRATED = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail-hydrated';
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = function npbHydratedFetch(input, init) {
+    try {
+      const url = typeof input === 'string' ? input : String(input?.url || '');
+      if (url === ORIGINAL) return nativeFetch(HYDRATED, init);
+    } catch {}
+    return nativeFetch(input, init);
+  };
+})();
     function uid() {
       return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
