@@ -1,4 +1,6 @@
 (() => {
+  // CPBL runner-name live fix: keep occupied-base identities when current.runners lags.
+  const RUNNER_FIX_VERSION = 'runner-fix-v1';
   let latest = null;
   let timer = 0;
 
@@ -79,4 +81,5 @@
 
   window.addEventListener('home-game-detail-state', event => schedule(event?.detail?.detail));
   window.addEventListener('cpbl-live-cache-update', event => schedule(event?.detail?.detail || event?.detail?.row?.published_payload));
+  void RUNNER_FIX_VERSION;
 })();
