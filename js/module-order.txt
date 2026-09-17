@@ -5,6 +5,7 @@
 04-provider-season.js
 05-provider-international.js
 06-provider-cpbl.js
+06a-cpbl-roster-home.js
 07-storage.js
 07a-cloud-sync.js
 08-stats-search.js
