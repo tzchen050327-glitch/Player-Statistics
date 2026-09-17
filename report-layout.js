@@ -221,3 +221,112 @@
   setInterval(() => { void sendHeartbeat(); }, HEARTBEAT_MS);
   scheduleImmediateHeartbeat();
 })();
+
+// Preserve the user's exact homepage game-list position across automatic rerenders.
+// Applies to CPBL / NPB / KBO / MLB and keeps separate state for each league + date.
+(() => {
+  if (typeof renderHomeDailyGames !== 'function') return;
+
+  const originalRenderHomeDailyGames = renderHomeDailyGames;
+  const positions = new Map();
+  let renderedKey = '';
+
+  function currentKey() {
+    try {
+      const league = typeof homeDailyGamesLeague === 'function' ? String(homeDailyGamesLeague() || '').toUpperCase() : '';
+      const date = String((typeof els !== 'undefined' && els?.gameDate?.value) || (typeof localISODate === 'function' ? localISODate() : '') || '');
+      if (!['CPBL','NPB','KBO','MLB'].includes(league) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+      return `${league}|${date}`;
+    } catch {
+      return '';
+    }
+  }
+
+  function signature(el) {
+    if (!el || el.nodeType !== 1) return '';
+    if (el.id) return `#${el.id}`;
+    const tag = String(el.tagName || '').toLowerCase();
+    const classes = [...(el.classList || [])].sort().join('.');
+    return `${tag}${classes ? '.' + classes : ''}`;
+  }
+
+  function scrollableEntries(host) {
+    if (!host) return [];
+    const all = [host, ...host.querySelectorAll('*')];
+    const counts = new Map();
+    const out = [];
+    for (const el of all) {
+      const horizontal = Number(el.scrollWidth) > Number(el.clientWidth) + 1;
+      const vertical = Number(el.scrollHeight) > Number(el.clientHeight) + 1;
+      if (!horizontal && !vertical && !el.scrollLeft && !el.scrollTop) continue;
+      const sig = signature(el);
+      if (!sig) continue;
+      const index = counts.get(sig) || 0;
+      counts.set(sig, index + 1);
+      out.push({ sig, index, left:Number(el.scrollLeft) || 0, top:Number(el.scrollTop) || 0 });
+    }
+    return out;
+  }
+
+  function save(key) {
+    if (!key) return;
+    const host = (typeof els !== 'undefined' && els?.homeDailyGames) || document.getElementById('homeDailyGames');
+    if (!host) return;
+    const scrollers = scrollableEntries(host);
+    // During an intermediate loading frame the list can temporarily have no
+    // scrollable children. Do not overwrite a valid saved position with that.
+    const previous = positions.get(key);
+    positions.set(key, {
+      scrollers: scrollers.length ? scrollers : (previous?.scrollers || []),
+      windowX: window.scrollX || 0,
+      windowY: window.scrollY || 0
+    });
+  }
+
+  function restore(key) {
+    if (!key) return;
+    const state = positions.get(key);
+    if (!state) return;
+    const host = (typeof els !== 'undefined' && els?.homeDailyGames) || document.getElementById('homeDailyGames');
+    if (!host) return;
+
+    const all = [host, ...host.querySelectorAll('*')];
+    const grouped = new Map();
+    for (const el of all) {
+      const sig = signature(el);
+      if (!sig) continue;
+      if (!grouped.has(sig)) grouped.set(sig, []);
+      grouped.get(sig).push(el);
+    }
+
+    for (const item of state.scrollers || []) {
+      const el = grouped.get(item.sig)?.[item.index];
+      if (!el) continue;
+      const maxLeft = Math.max(0, Number(el.scrollWidth) - Number(el.clientWidth));
+      const maxTop = Math.max(0, Number(el.scrollHeight) - Number(el.clientHeight));
+      el.scrollLeft = Math.min(Math.max(0, Number(item.left) || 0), maxLeft);
+      el.scrollTop = Math.min(Math.max(0, Number(item.top) || 0), maxTop);
+    }
+
+    window.scrollTo({ left:Number(state.windowX) || 0, top:Number(state.windowY) || 0, behavior:'auto' });
+  }
+
+  renderedKey = currentKey();
+
+  renderHomeDailyGames = function(...args) {
+    // renderedKey describes the DOM that is currently on screen. This matters
+    // when the user intentionally switches league/date before the next render.
+    if (renderedKey) save(renderedKey);
+
+    const result = originalRenderHomeDailyGames.apply(this, args);
+    const nextKey = currentKey();
+    renderedKey = nextKey;
+
+    // innerHTML replacement is synchronous, but one animation frame lets layout
+    // recalculate scrollWidth/clientWidth before clamping the saved position.
+    requestAnimationFrame(() => {
+      if (currentKey() === nextKey) restore(nextKey);
+    });
+    return result;
+  };
+})();
