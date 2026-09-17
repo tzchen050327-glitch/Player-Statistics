@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.53';
+    const APP_VERSION = 'v3.54';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.53';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.53';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.54';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.54';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -4809,45 +4809,27 @@ bg2: {
       renderAll();
     }
 
-    // Keep CPBL player-page level aligned with the official current roster when entering a player.
-    // The base/minor tabs encode A/D in renderAll(), so selectedTab must move together with selectedLevel.
+    // CPBL current roster is already refreshed on app startup for the homepage.
+    // Reuse that cached result when opening a player instead of issuing another roster request.
+    // While the original navigation/sync runs, render-controller consistency code keeps
+    // selectedTab / selectedLevel / player.stats on the same A/D profile.
     const selectPlayerBeforeCpblCurrentLevelFix = selectPlayer;
+    let cpblEntryPreferredLevelState = null;
 
-    async function refreshSelectedCpblCurrentLevel(player) {
-      if (!player || playerScope(player) !== 'cpbl' || !player.cpblAcnt) return;
-      try {
-        const data = await promiseTimeout(
-          cpblRequest('current-roster', { acnt: player.cpblAcnt }),
-          4500,
-          '目前一二軍狀態查詢逾時'
-        );
-        const current = data?.player || null;
-        if (!current) return;
-
-        if (current.team) player.cpblTeam = normalizeTeamName(current.team);
-        if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
-        if (current.number) player.number = String(current.number);
-        const level = String(current.level || '').toUpperCase();
-        if (level === 'A' || level === 'D') player.cpblCurrentLevel = level;
-        repairStoredCpblPlayerType(player, current.position || '');
-        player.cpblRosterUpdatedAt = Date.now();
-        await savePlayer(player);
-      } catch (error) {
-        console.warn('進入球員頁時目前一二軍狀態更新失敗，沿用最近一次判定', error);
-      }
+    function cpblCachedCurrentLevel(player) {
+      if (!player || playerScope(player) !== 'cpbl') return '';
+      const level = String(player.cpblCurrentLevel || '').toUpperCase();
+      return level === 'A' || level === 'D' ? level : '';
     }
 
-    async function alignSelectedCpblCurrentLevel(player) {
-      if (!player || playerScope(player) !== 'cpbl') return;
-      const level = String(player.cpblCurrentLevel || '').toUpperCase();
-      if (level !== 'A' && level !== 'D') return;
+    async function alignSelectedCpblCurrentLevel(player, level = cpblCachedCurrentLevel(player)) {
+      if (!player || playerScope(player) !== 'cpbl' || (level !== 'A' && level !== 'D')) return;
 
-      if (selectedLevel !== level) persistActiveStatsProfile(player);
       selectedLevel = level;
       selectedTab = level === 'D' ? 'minor' : 'base';
 
       const years = availableSeasonYears(player, level);
-      selectedSeason = years[0] || CURRENT_YEAR;
+      selectedSeason = years.includes(CURRENT_YEAR) ? CURRENT_YEAR : (years[0] || CURRENT_YEAR);
       activatePlayerStatsProfile(player, selectedSeason, level);
       await loadRecord();
       renderAll();
@@ -4855,15 +4837,24 @@ bg2: {
 
     selectPlayer = async function selectPlayerWithCpblCurrentLevel(id) {
       const enteringPlayer = players.find(player => player.id === id) || null;
-      if (enteringPlayer && playerScope(enteringPlayer) === 'cpbl' && enteringPlayer.cpblAcnt) {
-        await refreshSelectedCpblCurrentLevel(enteringPlayer);
+      const preferredLevel = cpblCachedCurrentLevel(enteringPlayer);
+
+      cpblEntryPreferredLevelState = preferredLevel
+        ? { playerId: id, level: preferredLevel }
+        : null;
+
+      try {
+        await selectPlayerBeforeCpblCurrentLevelFix(id);
+
+        const player = selectedPlayer();
+        if (!player || player.id !== id || currentPage !== 'player') return;
+
+        // Re-assert the homepage roster decision after season-history sync finishes.
+        // This prevents a final render from showing D stats inside the A form (or vice versa).
+        await alignSelectedCpblCurrentLevel(player, cpblCachedCurrentLevel(player) || preferredLevel);
+      } finally {
+        cpblEntryPreferredLevelState = null;
       }
-
-      await selectPlayerBeforeCpblCurrentLevelFix(id);
-
-      const player = selectedPlayer();
-      if (!player || player.id !== id || currentPage !== 'player') return;
-      await alignSelectedCpblCurrentLevel(player);
     };
     function clearBatchReportOutputs() {
       for (const output of batchReportOutputs) {
@@ -8937,6 +8928,47 @@ bg2: {
       ctx.restore();
     }
 
+    // renderAll historically treated the tab as A/D authority, but it only changed selectedLevel.
+    // If player.stats still belonged to the other level, the form could show D numbers under A
+    // while the annual canvas (which reads the keyed profile) remained correct.
+    const renderAllBeforeCpblLevelConsistency = renderAll;
+
+    function synchronizeRenderedLeagueLevel() {
+      const player = selectedPlayer();
+      if (!player || currentPage !== 'player' || !supportsLeagueLevelTabs(player)) return;
+
+      let expectedLevel = '';
+
+      if (
+        playerScope(player) === 'cpbl'
+        && cpblEntryPreferredLevelState
+        && cpblEntryPreferredLevelState.playerId === player.id
+        && ['A','D'].includes(cpblEntryPreferredLevelState.level)
+      ) {
+        expectedLevel = cpblEntryPreferredLevelState.level;
+        selectedTab = expectedLevel === 'D' ? 'minor' : 'base';
+      } else if (selectedTab === 'base') {
+        expectedLevel = 'A';
+      } else if (selectedTab === 'minor') {
+        expectedLevel = 'D';
+      } else if (selectedTab === 'secondary' && supportsUsDualRoleTabs(player)) {
+        expectedLevel = 'A';
+      }
+
+      if (!expectedLevel || selectedLevel === expectedLevel) return;
+
+      selectedLevel = expectedLevel;
+      const years = availableSeasonYears(player, expectedLevel);
+      if (!years.includes(selectedSeason)) {
+        selectedSeason = years.includes(CURRENT_YEAR) ? CURRENT_YEAR : (years[0] || CURRENT_YEAR);
+      }
+      activatePlayerStatsProfile(player, selectedSeason, expectedLevel);
+    }
+
+    renderAll = function renderAllWithCpblLevelConsistency() {
+      synchronizeRenderedLeagueLevel();
+      return renderAllBeforeCpblLevelConsistency();
+    };
     async function renderCanvas() {
       const token = ++renderToken;
       const ctx = els.canvas.getContext('2d');
