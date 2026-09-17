@@ -11,6 +11,7 @@
 08-stats-search.js
 09-player-navigation.js
 09a-cpbl-current-level.js
+09b-cpbl-entry-prefetch.js
 10-batch-reports.js
 11-home-international.js
 11a-home-cpbl-level-label.js
