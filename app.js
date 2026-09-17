@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.63';
+    const APP_VERSION = 'v3.64';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.63';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.63';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.64';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.64';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7630,6 +7630,47 @@ bg2: {
       if (npbLiveStateDetail) scheduleNpbLiveStatePatch();
     });
     if (document.body) npbStateObserver.observe(document.body, { childList:true, subtree:true });
+    /* ---------- NPB home inning DOM patch ---------- */
+    // The daily schedule feed intentionally contains only status/score. NPB's current
+    // inning lives in the shared detail cache. Patch the rendered home cards directly
+    // from the tiny summary RPC so the label cannot be lost by an intermediate cache.
+    const renderHomeDailyGamesBeforeNpbInningDom = renderHomeDailyGames;
+    let npbHomeInningDomRequestSeq = 0;
+
+    async function patchNpbHomeInningDom() {
+      if (currentPage !== 'home' || homeDailyGamesLeague() !== 'NPB') return;
+      const date = String(els.gameDate?.value || localISODate());
+      const key = `NPB|${date}`;
+      const cached = homeDailyGamesCache.get(key);
+      const games = Array.isArray(cached?.games) ? cached.games : [];
+      if (!games.some(game => String(game?.status || '').toLowerCase() === 'live')) return;
+
+      const seq = ++npbHomeInningDomRequestSeq;
+      const labels = await homeNpbLiveInningLabels(date);
+      if (seq !== npbHomeInningDomRequestSeq) return;
+      if (currentPage !== 'home' || homeDailyGamesLeague() !== 'NPB' || String(els.gameDate?.value || localISODate()) !== date) return;
+      if (!labels?.size) return;
+
+      const host = els.homeDailyGames;
+      if (!host) return;
+      host.querySelectorAll('.home-game-card[data-game-detail-index]').forEach(card => {
+        const index = Number(card.getAttribute('data-game-detail-index'));
+        if (!Number.isInteger(index) || index < 0 || index >= games.length) return;
+        const game = games[index];
+        if (String(game?.status || '').toLowerCase() !== 'live') return;
+        const label = String(labels.get(String(game?.id || '')) || '').trim();
+        if (!label) return;
+        game.inningLabel = label;
+        const statusEl = card.querySelector('.home-game-status');
+        if (statusEl) statusEl.textContent = label;
+      });
+    }
+
+    renderHomeDailyGames = function renderHomeDailyGamesWithNpbInningDom(options = {}) {
+      const result = renderHomeDailyGamesBeforeNpbInningDom(options);
+      queueMicrotask(() => { void patchNpbHomeInningDom(); });
+      return result;
+    };
     function selectedLevelSecondaryStats(player) {
       if (!player) return null;
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
