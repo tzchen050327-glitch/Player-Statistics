@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.71';
+    const APP_VERSION = 'v3.72';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.71';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.71';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.72';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.72';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7808,19 +7808,22 @@ bg2: {
   let countdown = 0;
   let latest = null;
   let lastRevision = -1;
+  let nextAt = 0;
 
   function stop() {
     if (timer) clearInterval(timer);
     if (countdown) clearInterval(countdown);
     timer = 0;
     countdown = 0;
+    nextAt = 0;
   }
 
-  function updateLabel(nextAt) {
+  function updateLabel(at = nextAt) {
     const el = document.getElementById('homeGameDetailRefreshCountdown');
-    if (!el || window.__cpblRealtimeConnected) return;
-    const sec = Math.max(0, Math.ceil((nextAt - Date.now()) / 1000));
-    el.textContent = `${sec}秒後更新`;
+    if (!el || !latest || window.__cpblRealtimeConnected || !at) return;
+    const sec = Math.max(0, Math.min(45, Math.ceil((at - Date.now()) / 1000)));
+    const text = `${sec}秒後更新`;
+    if (el.textContent !== text) el.textContent = text;
   }
 
   async function poll() {
@@ -7835,7 +7838,7 @@ bg2: {
       if (!detail?.game || !Number.isFinite(rev) || rev <= lastRevision) return;
       lastRevision = rev;
       window.dispatchEvent(new CustomEvent('cpbl-live-cache-update', {
-        detail:{ row, detail, version:'v3.68-fallback45' }
+        detail:{ row, detail, version:'v3.72-fallback45' }
       }));
     } catch {}
   }
@@ -7843,16 +7846,34 @@ bg2: {
   function start() {
     stop();
     if (!latest || window.__cpblRealtimeConnected) return;
-    let nextAt = Date.now() + INTERVAL;
-    updateLabel(nextAt);
-    countdown = setInterval(() => updateLabel(nextAt), 1000);
+    nextAt = Date.now() + INTERVAL;
+    updateLabel();
+    countdown = setInterval(() => updateLabel(), 1000);
     timer = setInterval(async () => {
       await poll();
       nextAt = Date.now() + INTERVAL;
-      updateLabel(nextAt);
+      updateLabel();
     }, INTERVAL);
     void poll();
   }
+
+  // The legacy detail scheduler still owns a five-minute fallback timer.  Keep its
+  // text from overwriting the real 45-second REST fallback while Realtime is down.
+  const observer = new MutationObserver(mutations => {
+    if (!latest || window.__cpblRealtimeConnected || !nextAt) return;
+    for (const mutation of mutations) {
+      const node = mutation.target?.nodeType === 3 ? mutation.target.parentElement : mutation.target;
+      if (node?.id === 'homeGameDetailRefreshCountdown' || node?.querySelector?.('#homeGameDetailRefreshCountdown')) {
+        queueMicrotask(() => updateLabel());
+        break;
+      }
+    }
+  });
+  const observeRoot = () => {
+    if (document.body) observer.observe(document.body, { subtree:true, childList:true, characterData:true });
+    else setTimeout(observeRoot, 50);
+  };
+  observeRoot();
 
   window.addEventListener('home-game-detail-state', event => {
     const detail = event?.detail?.detail || null;
