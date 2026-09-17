@@ -26,6 +26,16 @@
     if (el) el.textContent = message;
   }
 
+  function preloadScripts(paths) {
+    for (const path of paths) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'script';
+      link.href = versioned(path);
+      document.head.appendChild(link);
+    }
+  }
+
   function loadClassicScript(path) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -51,13 +61,19 @@
 
   async function bootModularApp() {
     try {
+      const orderPromise = loadModuleOrder();
+      preloadScripts(beforeModules);
+
       setStartupStatus('載入即時資料模組…');
       for (const path of beforeModules) await loadClassicScript(path);
 
-      const order = await loadModuleOrder();
-      for (let i = 0; i < order.length; i += 1) {
-        setStartupStatus(`載入程式模組 ${i + 1}/${order.length}…`);
-        await loadClassicScript(`./js/${order[i]}`);
+      const order = await orderPromise;
+      const modulePaths = order.map((name) => `./js/${name}`);
+      preloadScripts([...modulePaths, ...afterModules]);
+
+      for (let i = 0; i < modulePaths.length; i += 1) {
+        setStartupStatus(`載入程式模組 ${i + 1}/${modulePaths.length}…`);
+        await loadClassicScript(modulePaths[i]);
       }
 
       setStartupStatus('載入介面擴充模組…');
