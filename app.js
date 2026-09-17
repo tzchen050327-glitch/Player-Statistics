@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.55';
+    const APP_VERSION = 'v3.56';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.55';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.55';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.56';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.56';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7244,6 +7244,30 @@ bg2: {
         });
       });
     }
+    // Homepage display should make CPBL current level visible in the team label.
+    // Keep filtering/team identity normalized to the parent club, but append 二軍 for D players.
+    const playerDisplayTeamBeforeCpblLevelLabel = playerDisplayTeam;
+    const playerSourceMetaBeforeCpblLevelLabel = playerSourceMeta;
+
+    function homeCpblDisplayTeam(player) {
+      const team = homePlayerTeam(player) || normalizeTeamName(player?.cpblTeam || '').replace(/二軍\s*$/, '').trim();
+      if (!team) return '';
+      return homePlayerLevel(player) === 'D' ? `${team}二軍` : team;
+    }
+
+    playerDisplayTeam = function playerDisplayTeamWithCpblLevel(player) {
+      if (playerScope(player) === 'cpbl') return homeCpblDisplayTeam(player);
+      return playerDisplayTeamBeforeCpblLevelLabel(player);
+    };
+
+    playerSourceMeta = function playerSourceMetaWithCpblLevel(player) {
+      if (playerScope(player) !== 'cpbl') return playerSourceMetaBeforeCpblLevelLabel(player);
+      return [
+        player.type === 'pitcher' ? '投手' : '打者',
+        player.cpblDualRole ? '雙角色' : '',
+        homeCpblDisplayTeam(player)
+      ].filter(Boolean).join('｜');
+    };
     function selectedLevelSecondaryStats(player) {
       if (!player) return null;
       const level = supportsLeagueLevelTabs(player) ? selectedLevel : 'A';
