@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.75';
+    const APP_VERSION = 'v3.76';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.75';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.75';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.76';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.76';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7929,11 +7929,16 @@ bg2: {
 })();
 (() => {
   // CPBL live runner fix: keep occupied bases and runner identities in sync when current.* lags one PA.
-  const RUNNER_FIX_VERSION = 'runner-fix-v2';
+  const RUNNER_FIX_VERSION = 'runner-fix-v3';
   let latest = null;
   let timer = 0;
 
   const txt = v => String(v ?? '').trim();
+  const runnerName = v => {
+    const s = txt(v);
+    if (!s || /^\d+$/.test(s)) return '';
+    return s;
+  };
   const boolState = value => {
     if (Array.isArray(value)) return { first:!!value[0], second:!!value[1], third:!!value[2] };
     if (value && typeof value === 'object') return {
@@ -7955,17 +7960,30 @@ bg2: {
     return Number(play?.inning) === Number(m[1]) && txt(play?.half) === (m[2] === '上' ? 'top' : 'bottom');
   }
 
+  function isThirdOut(play) {
+    if (!play) return false;
+    const text = `${txt(play?.result)} ${txt(play?.raw)} ${txt(play?.description)}`;
+    if (/3\s*人出局|三人出局|半局結束/i.test(text)) return true;
+    const before = Number(String(play?.outs ?? '').match(/[0-3]/)?.[0]);
+    if (before !== 2) return false;
+    if (/安打|全壘打|二壘安打|三壘安打|四壞|故意四壞|觸身|死球|失誤上壘|野手選擇|趁傳上壘/i.test(`${txt(play?.result)} ${txt(play?.raw)}`)) return false;
+    return /三振|出局|飛球|界飛|邪飛|滾地|滾|雙殺|併殺|犧牲|犧飛|犠牲|アウト/i.test(text);
+  }
+
   function stateInfo(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays.at(-1) || null;
     const current = boolState(detail?.current?.baseState ?? detail?.current?.bases ?? '');
-    if (!last || !sameCurrentHalf(detail,last)) return { state:current, useAfter:false, last };
+    if (last && sameCurrentHalf(detail,last) && isThirdOut(last)) {
+      return { state:{first:false,second:false,third:false}, useAfter:false, last, thirdOut:true };
+    }
+    if (!last || !sameCurrentHalf(detail,last)) return { state:current, useAfter:false, last, thirdOut:false };
 
     const afterRaw = last?.baseStateAfter ?? last?.basesAfter;
-    if (afterRaw === undefined || afterRaw === null) return { state:current, useAfter:false, last };
+    if (afterRaw === undefined || afterRaw === null) return { state:current, useAfter:false, last, thirdOut:false };
 
-    // IMPORTANT: CPBL play.baseState / play.bases can already be the post-PA state.
-    // Prefer the explicit *Before fields when deciding whether current.* is one PA behind.
+    // CPBL play.baseState / play.bases can already be the post-PA state.
+    // Prefer explicit *Before fields when deciding whether current.* is one PA behind.
     const beforeRaw = last?.baseStateBefore ?? last?.basesBefore ?? last?.baseState ?? last?.bases ?? '';
     const before = boolState(beforeRaw);
     const after = boolState(afterRaw);
@@ -7973,20 +7991,22 @@ bg2: {
     const beforeKey = `${+before.first}${+before.second}${+before.third}`;
     const afterKey = `${+after.first}${+after.second}${+after.third}`;
     const useAfter = currentKey === beforeKey && beforeKey !== afterKey;
-    return { state:useAfter ? after : current, useAfter, last };
+    return { state:useAfter ? after : current, useAfter, last, thirdOut:false };
   }
 
   function namesFor(detail, info) {
+    if (info?.thirdOut) return {first:'',second:'',third:''};
     const direct = detail?.current?.runners || {};
     const after = info?.last && sameCurrentHalf(detail, info.last) ? (info.last?.runnersAfter || {}) : {};
     const names = {
-      first:txt(direct.first || direct.firstBase || direct[1] || direct.base1),
-      second:txt(direct.second || direct.secondBase || direct[2] || direct.base2),
-      third:txt(direct.third || direct.thirdBase || direct[3] || direct.base3)
+      first:runnerName(direct.first || direct.firstBase || direct.base1),
+      second:runnerName(direct.second || direct.secondBase || direct.base2),
+      third:runnerName(direct.third || direct.thirdBase || direct.base3)
     };
     for (const key of ['first','second','third']) {
-      if (info?.useAfter && txt(after?.[key])) names[key] = txt(after[key]);
-      else if (!names[key]) names[key] = txt(after?.[key]);
+      const afterName = runnerName(after?.[key]);
+      if (info?.useAfter && afterName) names[key] = afterName;
+      else if (!names[key]) names[key] = afterName;
     }
     return names;
   }
