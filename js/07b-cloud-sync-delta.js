@@ -42,7 +42,10 @@
       cloudSyncBusy = true;
       try {
         const previous = cloudSyncStoredRevision();
-        const useDelta = !forceFull && cloudSyncInitialDone && previous > 0;
+        const localHasData = players.length > 0 || photos.length > 0;
+        // Existing browsers may delta-sync immediately after a page reload when IndexedDB is still present.
+        // New joins clear the stored revision, while an unexpectedly empty local DB falls back to a full pull.
+        const useDelta = !forceFull && previous > 0 && (cloudSyncInitialDone || localHasData);
         const result = await cloudSyncApi('pull', useDelta ? { sinceRevision: previous } : {});
         const revision = Math.max(0, Number(result?.group?.revision || 0));
         const records = Array.isArray(result?.records) ? result.records : [];
