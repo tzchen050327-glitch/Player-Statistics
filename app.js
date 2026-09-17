@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.70';
+    const APP_VERSION = 'v3.71';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.70';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.70';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.71';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.71';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7877,6 +7877,88 @@ bg2: {
     if (document.visibilityState === 'visible') start();
     else stop();
   });
+})();
+(() => {
+  let latest = null;
+  let timer = 0;
+
+  const txt = v => String(v ?? '').trim();
+  const boolState = value => {
+    if (Array.isArray(value)) return { first:!!value[0], second:!!value[1], third:!!value[2] };
+    if (value && typeof value === 'object') return {
+      first:!!(value.first ?? value[1] ?? value.base1),
+      second:!!(value.second ?? value[2] ?? value.base2),
+      third:!!(value.third ?? value[3] ?? value.base3)
+    };
+    const s = txt(value);
+    return {
+      first:/一壘|一塁|(?:^|[^0-9])1(?:[^0-9]|$)/.test(s),
+      second:/二壘|二塁|(?:^|[^0-9])2(?:[^0-9]|$)/.test(s),
+      third:/三壘|三塁|(?:^|[^0-9])3(?:[^0-9]|$)/.test(s)
+    };
+  };
+
+  function sameCurrentHalf(detail, play) {
+    const m = txt(detail?.game?.inningLabel).match(/(\d+)\s*局?\s*([上下])/);
+    if (!m || !play) return true;
+    return Number(play?.inning) === Number(m[1]) && txt(play?.half) === (m[2] === '上' ? 'top' : 'bottom');
+  }
+
+  function namesFor(detail) {
+    const direct = detail?.current?.runners || {};
+    let names = {
+      first:txt(direct.first || direct.firstBase || direct[1] || direct.base1),
+      second:txt(direct.second || direct.secondBase || direct[2] || direct.base2),
+      third:txt(direct.third || direct.thirdBase || direct[3] || direct.base3)
+    };
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const last = plays.at(-1) || null;
+    const after = sameCurrentHalf(detail,last) ? (last?.runnersAfter || {}) : {};
+    for (const key of ['first','second','third']) {
+      if (!names[key]) names[key] = txt(after?.[key]);
+    }
+    return names;
+  }
+
+  function stateFor(detail) {
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    const last = plays.at(-1) || null;
+    const current = boolState(detail?.current?.baseState ?? detail?.current?.bases ?? '');
+    if (!last || !sameCurrentHalf(detail,last)) return current;
+    const afterRaw = last?.baseStateAfter ?? last?.basesAfter;
+    if (afterRaw === undefined || afterRaw === null) return current;
+    const before = boolState(last?.baseState ?? last?.bases ?? last?.baseStateBefore ?? last?.basesBefore ?? '');
+    const after = boolState(afterRaw);
+    const currentKey = `${+current.first}${+current.second}${+current.third}`;
+    const beforeKey = `${+before.first}${+before.second}${+before.third}`;
+    const afterKey = `${+after.first}${+after.second}${+after.third}`;
+    return currentKey === beforeKey && beforeKey !== afterKey ? after : current;
+  }
+
+  function patch() {
+    timer = 0;
+    const detail = latest;
+    if (!detail || txt(detail?.league).toUpperCase() !== 'CPBL') return;
+    const root = document.querySelector('#homeGameDetailBody');
+    if (!root) return;
+    const state = stateFor(detail);
+    const names = namesFor(detail);
+    for (const key of ['first','second','third']) {
+      const el = root.querySelector(`.gdx-runner-name-${key}`);
+      if (!el || !state[key]) continue;
+      if ((!txt(el.textContent) || txt(el.textContent) === '—') && names[key]) el.textContent = names[key];
+    }
+  }
+
+  function schedule(detail) {
+    if (detail?.game) latest = detail;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(patch, 40);
+    setTimeout(patch, 160);
+  }
+
+  window.addEventListener('home-game-detail-state', event => schedule(event?.detail?.detail));
+  window.addEventListener('cpbl-live-cache-update', event => schedule(event?.detail?.detail || event?.detail?.row?.published_payload));
 })();
     function selectedLevelSecondaryStats(player) {
       if (!player) return null;
