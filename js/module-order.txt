@@ -23,6 +23,8 @@
 11f-cpbl-live-fallback.js
 11g-cpbl-runner-name-fix.js
 11h-league-schedule-realtime.js
+11i-cpbl-home-inning.js
+11j-cpbl-realtime-rescue.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
