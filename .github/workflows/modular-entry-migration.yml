@@ -1,0 +1,43 @@
+name: Modular entry migration
+
+on:
+  push:
+    branches: [modular-entry-loader]
+    paths:
+      - '.github/workflows/modular-entry-migration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modular-entry-loader
+      - name: Switch index to module loader
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          old = '''  <script src="./live-static-update.js?v=v3.86"></script>\n  <script src="./cpbl-realtime.js?v=v3.86"></script>\n  <script src="./npb-realtime.js?v=v3.86"></script>\n  <script src="./app.js?v=v3.86"></script>\n  <script src="./postseason-history.js?v=v3.86"></script>\n  <script src="./cpbl-cache-router.js?v=v3.86"></script>\n  <script src="./game-detail-enhancement.js?v=v3.86"></script>\n  <script src="./report-layout.js?v=v3.86"></script>'''
+          new = '  <script src="./js/module-loader.js?v=v3.86"></script>'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one legacy script block, found {text.count(old)}')
+          p.write_text(text.replace(old, new), encoding='utf-8')
+      - name: Verify index switch
+        shell: bash
+        run: |
+          grep -Fq './js/module-loader.js?v=v3.86' index.html
+          ! grep -Fq './app.js?v=' index.html
+      - name: Remove migration workflow and commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/modular-entry-migration.yml
+          git add index.html
+          git commit -m "refactor: load app from modular sources"
+          git push origin HEAD:modular-entry-loader
