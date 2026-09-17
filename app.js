@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.59';
+    const APP_VERSION = 'v3.60';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.59';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.59';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.60';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.60';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -3983,7 +3983,10 @@ bg2: {
       cloudSyncBusy = true;
       try {
         const previous = cloudSyncStoredRevision();
-        const useDelta = !forceFull && cloudSyncInitialDone && previous > 0;
+        const localHasData = players.length > 0 || photos.length > 0;
+        // Existing browsers may delta-sync immediately after a page reload when IndexedDB is still present.
+        // New joins clear the stored revision, while an unexpectedly empty local DB falls back to a full pull.
+        const useDelta = !forceFull && previous > 0 && (cloudSyncInitialDone || localHasData);
         const result = await cloudSyncApi('pull', useDelta ? { sinceRevision: previous } : {});
         const revision = Math.max(0, Number(result?.group?.revision || 0));
         const records = Array.isArray(result?.records) ? result.records : [];
