@@ -90,11 +90,16 @@
   }
 })();
 
-// Viewer heartbeat + shared MLB/KBO one-minute refresh policy.
+// Viewer heartbeat + per-league homepage refresh cooldown.
 (() => {
   const HEARTBEAT_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-live-heartbeat';
   const HEARTBEAT_MS = 60_000;
-  const SCOREBOARD_COOLDOWN_MS = 60_000;
+  const SCOREBOARD_COOLDOWN = {
+    CPBL:45_000,
+    NPB:45_000,
+    KBO:60_000,
+    MLB:60_000
+  };
   const requestCache = new Map();
   let lastHeartbeatKey = '';
   let lastHeartbeatAt = 0;
@@ -137,36 +142,44 @@
     } catch {}
   }
 
-  // MLB/KBO homepage requests share the persistent backend cache and a browser-side
-  // 60-second cooldown. Rapid KR/US switching cannot cause repeated refreshes.
+  // All four leagues get a browser-side cooldown. MLB/KBO additionally share the
+  // persistent league_schedule_cache so rapid country switching cannot fan out
+  // into repeated official-source requests.
   if (typeof leagueDailyGamesRequest === 'function' && typeof LEAGUE_GAMES_API_URL !== 'undefined') {
     const originalDailyRequest = leagueDailyGamesRequest;
     leagueDailyGamesRequest = async function(league, date) {
       const lg = String(league || '').toUpperCase();
-      if (!['MLB','KBO'].includes(lg)) return originalDailyRequest(league, date);
+      const cooldown = Number(SCOREBOARD_COOLDOWN[lg] || 0);
+      if (!cooldown) return originalDailyRequest(league, date);
 
       const key = `${lg}|${date}`;
       const now = Date.now();
       const cached = requestCache.get(key);
-      if (cached?.games && now - Number(cached.at || 0) < SCOREBOARD_COOLDOWN_MS) return cached.games;
+      if (cached?.games && now - Number(cached.at || 0) < cooldown) return cached.games;
       if (cached?.promise) return cached.promise;
 
       const promise = (async () => {
-        const response = await fetch(LEAGUE_GAMES_API_URL, {
-          method:'POST',
-          headers:{ 'content-type':'application/json' },
-          body:JSON.stringify({
-            appKey: typeof CPBL_APP_KEY !== 'undefined' ? CPBL_APP_KEY : '',
-            action:'daily-games',
-            league:lg,
-            date
-          })
-        });
-        const json = await response.json().catch(() => ({}));
-        if (!response.ok || !json?.ok) throw new Error(json?.error || `daily games ${response.status}`);
-        const games = Array.isArray(json.games) ? json.games : [];
-        requestCache.set(key, { at:Date.now(), games });
-        return games;
+        let games;
+        if (lg === 'MLB' || lg === 'KBO') {
+          const response = await fetch(LEAGUE_GAMES_API_URL, {
+            method:'POST',
+            headers:{ 'content-type':'application/json' },
+            body:JSON.stringify({
+              appKey: typeof CPBL_APP_KEY !== 'undefined' ? CPBL_APP_KEY : '',
+              action:'daily-games',
+              league:lg,
+              date
+            })
+          });
+          const json = await response.json().catch(() => ({}));
+          if (!response.ok || !json?.ok) throw new Error(json?.error || `daily games ${response.status}`);
+          games = Array.isArray(json.games) ? json.games : [];
+        } else {
+          games = await originalDailyRequest(league, date);
+        }
+        const normalized = Array.isArray(games) ? games : [];
+        requestCache.set(key, { at:Date.now(), games:normalized });
+        return normalized;
       })();
 
       requestCache.set(key, { ...(cached || {}), promise });
@@ -179,7 +192,7 @@
     };
   }
 
-  // Keep MLB/KBO visible-home refresh at one minute while a game is live.
+  // MLB/KBO visible-home live scoreboards refresh once per minute.
   if (typeof homeDailyGamesRefreshDelay === 'function') {
     const originalRefreshDelay = homeDailyGamesRefreshDelay;
     homeDailyGamesRefreshDelay = function(league, date, games = []) {
