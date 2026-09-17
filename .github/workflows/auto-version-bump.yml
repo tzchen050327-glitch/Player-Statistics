@@ -79,6 +79,8 @@ jobs:
           python3 scripts/build-app.py
           python3 scripts/build-app.py --check
           node --check app.js
+          node --check js/module-loader.js
+          node --check service-worker.js
 
       - name: Verify version consistency
         shell: python
@@ -91,8 +93,10 @@ jobs:
           sw = Path('service-worker.js').read_text(encoding='utf-8')
           assert f"const APP_VERSION = '{v}'" in app
           assert f'content="{v}"' in html
-          assert f'?v={v}' in html
-          assert f'?v={v}' in sw
+          assert f'./js/module-loader.js?v={v}' in html
+          assert f'./js/module-loader.js?v={v}' in sw
+          assert './app.js?v=' not in html
+          assert './app.js?v=' not in sw
 
       - name: Commit generated release files
         run: |

@@ -1,5 +1,6 @@
 const CACHE_NAME = 'baseball-player-card-pwa-v386-auto';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
+const MODULE_ORDER_URL = './js/module-order.txt';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,7 +11,8 @@ const APP_SHELL = [
   './cpbl-realtime.js?v=v3.86',
   './npb-realtime.js?v=v3.86',
   './postseason-history.css?v=v3.86',
-  './app.js?v=v3.86',
+  './js/module-loader.js?v=v3.86',
+  MODULE_ORDER_URL,
   './postseason-history.js?v=v3.86',
   './cpbl-cache-router.js?v=v3.86',
   './game-detail-enhancement.css?v=v3.86',
@@ -23,13 +25,28 @@ const APP_SHELL = [
   './icon-512.png'
 ];
 
+async function getModuleShell() {
+  const response = await fetch(MODULE_ORDER_URL, { cache: 'reload' });
+  if (!response.ok) throw new Error(`Module order fetch failed (${response.status})`);
+  const text = await response.text();
+  const modules = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(name => `./js/${name}`);
+  if (!modules.length) throw new Error('Module order is empty');
+  return modules;
+}
+
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
+    const moduleShell = await getModuleShell();
+    const shell = [...APP_SHELL, ...moduleShell];
     // Do not activate a half-populated shell. If GitHub Pages is between
     // deployments, keep the currently working worker instead of caching gaps.
-    await Promise.all(APP_SHELL.map(async url => {
+    await Promise.all(shell.map(async url => {
       const response = await fetch(url, { cache: 'reload' });
       if (!response.ok) throw new Error(`App shell fetch failed: ${url} (${response.status})`);
       await cache.put(url, response.clone());
@@ -44,8 +61,8 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
-    // Do not navigate/reload clients here. app.js owns update/reload flow;
-    // having both layers navigate caused startup races and 0% splash stalls.
+    // Do not navigate/reload clients here. The modular app runtime owns the
+    // update/reload flow; having both layers navigate caused startup races.
   })());
 });
 
@@ -61,11 +78,12 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html');
-  const isCoreAsset = url.pathname.endsWith('/diagnostics.html')
+  const isModuleAsset = url.pathname.includes('/js/');
+  const isCoreAsset = isModuleAsset
+    || url.pathname.endsWith('/diagnostics.html')
     || url.pathname.endsWith('/diagnostic-runtime.js')
     || url.pathname.endsWith('/cpbl-realtime.js')
     || url.pathname.endsWith('/live-static-update.js')
-    || url.pathname.endsWith('/app.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
     || url.pathname.endsWith('/postseason-history.js')
