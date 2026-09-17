@@ -1,5 +1,5 @@
 (() => {
-  const REPORT_LAYOUT_VERSION = 'v2.77';
+  const REPORT_LAYOUT_VERSION = 'v2.78';
 
   function ensureFieldOverlay(root = document) {
     const cards = root.querySelectorAll?.('.gdx-field-card') || [];
@@ -100,9 +100,16 @@
     KBO:60_000,
     MLB:60_000
   };
+  const TERMINAL_STATUSES = new Set(['final','cancelled','postponed']);
   const requestCache = new Map();
   let lastHeartbeatKey = '';
   let lastHeartbeatAt = 0;
+
+  function allTerminal(games) {
+    return Array.isArray(games)
+      && games.length > 0
+      && games.every(game => TERMINAL_STATUSES.has(String(game?.status || '').toLowerCase()));
+  }
 
   function currentLeagueAndDate() {
     try {
@@ -123,6 +130,7 @@
     const current = currentLeagueAndDate();
     if (!current) return;
     const key = `${current.league}|${current.date}`;
+    if (requestCache.get(key)?.terminal) return;
     const now = Date.now();
     if (!force && key === lastHeartbeatKey && now - lastHeartbeatAt < 50_000) return;
     lastHeartbeatKey = key;
@@ -142,9 +150,9 @@
     } catch {}
   }
 
-  // All four leagues get a browser-side cooldown. MLB/KBO additionally share the
+  // All four leagues get a browser-side cooldown. NPB/KBO/MLB share the
   // persistent league_schedule_cache so rapid country switching cannot fan out
-  // into repeated official-source requests.
+  // into repeated official-source requests. Completed days stay frozen locally.
   if (typeof leagueDailyGamesRequest === 'function' && typeof LEAGUE_GAMES_API_URL !== 'undefined') {
     const originalDailyRequest = leagueDailyGamesRequest;
     leagueDailyGamesRequest = async function(league, date) {
@@ -155,12 +163,13 @@
       const key = `${lg}|${date}`;
       const now = Date.now();
       const cached = requestCache.get(key);
+      if (cached?.terminal && cached?.games) return cached.games;
       if (cached?.games && now - Number(cached.at || 0) < cooldown) return cached.games;
       if (cached?.promise) return cached.promise;
 
       const promise = (async () => {
         let games;
-        if (lg === 'MLB' || lg === 'KBO') {
+        if (lg === 'MLB' || lg === 'KBO' || lg === 'NPB') {
           const response = await fetch(LEAGUE_GAMES_API_URL, {
             method:'POST',
             headers:{ 'content-type':'application/json' },
@@ -178,7 +187,7 @@
           games = await originalDailyRequest(league, date);
         }
         const normalized = Array.isArray(games) ? games : [];
-        requestCache.set(key, { at:Date.now(), games:normalized });
+        requestCache.set(key, { at:Date.now(), games:normalized, terminal:allTerminal(normalized) });
         return normalized;
       })();
 
