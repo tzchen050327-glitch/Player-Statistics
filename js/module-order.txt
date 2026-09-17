@@ -19,6 +19,7 @@
 11b-home-live-inning-label.js
 11c-npb-live-state-fix.js
 11d-npb-home-inning-dom.js
+11e-cpbl-pregame-starter-stats.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
