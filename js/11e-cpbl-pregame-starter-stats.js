@@ -1,13 +1,10 @@
     /* ---------- CPBL pregame starter stats ---------- */
-    // Scheduled CPBL detail often knows the official 1-9 batting order before
-    // BattingJson is populated. Keep the lineup source separate from season stats:
-    // 1) hydrate the 18 starters if the lineup itself is incomplete;
-    // 2) resolve only those starter Acnts against the existing 30-minute team batting cache.
+    // IMPORTANT: this layer NEVER owns batting-order identity or ordering.
+    // It only enriches an already-resolved official 1-9 lineup by Acnt with
+    // AVG / H / HR / RBI from the existing team batting cache.
     const fetchBeforeCpblPregameStarterStats = window.fetch.bind(window);
     const CPBL_FUNCTIONS_BASE = String(CPBL_GAME_DETAIL_API_URL || '').replace(/\/cpbl-game-detail(?:\?.*)?$/, '');
-    const CPBL_PREGAME_STARTER_LINEUP_URL = `${CPBL_FUNCTIONS_BASE}/cpbl-pregame-lineup`;
     const CPBL_TEAM_BATTING_STATS_URL = `${CPBL_FUNCTIONS_BASE}/cpbl-team-batting-cache`;
-    const cpblPregameStarterLineupCache = new Map();
     const cpblPregameTeamStatsCache = new Map();
     const CPBL_PREGAME_CLIENT_CACHE_TTL = 5 * 60 * 1000;
 
@@ -32,45 +29,12 @@
     function cpblStarterLineupComplete(detail) {
       return ['away','home'].every(side => {
         const list = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
-        return list.length >= 9 && list.slice(0,9).every(player => String(player?.acnt || player?.id || '').trim());
+        return list.length >= 9 && list.slice(0,9).every((player,index) =>
+          String(player?.acnt || player?.id || '').trim()
+          && Number(player?.order || index + 1) >= 1
+          && Number(player?.order || index + 1) <= 9
+        );
       });
-    }
-
-    function mergeCpblPregameStarterLineup(detail, payload) {
-      if (!payload?.ok || !payload?.lineups) return detail;
-      detail.lineups ||= {};
-      for (const side of ['away','home']) {
-        const incoming = Array.isArray(payload?.lineups?.[side]) ? payload.lineups[side] : [];
-        if (incoming.length < 9) continue;
-        detail.lineups[side] ||= {};
-        const current = Array.isArray(detail.lineups[side].batters) ? detail.lineups[side].batters : [];
-        const byAcnt = new Map(current.map(player => [String(player?.acnt || player?.id || ''), player]));
-        const byOrder = new Map(current.map(player => [Number(player?.order) || 0, player]));
-        detail.lineups[side].batters = incoming.slice(0,9).map(entry => {
-          const acnt = String(entry?.acnt || entry?.id || '');
-          const order = Number(entry?.order) || 0;
-          const base = (acnt && byAcnt.get(acnt)) || (order && byOrder.get(order)) || {};
-          return { ...base, ...entry };
-        });
-      }
-      return detail;
-    }
-
-    async function cpblPregameStarterLineup(date, gameId) {
-      const key = `${date}|${gameId}`;
-      const cached = cpblPregameStarterLineupCache.get(key);
-      if (cached && Date.now() - cached.at < CPBL_PREGAME_CLIENT_CACHE_TTL) return cached.payload;
-      const response = await fetchBeforeCpblPregameStarterStats(CPBL_PREGAME_STARTER_LINEUP_URL, {
-        method:'POST',
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({appKey:CPBL_APP_KEY,date,gameId}),
-        cache:'no-store'
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (response.ok && payload?.ok && Number(payload?.counts?.away) >= 9 && Number(payload?.counts?.home) >= 9) {
-        cpblPregameStarterLineupCache.set(key, { at:Date.now(), payload });
-      }
-      return payload;
     }
 
     async function cpblPregameTeamBattingStats(season, clubNo) {
@@ -97,18 +61,11 @@
     }
 
     async function hydrateCpblPregameStarterStats(detail) {
-      const date = String(detail?.date || '');
-      const gameId = String(detail?.game?.id || detail?.gameId || '');
-      if (!date || !gameId) return detail;
-
-      if (!cpblStarterLineupComplete(detail)) {
-        try {
-          const lineup = await cpblPregameStarterLineup(date, gameId);
-          mergeCpblPregameStarterLineup(detail, lineup);
-        } catch {}
-      }
+      // Never synthesize, replace, sort, or reorder a lineup here.
       if (!cpblStarterLineupComplete(detail)) return detail;
 
+      const date = String(detail?.date || '');
+      if (!date) return detail;
       const season = Number(date.slice(0,4)) || new Date().getFullYear();
       const awayCode = String(detail?.game?.awayCode || '').slice(0,3);
       const homeCode = String(detail?.game?.homeCode || '').slice(0,3);
@@ -120,9 +77,11 @@
       for (const side of ['away','home']) {
         const stats = side === 'away' ? awayStats : homeStats;
         const list = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        // Map over the existing list in place/order. Acnt is the only join key.
         detail.lineups[side].batters = list.map((player, index) => {
           if (index >= 9) return player;
-          const stat = stats.get(String(player?.acnt || player?.id || ''));
+          const acnt = String(player?.acnt || player?.id || '');
+          const stat = stats.get(acnt);
           if (!stat) return player;
           return {
             ...player,
@@ -137,7 +96,7 @@
 
       detail.authority = {
         ...(detail.authority || {}),
-        pregameLineupStats:'CPBL starter Acnt + cached team batting totals (18 starters only)'
+        pregameLineupStats:'CPBL existing lineup order + Acnt-matched cached team batting totals'
       };
       return detail;
     }
@@ -154,10 +113,9 @@
         const status = String(detail?.status || detail?.game?.status || '').toLowerCase();
         const hasLivePlays = Array.isArray(detail?.plays) && detail.plays.length > 0;
         if (hasLivePlays || ['live','playing','inprogress','in_progress','final','suspended'].includes(status)) return response;
-        if (cpblStarterStatsComplete(detail)) return response;
+        if (!cpblStarterLineupComplete(detail) || cpblStarterStatsComplete(detail)) return response;
 
         await hydrateCpblPregameStarterStats(detail);
-        if (!cpblStarterLineupComplete(detail)) return response;
 
         const headers = new Headers(response.headers);
         headers.delete('content-length');
