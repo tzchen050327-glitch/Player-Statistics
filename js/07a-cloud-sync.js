@@ -266,7 +266,7 @@
         cloudSyncQueueRecord(storeName, existing || {}, { deleted: true, key: String(key), updatedAt: Date.now() });
       }
       return result;
-    };
+    }
 
     async function cloudSyncDownloadPhoto(record) {
       const meta = record?.payload && typeof record.payload === 'object' ? record.payload : {};
@@ -426,6 +426,36 @@
       }
     }
 
+    async function cloudSyncProbeAndPull() {
+      if (!cloudSyncCredentials || cloudSyncBusy || !db) return null;
+      if (!cloudSyncInitialDone) return cloudSyncPull({ uploadLocalOnly: true });
+
+      cloudSyncBusy = true;
+      let shouldPull = false;
+      try {
+        const probe = await cloudSyncApi('probe', {});
+        const remoteRevision = Math.max(0, Number(probe?.group?.revision || 0));
+        const localRevision = cloudSyncStoredRevision();
+        shouldPull = remoteRevision !== localRevision;
+        if (!shouldPull) {
+          cloudSyncLastSuccessAt = Date.now();
+          cloudSyncLastError = '';
+          cloudSyncRefreshUi();
+          return { ok: true, changed: false, revision: remoteRevision };
+        }
+      } catch (error) {
+        cloudSyncLastError = error?.message || String(error);
+        cloudSyncRefreshUi();
+        console.warn('雲端同步版本檢查失敗：', error);
+        return null;
+      } finally {
+        cloudSyncBusy = false;
+        cloudSyncRefreshUi();
+      }
+
+      return shouldPull ? cloudSyncPull({ uploadLocalOnly: true }) : null;
+    }
+
     async function cloudSyncFullPush({ manual = false } = {}) {
       if (!cloudSyncCredentials || !db) return;
       const allPlayers = await idbGetAll(STORES.players);
@@ -441,7 +471,7 @@
     function cloudSyncStartPolling() {
       if (cloudSyncPollTimer) return;
       cloudSyncPollTimer = setInterval(() => {
-        if (document.visibilityState === 'visible' && cloudSyncCredentials) void cloudSyncPull();
+        if (document.visibilityState === 'visible' && cloudSyncCredentials) void cloudSyncProbeAndPull();
       }, CLOUD_SYNC_POLL_MS);
     }
 
@@ -576,7 +606,7 @@
                   <div id="cloudSyncStateText" class="subtle"></div>
                 </div>
               </div>
-              <div class="subtle" style="margin-bottom:12px">這台裝置的球員、比賽紀錄與自訂照片會和同一群組的其他裝置合併同步。修改後會自動上傳，開啟網頁及回到前景時也會自動抓取。</div>
+              <div class="subtle" style="margin-bottom:12px">這台裝置的球員、比賽紀錄與自訂照片會和同一群組的其他裝置合併同步。修改後會自動上傳；背景每 30 秒與回到前景時只檢查版本，有變動才下載完整資料。</div>
               <div class="section-actions" style="flex-wrap:wrap">
                 <button id="cloudSyncNowBtn" class="press-btn primary" type="button">立即同步</button>
                 <button id="cloudSyncCopyBtn" class="press-btn" type="button">複製連接資訊</button>
@@ -698,7 +728,7 @@
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && cloudSyncCredentials && db) void cloudSyncPull();
+      if (document.visibilityState === 'visible' && cloudSyncCredentials && db) void cloudSyncProbeAndPull();
     });
 
     // app.js is loaded at the end of <body>, so the header controls already exist here.
