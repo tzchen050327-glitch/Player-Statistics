@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.60';
+    const APP_VERSION = 'v3.61';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.60';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.60';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.61';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.61';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7415,6 +7415,85 @@ bg2: {
         player.cpblDualRole ? '雙角色' : '',
         homeCpblDisplayTeam(player)
       ].filter(Boolean).join('｜');
+    };
+    /* ---------- Home live inning labels ---------- */
+    // NPB daily cards come from npb-live-games, while the authoritative inning label
+    // lives in the shared npb_live_game_cache payload. Fetch only game_id + inningLabel
+    // so the home page can show "2局上 / 2局下" without downloading full game detail.
+    const leagueDailyGamesRequestBeforeLiveInning = leagueDailyGamesRequest;
+
+    async function homeNpbLiveInningLabels(date) {
+      try {
+        const base = String(NPB_GAMES_API_URL || '').split('/functions/v1/')[0];
+        if (!base) return new Map();
+        const query = new URLSearchParams({
+          game_date: `eq.${date}`,
+          published_revision: 'gt.0',
+          select: 'game_id,inning_label:published_payload->game->>inningLabel'
+        });
+        const response = await fetch(`${base}/rest/v1/npb_live_game_cache?${query}`, {
+          headers: {
+            apikey: CPBL_ANON_KEY,
+            authorization: `Bearer ${CPBL_ANON_KEY}`
+          },
+          cache: 'no-store'
+        });
+        if (!response.ok) return new Map();
+        const rows = await response.json().catch(() => []);
+        return new Map((Array.isArray(rows) ? rows : [])
+          .map(row => [String(row?.game_id || ''), String(row?.inning_label || '').trim()])
+          .filter(([id, label]) => id && label));
+      } catch {
+        return new Map();
+      }
+    }
+
+    leagueDailyGamesRequest = async function leagueDailyGamesRequestWithLiveInning(league, date) {
+      const games = await leagueDailyGamesRequestBeforeLiveInning(league, date);
+      if (league !== 'NPB' || !Array.isArray(games) || !games.some(game => String(game?.status || '').toLowerCase() === 'live')) {
+        return games;
+      }
+      const labels = await homeNpbLiveInningLabels(date);
+      if (!labels.size) return games;
+      return games.map(game => {
+        const label = labels.get(String(game?.id || '')) || '';
+        return label ? { ...game, inningLabel: label } : game;
+      });
+    };
+
+    homeDailyGameStatusLabel = function homeDailyGameStatusLabelWithInning(game) {
+      const status = String(game?.status || '').toLowerCase();
+      if (status === 'final') return '已結束';
+      if (status === 'live') {
+        const direct = String(game?.inningLabel || '').trim();
+        if (direct) return direct;
+        const inning = Number(game?.currentInning ?? game?.inning);
+        const halfRaw = String(game?.currentHalf || game?.half || '').toLowerCase();
+        const half = ['top','up','上'].includes(halfRaw) ? '上' : ['bottom','down','下'].includes(halfRaw) ? '下' : '';
+        if (Number.isFinite(inning) && inning > 0) return `${inning}局${half}`;
+        return '比賽中';
+      }
+      if (status === 'cancelled') return '取消／延期';
+      return String(game?.time || '').trim() || '未開打';
+    };
+
+    // If a user opens a live detail page, immediately copy the newest inning label back
+    // to the home-card cache as well instead of waiting for the next 45-second home refresh.
+    const syncHomeDailyGameFromDetailBeforeLiveInning = syncHomeDailyGameFromDetail;
+    syncHomeDailyGameFromDetail = function syncHomeDailyGameFromDetailWithInning(league, date, game, detail) {
+      syncHomeDailyGameFromDetailBeforeLiveInning(league, date, game, detail);
+      const label = String(detail?.game?.inningLabel || '').trim();
+      if (!label) return;
+      if (game) game.inningLabel = label;
+      const daily = homeDailyGamesCache.get(`${league}|${date}`);
+      const games = Array.isArray(daily?.games) ? daily.games : [];
+      const detailGame = detail?.game || {};
+      const target = games.find(item =>
+        (detailGame?.id && item?.id && String(detailGame.id) === String(item.id))
+        || (String(item?.away || '') === String(detailGame?.away || game?.away || '')
+          && String(item?.home || '') === String(detailGame?.home || game?.home || ''))
+      );
+      if (target) target.inningLabel = label;
     };
     function selectedLevelSecondaryStats(player) {
       if (!player) return null;
