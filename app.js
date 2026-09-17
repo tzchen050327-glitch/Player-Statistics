@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.54';
+    const APP_VERSION = 'v3.55';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.54';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.54';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.55';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.55';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -2804,6 +2804,47 @@ bg2: {
       });
     }
 
+    // Homepage roster refresh must not fail as one large all-or-nothing 4.5s batch.
+    // Keep the startup roster decision authoritative for homepage A/D grouping.
+    const refreshCurrentRosterStatusBeforeHomeBatchFix = refreshCurrentRosterStatus;
+
+    refreshCurrentRosterStatus = async function refreshCurrentRosterStatusWithLongerBatchWindow() {
+      const linked = players.filter(player => player.cpblAcnt);
+      if (!linked.length) return;
+
+      try {
+        const data = await promiseTimeout(
+          cpblRequest('current-rosters', {
+            acnts: linked.map(player => player.cpblAcnt)
+          }),
+          12000,
+          '目前一二軍狀態查詢逾時'
+        );
+        const rows = Array.isArray(data.players) ? data.players : [];
+        const byAcnt = new Map(rows.filter(row => row?.ok && row.acnt).map(row => [String(row.acnt), row]));
+
+        for (const player of linked) {
+          const current = byAcnt.get(String(player.cpblAcnt));
+          if (!current) continue;
+
+          if (current.team) player.cpblTeam = normalizeTeamName(current.team);
+          if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
+          if (current.number) player.number = String(current.number);
+          const level = String(current.level || '').toUpperCase();
+          if (level === 'A' || level === 'D') player.cpblCurrentLevel = level;
+
+          const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
+          player.cpblRosterUpdatedAt = Date.now();
+
+          if (roleChanged && player.id === selectedPlayerId) {
+            activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
+          }
+          await idbPut(STORES.players, player);
+        }
+      } catch (error) {
+        console.warn('目前一二軍名單更新失敗，沿用最近一次成功判定', error);
+      }
+    };
     function uid() {
       return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
