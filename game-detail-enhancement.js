@@ -827,6 +827,7 @@
         && completedPlateAppearance(play)
       )
       .map(play=>({
+        order:Number(play?.battingOrder||play?.order||play?.batting_order)||0,
         acnt:String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim(),
         name:compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||''),
         result:compactLineupPaResult(play)
@@ -835,13 +836,18 @@
   }
 
   function lineupHalfResults(entry,results) {
+    const order=Number(entry?.order)||0;
     const acnt=String(entry?.acnt||'').trim();
     const name=compactName(entry?.name||'');
     return results
-      .filter(item=>
-        (acnt&&item.acnt&&acnt===item.acnt)
-        || (name&&item.name&&samePlayerName(name,item.name))
-      )
+      .filter(item=>{
+        // A completed PA belongs to the batting-order slot, not permanently to
+        // whoever currently occupies that slot. This preserves the PA result
+        // after a pinch runner / pinch hitter replacement.
+        if(order&&Number(item?.order)===order) return true;
+        return (acnt&&item.acnt&&acnt===item.acnt)
+          || (name&&item.name&&samePlayerName(name,item.name));
+      })
       .map(item=>item.result)
       .filter(Boolean);
   }
