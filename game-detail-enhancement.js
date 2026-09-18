@@ -795,7 +795,7 @@
       '一安':'一安',
       '雙殺':'雙殺',
       '犧飛':'犧飛',
-      '犧打':'犧打',
+      '犧短':'犧短',
       '界飛':'界飛',
       '飛球':'飛球',
       '平飛':'平飛',
@@ -808,7 +808,7 @@
     if (/^(一安|二安|三安)$/.test(result)) return 'is-hit';
     if (result === '全打') return 'is-homer';
     if (/^(四壞|觸身)$/.test(result)) return 'is-free-pass';
-    if (/^(犧飛|犧打)$/.test(result)) return 'is-sacrifice';
+    if (/^(犧飛|犧短)$/.test(result)) return 'is-sacrifice';
     return '';
   }
 
@@ -890,7 +890,7 @@
     if(/安打|single/i.test(text)) return '一安';
     if(/雙殺|併殺|double play|DP\b/i.test(text)) return '雙殺';
     if(/犧牲飛球|犠牲フライ|sacrifice fly/i.test(text)) return '犧飛';
-    if(/犧牲觸擊|犧牲短打|犠打|sacrifice bunt/i.test(text)) return '犧打';
+    if(/犧牲觸擊|犧牲短打|犠打|sacrifice bunt/i.test(text)) return '犧短';
     if(/界外飛|邪飛/i.test(text)) return '界飛';
     if(/飛球|飛出|flyout|フライ/i.test(text)) return '飛球';
     if(/平飛|lineout|ライナー/i.test(text)) return '平飛';
