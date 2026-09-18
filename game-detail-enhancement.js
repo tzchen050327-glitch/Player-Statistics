@@ -814,25 +814,85 @@
 
   function currentHalfLineupResults(detail,side) {
     const status=String(detail?.status||'').toLowerCase();
-    if(['final','cancelled','postponed'].includes(status)) return [];
+    if(['cancelled','postponed'].includes(status)) return [];
     const info=currentHalfInfo(detail);
     if(!info) return [];
     const offense=info.half==='top'?'away':'home';
     if(side!==offense) return [];
 
-    return (Array.isArray(detail?.plays)?detail.plays:[])
+    const entries=lineupEntries(detail,side);
+    const idToOrder=new Map();
+    const nameToOrder=new Map();
+    const remember=(acnt,name,order)=>{
+      const slot=Number(order)||0;
+      if(!slot) return;
+      const id=String(acnt||'').trim();
+      const nm=compactName(name||'');
+      if(id) idToOrder.set(id,slot);
+      if(nm) nameToOrder.set(nm,slot);
+    };
+
+    entries.forEach((entry,index)=>{
+      remember(entry?.acnt,entry?.name||entry?.fullName,Number(entry?.order)||index+1);
+    });
+
+    // A substitute inherits the exact batting-order slot of the player replaced.
+    // Propagate both directions because the current lineup may only contain the
+    // latest substitute (e.g. 王苡丞 -> 王正棠 -> 林書逸).
+    const subs=[];
+    for(const play of (Array.isArray(detail?.plays)?detail.plays:[])){
+      const text=String(play?.description||'');
+      const re=/更換(?:代打|代跑|選手)：([^。=>]+?)=>([^。]+)/g;
+      let m;
+      while((m=re.exec(text))){
+        const from=compactName(String(m[1]||'').replace(/^[^：:]*[:：]?/,'').trim());
+        const to=compactName(String(m[2]||'').trim());
+        if(from&&to) subs.push([from,to]);
+      }
+    }
+    for(let pass=0;pass<6;pass++){
+      let changed=false;
+      for(const [from,to] of subs){
+        const a=nameToOrder.get(from)||0;
+        const b=nameToOrder.get(to)||0;
+        if(a&&!b){ nameToOrder.set(to,a); changed=true; }
+        else if(b&&!a){ nameToOrder.set(from,b); changed=true; }
+      }
+      if(!changed) break;
+    }
+
+    const plays=(Array.isArray(detail?.plays)?detail.plays:[])
       .filter(play=>
         Number(play?.inning)===info.inning
         && String(play?.half||'')===info.half
         && completedPlateAppearance(play)
-      )
-      .map(play=>({
-        order:Number(play?.battingOrder||play?.order||play?.batting_order)||0,
-        acnt:String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim(),
-        name:compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||''),
+      );
+
+    const mapped=plays.map(play=>{
+      const acnt=String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim();
+      const name=compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||'');
+      return {
+        order:(acnt&&idToOrder.get(acnt)) || (name&&nameToOrder.get(name)) || 0,
+        acnt,
+        name,
         result:compactLineupPaResult(play)
-      }))
-      .filter(item=>item.result);
+      };
+    });
+
+    // If a play itself cannot be identified (rare source gap), baseball batting
+    // order still advances exactly one slot per completed PA. Anchor on any
+    // known hitter in the half and infer the surrounding slots cyclically.
+    const anchor=mapped.findIndex(item=>item.order>0);
+    if(anchor>=0){
+      const anchorOrder=mapped[anchor].order;
+      mapped.forEach((item,index)=>{
+        if(item.order) return;
+        const zero=((anchorOrder-1)+(index-anchor))%9;
+        item.order=((zero+9)%9)+1;
+      });
+    }
+
+    return mapped.filter(item=>item.result);
   }
 
   function lineupHalfResults(entry,results) {
