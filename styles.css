@@ -4782,3 +4782,95 @@ body.home-game-detail-open{overflow:hidden}
 .cache-diagnostics-header-btn:active{transform:translateY(1px)}
 @media(max-width:640px){.cache-diagnostics-header-btn{width:30px;min-width:30px;height:28px;min-height:28px}}
 /* ===== CACHE DIAGNOSTICS HEADER ICON END ===== */
+
+
+/* ---------- Home sidebar league clocks ---------- */
+.home-time-zone-panel{
+  margin-top:12px;
+  padding:10px;
+  border-radius:18px;
+}
+.home-time-zone-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:9px;
+}
+.home-time-zone-head h2{
+  margin:0;
+  font-size:15px;
+  line-height:1.15;
+  color:#173555;
+}
+.home-time-zone-head span{
+  font-size:10px;
+  color:#7b8da1;
+  white-space:nowrap;
+}
+.home-time-zone-list{
+  display:grid;
+  gap:7px;
+}
+.home-time-zone-card{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  min-height:48px;
+  padding:8px 9px;
+  border:1px solid #d6e0ea;
+  border-radius:13px;
+  background:rgba(248,251,254,.88);
+  box-shadow:0 3px 9px rgba(30,57,84,.05);
+  transition:border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.home-time-zone-meta{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.home-time-zone-meta strong{
+  font-size:11px;
+  line-height:1.15;
+  color:#38526d;
+  white-space:nowrap;
+}
+.home-time-zone-meta span{
+  font-size:9px;
+  color:#93a2b1;
+  font-variant-numeric:tabular-nums;
+}
+.home-time-zone-card time{
+  font-size:16px;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:#1e456b;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.home-time-zone-card.active{
+  border-color:#d3a52f;
+  background:linear-gradient(135deg,rgba(255,248,221,.98),rgba(246,250,253,.96));
+  box-shadow:0 5px 13px rgba(108,83,20,.12);
+  transform:translateY(-1px);
+}
+.home-time-zone-card.active::before{
+  content:"";
+  position:absolute;
+  left:-1px;
+  top:9px;
+  bottom:9px;
+  width:3px;
+  border-radius:0 3px 3px 0;
+  background:#d2a32e;
+}
+.home-time-zone-card.active time{
+  color:#173f68;
+}
+@media (max-width: 760px){
+  .home-time-zone-panel{margin-top:10px;}
+}
