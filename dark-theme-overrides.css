@@ -131,3 +131,12 @@ html[data-theme="dark"] #gameDateButtonText{
 html[data-theme="dark"] #gameDateButton svg{
   color:#dfb44e !important;
 }
+
+
+/* Lineup-ready badge */
+html[data-theme="dark"] .home-game-lineup-ready{
+  border-color:#a9822d !important;
+  background:linear-gradient(180deg,#2a220f,#1b170e) !important;
+  color:#f0ca68 !important;
+  box-shadow:inset 0 1px 0 rgba(255,230,160,.05) !important;
+}
