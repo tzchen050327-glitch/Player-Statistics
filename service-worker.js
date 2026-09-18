@@ -1,4 +1,5 @@
 const CACHE_NAME = 'baseball-player-card-pwa-v418-auto';
+const CACHE_VERSION = 'v4.18';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const APP_SHELL = [
@@ -117,12 +118,25 @@ self.addEventListener('fetch', event => {
 
   if (isCoreAsset) {
     event.respondWith((async () => {
-      const cached = await caches.match(request, { ignoreSearch: true });
+      const requestedVersion = String(url.searchParams.get('v') || '').trim();
+      const versionMismatch = Boolean(requestedVersion && requestedVersion !== CACHE_VERSION);
+
+      // A new index.html can be controlled briefly by the previous Service Worker.
+      // Never let an older worker satisfy a newer ?v= request from its stale cache.
+      if (versionMismatch) {
+        try {
+          return await fetch(request, { cache:'no-store' });
+        } catch {
+          return Response.error();
+        }
+      }
+
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request, { ignoreSearch:true });
       if (cached) return cached;
       try {
         const response = await fetch(request);
         if (response?.ok) {
-          const cache = await caches.open(CACHE_NAME);
           cache.put(request, response.clone()).catch(() => {});
           return response;
         }
