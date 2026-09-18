@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.29';
+    const APP_VERSION = 'v4.30';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.29';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.29';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.30';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.30';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -4390,15 +4390,15 @@ bg2: {
     
       const text = String(raw || '').normalize('NFKC');
       const tests = [
-        ['投', /投手|(?:^|[\s,，、])投(?:ゴロ|飛|直|失|安)|\bpitcher\b|투수/i],
-        ['捕', /捕手|(?:^|[\s,，、])捕(?:ゴロ|飛|直|失|安)|\bcatcher\b|포수/i],
-        ['一', /一塁手|(?:^|[\s,，、])一(?:ゴロ|飛|直|失|安)|\bfirst baseman\b|1루수/i],
-        ['二', /二塁手|(?:^|[\s,，、])二(?:ゴロ|飛|直|失|安)|\bsecond baseman\b|2루수/i],
-        ['三', /三塁手|(?:^|[\s,，、])三(?:ゴロ|飛|直|失|安)|\bthird baseman\b|3루수/i],
-        ['游', /遊撃手|游撃手|(?:^|[\s,，、])(?:遊|游)(?:ゴロ|飛|直|失|安)|\bshortstop\b|유격수/i],
-        ['左', /左翼手|(?:^|[\s,，、])左(?:飛|直|失|安)|\bleft fielder\b|좌익수/i],
-        ['中', /中堅手|(?:^|[\s,，、])中(?:飛|直|失|安)|\bcenter fielder\b|중견수/i],
-        ['右', /右翼手|(?:^|[\s,，、])右(?:飛|直|失|安)|\bright fielder\b|우익수/i]
+        ['投', /投手|(?:^|[\s,，、])投(?:滾|ゴロ|飛|直|失|安)|\bpitcher\b|투수/i],
+        ['捕', /捕手|(?:^|[\s,，、])捕(?:滾|ゴロ|飛|直|失|安)|\bcatcher\b|포수/i],
+        ['一', /一塁手|(?:^|[\s,，、])一(?:滾|ゴロ|飛|直|失|安)|\bfirst baseman\b|1루수/i],
+        ['二', /二塁手|(?:^|[\s,，、])二(?:滾|ゴロ|飛|直|失|安)|\bsecond baseman\b|2루수/i],
+        ['三', /三塁手|(?:^|[\s,，、])三(?:滾|ゴロ|飛|直|失|安)|\bthird baseman\b|3루수/i],
+        ['游', /遊撃手|游撃手|(?:^|[\s,，、])(?:遊|游)(?:滾|ゴロ|飛|直|失|安)|\bshortstop\b|유격수/i],
+        ['左', /左翼手|(?:^|[\s,，、])左(?:滾|飛|直|失|安)|\bleft fielder\b|좌익수/i],
+        ['中', /中堅手|(?:^|[\s,，、])中(?:滾|飛|直|失|安)|\bcenter fielder\b|중견수/i],
+        ['右', /右翼手|(?:^|[\s,，、])右(?:滾|飛|直|失|安)|\bright fielder\b|우익수/i]
       ];
       let bestPos = '';
       let bestIndex = Infinity;
@@ -9375,7 +9375,7 @@ bg2: {
 
       host.innerHTML = `
         <h3>${isRunner ? '代跑紀錄' : '純代守紀錄'}</h3>
-        <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
+        <div class="panel" style="box-shadow:none;padding:14px;background:var(--panel)">
           <div class="grid four">
             <label class="field">局數
               <select id="subInning">${substitutionInningOptions(appearance.inning)}</select>
@@ -9533,7 +9533,7 @@ bg2: {
         <h3>${aggregateOnly ? '手動補逐打席' : '逐打席紀錄'}</h3>
         <div class="pa-list">${rows || '<div class="small" style="padding:8px 2px 12px">目前沒有逐打席，可直接在下方新增。</div>'}</div>
         ${kboRbiNote}
-        <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
+        <div class="panel" style="box-shadow:none;padding:14px;background:var(--panel)">
           <h3 id="paFormHeading" style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
           <div class="grid four">
             <label class="field">大分類
