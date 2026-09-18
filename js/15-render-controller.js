@@ -62,7 +62,9 @@
       els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
-        if (playerScopeCode === 'international') {
+        if (!playerPageActive) {
+          els.playerPageDate.textContent = '';
+        } else if (playerScopeCode === 'international') {
           const gameDate = internationalSelectedGameKey && currentRecord?.internationalOfficialImport
             ? String(currentRecord.date || '')
             : '';
