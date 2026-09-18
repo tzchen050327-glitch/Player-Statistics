@@ -4993,3 +4993,139 @@ body.home-game-detail-open{overflow:hidden}
 .home-time-zone-card.active:hover{
   border-color:#d8b04a;
 }
+
+
+/* ===== HEADER SETTINGS HUB ===== */
+.app-settings-header-btn{
+  position:relative;
+  width:34px;
+  min-width:34px;
+  height:30px;
+  min-height:30px;
+  padding:0;
+  display:inline-grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.30);
+  border-radius:9px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  box-shadow:none;
+  cursor:pointer;
+}
+.app-settings-header-btn svg{width:18px;height:18px;display:block}
+.app-settings-header-btn:hover{background:rgba(255,255,255,.22)}
+.app-settings-header-btn:active{transform:translateY(1px)}
+.app-settings-header-btn::after{
+  content:'';
+  position:absolute;
+  right:2px;
+  top:2px;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:rgba(255,255,255,.38);
+  box-shadow:0 0 0 2px rgba(8,36,64,.36);
+}
+.app-settings-header-btn.is-connected::after{background:#35c46a}
+.app-settings-header-btn.is-error::after{background:#ff6b6b}
+.app-settings-header-btn.is-busy::after{background:#ffd166;animation:cloudSyncPulse 1s ease-in-out infinite}
+
+#appSettingsDialog{
+  width:min(440px,calc(100% - 24px));
+}
+#appSettingsDialog .app-settings-body{
+  max-width:440px;
+  padding-bottom:20px;
+}
+.app-settings-kicker{
+  margin-bottom:3px;
+  color:#9a711d;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+.app-settings-list{
+  display:grid;
+  gap:10px;
+  margin-top:8px;
+}
+.app-settings-option{
+  width:100%;
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  min-height:72px;
+  padding:11px 12px;
+  border:1px solid #dce5ee;
+  border-radius:15px;
+  background:linear-gradient(180deg,#fff,#f7f9fc);
+  color:#18344f;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(17,38,66,.055);
+  transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease;
+}
+.app-settings-option:hover{
+  transform:translateY(-1px);
+  border-color:#b9c9d9;
+  box-shadow:0 9px 20px rgba(17,38,66,.09);
+}
+.app-settings-option:active{transform:translateY(0)}
+.app-settings-option-icon{
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  background:#edf4fa;
+  color:#174f86;
+  box-shadow:inset 0 0 0 1px #d6e4ef;
+}
+.app-settings-option-icon.diagnostics{
+  background:#fff6df;
+  color:#9a711d;
+  box-shadow:inset 0 0 0 1px #efdfb6;
+}
+.app-settings-option-icon svg{width:24px;height:24px}
+.app-settings-option-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.app-settings-option-copy strong{
+  color:#17344f;
+  font-size:15px;
+  font-weight:950;
+}
+.app-settings-option-copy small{
+  color:#758397;
+  font-size:11px;
+  font-weight:750;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.app-settings-option-arrow{
+  color:#8ca0b3;
+  font-size:26px;
+  font-weight:400;
+  line-height:1;
+}
+@media(max-width:640px){
+  .app-settings-header-btn{
+    width:30px;
+    min-width:30px;
+    height:28px;
+    min-height:28px;
+  }
+  #appSettingsDialog{width:calc(100% - 16px)}
+  .app-settings-option{
+    grid-template-columns:42px minmax(0,1fr) auto;
+    min-height:66px;
+    padding:9px 10px;
+    gap:10px;
+  }
+  .app-settings-option-icon{width:42px;height:42px;border-radius:12px}
+}
+/* ===== HEADER SETTINGS HUB END ===== */
