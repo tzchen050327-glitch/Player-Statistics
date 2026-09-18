@@ -268,20 +268,8 @@
     }
 
     function paDisplayLabel(pa) {
-      const player = selectedPlayer();
-      if (player && isUsPlayer(player)) {
-        const code = String(pa?.code || 'OUT').toUpperCase();
-        const usMap = {
-          '1B':'一安','2B':'二安','3B':'三安','HR':'全壘打',
-          'BB':'四壞','IBB':'故意四壞','HBP':'死球','CI':'礙打',
-          'FC':'野選','E':'失誤','K':'三振','DP':'雙殺','TP':'三殺',
-          'SH':'犧短','SF':'犧飛','GO':'滾地出局','FO':'飛球出局',
-          'OUT':'出局'
-        };
-        return usMap[code] || paLabel({ ...pa, position:'', cpblOfficialAction:'' });
-      }
       const official = String(pa?.cpblOfficialAction || '').trim();
-      if (official) return official;
+      if (official) return localizePaAction(pa);
       if (pa?.code === 'GO' && pa?.position) return `${pa.position}滾`;
       if (pa?.code === 'FO' && pa?.position) return `${pa.position}飛`;
       return paLabel(pa);
