@@ -133,3 +133,127 @@
 }
 
 /* Versioning is now managed automatically after code changes. */
+
+
+/* ===== DESKTOP LANDSCAPE READABILITY v4 ===== */
+@media (orientation:landscape) and (min-width:1200px){
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-board{
+    --gdx-type-xs:clamp(13px,.72vw,16px);
+    --gdx-type-sm:clamp(14px,.82vw,18px);
+    --gdx-type-md:clamp(16px,.98vw,21px);
+  }
+
+  /* Team headers */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-team-head{
+    height:clamp(58px,6.8vh,80px);
+    flex-basis:clamp(58px,6.8vh,80px);
+    padding:clamp(9px,.72vw,14px) clamp(12px,.9vw,18px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-team-head>span,
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-team-head>em{
+    font-size:clamp(12px,.68vw,15px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-team-head>strong{
+    font-size:clamp(18px,1.02vw,22px);
+  }
+
+  /* Left / right lineups */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-lineup{
+    grid-template-rows:clamp(34px,3.6vh,44px) repeat(9,minmax(0,1fr));
+    padding:8px 10px 10px;
+    gap:3px;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-head,
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-row{
+    grid-template-columns:
+      28px
+      minmax(78px,1fr)
+      44px
+      32px
+      32px
+      38px
+      minmax(48px,58px);
+    gap:3px;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-head{
+    font-size:clamp(12px,.68vw,15px);
+    line-height:1.15;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-row{
+    font-size:clamp(13px,.76vw,17px);
+    padding:0 5px;
+    line-height:1.2;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-row strong{
+    font-size:clamp(15px,.86vw,19px);
+    line-height:1.2;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-lineup-half-result i{
+    padding:2px 4px;
+    font-size:clamp(10px,.6vw,13px);
+    line-height:1.2;
+  }
+
+  /* Center scoreboard */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-scoreline span{
+    font-size:clamp(17px,.96vw,21px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-inning{
+    font-size:clamp(14px,.8vw,18px);
+    padding:6px 12px;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-scoretable{
+    font-size:clamp(13px,.76vw,17px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-scoretable thead th{
+    font-size:clamp(12px,.68vw,15px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-landscape-scoretable tbody th{
+    font-size:clamp(14px,.82vw,18px);
+  }
+
+  /* Field / defense */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-mini-title{
+    font-size:clamp(12px,.68vw,15px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-fielders-layer .gdx-fielder{
+    padding:4px 8px !important;
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-fielders-layer .gdx-fielder span{
+    font-size:clamp(12px,.7vw,15px) !important;
+    line-height:1.15;
+  }
+
+  /* Runner / live strip */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-runner-name{
+    font-size:clamp(12px,.7vw,15px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-runner-outs{
+    font-size:clamp(15px,.86vw,19px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-pitcher-row>span,
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-batter-row>div:first-child>span{
+    font-size:clamp(11px,.62vw,14px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-pitcher-row>strong,
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-batter-row>div:first-child>strong{
+    font-size:clamp(14px,.78vw,17px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-pitcher-row>b,
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-live-batter-row>b{
+    font-size:clamp(11px,.62vw,14px);
+    padding:4px 7px;
+  }
+
+  /* Pitcher card, if shown in this layout */
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-pitcher-kicker{
+    font-size:clamp(12px,.68vw,15px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-pitcher-grid span{
+    font-size:clamp(11px,.64vw,14px);
+  }
+  body.home-game-detail-open.gdx-cpbl-landscape .gdx-pitcher-grid b{
+    font-size:clamp(16px,.9vw,20px);
+  }
+}
+/* ===== DESKTOP LANDSCAPE READABILITY v4 END ===== */
