@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.34';
+    const APP_VERSION = 'v4.35';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.34';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.34';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.35';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.35';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -2300,15 +2300,15 @@ bg2: {
         const pitchCount = Math.max(0,Math.min(150,Number(pitcher.pitchCount)||0));
         g.pitchTens = Math.floor(pitchCount/10);
         g.pitchOnes = pitchCount>=150 ? 0 : pitchCount%10;
-        g.cg = Boolean(Number(pitcher.cg)||pitcher.cg);
-        g.sho = Boolean(Number(pitcher.sho)||pitcher.sho);
-        g.hld = Boolean(Number(pitcher.hld)||pitcher.hld);
-        g.sv = Boolean(Number(pitcher.sv)||pitcher.sv);
-        g.bsv = Boolean(Number(pitcher.bsv)||pitcher.bsv);
+        g.cg = officialFlag(pitcher.cg);
+        g.sho = officialFlag(pitcher.sho);
+        g.hld = officialFlag(pitcher.hld);
+        g.sv = officialFlag(pitcher.sv);
+        g.bsv = officialFlag(pitcher.bsv);
         g.decision = Number(pitcher.w)>0 ? 'W' : Number(pitcher.l)>0 ? 'L'
           : (['W','L'].includes(pitcher.decision) ? pitcher.decision : 'ND');
         g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
-        currentRecord.externalWalksCombined = Boolean(pitcher.walksCombined);
+        currentRecord.externalWalksCombined = officialFlag(pitcher.walksCombined);
         standardizePitcherSpecialRecords(g);
       }
 
