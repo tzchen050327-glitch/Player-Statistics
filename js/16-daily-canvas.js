@@ -13,6 +13,16 @@
       }
 
       // Start photo loading, but never block the main card on it.
+      // Re-renders of the same view are allowed to finish the photo; only a real
+      // context change (player/role/tab/template/date/photo selection) invalidates it.
+      const photoContext = {
+        playerId:String(player.id || ''),
+        role:String(effectiveType || ''),
+        tab:String(selectedTab || ''),
+        template:String(currentTemplate || ''),
+        date:String(currentRecord?.date || ''),
+        selectedPhotoId:String(player.selectedPhotoId || '')
+      };
       const photoPromise = resolvePlayerDisplayPhoto(player, effectiveType);
 
       ctx.clearRect(0, 0, W, H);
@@ -358,7 +368,19 @@
 
       try {
         const resolvedPhoto = await photoPromise;
-        if (token !== renderToken) return;
+        const activePlayer = selectedPlayer();
+        const activeRole = activePlayer && selectedTab === 'today' ? activeTodayRole(activePlayer) : activePlayer?.type;
+        const photoContextStillCurrent = Boolean(
+          currentPage === 'player'
+          && activePlayer
+          && String(activePlayer.id || '') === photoContext.playerId
+          && String(activeRole || '') === photoContext.role
+          && String(selectedTab || '') === photoContext.tab
+          && String(currentTemplate || '') === photoContext.template
+          && String(currentRecord?.date || '') === photoContext.date
+          && String(activePlayer.selectedPhotoId || '') === photoContext.selectedPhotoId
+        );
+        if (!photoContextStillCurrent) return;
         if (resolvedPhoto.image) {
           if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
             const transform = clampPhotoTransform(
