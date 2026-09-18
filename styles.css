@@ -5129,3 +5129,320 @@ body.home-game-detail-open{overflow:hidden}
   .app-settings-option-icon{width:42px;height:42px;border-radius:12px}
 }
 /* ===== HEADER SETTINGS HUB END ===== */
+
+
+/* ===== v4 BLACK GOLD THEME ===== */
+#homeHeaderDateControl{
+  gap:6px;
+}
+
+/* Settings theme control */
+.app-settings-theme-option{
+  cursor:default;
+}
+.app-settings-option-icon.theme{
+  background:#f7f2e7;
+  color:#9a711d;
+  box-shadow:inset 0 0 0 1px #e7d9b9;
+}
+.app-theme-segmented{
+  display:inline-grid;
+  grid-template-columns:1fr 1fr;
+  gap:3px;
+  padding:3px;
+  border:1px solid #d6e0e9;
+  border-radius:10px;
+  background:#eef2f6;
+}
+.app-theme-segmented button{
+  min-width:48px;
+  min-height:30px;
+  padding:4px 8px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#68798b;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+}
+.app-theme-segmented button.active{
+  background:#fff;
+  color:#173b60;
+  box-shadow:0 2px 7px rgba(17,38,66,.10);
+}
+@media(max-width:520px){
+  .app-settings-theme-option{
+    grid-template-columns:42px minmax(0,1fr);
+  }
+  .app-settings-theme-option .app-theme-segmented{
+    grid-column:1/-1;
+    width:100%;
+  }
+  .app-theme-segmented button{min-height:34px}
+}
+
+/* Dark / black-gold mode */
+html[data-theme="dark"]{
+  color-scheme:dark;
+  background:#080a0d;
+  --bg:#080a0d;
+  --panel:#11151b;
+  --text:#f2ead8;
+  --muted:#aaa28f;
+  --line:#2d3035;
+  --accent:#d0a441;
+  --accent-strong:#b38122;
+  --accent-soft:#241e13;
+  --accent-2:#e0b956;
+  --pressed:#252017;
+  --shadow:0 14px 36px rgba(0,0,0,.38);
+  --shadow-strong:0 22px 56px rgba(0,0,0,.52);
+}
+html[data-theme="dark"] body{
+  color:#eee7d9;
+  background:
+    radial-gradient(circle at 10% -8%, rgba(201,154,57,.13), transparent 30%),
+    radial-gradient(circle at 92% 4%, rgba(147,105,28,.10), transparent 24%),
+    linear-gradient(180deg,#0d1014 0%,#080a0d 100%);
+}
+html[data-theme="dark"] body::before{
+  background:
+    linear-gradient(115deg,rgba(5,6,8,.99),rgba(18,16,12,.97)),
+    repeating-linear-gradient(135deg,rgba(218,176,81,.035) 0 1px,transparent 1px 13px);
+}
+html[data-theme="dark"] .title-row{
+  border-color:rgba(218,176,81,.23);
+  background:
+    radial-gradient(circle at 78% -30%,rgba(224,185,86,.16),transparent 34%),
+    linear-gradient(118deg,#080a0d,#14110b 70%,#0b0c0e);
+  box-shadow:0 18px 46px rgba(0,0,0,.46);
+}
+html[data-theme="dark"] .title-row::before{
+  border-color:rgba(224,185,86,.14);
+}
+html[data-theme="dark"] .title-row::after{
+  background:linear-gradient(90deg,#f0cc70,#9d701d);
+}
+html[data-theme="dark"] .toolbar,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] dialog,
+html[data-theme="dark"] .sync-progress-card{
+  border-color:#2d3137;
+  background:rgba(17,21,27,.97);
+  box-shadow:0 14px 36px rgba(0,0,0,.34);
+}
+html[data-theme="dark"] .panel h2,
+html[data-theme="dark"] .panel h3,
+html[data-theme="dark"] .home-card-title h2,
+html[data-theme="dark"] .home-player-head h2,
+html[data-theme="dark"] .player-page-top h2,
+html[data-theme="dark"] .sync-progress-title{
+  color:#f4ecd9;
+}
+html[data-theme="dark"] .subtle,
+html[data-theme="dark"] .home-player-meta,
+html[data-theme="dark"] .template-card-status,
+html[data-theme="dark"] .home-daily-games-meta,
+html[data-theme="dark"] .home-daily-games-title span{
+  color:#a89f8c;
+}
+html[data-theme="dark"] .press-btn,
+html[data-theme="dark"] .player-btn,
+html[data-theme="dark"] .app-picker-trigger,
+html[data-theme="dark"] .home-hierarchy-btn,
+html[data-theme="dark"] .home-special-filter-btn,
+html[data-theme="dark"] .app-date-nav,
+html[data-theme="dark"] .app-date-year-trigger{
+  border-color:#34373d;
+  color:#e8dfcc;
+  background:linear-gradient(180deg,#171b20,#101318);
+  box-shadow:0 3px 10px rgba(0,0,0,.24);
+}
+html[data-theme="dark"] .press-btn:hover,
+html[data-theme="dark"] .player-btn:hover,
+html[data-theme="dark"] .app-picker-trigger:hover,
+html[data-theme="dark"] .home-hierarchy-btn:hover{
+  border-color:#8d722f;
+  background:linear-gradient(180deg,#201c14,#141414);
+}
+html[data-theme="dark"] .press-btn:active,
+html[data-theme="dark"] .player-btn:active,
+html[data-theme="dark"] .press-btn.active,
+html[data-theme="dark"] .player-btn.active{
+  border-color:#9c7a2e;
+  background:#211c12;
+}
+html[data-theme="dark"] .press-btn.primary,
+html[data-theme="dark"] .home-zone-btn.active,
+html[data-theme="dark"] .home-hierarchy-btn.active,
+html[data-theme="dark"] .home-level-filter-btn.active{
+  border-color:#b78c2d;
+  color:#fff5d5;
+  background:linear-gradient(145deg,#8b651b,#4e370d);
+  box-shadow:0 8px 18px rgba(130,92,17,.24);
+}
+html[data-theme="dark"] .home-zone-switch,
+html[data-theme="dark"] .level-switch{
+  border-color:#2f3338;
+  background:#0d1014;
+}
+html[data-theme="dark"] .home-zone-btn{
+  color:#b8af9d;
+}
+html[data-theme="dark"] .template-card,
+html[data-theme="dark"] .home-player-card,
+html[data-theme="dark"] .home-game-card,
+html[data-theme="dark"] .player-search-result,
+html[data-theme="dark"] .batch-report-row,
+html[data-theme="dark"] .batch-report-result,
+html[data-theme="dark"] .intl-game-card,
+html[data-theme="dark"] .app-settings-option{
+  border-color:#2d3137;
+  color:#eee6d5;
+  background:linear-gradient(180deg,#15191e,#101318);
+  box-shadow:0 6px 16px rgba(0,0,0,.24);
+}
+html[data-theme="dark"] .template-card:not(:disabled):hover,
+html[data-theme="dark"] .home-player-card:hover,
+html[data-theme="dark"] .app-settings-option:hover{
+  border-color:#806825;
+  box-shadow:0 10px 22px rgba(0,0,0,.34);
+}
+html[data-theme="dark"] .template-card.selected,
+html[data-theme="dark"] .home-player-card.active{
+  border-color:#d3a941;
+  outline-color:#d3a941;
+  box-shadow:0 0 0 2px rgba(211,169,65,.16),0 10px 24px rgba(0,0,0,.32);
+}
+html[data-theme="dark"] .template-card-title,
+html[data-theme="dark"] .home-player-name,
+html[data-theme="dark"] .home-game-team-name,
+html[data-theme="dark"] .home-game-score,
+html[data-theme="dark"] .app-settings-option-copy strong{
+  color:#f0e7d4;
+}
+html[data-theme="dark"] .home-player-number{
+  background:#241e13;
+  color:#e5b94d;
+}
+html[data-theme="dark"] .template-preview{
+  background:#090b0e;
+}
+html[data-theme="dark"] .home-time-zone-head h2,
+html[data-theme="dark"] .home-time-zone-meta strong{
+  color:#e9dfc9;
+}
+html[data-theme="dark"] .home-time-zone-head span,
+html[data-theme="dark"] .home-time-zone-meta span{
+  color:#8f8778;
+}
+html[data-theme="dark"] .home-time-zone-card{
+  border-color:#2f3338;
+  background:#101318;
+  box-shadow:0 3px 9px rgba(0,0,0,.24);
+}
+html[data-theme="dark"] .home-time-zone-card time{
+  color:#d9b352;
+}
+html[data-theme="dark"] .home-time-zone-card.active{
+  border-color:#c99c34;
+  background:linear-gradient(135deg,#2a2111,#121416);
+}
+html[data-theme="dark"] .home-time-zone-card.active time{
+  color:#f0ca69;
+}
+html[data-theme="dark"] .home-game-status{
+  background:#25282c;
+  color:#c6bdad;
+}
+html[data-theme="dark"] .home-game-status.status-live{
+  background:#33260d;
+  color:#f0c45c;
+}
+html[data-theme="dark"] .home-game-status.status-final{
+  background:#202328;
+  color:#aaa394;
+}
+html[data-theme="dark"] .home-game-venue{
+  border-top-color:#2b2e32;
+  color:#8f887a;
+}
+html[data-theme="dark"] .home-games-state,
+html[data-theme="dark"] .empty,
+html[data-theme="dark"] .intl-flow-empty{
+  border-color:#3a3932;
+  background:rgba(18,20,23,.86);
+  color:#a9a18f;
+}
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input[type="password"],
+html[data-theme="dark"] input[type="date"],
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+  border-color:#383b40;
+  background:#0d1014;
+  color:#eee6d5;
+}
+html[data-theme="dark"] input[readonly]{
+  background:#15181c;
+}
+html[data-theme="dark"] .new-player-suggestions,
+html[data-theme="dark"] .filter-choice-shell{
+  border-color:#30343a;
+  background:rgba(15,18,22,.98);
+  box-shadow:0 18px 44px rgba(0,0,0,.52);
+}
+html[data-theme="dark"] .new-player-suggestion{
+  color:#e8dfcc;
+}
+html[data-theme="dark"] .new-player-suggestion:hover{
+  background:#211b10;
+}
+html[data-theme="dark"] .app-settings-option-icon{
+  background:#171d23;
+  color:#d7ad48;
+  box-shadow:inset 0 0 0 1px #34383e;
+}
+html[data-theme="dark"] .app-settings-option-icon.diagnostics,
+html[data-theme="dark"] .app-settings-option-icon.theme{
+  background:#241e13;
+  color:#e0b653;
+  box-shadow:inset 0 0 0 1px #4a3d20;
+}
+html[data-theme="dark"] .app-settings-option-copy small{
+  color:#9e9687;
+}
+html[data-theme="dark"] .app-theme-segmented{
+  border-color:#3a3d42;
+  background:#0b0d10;
+}
+html[data-theme="dark"] .app-theme-segmented button{
+  color:#9e9687;
+}
+html[data-theme="dark"] .app-theme-segmented button.active{
+  color:#17120a;
+  background:linear-gradient(180deg,#f0cf75,#bf8e2e);
+  box-shadow:0 3px 9px rgba(0,0,0,.30);
+}
+html[data-theme="dark"] .app-date-month-label,
+html[data-theme="dark"] .app-date-year-trigger{
+  color:#e6c267;
+}
+html[data-theme="dark"] .app-date-year-trigger:hover,
+html[data-theme="dark"] .app-date-year-trigger[aria-expanded="true"]{
+  border-color:#a5812d;
+  background:#241e13;
+  color:#f0cd71;
+}
+html[data-theme="dark"] .app-version-badge{
+  border-color:rgba(226,185,79,.55);
+  background:rgba(13,13,13,.94);
+  color:#f0cc70;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:#66552c;
+  background-clip:padding-box;
+}
+/* ===== v4 BLACK GOLD THEME END ===== */
