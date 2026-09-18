@@ -736,7 +736,7 @@
   function compactLineupPaResult(play) {
     const result=shortPaResult(play);
     const map={
-      '全壘打':'全壘',
+      '全壘打':'全打',
       '四壞':'四壞',
       '觸身':'觸身',
       '三振':'三振',
@@ -752,6 +752,14 @@
       '滾地':'滾地'
     };
     return map[result]||result;
+  }
+
+  function lineupPaTone(result) {
+    if (/^(一安|二安|三安)$/.test(result)) return 'is-hit';
+    if (result === '全打') return 'is-homer';
+    if (/^(四壞|觸身)$/.test(result)) return 'is-free-pass';
+    if (/^(犧飛|犧打)$/.test(result)) return 'is-sacrifice';
+    return '';
   }
 
   function currentHalfLineupResults(detail,side) {
@@ -799,7 +807,7 @@
     return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span><span>本局</span></div>`}${rows.map(e=>{
       const results=lineupHalfResults(e,halfResults);
       const title=results.length?`本半局：${results.join('、')}`:'';
-      const resultHtml=results.map(result=>`<i>${esc(result)}</i>`).join('');
+      const resultHtml=results.map(result=>`<i class="${lineupPaTone(result)}">${esc(result)}</i>`).join('');
       return `<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span><span class="gdx-lineup-half-result ${results.length?'has-result':''}" title="${esc(title)}">${resultHtml}</span></div>`;
     }).join('')}</div>`;
   }
