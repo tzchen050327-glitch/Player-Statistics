@@ -1155,18 +1155,16 @@
       if (String(detail?.status || '').toLowerCase() !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
-      if (activeHomeGameDetail.league === 'CPBL' || activeHomeGameDetail.league === 'NPB') {
-        // v2.82: CPBL/NPB live detail is backend-managed and pushed by Supabase Realtime.
-        // Browser polling is only a five-minute safety net after a Realtime disconnect.
-        const connected = activeHomeGameDetail.league === 'CPBL'
-          ? window.__cpblRealtimeConnected
-          : window.__npbRealtimeConnected;
-        if (connected) {
+      if (activeHomeGameDetail.league === 'CPBL') {
+        // CPBL still uses Realtime as the primary path; keep a five-minute fallback only if disconnected.
+        if (window.__cpblRealtimeConnected) {
           updateHomeGameDetailRefreshCountdown();
           return;
         }
         delay = 5 * 60 * 1000;
       } else if (activeHomeGameDetail.league === 'NPB') {
+        // NPB does not rely on push delivery alone. The lightweight revision watcher runs every 10s,
+        // and this 45s full shared-cache refresh is a second safety net.
         delay = 45 * 1000;
       }
       startHomeGameDetailRefreshCountdown(delay);
