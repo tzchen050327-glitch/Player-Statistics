@@ -154,8 +154,22 @@
       if (!decorImageCache.has(src)) {
         decorImageCache.set(src, new Promise((resolve, reject) => {
           const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error('裝飾圖片載入失敗'));
+          let settled = false;
+          const finish = (fn, value) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            fn(value);
+          };
+          const timer = setTimeout(() => {
+            decorImageCache.delete(src);
+            finish(reject, new Error('圖片載入逾時'));
+          }, 5000);
+          img.onload = () => finish(resolve, img);
+          img.onerror = () => {
+            decorImageCache.delete(src);
+            finish(reject, new Error('圖片載入失敗'));
+          };
           img.src = src;
         }));
       }
@@ -182,8 +196,17 @@
       return new Promise((resolve, reject) => {
         const url = URL.createObjectURL(blob);
         const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('圖片載入失敗')); };
+        let settled = false;
+        const finish = (fn, value) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          URL.revokeObjectURL(url);
+          fn(value);
+        };
+        const timer = setTimeout(() => finish(reject, new Error('圖片載入逾時')), 5000);
+        img.onload = () => finish(resolve, img);
+        img.onerror = () => finish(reject, new Error('圖片載入失敗'));
         img.src = url;
       });
     }
