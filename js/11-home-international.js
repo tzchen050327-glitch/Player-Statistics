@@ -924,6 +924,17 @@
       return found ? total : null;
     }
 
+    function homeDetailLineupReady(detail) {
+      return ['away','home'].every(side => {
+        const batters = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        return batters.length >= 9 && batters.slice(0, 9).every((player, index) => {
+          const name = String(player?.fullName || player?.name || '').trim();
+          const order = Number(player?.order || index + 1);
+          return Boolean(name) && order >= 1 && order <= 9;
+        });
+      });
+    }
+
     function syncHomeDailyGameFromDetail(league, date, game, detail) {
       const info = detail?.game || {};
       const awayRuns = detailRunsFromScoreboard(detail, 'away');
@@ -937,6 +948,7 @@
         if (Number.isFinite(homeScore)) target.homeScore = homeScore;
         if (normalizedStatus) target.status = normalizedStatus;
         if (info?.id && !target.id) target.id = info.id;
+        if (homeDetailLineupReady(detail)) target.lineupReady = true;
       };
       apply(game);
       const daily = homeDailyGamesCache.get(`${league}|${date}`);
@@ -1346,7 +1358,8 @@
         ...cached.games[index],
         ...gameInfo,
         id:incomingId || cached.games[index]?.id,
-        status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled')
+        status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled'),
+        lineupReady:Boolean(cached.games[index]?.lineupReady || homeDetailLineupReady(detail))
       };
       cached.at = Date.now();
       cached.error = '';
@@ -1438,7 +1451,10 @@
           return `
             <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
-                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                <span class="home-game-card-top-left">
+                  <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                  ${(league === 'CPBL' || league === 'NPB') && game?.lineupReady ? '<span class="home-game-lineup-ready">先發打序</span>' : ''}
+                </span>
                 ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
               </div>
               <div class="home-game-team">
