@@ -1,0 +1,133 @@
+/* Final dark-theme overrides. Loaded after all legacy component styles. */
+
+html[data-theme="dark"] #datePickerDialog .filter-choice-shell{
+  border:1px solid #3b3528 !important;
+  background:linear-gradient(180deg,#111317 0%,#0c0e11 100%) !important;
+  color:#f1e8d6 !important;
+  box-shadow:0 30px 90px rgba(0,0,0,.62) !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-shell::before{
+  background:linear-gradient(90deg,#7f5a16 0%,#d0a13a 58%,#f0cc70 100%) !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-head{
+  border-bottom-color:#343028 !important;
+  background:linear-gradient(180deg,#15171a 0%,#101215 100%) !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-kicker{
+  color:#d5a640 !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-head h2,
+html[data-theme="dark"] #datePickerTitle{
+  color:#f5ecd9 !important;
+  text-shadow:none !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-close{
+  border-color:#66552d !important;
+  background:#14161a !important;
+  color:#eee4cf !important;
+}
+html[data-theme="dark"] #datePickerDialog .filter-choice-close:hover{
+  border-color:#ba8f31 !important;
+  color:#ffd66a !important;
+  background:#211b11 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-picker-body{
+  background:#0f1114 !important;
+  color:#eee5d3 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-nav{
+  border-color:#383a3f !important;
+  background:#15181c !important;
+  color:#e7c264 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-nav:hover{
+  border-color:#9a792c !important;
+  background:#221c11 !important;
+  color:#ffd76d !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-trigger{
+  border-color:#3c3e42 !important;
+  background:linear-gradient(180deg,#191b1f,#111318) !important;
+  color:#f2e7d1 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-trigger svg{
+  color:#d9ac42 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-trigger:hover,
+html[data-theme="dark"] #datePickerDialog .app-date-year-trigger[aria-expanded="true"]{
+  border-color:#9a782a !important;
+  background:#211b11 !important;
+  color:#ffd66a !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-month-label{
+  color:#f0c861 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-weekdays span{
+  color:#aaa190 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-day{
+  color:#ddd4c3 !important;
+  background:transparent !important;
+  border-color:transparent !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-day:hover{
+  color:#ffd66a !important;
+  background:#1d1912 !important;
+  border-color:#5a4925 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-day.is-today{
+  color:#e1b44c !important;
+  border-color:#8e6e29 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-day.is-selected,
+html[data-theme="dark"] #datePickerDialog .app-date-day.is-selected.is-today{
+  color:#19130a !important;
+  border-color:#e0b64d !important;
+  background:linear-gradient(180deg,#f0cc70 0%,#c9972e 100%) !important;
+  box-shadow:inset 0 -3px #8a6118,0 6px 14px rgba(0,0,0,.28) !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-option{
+  border-color:#34373c !important;
+  background:#14171b !important;
+  color:#ddd4c3 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-option:hover{
+  border-color:#796126 !important;
+  background:#211b11 !important;
+  color:#f0c861 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-year-option.is-selected{
+  border-color:#e0b64d !important;
+  background:linear-gradient(180deg,#e5bc57,#b78326) !important;
+  color:#171108 !important;
+  box-shadow:inset 0 -3px #785215 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-footer{
+  border-top-color:#343028 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-today{
+  border-color:#6f5824 !important;
+  background:#191611 !important;
+  color:#ead096 !important;
+}
+html[data-theme="dark"] #datePickerDialog .app-date-today:hover{
+  border-color:#b78b30 !important;
+  background:#241d11 !important;
+  color:#ffd66a !important;
+}
+
+/* Header date trigger: keep this here too so legacy title-row rules cannot restore blue text. */
+html[data-theme="dark"] #gameDateButton{
+  border-color:#4a4028 !important;
+  background:linear-gradient(180deg,#171612,#0f1012) !important;
+  color:#f3ead7 !important;
+}
+html[data-theme="dark"] #gameDateButtonText{
+  color:#f3ead7 !important;
+}
+html[data-theme="dark"] #gameDateButton svg{
+  color:#dfb44e !important;
+}
