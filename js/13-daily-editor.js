@@ -157,7 +157,7 @@
 
       host.innerHTML = `
         <h3>${isRunner ? '代跑紀錄' : '純代守紀錄'}</h3>
-        <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
+        <div class="panel" style="box-shadow:none;padding:14px;background:var(--panel)">
           <div class="grid four">
             <label class="field">局數
               <select id="subInning">${substitutionInningOptions(appearance.inning)}</select>
@@ -315,7 +315,7 @@
         <h3>${aggregateOnly ? '手動補逐打席' : '逐打席紀錄'}</h3>
         <div class="pa-list">${rows || '<div class="small" style="padding:8px 2px 12px">目前沒有逐打席，可直接在下方新增。</div>'}</div>
         ${kboRbiNote}
-        <div class="panel" style="box-shadow:none;padding:14px;background:#f8fafc">
+        <div class="panel" style="box-shadow:none;padding:14px;background:var(--panel)">
           <h3 id="paFormHeading" style="margin-top:0">第 ${currentRecord.hitterPAs.length + 1} 打席</h3>
           <div class="grid four">
             <label class="field">大分類
