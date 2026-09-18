@@ -65,6 +65,24 @@
     queueMicrotask(renderClocks);
   }
 
+  function switchLeagueFromClock(key) {
+    const country = key === 'TW' ? 'TW' : key === 'JP_KR' ? 'JP' : key === 'US' ? 'US' : '';
+    if (!country) return;
+
+    homeRootSection = 'pro';
+    homeProCountry = country;
+    homeTeamFilter = '';
+    if (country === 'US') homeUsLeague = 'MLB';
+
+    applyHomeProSelection();
+    renderRecentPlayers();
+    renderClocks();
+  }
+
+  document.querySelectorAll('#homeTimeZonePanel [data-time-zone-key]').forEach(card => {
+    card.addEventListener('click', () => switchLeagueFromClock(String(card.dataset.timeZoneKey || '')));
+  });
+
   document.querySelectorAll('[data-pro-country],[data-home-root],[data-us-league]').forEach(button => {
     button.addEventListener('click', refreshSoon);
   });
