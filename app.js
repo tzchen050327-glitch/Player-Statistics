@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.35';
+    const APP_VERSION = 'v4.36';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.35';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.35';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.36';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.36';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -10738,6 +10738,16 @@ bg2: {
       }
 
       // Start photo loading, but never block the main card on it.
+      // Re-renders of the same view are allowed to finish the photo; only a real
+      // context change (player/role/tab/template/date/photo selection) invalidates it.
+      const photoContext = {
+        playerId:String(player.id || ''),
+        role:String(effectiveType || ''),
+        tab:String(selectedTab || ''),
+        template:String(currentTemplate || ''),
+        date:String(currentRecord?.date || ''),
+        selectedPhotoId:String(player.selectedPhotoId || '')
+      };
       const photoPromise = resolvePlayerDisplayPhoto(player, effectiveType);
 
       ctx.clearRect(0, 0, W, H);
@@ -11083,7 +11093,19 @@ bg2: {
 
       try {
         const resolvedPhoto = await photoPromise;
-        if (token !== renderToken) return;
+        const activePlayer = selectedPlayer();
+        const activeRole = activePlayer && selectedTab === 'today' ? activeTodayRole(activePlayer) : activePlayer?.type;
+        const photoContextStillCurrent = Boolean(
+          currentPage === 'player'
+          && activePlayer
+          && String(activePlayer.id || '') === photoContext.playerId
+          && String(activeRole || '') === photoContext.role
+          && String(selectedTab || '') === photoContext.tab
+          && String(currentTemplate || '') === photoContext.template
+          && String(currentRecord?.date || '') === photoContext.date
+          && String(activePlayer.selectedPhotoId || '') === photoContext.selectedPhotoId
+        );
+        if (!photoContextStillCurrent) return;
         if (resolvedPhoto.image) {
           if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
             const transform = clampPhotoTransform(
