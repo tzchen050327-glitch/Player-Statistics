@@ -82,21 +82,21 @@
           <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各聯盟時間">
             <div class="home-time-zone-head">
               <h2>各地時間</h2>
-              <span>聯盟時區</span>
+              <span>點擊切換聯盟</span>
             </div>
             <div class="home-time-zone-list">
-              <div class="home-time-zone-card" data-time-zone-key="TW">
-                <div class="home-time-zone-meta"><strong>台灣</strong><span id="homeTimeDateTW"></span></div>
+              <button class="home-time-zone-card" type="button" data-time-zone-key="TW" aria-label="切換到台灣中職">
+                <span class="home-time-zone-meta"><strong>台灣</strong><span id="homeTimeDateTW"></span></span>
                 <time id="homeTimeTW">--:--</time>
-              </div>
-              <div class="home-time-zone-card" data-time-zone-key="JP_KR">
-                <div class="home-time-zone-meta"><strong>日韓</strong><span id="homeTimeDateJPKR"></span></div>
+              </button>
+              <button class="home-time-zone-card" type="button" data-time-zone-key="JP_KR" aria-label="切換到日本職棒">
+                <span class="home-time-zone-meta"><strong>日韓</strong><span id="homeTimeDateJPKR"></span></span>
                 <time id="homeTimeJPKR">--:--</time>
-              </div>
-              <div class="home-time-zone-card" data-time-zone-key="US">
-                <div class="home-time-zone-meta"><strong>紐約</strong><span id="homeTimeDateUS"></span></div>
+              </button>
+              <button class="home-time-zone-card" type="button" data-time-zone-key="US" aria-label="切換到美國大聯盟">
+                <span class="home-time-zone-meta"><strong>紐約</strong><span id="homeTimeDateUS"></span></span>
                 <time id="homeTimeUS">--:--</time>
-              </div>
+              </button>
             </div>
           </section>
         </aside>
