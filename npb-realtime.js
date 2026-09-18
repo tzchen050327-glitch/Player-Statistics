@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v3.11';
+  const VERSION = 'v4.15';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -9,6 +9,7 @@
   let channel = null;
   let watch = null;
   let lastRevision = -1;
+  let lastSignalRevision = -1;
   let loader = null;
   let watchdogTimer = 0;
   let signalSerial = 0;
@@ -128,20 +129,24 @@
     watchdogTimer = 0;
   }
 
+  async function checkRevisionNow() {
+    const current = watch ? { ...watch } : null;
+    if (!current || document.visibilityState !== 'visible') return;
+    try {
+      const meta = await readRevision(current.date, current.gameId);
+      if (!meta || !watch || watch.date !== current.date || watch.gameId !== current.gameId) return;
+      const signalRevision = Number(meta.published_revision ?? -1);
+      if (!Number.isFinite(signalRevision) || signalRevision <= lastSignalRevision) return;
+      const published = await readPublishedForRevision(current.date, current.gameId, signalRevision);
+      if (!published?.row || !watch || watch.date !== current.date || watch.gameId !== current.gameId) return;
+      lastSignalRevision = signalRevision;
+      acceptRow(published.row);
+    } catch {}
+  }
+
   function startWatchdog() {
     stopWatchdog();
-    watchdogTimer = setInterval(async () => {
-      const current = watch ? { ...watch } : null;
-      if (!current || document.visibilityState !== 'visible') return;
-      try {
-        const meta = await readRevision(current.date, current.gameId);
-        if (!meta || !watch || watch.date !== current.date || watch.gameId !== current.gameId) return;
-        const revision = Number(meta.published_revision ?? -1);
-        if (!Number.isFinite(revision) || revision <= lastRevision) return;
-        const published = await readPublishedForRevision(current.date, current.gameId, revision);
-        if (published?.row && watch && watch.date === current.date && watch.gameId === current.gameId) acceptRow(published.row);
-      } catch {}
-    }, 12000);
+    watchdogTimer = setInterval(() => { void checkRevisionNow(); }, 10000);
   }
 
   function acceptRow(row) {
@@ -162,14 +167,17 @@
     const current = watch ? { ...watch } : null;
     if (!current || !signal) return;
     if (String(signal.game_id || '') !== current.gameId || String(signal.game_date || '') !== current.date) return;
-    const revision = Number(signal.published_revision ?? -1);
-    if (!Number.isFinite(revision) || revision <= lastRevision) return;
+    const signalRevision = Number(signal.published_revision ?? -1);
+    if (!Number.isFinite(signalRevision) || signalRevision <= lastSignalRevision) return;
     const serial = ++signalSerial;
     try {
-      const published = await readPublishedForRevision(current.date, current.gameId, revision);
+      const published = await readPublishedForRevision(current.date, current.gameId, signalRevision);
       if (serial !== signalSerial || !watch) return;
       if (watch.date !== current.date || watch.gameId !== current.gameId) return;
-      if (published?.row) acceptRow(published.row);
+      if (published?.row) {
+        lastSignalRevision = signalRevision;
+        acceptRow(published.row);
+      }
     } catch {}
   }
 
@@ -179,6 +187,7 @@
     channel = null;
     watch = null;
     lastRevision = -1;
+    lastSignalRevision = -1;
     signalSerial += 1;
     if (old && client) {
       try { await client.removeChannel(old); } catch {}
@@ -193,6 +202,7 @@
     if (watch?.date === date && watch?.gameId === gameId && channel) return;
     await stopWatch(false);
     watch = { date, gameId };
+    lastSignalRevision = -1;
     try {
       const sb = await getClient();
       if (!watch || watch.date !== date || watch.gameId !== gameId) return;
@@ -214,4 +224,10 @@
 
   window.addEventListener('npb-live-watch', event => startWatch(event?.detail || {}));
   window.addEventListener('npb-live-unwatch', () => stopWatch());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && watch) void checkRevisionNow();
+  });
+  window.addEventListener('focus', () => {
+    if (watch) void checkRevisionNow();
+  });
 })();
