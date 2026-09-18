@@ -1163,8 +1163,12 @@
         }
         delay = 5 * 60 * 1000;
       } else if (activeHomeGameDetail.league === 'NPB') {
-        // NPB does not rely on push delivery alone. The lightweight revision watcher runs every 10s,
-        // and this 45s full shared-cache refresh is a second safety net.
+        // NPB Realtime is the primary path. The 10s revision watchdog remains a lightweight
+        // safety check; only fall back to a 45s full shared-cache refresh when Realtime is down.
+        if (window.__npbRealtimeConnected) {
+          updateHomeGameDetailRefreshCountdown();
+          return;
+        }
         delay = 45 * 1000;
       }
       startHomeGameDetailRefreshCountdown(delay);
