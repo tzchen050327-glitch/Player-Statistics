@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.36';
+    const APP_VERSION = 'v4.37';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.36';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.36';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.37';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.37';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -14298,7 +14298,7 @@ bg2: {
       });
     }
 
-    async function annualDrawPhotoAndName(ctx, player, role, context, token) {
+    async function annualDrawPhotoAndName(ctx, player, role, context, renderContext) {
       const frame={x:674,y:318,w:368,h:506,r:16};
       annualPanel(ctx,frame.x,frame.y,frame.w,frame.h,{
         fill:'#0a1d2a',border:'rgba(64,149,189,.82)',radius:16,lineWidth:3
@@ -14330,7 +14330,17 @@ bg2: {
       if(detail) ctx.fillText(detail,plate.x+plate.w-20,plate.y+98);
 
       const resolvedPhoto=await photoPromise;
-      if(token !== renderToken) return false;
+      const activePlayer=selectedPlayer();
+      const stillCurrent=Boolean(
+        currentPage==='player'
+        && activePlayer
+        && String(activePlayer.id||'')===renderContext.playerId
+        && String(selectedTab||'')===renderContext.tab
+        && Number(selectedSeason||0)===renderContext.season
+        && String(selectedLevel||'')===renderContext.level
+        && String(activePlayer.selectedPhotoId||'')===renderContext.selectedPhotoId
+      );
+      if(!stillCurrent) return false;
       if(resolvedPhoto.image){
         drawStaticPhotoImageInFrame(ctx,resolvedPhoto.image,frame);
         ctx.save();
@@ -14346,8 +14356,16 @@ bg2: {
 
     async function renderAnnualSeasonCanvas(role, player=selectedPlayer()) {
       if(!player) throw new Error('請先選擇球員。');
-      const token=++renderToken;
+      ++renderToken;
       role=role==='pitcher'?'pitcher':'hitter';
+      const renderContext={
+        playerId:String(player.id||''),
+        role,
+        tab:String(selectedTab||''),
+        season:Number(selectedSeason||0),
+        level:String(selectedLevel||''),
+        selectedPhotoId:String(player.selectedPhotoId||'')
+      };
 
       const stats=seasonStatsForOutputRole(player,role);
       const context=annualSeasonContext(player);
@@ -14392,8 +14410,8 @@ bg2: {
       }
 
       annualDrawStatGrid(ctx,role,stats);
-      const photoRenderCurrent=await annualDrawPhotoAndName(ctx,player,role,context,token);
-      if(!photoRenderCurrent || token !== renderToken) return {role,stats,context,stale:true};
+      const photoRenderCurrent=await annualDrawPhotoAndName(ctx,player,role,context,renderContext);
+      if(!photoRenderCurrent) return {role,stats,context,stale:true};
 
       ctx.fillStyle='rgba(3,13,20,.98)';
       ctx.fillRect(18,982,1044,72);
