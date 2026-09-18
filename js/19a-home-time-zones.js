@@ -21,7 +21,8 @@
     const get = type => values.find(part => part.type === type)?.value || '';
     return {
       time:`${get('hour')}:${get('minute')}`,
-      date:`${get('month')}/${get('day')}`
+      date:`${get('month')}/${get('day')}`,
+      iso:`${get('year')}-${get('month')}-${get('day')}`
     };
   }
 
@@ -69,10 +70,18 @@
     const country = key === 'TW' ? 'TW' : key === 'JP_KR' ? 'JP' : key === 'US' ? 'US' : '';
     if (!country) return;
 
+    const zone = key === 'US' ? 'America/New_York' : key === 'JP_KR' ? 'Asia/Tokyo' : 'Asia/Taipei';
+    const targetDate = parts(zone).iso;
+
     homeRootSection = 'pro';
     homeProCountry = country;
     homeTeamFilter = '';
     if (country === 'US') homeUsLeague = 'MLB';
+
+    if (els.gameDate && targetDate) {
+      els.gameDate.value = targetDate;
+      if (typeof syncAppPickerLabels === 'function') syncAppPickerLabels();
+    }
 
     applyHomeProSelection();
     renderRecentPlayers();
