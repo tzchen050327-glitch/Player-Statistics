@@ -4920,3 +4920,61 @@ body.home-game-detail-open{overflow:hidden}
   }
 }
 
+
+
+/* ---------- Fixed sidebar clocks / scrolling backgrounds ---------- */
+#homePage .home-sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  scrollbar-gutter:auto;
+}
+#homePage .home-background-panel{
+  flex:1 1 auto;
+  height:auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#homePage .home-time-zone-panel{
+  flex:0 0 auto;
+  margin-top:0;
+}
+#homePage .home-background-panel::-webkit-scrollbar{
+  width:7px;
+}
+#homePage .home-background-panel::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:999px;
+  background:#9cabb9;
+  background-clip:padding-box;
+}
+.home-time-zone-card{
+  width:100%;
+  margin:0;
+  font:inherit;
+  text-align:left;
+  color:inherit;
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.home-time-zone-card:hover{
+  border-color:#afc2d4;
+  box-shadow:0 4px 11px rgba(30,57,84,.09);
+}
+.home-time-zone-card:active{
+  transform:translateY(1px);
+}
+.home-time-zone-card:focus-visible{
+  outline:2px solid #1f5f93;
+  outline-offset:2px;
+}
+.home-time-zone-card.active:hover{
+  border-color:#d8b04a;
+}
