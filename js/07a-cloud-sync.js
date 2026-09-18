@@ -556,35 +556,82 @@
 
     function cloudSyncEnsureUi() {
       const actions = document.getElementById('homeHeaderDateControl');
-      if (actions && !document.getElementById('cloudSyncBtn')) {
-        const button = document.createElement('button');
-        button.id = 'cloudSyncBtn';
-        button.className = 'cloud-sync-header-btn';
-        button.type = 'button';
-        button.textContent = '雲端同步';
-        button.addEventListener('click', () => {
+      if (actions && !document.getElementById('appSettingsBtn')) {
+        const settingsButton = document.createElement('button');
+        settingsButton.id = 'appSettingsBtn';
+        settingsButton.className = 'app-settings-header-btn';
+        settingsButton.type = 'button';
+        settingsButton.setAttribute('aria-label', '設定');
+        settingsButton.title = '設定';
+        settingsButton.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" stroke="currentColor" stroke-width="1.9"/>
+            <path d="M19.2 13.2c.05-.39.08-.79.08-1.2s-.03-.81-.08-1.2l2.03-1.58-1.92-3.32-2.39.96a7.62 7.62 0 0 0-2.08-1.2L14.48 3h-3.84l-.36 2.68a7.62 7.62 0 0 0-2.08 1.2l-2.39-.96-1.92 3.32 2.03 1.58c-.05.39-.08.79-.08 1.2s.03.81.08 1.2L3.89 14.8l1.92 3.32 2.39-.96c.63.5 1.33.9 2.08 1.2l.36 2.68h3.84l.36-2.68a7.62 7.62 0 0 0 2.08-1.2l2.39.96 1.92-3.32-2.03-1.58Z" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
+        settingsButton.addEventListener('click', () => {
+          cloudSyncRefreshUi();
+          document.getElementById('appSettingsDialog')?.showModal();
+        });
+        actions.insertBefore(settingsButton, actions.firstChild);
+      }
+
+      if (!document.getElementById('appSettingsDialog')) {
+        const settingsDialog = document.createElement('dialog');
+        settingsDialog.id = 'appSettingsDialog';
+        settingsDialog.className = 'app-settings-dialog';
+        settingsDialog.innerHTML = `
+          <div class="dialog-body app-settings-body">
+            <div class="dialog-head">
+              <div>
+                <div class="app-settings-kicker">SYSTEM</div>
+                <h2>設定</h2>
+              </div>
+              <button id="appSettingsCloseBtn" class="press-btn dialog-close" type="button" aria-label="關閉">×</button>
+            </div>
+            <div class="app-settings-list">
+              <button id="settingsCloudSyncBtn" class="app-settings-option" type="button">
+                <span class="app-settings-option-icon cloud" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M7.4 18.2h10.1a4 4 0 0 0 .55-7.96A6.1 6.1 0 0 0 6.42 8.8a4.72 4.72 0 0 0 .98 9.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="app-settings-option-copy">
+                  <strong>雲端同步</strong>
+                  <small id="settingsCloudSyncStatus">未設定</small>
+                </span>
+                <span class="app-settings-option-arrow" aria-hidden="true">›</span>
+              </button>
+              <button id="settingsDiagnosticsBtn" class="app-settings-option" type="button">
+                <span class="app-settings-option-icon diagnostics" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M5.5 5.5v5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-5M5.5 10.5v5c0 1.4 2.9 2.5 6.5 2.5 1.15 0 2.23-.11 3.15-.31" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="m16.2 16.2 1.35 1.35 2.55-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="app-settings-option-copy">
+                  <strong>診斷</strong>
+                  <small>檢查快取、PWA 與執行狀態</small>
+                </span>
+                <span class="app-settings-option-arrow" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </div>`;
+        document.body.appendChild(settingsDialog);
+
+        settingsDialog.querySelector('#appSettingsCloseBtn')?.addEventListener('click', () => settingsDialog.close());
+        settingsDialog.addEventListener('click', event => {
+          if (event.target === settingsDialog) settingsDialog.close();
+        });
+        settingsDialog.querySelector('#settingsCloudSyncBtn')?.addEventListener('click', () => {
+          settingsDialog.close();
           cloudSyncRefreshUi();
           document.getElementById('cloudSyncDialog')?.showModal();
         });
-        actions.insertBefore(button, actions.firstChild);
-        if (!document.getElementById('cacheDiagnosticsBtn')) {
-          const diagnosticsButton = document.createElement('button');
-          diagnosticsButton.id = 'cacheDiagnosticsBtn';
-          diagnosticsButton.className = 'cache-diagnostics-header-btn';
-          diagnosticsButton.type = 'button';
-          diagnosticsButton.setAttribute('aria-label', '快取診斷');
-          diagnosticsButton.title = '快取診斷';
-          diagnosticsButton.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M5.5 5.5v5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-5M5.5 10.5v5c0 1.4 2.9 2.5 6.5 2.5 1.15 0 2.23-.11 3.15-.31" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="m16.2 16.2 1.35 1.35 2.55-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>`;
-          diagnosticsButton.addEventListener('click', () => {
-            window.open('./diagnostics.html', '_blank', 'noopener');
-          });
-          button.insertAdjacentElement('afterend', diagnosticsButton);
-        }
+        settingsDialog.querySelector('#settingsDiagnosticsBtn')?.addEventListener('click', () => {
+          settingsDialog.close();
+          window.open('./diagnostics.html', '_blank', 'noopener');
+        });
       }
 
       if (!document.getElementById('cloudSyncDialog')) {
@@ -701,15 +748,28 @@
     }
 
     function cloudSyncRefreshUi() {
-      const button = document.getElementById('cloudSyncBtn');
-      if (button) {
-        button.textContent = cloudSyncLastError ? '同步異常' : cloudSyncBusy ? '同步中' : cloudSyncCredentials ? '已同步' : '雲端同步';
-        button.classList.toggle('is-connected', Boolean(cloudSyncCredentials) && !cloudSyncLastError);
-        button.classList.toggle('is-error', Boolean(cloudSyncLastError));
-        button.classList.toggle('is-busy', Boolean(cloudSyncBusy));
-        button.title = cloudSyncCredentials
-          ? (cloudSyncLastError ? `同步異常：${cloudSyncLastError}` : `群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`)
-          : '設定指定裝置／帳號共用球員資料';
+      const settingsButton = document.getElementById('appSettingsBtn');
+      if (settingsButton) {
+        settingsButton.classList.toggle('is-connected', Boolean(cloudSyncCredentials) && !cloudSyncLastError);
+        settingsButton.classList.toggle('is-error', Boolean(cloudSyncLastError));
+        settingsButton.classList.toggle('is-busy', Boolean(cloudSyncBusy));
+        settingsButton.title = cloudSyncLastError
+          ? `設定｜雲端同步異常：${cloudSyncLastError}`
+          : cloudSyncBusy
+            ? '設定｜雲端同步中'
+            : cloudSyncCredentials
+              ? `設定｜群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`
+              : '設定';
+      }
+      const settingsStatus = document.getElementById('settingsCloudSyncStatus');
+      if (settingsStatus) {
+        settingsStatus.textContent = cloudSyncLastError
+          ? `同步異常：${cloudSyncLastError}`
+          : cloudSyncBusy
+            ? '同步中…'
+            : cloudSyncCredentials
+              ? `已連接｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`
+              : '尚未設定雲端同步';
       }
       const connected = document.getElementById('cloudSyncConnectedPanel');
       const disconnected = document.getElementById('cloudSyncDisconnectedPanel');
