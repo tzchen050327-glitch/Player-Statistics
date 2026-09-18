@@ -98,7 +98,7 @@ self.addEventListener('fetch', event => {
     || url.pathname.endsWith('/report-layout.js')
     || url.pathname.endsWith('/landscape-state.css');
 
-  if (isDocument || isCoreAsset) {
+  if (isDocument) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
@@ -109,14 +109,25 @@ self.addEventListener('fetch', event => {
         }
         throw new Error(`Network ${response?.status || 0}`);
       } catch {
-        const cached = await caches.match(request, { ignoreSearch: true });
-        if (cached) return cached;
-        // HTML may fall back to the cached app shell. JS/CSS must NEVER receive
-        // index.html, otherwise the browser parses HTML as JavaScript and boot
-        // stops at the 0% splash screen.
-        if (isDocument) {
-          return await caches.match('./index.html', { ignoreSearch: true }) || Response.error();
+        return await caches.match('./index.html', { ignoreSearch: true }) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  if (isCoreAsset) {
+    event.respondWith((async () => {
+      const cached = await caches.match(request, { ignoreSearch: true });
+      if (cached) return cached;
+      try {
+        const response = await fetch(request);
+        if (response?.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, response.clone()).catch(() => {});
+          return response;
         }
+        return Response.error();
+      } catch {
         return Response.error();
       }
     })());
