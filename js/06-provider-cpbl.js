@@ -404,15 +404,15 @@
         const pitchCount = Math.max(0,Math.min(150,Number(pitcher.pitchCount)||0));
         g.pitchTens = Math.floor(pitchCount/10);
         g.pitchOnes = pitchCount>=150 ? 0 : pitchCount%10;
-        g.cg = Boolean(Number(pitcher.cg)||pitcher.cg);
-        g.sho = Boolean(Number(pitcher.sho)||pitcher.sho);
-        g.hld = Boolean(Number(pitcher.hld)||pitcher.hld);
-        g.sv = Boolean(Number(pitcher.sv)||pitcher.sv);
-        g.bsv = Boolean(Number(pitcher.bsv)||pitcher.bsv);
+        g.cg = officialFlag(pitcher.cg);
+        g.sho = officialFlag(pitcher.sho);
+        g.hld = officialFlag(pitcher.hld);
+        g.sv = officialFlag(pitcher.sv);
+        g.bsv = officialFlag(pitcher.bsv);
         g.decision = Number(pitcher.w)>0 ? 'W' : Number(pitcher.l)>0 ? 'L'
           : (['W','L'].includes(pitcher.decision) ? pitcher.decision : 'ND');
         g.result = g.sv ? 'SV' : g.hld ? 'HLD' : g.decision;
-        currentRecord.externalWalksCombined = Boolean(pitcher.walksCombined);
+        currentRecord.externalWalksCombined = officialFlag(pitcher.walksCombined);
         standardizePitcherSpecialRecords(g);
       }
 
