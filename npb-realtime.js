@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v4.15';
+  const VERSION = 'v4.17';
   const SUPABASE_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';
@@ -12,6 +12,7 @@
   let lastSignalRevision = -1;
   let loader = null;
   let watchdogTimer = 0;
+  let retryTimer = 0;
   let signalSerial = 0;
   const inflightPublished = new Map();
 
@@ -129,6 +130,22 @@
     watchdogTimer = 0;
   }
 
+  function stopRetry() {
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = 0;
+  }
+
+  function scheduleRetry(reason = 'reconnect') {
+    if (retryTimer || !watch) return;
+    const target = { ...watch };
+    emitStatus(false, reason);
+    retryTimer = setTimeout(() => {
+      retryTimer = 0;
+      if (!watch || watch.date !== target.date || watch.gameId !== target.gameId) return;
+      void startWatch({ ...target, force:true });
+    }, 3000);
+  }
+
   async function checkRevisionNow() {
     const current = watch ? { ...watch } : null;
     if (!current || document.visibilityState !== 'visible') return;
@@ -183,6 +200,7 @@
 
   async function stopWatch(emit = true) {
     stopWatchdog();
+    stopRetry();
     const old = channel;
     channel = null;
     watch = null;
@@ -198,11 +216,22 @@
   async function startWatch(input = {}) {
     const date = String(input.date || '').trim();
     const gameId = String(input.gameId || '').trim();
+    const force = Boolean(input.force);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !gameId) return;
-    if (watch?.date === date && watch?.gameId === gameId && channel) return;
-    await stopWatch(false);
+    if (!force && watch?.date === date && watch?.gameId === gameId && channel && window.__npbRealtimeConnected) return;
+
+    stopRetry();
+    const sameTarget = watch?.date === date && watch?.gameId === gameId;
+    const old = channel;
+    channel = null;
+    if (old && client) {
+      try { await client.removeChannel(old); } catch {}
+    }
+    if (!sameTarget) {
+      lastRevision = -1;
+      lastSignalRevision = -1;
+    }
     watch = { date, gameId };
-    lastSignalRevision = -1;
     try {
       const sb = await getClient();
       if (!watch || watch.date !== date || watch.gameId !== gameId) return;
@@ -211,23 +240,32 @@
           event:'*', schema:'public', table:SIGNAL_TABLE, filter:`game_id=eq.${gameId}`
         }, payload => { void acceptSignal(payload?.new); })
         .subscribe(status => {
-          if (status === 'SUBSCRIBED') emitStatus(true, 'subscribed');
-          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') emitStatus(false, status);
+          if (status === 'SUBSCRIBED') {
+            emitStatus(true, 'subscribed');
+            stopRetry();
+            void checkRevisionNow();
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            scheduleRetry(status);
+          }
         });
       const initial = await readPublished(date, gameId);
       if (initial?.row) acceptRow(initial.row);
       if (watch) startWatchdog();
     } catch (error) {
-      emitStatus(false, error?.message || String(error));
+      scheduleRetry(error?.message || String(error));
     }
   }
 
   window.addEventListener('npb-live-watch', event => startWatch(event?.detail || {}));
   window.addEventListener('npb-live-unwatch', () => stopWatch());
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && watch) void checkRevisionNow();
+    if (document.visibilityState !== 'visible' || !watch) return;
+    void checkRevisionNow();
+    if (!window.__npbRealtimeConnected) void startWatch({ ...watch, force:true });
   });
   window.addEventListener('focus', () => {
-    if (watch) void checkRevisionNow();
+    if (!watch) return;
+    void checkRevisionNow();
+    if (!window.__npbRealtimeConnected) void startWatch({ ...watch, force:true });
   });
 })();
