@@ -12,11 +12,8 @@
         return;
       }
 
-      // Resolve the photo before touching the visible canvas. If another render starts
-      // while the image is loading, keep the last complete preview instead of leaving
-      // a half-rendered card (header/metrics only).
-      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
-      if (token !== renderToken) return;
+      // Start photo loading, but never block the main card on it.
+      const photoPromise = resolvePlayerDisplayPhoto(player, effectiveType);
 
       ctx.clearRect(0, 0, W, H);
       const frameColor = currentRecord?.opponent
@@ -62,11 +59,10 @@
         const dateWidth = ctx.measureText(dateText).width;
 
         if (layout.decorHeads?.enabled) {
-          try {
-            const [decorHead1, decorHead2] = await Promise.all([
-              loadEmbeddedImage(DECOR_HEAD_1),
-              loadEmbeddedImage(DECOR_HEAD_2)
-            ]);
+          void Promise.all([
+            loadEmbeddedImage(DECOR_HEAD_1),
+            loadEmbeddedImage(DECOR_HEAD_2)
+          ]).then(([decorHead1, decorHead2]) => {
             if (token !== renderToken) return;
             const gapStart = 86 + vsWidth + opponentWidth + 18;
             const gapEnd = 994 - dateWidth - 18;
@@ -77,7 +73,7 @@
             const head2Box = { x: areaX + areaW * 0.00, y: 60, w: areaW * 0.42, h: 62 };
             drawContain(ctx, decorHead2, head2Box.x, head2Box.y, head2Box.w, head2Box.h);
             drawContain(ctx, decorHead1, head1Box.x, head1Box.y, head1Box.w, head1Box.h);
-          } catch {}
+          }).catch(() => {});
         }
       }
 
@@ -108,20 +104,7 @@
       // 區塊 4：照片。所有聯盟與國際賽都走同一套「自訂照優先、無照依角色補預設圖」。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
-      if (resolvedPhoto.image) {
-        if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
-          const transform = clampPhotoTransform(
-            resolvedPhoto.image,
-            getPhotoTransform(player, resolvedPhoto.photo.id)
-          );
-          player.photoTransforms[resolvedPhoto.photo.id] = transform;
-          drawPhotoImageInFrame(ctx, resolvedPhoto.image, frame, transform);
-        } else {
-          drawStaticPhotoImageInFrame(ctx, resolvedPhoto.image, frame);
-        }
-      } else {
-        drawPhotoPlaceholderFrame(ctx, frame);
-      }
+      drawPhotoPlaceholderFrame(ctx, frame);
 
       // 區塊 3：逐打席或投球戰績
       if (layout.detail.drawBox !== false) {
@@ -371,6 +354,25 @@
 
       if (layout.style === 'scoreboard-tech') {
         drawScoreboardPlayerFooter(ctx, { ...player, type:effectiveType }, currentRecord);
+      }
+
+      try {
+        const resolvedPhoto = await photoPromise;
+        if (token !== renderToken) return;
+        if (resolvedPhoto.image) {
+          if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
+            const transform = clampPhotoTransform(
+              resolvedPhoto.image,
+              getPhotoTransform(player, resolvedPhoto.photo.id)
+            );
+            player.photoTransforms[resolvedPhoto.photo.id] = transform;
+            drawPhotoImageInFrame(ctx, resolvedPhoto.image, frame, transform);
+          } else {
+            drawStaticPhotoImageInFrame(ctx, resolvedPhoto.image, frame);
+          }
+        }
+      } catch {
+        // Keep the placeholder. A photo failure must never blank the rest of the card.
       }
     }
 
