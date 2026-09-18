@@ -135,6 +135,10 @@
       if (last?.basesAfter) return last.basesAfter;
     }
     if (league === 'NPB') {
+      if (detail?.current?.baseStateSource === 'npb-live-current-row') {
+        if (detail?.current?.baseState !== undefined && detail?.current?.baseState !== null) return detail.current.baseState;
+        if (detail?.current?.bases !== undefined && detail?.current?.bases !== null) return detail.current.bases;
+      }
       const inferred = inferRunnerNames(detail);
       if (inferred.first || inferred.second || inferred.third) {
         return [!!inferred.first, !!inferred.second, !!inferred.third];
@@ -632,10 +636,48 @@
       }
       return after;
     };
-    const assignToState=(after,batter,dest)=>{
+    const assignToState=(after,batter,dest,official=false,play=null)=>{
       const old={...runners};
       const next={first:'',second:'',third:''};
       if(dest==='home'){ runners=next; return; }
+
+      if(official){
+        const targets=keys.filter(key=>after[key]).sort((a,b)=>rank[a]-rank[b]);
+        const candidates=[];
+        if(batter) candidates.push({name:batter,from:0,type:'batter'});
+        for(const key of keys) if(old[key]) candidates.push({name:old[key],from:rank[key],type:'runner',fromKey:key});
+
+        let best=null;
+        const total=1<<candidates.length;
+        const resultText=`${play?.result||''} ${play?.raw||''} ${play?.description||''}`;
+        const batterClearlySafe=!!dest || /安打|ヒット|四壞|四球|フォアボール|觸身|死球|失誤上壘|野手選擇|フィルダースチョイス/i.test(resultText);
+        const batterClearlyOut=/三振|フライ|飛球|ライナー|平飛|犧牲|犠牲|犠打|アウト/i.test(resultText);
+
+        for(let mask=0;mask<total;mask++){
+          const chosen=candidates.filter((_,idx)=>mask&(1<<idx)).sort((a,b)=>a.from-b.from);
+          if(chosen.length!==targets.length) continue;
+          let valid=true,score=0;
+          for(let j=0;j<chosen.length;j++){
+            const target=targets[j],person=chosen[j];
+            if(rank[target]<person.from){ valid=false; break; }
+            if(person.type==='runner' && person.fromKey===target) score+=2;
+            if(person.type==='runner' && rank[target]>person.from) score+=1;
+          }
+          if(!valid) continue;
+          const batterIncluded=chosen.some(x=>x.type==='batter');
+          if(batterClearlySafe) score+=batterIncluded?8:-8;
+          else if(batterClearlyOut) score+=batterIncluded?-5:5;
+          else if(after.first) score+=batterIncluded?2:0;
+          if(best===null||score>best.score) best={chosen,score};
+        }
+
+        if(best){
+          best.chosen.forEach((person,idx)=>{ next[targets[idx]]=person.name; });
+          runners=next;
+          return;
+        }
+      }
+
       if(dest && after[dest] && batter) next[dest]=batter;
       const oldRunners=[['third',old.third],['second',old.second],['first',old.first]].filter(([,name])=>!!name);
       for(const [from,name] of oldRunners){
@@ -669,12 +711,17 @@
 
       const nextPlay=plays[i+1];
       const sameHalf=nextPlay&&Number(nextPlay?.inning)===Number(play?.inning)&&nextPlay?.half===play?.half;
-      // For CPBL, the next PA's official pre-PA state is this PA's authoritative after-state.
-      // This fixes the old off-by-one interpretation that lost runner identities.
-      const officialAfter=sameHalf ? stateForPlay(nextPlay) : null;
+      const currentNpbAfter=league==='NPB'
+        && i===plays.length-1
+        && detail?.current?.baseStateSource==='npb-live-current-row'
+        ? normalizeBaseState(detail?.current?.baseState ?? detail?.current?.bases ?? '')
+        : null;
+      // The next PA's official pre-PA state is this PA's authoritative after-state.
+      // For the currently completed NPB PA, the live current-batter row provides the same authority.
+      const officialAfter=sameHalf ? stateForPlay(nextPlay) : currentNpbAfter;
       const dest=destination(result,desc);
       const after=officialAfter || heuristicAfter(before,dest,result,play);
-      assignToState(after,batter,dest);
+      assignToState(after,batter,dest,!!officialAfter,play);
 
       if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
     }
@@ -699,9 +746,12 @@
     }
     // When current.baseState is stale, its runner names are stale as well.
     // Prefer the completed PA's post-state identities before direct current runners.
+    const useNpbSnapshot=String(detail?.league||'').toUpperCase()==='NPB' && detail?.current?.baseStateSource==='npb-live-current-row';
     const merged=useCpblAfter
       ? {first:immediate.first||direct.first||inferred.first,second:immediate.second||direct.second||inferred.second,third:immediate.third||direct.third||inferred.third}
-      : {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
+      : useNpbSnapshot
+        ? {first:inferred.first||direct.first,second:inferred.second||direct.second,third:inferred.third||direct.third}
+        : {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
     const state=normalizeBaseState(currentBaseState(detail));
     return {first:state.first?merged.first:'',second:state.second?merged.second:'',third:state.third?merged.third:''};
   }
