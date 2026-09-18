@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.13';
+    const APP_VERSION = 'v4.14';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.13';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.13';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.14';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.14';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -14740,7 +14740,9 @@ bg2: {
         db = await openDB();
         players = await idbGetAll(STORES.players);
         photos = await idbGetAll(STORES.photos);
-        if (typeof cloudSyncInitialMerge === 'function') {
+        const deferCloudSync = typeof cloudSyncInitialMerge === 'function' && (players.length > 0 || photos.length > 0);
+        if (typeof cloudSyncInitialMerge === 'function' && !deferCloudSync) {
+          // A brand-new/empty browser still waits for cloud data so the first screen is not empty.
           await cloudSyncInitialMerge();
         }
         for (const player of players) {
@@ -14780,6 +14782,14 @@ bg2: {
           await loadRecord();
         }
         renderAll();
+
+        // Existing browsers already have usable IndexedDB data. Do not keep the splash
+        // open while waiting for Supabase; merge cloud changes in the background.
+        if (deferCloudSync) {
+          void cloudSyncInitialMerge().catch(error => {
+            console.warn('背景雲端同步失敗，沿用本機資料', error);
+          });
+        }
       } catch (error) {
         console.error(error);
         setStatus('無法開啟瀏覽器資料庫。', true);
@@ -15086,7 +15096,7 @@ bg2: {
     }
 
     async function bootApp() {
-      // 本機資料和更新檢查同時跑；首頁顯示前再確認一次所有已連結球員目前軍別。
+      // Local data and update checks run together. Slow roster refresh must not block first paint.
       const initPromise = init();
       const updatePromise = setupAppUpdate();
 
@@ -15096,13 +15106,18 @@ bg2: {
       setAppUpdateProgress(88, '正在準備球員資料…');
       await initPromise;
 
-      setAppUpdateProgress(94, '正在確認球員目前一軍／二軍狀態…');
-      await refreshCurrentRosterStatus();
-      renderAll();
-
       setAppUpdateProgress(100, '資料已準備完成');
-      await new Promise(resolve => setTimeout(resolve, 220));
+      await new Promise(resolve => setTimeout(resolve, 120));
       hideAppUpdateProgress();
+
+      // Use the most recently cached CPBL level immediately, then refresh it in background.
+      void refreshCurrentRosterStatus()
+        .then(() => {
+          if (currentPage === 'home') renderAll();
+        })
+        .catch(error => {
+          console.warn('背景更新目前一軍／二軍狀態失敗', error);
+        });
     }
 
     bootApp();
