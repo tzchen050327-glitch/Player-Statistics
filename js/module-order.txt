@@ -37,7 +37,8 @@
 16-daily-canvas.js
 17-canvas-backgrounds.js
 18-canvas-utils.js
-19-forms-events.js\n19a-home-time-zones.js
+19-forms-events.js
+19a-home-time-zones.js
 20-output-core.js
 20a-npb-season-bridge.js
 20b-npb-season-bridge-endpoint.js
