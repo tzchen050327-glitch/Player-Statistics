@@ -188,7 +188,6 @@
   function currentOuts(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
-    if (String(detail?.status || '').toLowerCase() === 'final') return 3;
     const direct = parseOutNumber(detail?.current?.outs);
     const sameHalf=playMatchesCurrentHalf(detail,last);
     // Once the scoreboard has switched half-innings, the new half always starts at 0 outs.
