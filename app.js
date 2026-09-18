@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.09';
+    const APP_VERSION = 'v4.10';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.09';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.09';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.10';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.10';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6638,6 +6638,17 @@ bg2: {
       return found ? total : null;
     }
 
+    function homeDetailLineupReady(detail) {
+      return ['away','home'].every(side => {
+        const batters = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        return batters.length >= 9 && batters.slice(0, 9).every((player, index) => {
+          const name = String(player?.fullName || player?.name || '').trim();
+          const order = Number(player?.order || index + 1);
+          return Boolean(name) && order >= 1 && order <= 9;
+        });
+      });
+    }
+
     function syncHomeDailyGameFromDetail(league, date, game, detail) {
       const info = detail?.game || {};
       const awayRuns = detailRunsFromScoreboard(detail, 'away');
@@ -6651,6 +6662,7 @@ bg2: {
         if (Number.isFinite(homeScore)) target.homeScore = homeScore;
         if (normalizedStatus) target.status = normalizedStatus;
         if (info?.id && !target.id) target.id = info.id;
+        if (homeDetailLineupReady(detail)) target.lineupReady = true;
       };
       apply(game);
       const daily = homeDailyGamesCache.get(`${league}|${date}`);
@@ -7060,7 +7072,8 @@ bg2: {
         ...cached.games[index],
         ...gameInfo,
         id:incomingId || cached.games[index]?.id,
-        status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled')
+        status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled'),
+        lineupReady:Boolean(cached.games[index]?.lineupReady || homeDetailLineupReady(detail))
       };
       cached.at = Date.now();
       cached.error = '';
@@ -7152,7 +7165,10 @@ bg2: {
           return `
             <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
-                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                <span class="home-game-card-top-left">
+                  <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                  ${(league === 'CPBL' || league === 'NPB') && game?.lineupReady ? '<span class="home-game-lineup-ready">先發打序</span>' : ''}
+                </span>
                 ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
               </div>
               <div class="home-game-team">
