@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.00';
+    const APP_VERSION = 'v4.1';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.00';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.00';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.1';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.1';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -13393,7 +13393,8 @@ bg2: {
     const get = type => values.find(part => part.type === type)?.value || '';
     return {
       time:`${get('hour')}:${get('minute')}`,
-      date:`${get('month')}/${get('day')}`
+      date:`${get('month')}/${get('day')}`,
+      iso:`${get('year')}-${get('month')}-${get('day')}`
     };
   }
 
@@ -13441,10 +13442,18 @@ bg2: {
     const country = key === 'TW' ? 'TW' : key === 'JP_KR' ? 'JP' : key === 'US' ? 'US' : '';
     if (!country) return;
 
+    const zone = key === 'US' ? 'America/New_York' : key === 'JP_KR' ? 'Asia/Tokyo' : 'Asia/Taipei';
+    const targetDate = parts(zone).iso;
+
     homeRootSection = 'pro';
     homeProCountry = country;
     homeTeamFilter = '';
     if (country === 'US') homeUsLeague = 'MLB';
+
+    if (els.gameDate && targetDate) {
+      els.gameDate.value = targetDate;
+      if (typeof syncAppPickerLabels === 'function') syncAppPickerLabels();
+    }
 
     applyHomeProSelection();
     renderRecentPlayers();
