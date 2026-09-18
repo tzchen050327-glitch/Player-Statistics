@@ -3985,6 +3985,21 @@ dialog::backdrop {
     body.sync-ui-locked .sync-progress-overlay {
       pointer-events: auto !important;
     }
+
+    /* The app message dialog can be opened while a sync/import is still locked.
+       Keep the rest of the UI frozen, but allow the user to confirm/cancel it. */
+    body.sync-ui-locked #appMessageDialog[open],
+    body.sync-ui-locked #appMessageDialog[open] .app-message-shell,
+    body.sync-ui-locked #appMessageDialog[open] button,
+    body.sync-ui-locked #appMessageDialog[open] input {
+      pointer-events: auto !important;
+      user-select: auto;
+    }
+
+    body.sync-ui-locked #appMessageDialog[open] {
+      cursor: default;
+    }
+
     body.sync-ui-locked { cursor: progress; }
 
     .sync-source-meta {
