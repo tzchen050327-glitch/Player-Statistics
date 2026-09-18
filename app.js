@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.30';
+    const APP_VERSION = 'v4.31';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.30';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.30';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.31';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.31';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -10719,6 +10719,17 @@ bg2: {
       const W = els.canvas.width;
       const H = els.canvas.height;
 
+      if (!player || !currentRecord) {
+        ctx.clearRect(0, 0, W, H);
+        return;
+      }
+
+      // Resolve the photo before touching the visible canvas. If another render starts
+      // while the image is loading, keep the last complete preview instead of leaving
+      // a half-rendered card (header/metrics only).
+      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
+      if (token !== renderToken) return;
+
       ctx.clearRect(0, 0, W, H);
       const frameColor = currentRecord?.opponent
         ? opponentColor(currentRecord.opponent)
@@ -10736,8 +10747,6 @@ bg2: {
         ctx.fillStyle = layout.innerBg;
         ctx.fillRect(frameSize, frameSize, W - frameSize * 2, H - frameSize * 2);
       }
-
-      if (!player || !currentRecord) return;
 
       const projected = projectedPlayerStatsForRole(player, effectiveType);
       const opponent = currentRecord.opponent || '今日對手';
@@ -10811,8 +10820,6 @@ bg2: {
       // 區塊 4：照片。所有聯盟與國際賽都走同一套「自訂照優先、無照依角色補預設圖」。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
-      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
-      if (token !== renderToken) return;
       if (resolvedPhoto.image) {
         if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
           const transform = clampPhotoTransform(
