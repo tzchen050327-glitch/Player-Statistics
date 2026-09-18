@@ -5448,3 +5448,72 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{
 /* ===== v4 BLACK GOLD THEME END ===== */
 
 html[data-theme="dark"] .date-picker-trigger svg{color:#e1b84f}
+
+
+/* ===== v4 DARK REPORT CONTRAST FIX ===== */
+html[data-theme="dark"] .today-status-heading{
+  color:#f4ecd9;
+}
+html[data-theme="dark"] .today-player-name-link{
+  color:#fff4d0;
+  border-bottom-color:#d8aa3f;
+  text-shadow:0 1px 8px rgba(216,170,63,.12);
+}
+html[data-theme="dark"] .today-player-name-link:hover,
+html[data-theme="dark"] .today-player-name-link:focus-visible{
+  color:#ffd970;
+  border-bottom-color:#ffd970;
+}
+html[data-theme="dark"] .today-status-heading > span{
+  color:#d5ccba;
+}
+
+html[data-theme="dark"] .inline-checks .check{
+  border-color:#3a3c40;
+  background:linear-gradient(180deg,#171a1f,#111418);
+  color:#eee6d6;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+html[data-theme="dark"] .inline-checks .check:hover{
+  border-color:#806722;
+  background:linear-gradient(180deg,#211c12,#141517);
+  color:#fff2c8;
+}
+html[data-theme="dark"] .inline-checks .check:has(input:checked){
+  border-color:#d1a43a;
+  background:linear-gradient(180deg,#2d230f,#1d180f);
+  color:#ffd66a;
+  box-shadow:0 0 0 1px rgba(209,164,58,.16),0 5px 14px rgba(0,0,0,.22);
+}
+html[data-theme="dark"] .inline-checks .check input{
+  accent-color:#d5a83f;
+}
+html[data-theme="dark"] .inline-checks .check input:disabled + *,
+html[data-theme="dark"] .inline-checks .check:has(input:disabled){
+  color:#8f8879;
+}
+
+html[data-theme="dark"] .metric{
+  border-color:#30343a;
+  background:linear-gradient(180deg,#171a1f,#111418);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+html[data-theme="dark"] .metric span{
+  color:#b8ae9c;
+}
+html[data-theme="dark"] .metric strong{
+  color:#f4d06f;
+}
+
+html[data-theme="dark"] .pa-row{
+  border-color:#30343a;
+  background:#12161a;
+  color:#eee6d6;
+}
+html[data-theme="dark"] .pa-result{
+  color:#f1e9da;
+}
+html[data-theme="dark"] .pa-rbi{
+  color:#e4b84d;
+}
+/* ===== v4 DARK REPORT CONTRAST FIX END ===== */
