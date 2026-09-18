@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v3.97';
+    const APP_VERSION = 'v3.98';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.97';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.97';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v3.98';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v3.98';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9354,6 +9354,18 @@ bg2: {
     }
 
     function paDisplayLabel(pa) {
+      const player = selectedPlayer();
+      if (player && isUsPlayer(player)) {
+        const code = String(pa?.code || 'OUT').toUpperCase();
+        const usMap = {
+          '1B':'一安','2B':'二安','3B':'三安','HR':'全壘打',
+          'BB':'四壞','IBB':'故意四壞','HBP':'死球','CI':'礙打',
+          'FC':'野選','E':'失誤','K':'三振','DP':'雙殺','TP':'三殺',
+          'SH':'犧短','SF':'犧飛','GO':'滾地出局','FO':'飛球出局',
+          'OUT':'出局'
+        };
+        return usMap[code] || paLabel({ ...pa, position:'', cpblOfficialAction:'' });
+      }
       const official = String(pa?.cpblOfficialAction || '').trim();
       if (official) return official;
       if (pa?.code === 'GO' && pa?.position) return `${pa.position}滾`;
