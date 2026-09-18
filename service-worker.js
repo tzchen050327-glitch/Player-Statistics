@@ -6,6 +6,7 @@ const APP_SHELL = [
   './index.html',
   './diagnostics.html',
   './styles.css?v=v4.08',
+  './dark-theme-overrides.css?v=v4.08',
   './diagnostic-runtime.js?v=v4.08',
   './live-static-update.js?v=v4.08',
   './cpbl-realtime.js?v=v4.08',
@@ -88,6 +89,7 @@ self.addEventListener('fetch', event => {
     || url.pathname.endsWith('/live-static-update.js')
     || url.pathname.endsWith('/cpbl-cache-router.js')
     || url.pathname.endsWith('/styles.css')
+    || url.pathname.endsWith('/dark-theme-overrides.css')
     || url.pathname.endsWith('/postseason-history.js')
     || url.pathname.endsWith('/postseason-history.css')
     || url.pathname.endsWith('/game-detail-enhancement.js')
