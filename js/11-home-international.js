@@ -1451,11 +1451,10 @@
           return `
             <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
-                <span class="home-game-card-top-left">
-                  <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
-                  ${(league === 'CPBL' || league === 'NPB') && game?.lineupReady ? '<span class="home-game-lineup-ready">先發打序</span>' : ''}
-                </span>
-                ${game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : ''}
+                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                ${(league === 'CPBL' || league === 'NPB') && game?.lineupReady
+                  ? '<span class="home-game-lineup-ready">先發打序</span>'
+                  : (game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : '')}
               </div>
               <div class="home-game-team">
                 <span class="home-game-team-name">${escapeHtml(String(game?.away || '客隊'))}</span>
