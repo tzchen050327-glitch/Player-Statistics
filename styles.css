@@ -5690,3 +5690,148 @@ html[data-theme="dark"] ::placeholder{
   color:#8f8779 !important;
 }
 /* ===== v4 DARK TEXT PALETTE CLEANUP END ===== */
+
+
+/* ===== v4 DARK SPLASH BLACK GOLD ===== */
+html[data-theme="dark"] .app-update-overlay{
+  background:
+    radial-gradient(circle at 76% 13%,rgba(218,174,72,.16),transparent 25%),
+    radial-gradient(circle at 18% 82%,rgba(143,101,28,.10),transparent 32%),
+    linear-gradient(145deg,#050607 0%,#0b0b0c 48%,#12100b 100%) !important;
+}
+
+html[data-theme="dark"] .app-update-overlay::before{
+  width:min(80vw,620px);
+  border-color:rgba(218,174,72,.075) !important;
+  box-shadow:
+    0 0 0 38px rgba(218,174,72,.014),
+    0 0 0 76px rgba(218,174,72,.009) !important;
+}
+
+html[data-theme="dark"] .app-update-overlay::after{
+  border-color:rgba(218,174,72,.16) !important;
+  box-shadow:
+    inset 0 0 0 16px rgba(218,174,72,.018),
+    0 0 90px rgba(218,174,72,.09) !important;
+}
+
+/* app-splash is also sync-progress-card; explicitly remove the generic dark card. */
+html[data-theme="dark"] .app-update-overlay .sync-progress-card.app-splash{
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#f5eddb !important;
+}
+
+html[data-theme="dark"] .app-splash-mark{
+  border:1px solid rgba(222,182,83,.32) !important;
+  background:
+    radial-gradient(circle at 32% 22%,rgba(239,201,103,.10),transparent 34%),
+    linear-gradient(145deg,#191713,#090a0b) !important;
+  box-shadow:
+    0 24px 68px rgba(0,0,0,.58),
+    0 0 34px rgba(202,158,58,.10),
+    inset 0 1px 0 rgba(255,226,155,.08) !important;
+}
+
+html[data-theme="dark"] .app-splash-mark::after{
+  content:'';
+  position:absolute;
+  inset:7px;
+  border:1px solid rgba(221,179,75,.12);
+  border-radius:23px;
+  pointer-events:none;
+}
+
+html[data-theme="dark"] .app-splash-ball{
+  background:linear-gradient(145deg,#f3ead7,#cdbf9f) !important;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.42),
+    0 0 20px rgba(215,174,77,.10) !important;
+}
+
+html[data-theme="dark"] .app-splash-ball::before,
+html[data-theme="dark"] .app-splash-ball::after{
+  border-color:#a77a25 !important;
+}
+
+html[data-theme="dark"] .app-splash-kicker{
+  color:#dcb552 !important;
+  text-shadow:0 0 16px rgba(220,181,82,.16);
+}
+
+html[data-theme="dark"] .app-splash-title{
+  color:#f7efdd !important;
+  text-shadow:0 8px 28px rgba(0,0,0,.56) !important;
+}
+
+html[data-theme="dark"] .app-splash-subtitle{
+  color:#a99f8d !important;
+}
+
+html[data-theme="dark"] .app-splash-progress .sync-progress-title{
+  color:#c7bca8 !important;
+}
+
+html[data-theme="dark"] .app-splash-progress .sync-progress-percent{
+  color:#e4bc59 !important;
+  text-shadow:0 0 15px rgba(228,188,89,.14);
+}
+
+html[data-theme="dark"] .app-splash-progress .sync-progress-status{
+  color:#9d9485 !important;
+}
+
+html[data-theme="dark"] .app-splash-progress .sync-progress-track{
+  border:1px solid rgba(222,181,81,.09);
+  background:#1a1813 !important;
+  box-shadow:
+    inset 0 1px 4px rgba(0,0,0,.56),
+    0 0 0 1px rgba(255,255,255,.012) !important;
+}
+
+html[data-theme="dark"] .app-splash-progress .sync-progress-bar{
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255,244,205,.16) 0 8px,
+      rgba(255,244,205,.02) 8px 16px
+    ),
+    linear-gradient(90deg,#8f6518 0%,#d2a43d 48%,#f0cd72 100%) !important;
+  box-shadow:
+    0 0 18px rgba(215,173,82,.28),
+    0 0 34px rgba(215,173,82,.08) !important;
+}
+
+html[data-theme="dark"] .app-splash-version{
+  color:#6f675a !important;
+}
+
+html[data-theme="dark"] #startupEmergencyDiagnostics a{
+  border-color:rgba(220,180,78,.34) !important;
+  background:rgba(196,151,49,.07) !important;
+  color:#b9aa8f !important;
+  box-shadow:none !important;
+}
+
+html[data-theme="dark"] #startupEmergencyDiagnostics a:hover{
+  border-color:rgba(235,195,92,.62) !important;
+  background:rgba(205,160,54,.12) !important;
+  color:#e8c768 !important;
+}
+
+html[data-theme="dark"] .app-update-overlay .sync-progress-card.error{
+  background:transparent !important;
+}
+
+html[data-theme="dark"] .app-update-overlay .sync-progress-card.error .sync-progress-percent,
+html[data-theme="dark"] .app-update-overlay .sync-progress-card.error .sync-progress-status{
+  color:#e78f87 !important;
+}
+
+html[data-theme="dark"] .app-update-overlay .sync-progress-card.error .sync-progress-bar{
+  background:linear-gradient(90deg,#7f2f2a,#d35b52) !important;
+  box-shadow:0 0 18px rgba(211,91,82,.22) !important;
+}
+/* ===== v4 DARK SPLASH BLACK GOLD END ===== */
