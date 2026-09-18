@@ -554,6 +554,28 @@
       return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
+    const APP_THEME_STORAGE_KEY = 'baseball-app-theme-v1';
+
+    function currentAppTheme() {
+      return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    }
+
+    function applyAppTheme(theme, { persist = true } = {}) {
+      const next = theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = next;
+      if (persist) {
+        try { localStorage.setItem(APP_THEME_STORAGE_KEY, next); } catch {}
+      }
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#0b0b0c' : '#1f4e79');
+
+      const status = document.getElementById('settingsThemeStatus');
+      if (status) status.textContent = next === 'dark' ? '目前：深色黑金' : '目前：淺色模式';
+
+      document.getElementById('settingsThemeLightBtn')?.classList.toggle('active', next === 'light');
+      document.getElementById('settingsThemeDarkBtn')?.classList.toggle('active', next === 'dark');
+    }
+
     function cloudSyncEnsureUi() {
       const actions = document.getElementById('homeHeaderDateControl');
       if (actions && !document.getElementById('appSettingsBtn')) {
@@ -589,6 +611,22 @@
               <button id="appSettingsCloseBtn" class="press-btn dialog-close" type="button" aria-label="關閉">×</button>
             </div>
             <div class="app-settings-list">
+              <div class="app-settings-option app-settings-theme-option">
+                <span class="app-settings-option-icon theme" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.5a8.5 8.5 0 1 0 0 17 6.4 6.4 0 0 1 0-17Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 3.5v17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="app-settings-option-copy">
+                  <strong>外觀主題</strong>
+                  <small id="settingsThemeStatus">目前：淺色模式</small>
+                </span>
+                <span class="app-theme-segmented" role="group" aria-label="外觀主題">
+                  <button id="settingsThemeLightBtn" type="button">淺色</button>
+                  <button id="settingsThemeDarkBtn" type="button">深色</button>
+                </span>
+              </div>
               <button id="settingsCloudSyncBtn" class="app-settings-option" type="button">
                 <span class="app-settings-option-icon cloud" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -622,6 +660,14 @@
         settingsDialog.querySelector('#appSettingsCloseBtn')?.addEventListener('click', () => settingsDialog.close());
         settingsDialog.addEventListener('click', event => {
           if (event.target === settingsDialog) settingsDialog.close();
+        });
+        settingsDialog.querySelector('#settingsThemeLightBtn')?.addEventListener('click', event => {
+          event.stopPropagation();
+          applyAppTheme('light');
+        });
+        settingsDialog.querySelector('#settingsThemeDarkBtn')?.addEventListener('click', event => {
+          event.stopPropagation();
+          applyAppTheme('dark');
         });
         settingsDialog.querySelector('#settingsCloudSyncBtn')?.addEventListener('click', () => {
           settingsDialog.close();
@@ -761,6 +807,7 @@
               ? `設定｜群組 ${cloudSyncCredentials.code}｜最後同步 ${cloudSyncFormatTime(cloudSyncLastSuccessAt)}`
               : '設定';
       }
+      applyAppTheme(currentAppTheme(), { persist:false });
       const settingsStatus = document.getElementById('settingsCloudSyncStatus');
       if (settingsStatus) {
         settingsStatus.textContent = cloudSyncLastError
@@ -790,6 +837,9 @@
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && cloudSyncCredentials && db) void cloudSyncProbeAndPull();
     });
+
+    // Keep the early head-applied theme in sync with the settings UI.
+    applyAppTheme(currentAppTheme(), { persist:false });
 
     // app.js is loaded at the end of <body>, so the header controls already exist here.
     cloudSyncEnsureUi();
