@@ -7,6 +7,17 @@
       const W = els.canvas.width;
       const H = els.canvas.height;
 
+      if (!player || !currentRecord) {
+        ctx.clearRect(0, 0, W, H);
+        return;
+      }
+
+      // Resolve the photo before touching the visible canvas. If another render starts
+      // while the image is loading, keep the last complete preview instead of leaving
+      // a half-rendered card (header/metrics only).
+      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
+      if (token !== renderToken) return;
+
       ctx.clearRect(0, 0, W, H);
       const frameColor = currentRecord?.opponent
         ? opponentColor(currentRecord.opponent)
@@ -24,8 +35,6 @@
         ctx.fillStyle = layout.innerBg;
         ctx.fillRect(frameSize, frameSize, W - frameSize * 2, H - frameSize * 2);
       }
-
-      if (!player || !currentRecord) return;
 
       const projected = projectedPlayerStatsForRole(player, effectiveType);
       const opponent = currentRecord.opponent || '今日對手';
@@ -99,8 +108,6 @@
       // 區塊 4：照片。所有聯盟與國際賽都走同一套「自訂照優先、無照依角色補預設圖」。
       const frame = layout.photo;
       drawPhotoFrameBase(ctx, frame);
-      const resolvedPhoto = await resolvePlayerDisplayPhoto(player, effectiveType);
-      if (token !== renderToken) return;
       if (resolvedPhoto.image) {
         if (resolvedPhoto.source === 'upload' && resolvedPhoto.photo) {
           const transform = clampPhotoTransform(
