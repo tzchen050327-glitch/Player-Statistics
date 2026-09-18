@@ -1547,6 +1547,9 @@
 
     function renderRecentPlayers() {
       renderHomePlayerFilters();
+      if (els.pageSubtitle && currentPage === 'home') {
+        els.pageSubtitle.textContent = homePageBreadcrumb();
+      }
       els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
       renderHomeDailyGames();
 
