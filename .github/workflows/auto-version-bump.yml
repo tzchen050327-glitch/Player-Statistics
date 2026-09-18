@@ -72,6 +72,11 @@ jobs:
           text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
           text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
           p.write_text(text, encoding='utf-8')
+
+          p = Path('manifest.webmanifest')
+          text = p.read_text(encoding='utf-8')
+          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          p.write_text(text, encoding='utf-8')
           print(f'{old} -> {new}')
 
       - name: Generate and verify app.js
@@ -102,6 +107,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.json index.html service-worker.js app.js js
+          git add version.json index.html service-worker.js manifest.webmanifest app.js js
           git commit -m "chore: auto bump app version [skip version bump]" || exit 0
           git push
