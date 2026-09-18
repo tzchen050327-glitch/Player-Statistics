@@ -5517,3 +5517,176 @@ html[data-theme="dark"] .pa-rbi{
   color:#e4b84d;
 }
 /* ===== v4 DARK REPORT CONTRAST FIX END ===== */
+
+
+/* ===== v4 DARK TEXT PALETTE CLEANUP ===== */
+/* Remove legacy navy text from the black-gold theme. */
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] #contentPanel,
+html[data-theme="dark"] .player-page-shell,
+html[data-theme="dark"] .dialog-body,
+html[data-theme="dark"] .output-dialog-body{
+  color:#eee6d6;
+}
+
+html[data-theme="dark"] .panel h1,
+html[data-theme="dark"] .panel h2,
+html[data-theme="dark"] .panel h3,
+html[data-theme="dark"] .player-page-top h1,
+html[data-theme="dark"] .player-page-top h2,
+html[data-theme="dark"] .player-page-top h3,
+html[data-theme="dark"] .dialog-head h2,
+html[data-theme="dark"] #outputDialog .output-dialog-head h2,
+html[data-theme="dark"] .app-message-title,
+html[data-theme="dark"] .error-page-title-row h2,
+html[data-theme="dark"] .error-player-name,
+html[data-theme="dark"] #allPlayersDialog .all-player-line-main{
+  color:#f5eddb !important;
+}
+
+html[data-theme="dark"] .subtle,
+html[data-theme="dark"] .small,
+html[data-theme="dark"] .dialog-body > .small,
+html[data-theme="dark"] .dialog-body > .subtle,
+html[data-theme="dark"] .dialog-body label.field,
+html[data-theme="dark"] .app-message-text,
+html[data-theme="dark"] .sync-source-meta,
+html[data-theme="dark"] .sync-source-meta .sync-meta-muted,
+html[data-theme="dark"] .error-page-note,
+html[data-theme="dark"] .error-player-team,
+html[data-theme="dark"] #allPlayersDialog .all-player-line-meta{
+  color:#b8af9e !important;
+}
+
+html[data-theme="dark"] .sync-source-meta strong,
+html[data-theme="dark"] #allPlayersDialog .all-player-line-extra,
+html[data-theme="dark"] .error-page-kicker{
+  color:#deb653 !important;
+}
+
+html[data-theme="dark"] .level-role-btn,
+html[data-theme="dark"] .all-filter-trigger,
+html[data-theme="dark"] .filter-choice-option,
+html[data-theme="dark"] .filter-choice-trigger,
+html[data-theme="dark"] .batch-template-chip,
+html[data-theme="dark"] .error-player-name-link{
+  color:#e9dfca !important;
+}
+
+html[data-theme="dark"] .level-role-btn:hover,
+html[data-theme="dark"] .all-filter-trigger:hover,
+html[data-theme="dark"] .filter-choice-option:hover,
+html[data-theme="dark"] .filter-choice-trigger:hover,
+html[data-theme="dark"] .error-player-name-link:hover,
+html[data-theme="dark"] .error-player-name-link:focus-visible{
+  color:#f1c75d !important;
+}
+
+html[data-theme="dark"] .level-role-btn.active,
+html[data-theme="dark"] .batch-template-chip.active{
+  border-color:#c89b34 !important;
+  background:linear-gradient(180deg,#2b220f,#19150d) !important;
+  color:#ffd66a !important;
+}
+
+html[data-theme="dark"] .all-filter-trigger,
+html[data-theme="dark"] .filter-choice-option,
+html[data-theme="dark"] .filter-choice-trigger{
+  border-color:#35383d !important;
+  background:linear-gradient(180deg,#171a1f,#111418) !important;
+}
+
+html[data-theme="dark"] .all-filter-trigger svg,
+html[data-theme="dark"] .filter-choice-trigger svg{
+  color:#d5aa43 !important;
+}
+
+html[data-theme="dark"] .dialog-head{
+  border-bottom-color:#303238 !important;
+  background:linear-gradient(180deg,rgba(17,20,24,.995) 72%,rgba(17,20,24,.94)) !important;
+}
+
+html[data-theme="dark"] .dialog-head h2::before{
+  background:linear-gradient(180deg,#edc665,#9c701d) !important;
+}
+
+html[data-theme="dark"] .dialog-close,
+html[data-theme="dark"] .app-message-close{
+  border-color:#3a3d42 !important;
+  background:linear-gradient(180deg,#1b1e23,#111418) !important;
+  color:#e7deca !important;
+}
+
+html[data-theme="dark"] .dialog-close:hover,
+html[data-theme="dark"] .app-message-close:hover{
+  border-color:#94762c !important;
+  color:#ffd66a !important;
+}
+
+html[data-theme="dark"] .app-message-shell{
+  border-color:#39352a !important;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(211,167,63,.11),transparent 31%),
+    linear-gradient(180deg,#171a1e 0%,#101317 100%) !important;
+}
+
+html[data-theme="dark"] .app-message-icon{
+  background:#241e13 !important;
+  color:#e0b653 !important;
+  box-shadow:inset 0 0 0 1px #4b3e21 !important;
+}
+
+html[data-theme="dark"] #outputDialog .output-ready-icon{
+  border-color:#4a3c1e !important;
+  background:linear-gradient(145deg,#292111,#171511) !important;
+  color:#e1b64d !important;
+}
+
+html[data-theme="dark"] #outputDialog .output-choice{
+  border-color:#34373c !important;
+  background:linear-gradient(180deg,#171a1f,#101318) !important;
+  color:#eee5d3 !important;
+}
+
+html[data-theme="dark"] #outputDialog .output-choice:hover{
+  border-color:#92752c !important;
+  color:#ffd66a !important;
+}
+
+html[data-theme="dark"] .error-page-title-row,
+html[data-theme="dark"] .error-player-card,
+html[data-theme="dark"] .error-page-note,
+html[data-theme="dark"] .error-page-empty{
+  border-color:#30343a !important;
+  background:linear-gradient(180deg,#171a1f,#111418) !important;
+}
+
+html[data-theme="dark"] .error-player-card.selected{
+  border-color:#c99c34 !important;
+  background:linear-gradient(180deg,#241e12,#151515) !important;
+}
+
+html[data-theme="dark"] .error-count-badge,
+html[data-theme="dark"] .error-own-summary{
+  background:#2b220f !important;
+  color:#f7d675 !important;
+}
+
+html[data-theme="dark"] .error-page-empty.success{
+  color:#8fd0ad !important;
+}
+html[data-theme="dark"] .error-page-empty.error{
+  color:#f0a0a0 !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .player-search-input{
+  color:#f0e8d8 !important;
+}
+
+html[data-theme="dark"] ::placeholder{
+  color:#8f8779 !important;
+}
+/* ===== v4 DARK TEXT PALETTE CLEANUP END ===== */
