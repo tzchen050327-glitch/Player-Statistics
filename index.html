@@ -9,8 +9,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="球員戰績" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v4.02" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v4.02" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v4.02" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v4.02" />
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('baseball-app-theme-v1') === 'dark' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.setAttribute('content', theme === 'dark' ? '#0b0b0c' : '#1f4e79');
+      } catch {}
+    })();
+  </script>
     <script src="./diagnostic-runtime.js?v=v4.02"></script>
   <link rel="stylesheet" href="./styles.css?v=v4.02" />
   <link rel="stylesheet" href="./game-detail-enhancement.css?v=v4.02" />
@@ -54,7 +66,6 @@
       <div class="title-row-right">
         <div id="selectedPlayerText" class="subtle"></div>
         <div id="homeHeaderDateControl" class="title-date-control" aria-label="日期">
-          <span>日期</span>
           <button id="gameDateButton" class="app-picker-trigger date-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="datePickerDialog">
             <span id="gameDateButtonText" class="app-picker-trigger-label">選擇日期</span>
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
