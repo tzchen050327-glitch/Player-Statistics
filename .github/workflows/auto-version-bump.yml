@@ -71,6 +71,7 @@ jobs:
           text = p.read_text(encoding='utf-8')
           text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
           text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
+          text = re.sub(r"const CACHE_VERSION = '[^']+';", f"const CACHE_VERSION = '{new}';", text, count=1)
           p.write_text(text, encoding='utf-8')
 
           p = Path('manifest.webmanifest')
