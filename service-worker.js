@@ -1,5 +1,5 @@
 const CACHE_NAME = 'baseball-player-card-pwa-v419-auto';
-const CACHE_VERSION = 'v4.18';
+const CACHE_VERSION = 'v4.19';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const APP_SHELL = [
