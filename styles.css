@@ -5446,3 +5446,5 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{
   background-clip:padding-box;
 }
 /* ===== v4 BLACK GOLD THEME END ===== */
+
+html[data-theme="dark"] .date-picker-trigger svg{color:#e1b84f}
