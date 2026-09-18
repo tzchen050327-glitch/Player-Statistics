@@ -733,14 +733,75 @@
     return `<section class="gdx-scoreboard game-detail-enhanced-marker" data-gdx="scoreboard"><div class="gdx-section-head"><strong>計分板</strong></div><div class="gdx-scoreboard-scroll"><table><thead><tr><th class="gdx-team-col">球隊</th>${head}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th class="gdx-team-col">${esc(game.away||'客隊')}</th>${cells(board.away)}<td class="gdx-total">${esc(board.awayTotals.R)}</td><td>${esc(board.awayTotals.H)}</td><td>${esc(board.awayTotals.E)}</td></tr><tr><th class="gdx-team-col">${esc(game.home||'主隊')}</th>${cells(board.home)}<td class="gdx-total">${esc(board.homeTotals.R)}</td><td>${esc(board.homeTotals.H)}</td><td>${esc(board.homeTotals.E)}</td></tr></tbody></table></div></section>`;
   }
 
+  function compactLineupPaResult(play) {
+    const result=shortPaResult(play);
+    const map={
+      '全壘打':'全壘',
+      '四壞':'四壞',
+      '觸身':'觸身',
+      '三振':'三振',
+      '三安':'三安',
+      '二安':'二安',
+      '一安':'一安',
+      '雙殺':'雙殺',
+      '犧飛':'犧飛',
+      '犧打':'犧打',
+      '界飛':'界飛',
+      '飛球':'飛球',
+      '平飛':'平飛',
+      '滾地':'滾地'
+    };
+    return map[result]||result;
+  }
+
+  function currentHalfLineupResults(detail,side) {
+    const status=String(detail?.status||'').toLowerCase();
+    if(['final','cancelled','postponed'].includes(status)) return [];
+    const info=currentHalfInfo(detail);
+    if(!info) return [];
+    const offense=info.half==='top'?'away':'home';
+    if(side!==offense) return [];
+
+    return (Array.isArray(detail?.plays)?detail.plays:[])
+      .filter(play=>
+        Number(play?.inning)===info.inning
+        && String(play?.half||'')===info.half
+        && completedPlateAppearance(play)
+      )
+      .map(play=>({
+        acnt:String(play?.batterAcnt||play?.hitterAcnt||play?.batter?.acnt||play?.hitter?.acnt||'').trim(),
+        name:compactName(play?.batter?.fullName||play?.batter?.name||play?.batter||play?.hitter?.fullName||play?.hitter?.name||play?.hitter||''),
+        result:compactLineupPaResult(play)
+      }))
+      .filter(item=>item.result);
+  }
+
+  function lineupHalfResults(entry,results) {
+    const acnt=String(entry?.acnt||'').trim();
+    const name=compactName(entry?.name||'');
+    return results
+      .filter(item=>
+        (acnt&&item.acnt&&acnt===item.acnt)
+        || (name&&item.name&&samePlayerName(name,item.name))
+      )
+      .map(item=>item.result)
+      .filter(Boolean);
+  }
+
   function renderLineupPanel(detail,side) {
     const effective=effectiveCurrentBatter(detail);
     // lineups.*.batters is the canonical CURRENT nine-player batting order.
     // A substitution replaces that lineup slot instead of being appended.
     const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    const halfResults=currentHalfLineupResults(detail,side);
     const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
-    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:''});
-    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span></div>`}${rows.map(e=>`<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span></div>`).join('')}</div>`;
+    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:'',acnt:''});
+    return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span><span>本局</span></div>`}${rows.map(e=>{
+      const results=lineupHalfResults(e,halfResults);
+      const title=results.length?`本半局：${results.join('、')}`:'';
+      const resultHtml=results.map(result=>`<i>${esc(result)}</i>`).join('');
+      return `<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span><span class="gdx-lineup-half-result ${results.length?'has-result':''}" title="${esc(title)}">${resultHtml}</span></div>`;
+    }).join('')}</div>`;
   }
 
   function currentPitcherInfo(detail,side) {
