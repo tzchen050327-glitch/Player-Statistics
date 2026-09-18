@@ -3,7 +3,9 @@
         db = await openDB();
         players = await idbGetAll(STORES.players);
         photos = await idbGetAll(STORES.photos);
-        if (typeof cloudSyncInitialMerge === 'function') {
+        const deferCloudSync = typeof cloudSyncInitialMerge === 'function' && (players.length > 0 || photos.length > 0);
+        if (typeof cloudSyncInitialMerge === 'function' && !deferCloudSync) {
+          // A brand-new/empty browser still waits for cloud data so the first screen is not empty.
           await cloudSyncInitialMerge();
         }
         for (const player of players) {
@@ -43,6 +45,14 @@
           await loadRecord();
         }
         renderAll();
+
+        // Existing browsers already have usable IndexedDB data. Do not keep the splash
+        // open while waiting for Supabase; merge cloud changes in the background.
+        if (deferCloudSync) {
+          void cloudSyncInitialMerge().catch(error => {
+            console.warn('背景雲端同步失敗，沿用本機資料', error);
+          });
+        }
       } catch (error) {
         console.error(error);
         setStatus('無法開啟瀏覽器資料庫。', true);
@@ -349,7 +359,7 @@
     }
 
     async function bootApp() {
-      // 本機資料和更新檢查同時跑；首頁顯示前再確認一次所有已連結球員目前軍別。
+      // Local data and update checks run together. Slow roster refresh must not block first paint.
       const initPromise = init();
       const updatePromise = setupAppUpdate();
 
@@ -359,13 +369,18 @@
       setAppUpdateProgress(88, '正在準備球員資料…');
       await initPromise;
 
-      setAppUpdateProgress(94, '正在確認球員目前一軍／二軍狀態…');
-      await refreshCurrentRosterStatus();
-      renderAll();
-
       setAppUpdateProgress(100, '資料已準備完成');
-      await new Promise(resolve => setTimeout(resolve, 220));
+      await new Promise(resolve => setTimeout(resolve, 120));
       hideAppUpdateProgress();
+
+      // Use the most recently cached CPBL level immediately, then refresh it in background.
+      void refreshCurrentRosterStatus()
+        .then(() => {
+          if (currentPage === 'home') renderAll();
+        })
+        .catch(error => {
+          console.warn('背景更新目前一軍／二軍狀態失敗', error);
+        });
     }
 
     bootApp();
