@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.11';
+    const APP_VERSION = 'v4.12';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.11';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.11';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.12';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.12';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -6371,9 +6371,11 @@ bg2: {
 
     function homeDailyGameStatusLabel(game) {
       const status = String(game?.status || '').toLowerCase();
+      const league = homeDailyGamesLeague();
       if (status === 'final') return '已結束';
-      if (status === 'live') return '比賽中';
+      if (status === 'live') return String(game?.inningLabel || '').trim() || '比賽中';
       if (status === 'cancelled') return '取消／延期';
+      if ((league === 'CPBL' || league === 'NPB') && game?.lineupReady) return '先發打序';
       return String(game?.time || '').trim() || '未開打';
     }
 
@@ -7166,9 +7168,9 @@ bg2: {
             <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
-                ${(league === 'CPBL' || league === 'NPB') && game?.lineupReady
-                  ? '<span class="home-game-lineup-ready">先發打序</span>'
-                  : (game?.time && ['final','live'].includes(status) ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>` : '')}
+                ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
+                  ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
+                  : ''}
               </div>
               <div class="home-game-team">
                 <span class="home-game-team-name">${escapeHtml(String(game?.away || '客隊'))}</span>
