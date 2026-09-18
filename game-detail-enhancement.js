@@ -127,8 +127,13 @@
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
     const status = String(detail?.status || '').toLowerCase();
-    if (status === 'final' || inferredOutsAfterPlay(last) >= 3) return [false,false,false];
     const league=String(detail?.league || '').toUpperCase();
+    if (status === 'final') return [false,false,false];
+
+    const extraPending=cpblExtraInningPendingState(detail);
+    if(extraPending) return [false,true,false];
+
+    if (inferredOutsAfterPlay(last) >= 3) return [false,false,false];
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
     if (league === 'CPBL' && shouldUseCpblLastAfter(detail,last)) {
       if (last?.baseStateAfter !== undefined && last?.baseStateAfter !== null) return last.baseStateAfter;
@@ -468,6 +473,43 @@
     return {inning:Number(m[1]),half:m[2]==='上'?'top':'bottom'};
   }
 
+  function cpblExtraInningPendingState(detail) {
+    if (String(detail?.league||'').toUpperCase() !== 'CPBL') return null;
+    if (String(detail?.status||'').toLowerCase() !== 'live') return null;
+
+    const info=currentHalfInfo(detail);
+    if(!info || info.inning < 10) return null;
+
+    const plays=Array.isArray(detail?.plays)?detail.plays:[];
+    const hasCurrentHalfData=plays.some(play=>
+      Number(play?.inning)===info.inning
+      && String(play?.half||'')===info.half
+    );
+    if(hasCurrentHalfData) return null;
+
+    const side=info.half==='top'?'away':'home';
+    const roster=lineupEntries(detail,side);
+    if(!roster.length) return null;
+
+    const batter=cpblExpectedBatter(detail);
+    const batterOrder=Number(batter?.order)||0;
+    if(!(batterOrder>=1&&batterOrder<=9)) return null;
+
+    const runnerOrder=batterOrder===1?9:batterOrder-1;
+    const runner=roster.find(player=>Number(player?.order)===runnerOrder)||null;
+    if(!runner) return null;
+
+    return {
+      inning:info.inning,
+      half:info.half,
+      side,
+      batter,
+      runner,
+      batterOrder,
+      runnerOrder
+    };
+  }
+
   function cpblExpectedBatter(detail) {
     if(String(detail?.league||'').toUpperCase()!=='CPBL') return null;
     const info=currentHalfInfo(detail);
@@ -509,6 +551,13 @@
   function effectiveCurrentBatter(detail) {
     const official=detail?.current?.batter||{};
     if(String(detail?.league||'').toUpperCase()!=='CPBL') return official;
+
+    const extraPending=cpblExtraInningPendingState(detail);
+    if(extraPending?.batter) return {
+      ...extraPending.batter,
+      inferredExtraInning:true
+    };
+
     const expected=cpblExpectedBatter(detail);
     if(!expected) return official;
 
@@ -730,7 +779,20 @@
   function currentRunnerNames(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
-    if (String(detail?.status || '').toLowerCase() === 'final' || inferredOutsAfterPlay(last) >= 3) {
+    if (String(detail?.status || '').toLowerCase() === 'final') {
+      return {first:'',second:'',third:''};
+    }
+
+    const extraPending=cpblExtraInningPendingState(detail);
+    if(extraPending?.runner){
+      return {
+        first:'',
+        second:compactName(extraPending.runner?.name||extraPending.runner?.fullName||''),
+        third:''
+      };
+    }
+
+    if (inferredOutsAfterPlay(last) >= 3) {
       return {first:'',second:'',third:''};
     }
     if (String(detail?.league||'').toUpperCase()==='CPBL' && last && !playMatchesCurrentHalf(detail,last)) {
