@@ -20,9 +20,11 @@ const APP_SHELL = [
   './landscape-state.css?v=v4.02',
   './game-detail-enhancement.js?v=v4.02',
   './report-layout.js?v=v4.02',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png'
+  './manifest.webmanifest?v=v4.02',
+  './icon-192.png?v=v4.02',
+  './icon-512.png?v=v4.02',
+  './favicon-32.png?v=v4.02',
+  './favicon-16.png?v=v4.02'
 ];
 
 async function getModuleShell() {
