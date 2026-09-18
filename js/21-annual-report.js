@@ -148,23 +148,15 @@
       });
     }
 
-    async function annualDrawPhotoAndName(ctx, player, role, context) {
+    async function annualDrawPhotoAndName(ctx, player, role, context, token) {
       const frame={x:674,y:318,w:368,h:506,r:16};
       annualPanel(ctx,frame.x,frame.y,frame.w,frame.h,{
         fill:'#0a1d2a',border:'rgba(64,149,189,.82)',radius:16,lineWidth:3
       });
 
-      const resolvedPhoto=await resolvePlayerDisplayPhoto(player,role);
-      if(resolvedPhoto.image){
-        drawStaticPhotoImageInFrame(ctx,resolvedPhoto.image,frame);
-        ctx.save();
-        tracePhotoFramePath(ctx,frame);ctx.clip();
-        const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
-        shade.addColorStop(0,'rgba(3,13,21,.02)');
-        shade.addColorStop(1,'rgba(3,13,21,.28)');
-        ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
-        ctx.restore();
-      }
+      // Start loading, but draw the name plate immediately so a slow image cannot
+      // leave the annual canvas visibly incomplete.
+      const photoPromise=resolvePlayerDisplayPhoto(player,role);
 
       const plate={x:674,y:842,w:368,h:120};
       annualPanel(ctx,plate.x,plate.y,plate.w,plate.h,{
@@ -186,10 +178,25 @@
       ctx.font='700 13px "Microsoft JhengHei", sans-serif';
       const detail=context.detail && context.detail!==context.team ? context.detail : '';
       if(detail) ctx.fillText(detail,plate.x+plate.w-20,plate.y+98);
+
+      const resolvedPhoto=await photoPromise;
+      if(token !== renderToken) return false;
+      if(resolvedPhoto.image){
+        drawStaticPhotoImageInFrame(ctx,resolvedPhoto.image,frame);
+        ctx.save();
+        tracePhotoFramePath(ctx,frame);ctx.clip();
+        const shade=ctx.createLinearGradient(0,frame.y,0,frame.y+frame.h);
+        shade.addColorStop(0,'rgba(3,13,21,.02)');
+        shade.addColorStop(1,'rgba(3,13,21,.28)');
+        ctx.fillStyle=shade;ctx.fillRect(frame.x,frame.y,frame.w,frame.h);
+        ctx.restore();
+      }
+      return true;
     }
 
     async function renderAnnualSeasonCanvas(role, player=selectedPlayer()) {
       if(!player) throw new Error('請先選擇球員。');
+      const token=++renderToken;
       role=role==='pitcher'?'pitcher':'hitter';
 
       const stats=seasonStatsForOutputRole(player,role);
@@ -235,7 +242,8 @@
       }
 
       annualDrawStatGrid(ctx,role,stats);
-      await annualDrawPhotoAndName(ctx,player,role,context);
+      const photoRenderCurrent=await annualDrawPhotoAndName(ctx,player,role,context,token);
+      if(!photoRenderCurrent || token !== renderToken) return {role,stats,context,stale:true};
 
       ctx.fillStyle='rgba(3,13,20,.98)';
       ctx.fillRect(18,982,1044,72);
