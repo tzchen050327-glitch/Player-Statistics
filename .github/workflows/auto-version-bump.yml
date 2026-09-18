@@ -44,7 +44,7 @@ jobs:
           old = str(data.get('version', '')).strip()
           m = re.fullmatch(r'v(\d+)\.(\d+)', old)
           if not m: raise SystemExit(f'Unsupported version format: {old!r}')
-          new = f'v{int(m.group(1))}.{int(m.group(2))+1}'
+          new = f'v{int(m.group(1))}.{int(m.group(2))+1:02d}'
           cache_tag = new.replace('.', '')
           Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
 
