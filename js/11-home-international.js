@@ -1478,10 +1478,16 @@
       host.classList.remove('hidden');
 
       const key = `${league}|${date}`;
+      const existingScroller = host.querySelector('.home-games-scroller');
+      if (existingScroller) {
+        const captured = captureHomeDailyGamesScroll(existingScroller);
+        if (captured) homeDailyGamesScrollState.set(key, captured);
+      }
       const cached = homeDailyGamesCache.get(key) || null;
       const loading = homeDailyGamesLoading.has(key);
       const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
       const games = Array.isArray(cached?.games) ? cached.games : [];
+      const displayRows = homeDailyGamesDisplayRows(games);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);
       const dateLabel = date.replaceAll('-', '/');
@@ -1496,7 +1502,8 @@
       } else if (!games.length) {
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map((game, gameIndex) => {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${displayRows.map(({ game, sourceIndex }) => {
+          const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const showScore = status === 'live' || status === 'final';
@@ -1506,7 +1513,7 @@
           const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
           const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
           return `
-            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
+            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
