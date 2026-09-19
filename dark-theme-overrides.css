@@ -433,3 +433,83 @@ html[data-theme="dark"] .standings-sync-status-error .standings-sync-dot{
   background:#d66a6a !important;
   box-shadow:0 0 0 3px rgba(214,106,106,.12) !important;
 }
+
+
+/* Standings team drilldown */
+html[data-theme="dark"] .standings-team-row:hover{
+  background:#15191e !important;
+}
+html[data-theme="dark"] .standings-team-row.selected{
+  background:#1d190f !important;
+}
+html[data-theme="dark"] .standings-team-row.selected .standings-team-name{
+  color:#e5bd5d !important;
+}
+html[data-theme="dark"] .standings-team-detail{
+  border-color:#343a42 !important;
+  background:#111419 !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.22) !important;
+}
+html[data-theme="dark"] .standings-team-detail-head span{
+  color:#d2aa4e !important;
+}
+html[data-theme="dark"] .standings-team-detail-head strong{
+  color:#f1e7d4 !important;
+}
+html[data-theme="dark"] .standings-team-detail-close{
+  border-color:#383e46 !important;
+  background:#171b20 !important;
+  color:#a5b0bc !important;
+}
+html[data-theme="dark"] .standings-team-detail-tabs button{
+  border-color:#343a42 !important;
+  background:#15191e !important;
+  color:#9ba8b7 !important;
+}
+html[data-theme="dark"] .standings-team-detail-tabs button.active{
+  border-color:#8f6b1e !important;
+  background:#2b220f !important;
+  color:#e8bd56 !important;
+}
+html[data-theme="dark"] .standings-team-detail-body{
+  border-top-color:#2d3238 !important;
+}
+html[data-theme="dark"] .standings-h2h-row{
+  border-color:#2d333a !important;
+  background:#15191e !important;
+}
+html[data-theme="dark"] .standings-h2h-opponent{
+  color:#eee5d4 !important;
+}
+html[data-theme="dark"] .standings-h2h-record{
+  color:#98a4b2 !important;
+}
+html[data-theme="dark"] .standings-h2h-record b{
+  color:#d8e0e9 !important;
+}
+html[data-theme="dark"] .standings-schedule-section-title{
+  color:#d0a94e !important;
+}
+html[data-theme="dark"] .standings-schedule-row{
+  border-bottom-color:#292e34 !important;
+}
+html[data-theme="dark"] .standings-schedule-date strong,
+html[data-theme="dark"] .standings-schedule-match strong,
+html[data-theme="dark"] .standings-schedule-result strong{
+  color:#e7dfd1 !important;
+}
+html[data-theme="dark"] .standings-schedule-date span,
+html[data-theme="dark"] .standings-schedule-match span,
+html[data-theme="dark"] .standings-schedule-result span{
+  color:#8e9aa8 !important;
+}
+html[data-theme="dark"] .standings-schedule-result.is-w strong{color:#64b58b !important;}
+html[data-theme="dark"] .standings-schedule-result.is-l strong{color:#d27878 !important;}
+html[data-theme="dark"] .standings-schedule-result.is-t strong{color:#d3ad59 !important;}
+html[data-theme="dark"] .standings-schedule-result.upcoming strong{color:#d6ac4a !important;}
+html[data-theme="dark"] .standings-team-detail-empty{
+  color:#929daa !important;
+}
+html[data-theme="dark"] .standings-team-detail-empty.error{
+  color:#d97878 !important;
+}
