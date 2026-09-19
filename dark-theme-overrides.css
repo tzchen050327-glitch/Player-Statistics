@@ -179,3 +179,62 @@ html[data-theme="dark"] .intl-select-step select option{
   background:#11151b !important;
   color:#f0e7d5 !important;
 }
+
+
+/* International game archive: high-contrast dark mode */
+html[data-theme="dark"] .intl-games-tab-head h2,
+html[data-theme="dark"] .intl-game-archive-head h3{
+  color:#f3ead8 !important;
+}
+html[data-theme="dark"] .intl-games-tab-meta,
+html[data-theme="dark"] .intl-game-archive-head .small{
+  color:#aeb7c4 !important;
+}
+html[data-theme="dark"] .intl-game-card{
+  border-color:#343a43 !important;
+  background:linear-gradient(180deg,#15191f 0%,#111419 100%) !important;
+  color:#eee6d5 !important;
+  box-shadow:0 5px 14px rgba(0,0,0,.24) !important;
+}
+html[data-theme="dark"] .intl-game-card.is-selected{
+  border-color:#a9822d !important;
+  background:linear-gradient(180deg,#211b11 0%,#17140f 100%) !important;
+}
+html[data-theme="dark"] .intl-game-date{
+  color:#d6b35b !important;
+}
+html[data-theme="dark"] .intl-game-main strong{
+  color:#f1e8d6 !important;
+}
+html[data-theme="dark"] .intl-game-main span{
+  color:#aeb9c9 !important;
+}
+html[data-theme="dark"] .intl-game-card .press-btn{
+  border-color:#3d434c !important;
+  background:#15191e !important;
+  color:#f0e6d3 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .intl-game-card .press-btn:hover{
+  border-color:#9d792a !important;
+  background:#201a11 !important;
+  color:#ffd56a !important;
+}
+
+/* Sync source banner used above official international records */
+html[data-theme="dark"] .sync-source-meta{
+  border-color:#343a42 !important;
+  background:linear-gradient(180deg,#171b20 0%,#12161b 100%) !important;
+  color:#b8c0cc !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .sync-source-meta strong{
+  color:#e1b84f !important;
+}
+html[data-theme="dark"] .sync-source-meta .sync-meta-muted{
+  color:#a2acb9 !important;
+}
+html[data-theme="dark"] .sync-source-meta::before{
+  background:#4aa377 !important;
+  box-shadow:0 0 0 3px rgba(74,163,119,.14) !important;
+}
