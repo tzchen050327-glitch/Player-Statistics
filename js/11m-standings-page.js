@@ -23,7 +23,6 @@
     let standingsOfficialCacheAt = 0;
     let standingsOfficialLoading = false;
     let standingsOfficialError = '';
-    let standingsAutoRefreshTimer = null;
 
     function standingsPreviewRows() {
       if (standingsUiState.league === 'cpbl') return STANDINGS_PREVIEW_TEAMS.cpbl;
@@ -169,17 +168,7 @@
       return { title:'等待戰績資料', detail:'尚未完成首次讀取。', state:'idle' };
     }
 
-    function scheduleStandingsAutoRefresh() {
-      if (standingsAutoRefreshTimer) clearTimeout(standingsAutoRefreshTimer);
-      standingsAutoRefreshTimer = null;
-      if (currentPage !== 'standings') return;
-      const state = String(standingsCurrentMeta()?.status || 'official-only');
-      if (state === 'official-only') return;
-      standingsAutoRefreshTimer = setTimeout(() => {
-        if (currentPage !== 'standings') return;
-        void loadOfficialStandings({ force:true });
-      }, 120000);
-    }
+
 
     async function loadOfficialStandings({ force = false } = {}) {
       const now = Date.now();
@@ -311,5 +300,4 @@
       if (!standingsOfficialCache && !standingsOfficialLoading) {
         void loadOfficialStandings();
       }
-      scheduleStandingsAutoRefresh();
     }
