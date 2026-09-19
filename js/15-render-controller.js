@@ -47,6 +47,7 @@
       els.homePage?.classList.toggle('hidden', playerPageActive || standingsPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
+      if (standingsPageActive) renderStandingsPage();
       if (els.pageSubtitle) {
         els.pageSubtitle.textContent = standingsPageActive
           ? '戰績排名'
