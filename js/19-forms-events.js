@@ -955,6 +955,18 @@
       }
     });
 
+    els.homeStandingsBtn?.addEventListener('click', () => {
+      currentPage = 'standings';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.standingsBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const player = selectedPlayer();
