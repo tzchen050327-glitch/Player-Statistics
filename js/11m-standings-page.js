@@ -282,7 +282,7 @@
       return `
         <section class="standings-team-detail" id="standingsTeamDetail">
           <div class="standings-team-detail-head">
-            <div><span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026</span><strong>${escapeHtml(team)}</strong></div>
+            <div><span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026・${standingsSubTitle()}</span><strong>${escapeHtml(team)}</strong></div>
             <button type="button" class="standings-team-detail-close" data-standings-team-close aria-label="關閉球隊詳情">×</button>
           </div>
           <div class="standings-team-detail-tabs">
@@ -439,7 +439,7 @@
           standingsTeamTab = 'h2h';
           standingsTeamDetailError = '';
           renderStandingsPage();
-          void loadStandingsTeamDetail(team);
+          void loadStandingsTeamDetail(team, { force:true });
           requestAnimationFrame(() => document.getElementById('standingsTeamDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }));
         });
       });
