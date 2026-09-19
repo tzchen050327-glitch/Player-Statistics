@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.68';
+    const APP_VERSION = 'v4.69';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -21,8 +21,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.68';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.68';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.69';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.69';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9032,7 +9032,6 @@ bg2: {
     let standingsOfficialCacheAt = 0;
     let standingsOfficialLoading = false;
     let standingsOfficialError = '';
-    let standingsAutoRefreshTimer = null;
 
     function standingsPreviewRows() {
       if (standingsUiState.league === 'cpbl') return STANDINGS_PREVIEW_TEAMS.cpbl;
@@ -9178,17 +9177,7 @@ bg2: {
       return { title:'等待戰績資料', detail:'尚未完成首次讀取。', state:'idle' };
     }
 
-    function scheduleStandingsAutoRefresh() {
-      if (standingsAutoRefreshTimer) clearTimeout(standingsAutoRefreshTimer);
-      standingsAutoRefreshTimer = null;
-      if (currentPage !== 'standings') return;
-      const state = String(standingsCurrentMeta()?.status || 'official-only');
-      if (state === 'official-only') return;
-      standingsAutoRefreshTimer = setTimeout(() => {
-        if (currentPage !== 'standings') return;
-        void loadOfficialStandings({ force:true });
-      }, 120000);
-    }
+
 
     async function loadOfficialStandings({ force = false } = {}) {
       const now = Date.now();
@@ -9320,7 +9309,6 @@ bg2: {
       if (!standingsOfficialCache && !standingsOfficialLoading) {
         void loadOfficialStandings();
       }
-      scheduleStandingsAutoRefresh();
     }
     function selectedLevelSecondaryStats(player) {
       if (!player) return null;
