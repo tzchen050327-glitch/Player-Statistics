@@ -44,7 +44,7 @@
       }
 
       const projected = projectedPlayerStatsForRole(player, effectiveType);
-      const opponent = currentRecord.opponent || '今日對手';
+      const opponent = isUsPlayer(player) ? (mlbTeamZh(currentRecord.opponent) || '今日對手') : (currentRecord.opponent || '今日對手');
       const dateText = currentRecord.date.replaceAll('-', '.');
 
       // 區塊 1：對手與日期
