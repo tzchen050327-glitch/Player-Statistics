@@ -173,6 +173,8 @@
       if (standingsAutoRefreshTimer) clearTimeout(standingsAutoRefreshTimer);
       standingsAutoRefreshTimer = null;
       if (currentPage !== 'standings') return;
+      const state = String(standingsCurrentMeta()?.status || 'official-only');
+      if (state === 'official-only') return;
       standingsAutoRefreshTimer = setTimeout(() => {
         if (currentPage !== 'standings') return;
         void loadOfficialStandings({ force:true });
