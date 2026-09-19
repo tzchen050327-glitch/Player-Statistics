@@ -518,6 +518,7 @@
 
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
+    const homeDailyGamesScrollState = new Map();
     const homeGameDetailCache = new Map();
     const HOME_GAME_DETAIL_AUTO_LIMIT = 2400;
     const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
@@ -558,6 +559,56 @@
       return Array.isArray(games) && games.some(game => String(game?.status || '').toLowerCase() === 'live');
     }
 
+    function homeDailyGameStableKey(game = {}) {
+      return [
+        String(game?.id || ''),
+        String(game?.kindCode || ''),
+        String(game?.away || ''),
+        String(game?.home || ''),
+        String(game?.time || '')
+      ].join('|');
+    }
+
+    function homeDailyGamesDisplayRows(games = []) {
+      return (Array.isArray(games) ? games : [])
+        .map((game, sourceIndex) => ({ game, sourceIndex }))
+        .sort((a, b) => {
+          const aStatus = String(a.game?.status || '').toLowerCase();
+          const bStatus = String(b.game?.status || '').toLowerCase();
+          const aLive = aStatus === 'live' || aStatus === 'suspended';
+          const bLive = bStatus === 'live' || bStatus === 'suspended';
+          if (aLive !== bLive) return aLive ? -1 : 1;
+          return a.sourceIndex - b.sourceIndex;
+        });
+    }
+
+    function captureHomeDailyGamesScroll(scroller) {
+      if (!scroller) return null;
+      const cards = [...scroller.querySelectorAll('[data-home-game-key]')];
+      const scrollerRect = scroller.getBoundingClientRect();
+      const anchor = cards.find(card => card.getBoundingClientRect().right > scrollerRect.left + 1) || cards[0] || null;
+      return {
+        scrollLeft:Math.max(0, Number(scroller.scrollLeft) || 0),
+        anchorKey:String(anchor?.dataset?.homeGameKey || ''),
+        anchorOffset:anchor ? anchor.getBoundingClientRect().left - scrollerRect.left : 0
+      };
+    }
+
+    function restoreHomeDailyGamesScroll(scroller, state) {
+      if (!scroller || !state) return;
+      const raw = Math.max(0, Number(state.scrollLeft) || 0);
+      if (raw <= 8) { scroller.scrollLeft = 0; return; }
+      scroller.scrollLeft = raw;
+      const anchorKey = String(state.anchorKey || '');
+      if (!anchorKey) return;
+      requestAnimationFrame(() => {
+        const anchor = [...scroller.querySelectorAll('[data-home-game-key]')].find(card => String(card.dataset.homeGameKey || '') === anchorKey);
+        if (!anchor) return;
+        const scrollerRect = scroller.getBoundingClientRect();
+        const currentOffset = anchor.getBoundingClientRect().left - scrollerRect.left;
+        scroller.scrollLeft += currentOffset - (Number(state.anchorOffset) || 0);
+      });
+    }
     function homeDailyGamesStartMs(league, date, time) {
       const m = String(time || '').match(/(\d{1,2}):(\d{2})/);
       if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return NaN;
