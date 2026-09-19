@@ -421,3 +421,15 @@ html[data-theme="dark"] .standings-flow-icon{
   background:#14251d !important;
   color:#65b78a !important;
 }
+
+html[data-theme="dark"] .standings-sync-status-ok .standings-sync-dot{
+  background:#56b98a !important;
+  box-shadow:0 0 0 3px rgba(86,185,138,.13) !important;
+}
+html[data-theme="dark"] .standings-sync-status-loading .standings-sync-dot{
+  background:#d4a33a !important;
+}
+html[data-theme="dark"] .standings-sync-status-error .standings-sync-dot{
+  background:#d66a6a !important;
+  box-shadow:0 0 0 3px rgba(214,106,106,.12) !important;
+}
