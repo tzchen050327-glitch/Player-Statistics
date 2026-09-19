@@ -142,6 +142,15 @@ html[data-theme="dark"] .home-game-lineup-ready{
 }
 
 
+/* International explorer heading */
+html[data-theme="dark"] .intl-explorer-head strong{
+  color:#f1e6cf !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.35) !important;
+}
+html[data-theme="dark"] .intl-explorer-head span{
+  color:#9eabc0 !important;
+}
+
 /* International database select flow: high-contrast dark states */
 html[data-theme="dark"] .intl-select-step span{
   color:#9eabc0 !important;
