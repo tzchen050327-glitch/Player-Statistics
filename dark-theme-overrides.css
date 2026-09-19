@@ -526,3 +526,10 @@ html[data-theme="dark"] .standings-team-game-count i{
 html[data-theme="dark"] .standings-h2h-section-title{
   color:#d0a94e !important;
 }
+
+html[data-theme="dark"] .home-game-status.is-lineup-ready{
+  border:1px solid #67599c !important;
+  background:linear-gradient(135deg,#14283d 0%,#24213f 56%,#35244f 100%) !important;
+  color:#c9ddff !important;
+  box-shadow:0 2px 9px rgba(27,20,57,.34),inset 0 1px 0 rgba(190,211,255,.08) !important;
+}
