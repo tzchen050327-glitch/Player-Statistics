@@ -77,9 +77,10 @@
 
     function usCareerOptionLabel(entry) {
       if (!entry) return '';
+      const team = mlbTeamZh(String(entry.organizationName || entry.teamName || '').trim());
       return [
         Number(entry.year) || '',
-        String(entry.organizationName || entry.teamName || '').trim() || '球隊未提供',
+        team || '球隊未提供',
         String(entry.level || '').trim() || 'MiLB'
       ].filter(Boolean).join('｜');
     }
