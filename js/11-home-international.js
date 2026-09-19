@@ -321,7 +321,7 @@
     }
     function playerDisplayTeam(player) {
       if (playerScope(player) === 'cpbl') return normalizeTeamName(player?.cpblTeam || '');
-      if (isUsPlayer(player)) return String(player?.externalCurrentOrganization || player?.externalCurrentTeam || player?.externalTeam || '').trim();
+      if (isUsPlayer(player)) return mlbTeamZh(String(player?.externalCurrentOrganization || player?.externalCurrentTeam || player?.externalTeam || '').trim());
       return String(player?.externalTeam || '').trim();
     }
 
@@ -335,7 +335,7 @@
         ].filter(Boolean).join('｜');
       }
       if (isUsPlayer(player)) {
-        const team = String(player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || '').trim();
+        const team = mlbTeamZh(String(player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || '').trim());
         const level = String(player.externalCurrentLevel || (
           String(player.externalProvider || '').toUpperCase() === 'MLB' ? 'MLB'
             : String(player.externalProvider || '').toUpperCase() === 'MILB' ? 'MiLB' : ''
@@ -362,10 +362,10 @@
       if (isUsPlayer(player) && player.externalPlayerId) {
         const entry = currentUsCareerEntry(player);
         const selected = entry
-          ? [entry.year, entry.organizationName || entry.teamName || '球隊未提供', entry.level || 'MiLB'].filter(Boolean).join('｜')
+          ? [entry.year, mlbTeamZh(entry.organizationName || entry.teamName || '') || '球隊未提供', entry.level || 'MiLB'].filter(Boolean).join('｜')
           : '年份／球隊／層級尚未同步';
         const current = [
-          player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || '',
+          mlbTeamZh(player.externalCurrentOrganization || player.externalCurrentTeam || player.externalTeam || ''),
           player.externalCurrentLevel || ''
         ].filter(Boolean).join('｜');
         const synced = player.externalLastUpdatedAt
@@ -1452,8 +1452,10 @@
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
           const venue = String(game?.venue || '').trim();
+          const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
+          const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
           return `
-            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(String(game?.away || ''))} 對 ${escapeAttr(String(game?.home || ''))} 全場逐打席"` : ''}>
+            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
@@ -1461,11 +1463,11 @@
                   : ''}
               </div>
               <div class="home-game-team">
-                <span class="home-game-team-name">${escapeHtml(String(game?.away || '客隊'))}</span>
+                <span class="home-game-team-name">${escapeHtml(awayName || '客隊')}</span>
                 <strong class="home-game-score">${escapeHtml(awayScore)}</strong>
               </div>
               <div class="home-game-team">
-                <span class="home-game-team-name">${escapeHtml(String(game?.home || '主隊'))}</span>
+                <span class="home-game-team-name">${escapeHtml(homeName || '主隊')}</span>
                 <strong class="home-game-score">${escapeHtml(homeScore)}</strong>
               </div>
               <div class="home-game-venue">${escapeHtml(venue || '場地未提供')}</div>
@@ -1637,7 +1639,7 @@
           : (scope === 'cpbl'
               ? normalizeTeamName(p.cpblTeam || '')
               : (isUsPlayer(p)
-                  ? String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim()
+                  ? mlbTeamZh(String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim())
                   : String(p.externalTeam || '').trim()));
         const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
         const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
