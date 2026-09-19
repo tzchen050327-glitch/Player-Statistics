@@ -235,6 +235,8 @@
       const key = standingsTeamDetailKey(team);
       const data = standingsTeamDetailCache.get(key) || null;
       const h2h = Array.isArray(data?.h2h) ? data.h2h : [];
+      const interleague = Array.isArray(data?.interleague) ? data.interleague : [];
+      const summary = data?.summary || null;
       const recent = Array.isArray(data?.recent) ? data.recent : [];
       const upcoming = Array.isArray(data?.upcoming) ? data.upcoming : [];
 
@@ -244,14 +246,28 @@
       } else if (standingsTeamDetailError && !data) {
         body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
       } else if (standingsTeamTab === 'h2h') {
-        body = h2h.length
-          ? `<div class="standings-h2h-list">${h2h.map(item => `
-              <div class="standings-h2h-row">
-                <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
-                <span class="standings-h2h-record"><b>${Number(item.wins)||0}</b>勝 <b>${Number(item.losses)||0}</b>敗 <b>${Number(item.ties)||0}</b>和</span>
-              </div>
-            `).join('')}</div>`
-          : `<div class="standings-team-detail-empty">目前沒有可顯示的官方對戰戰績。</div>`;
+        const h2hRows = list => `<div class="standings-h2h-list">${list.map(item => `
+          <div class="standings-h2h-row">
+            <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
+            <span class="standings-h2h-record"><b>${Number(item.wins)||0}</b>勝 <b>${Number(item.losses)||0}</b>敗 <b>${Number(item.ties)||0}</b>和</span>
+          </div>
+        `).join('')}</div>`;
+        if (standingsUiState.league === 'npb') {
+          body = `
+            <div class="standings-h2h-section">
+              <span class="standings-h2h-section-title">${standingsSubTitle()}對戰</span>
+              ${h2h.length ? h2hRows(h2h) : '<div class="standings-team-detail-empty compact">目前沒有同聯盟對戰資料。</div>'}
+            </div>
+            <div class="standings-h2h-section">
+              <span class="standings-h2h-section-title">交流賽</span>
+              ${interleague.length ? h2hRows(interleague) : '<div class="standings-team-detail-empty compact">目前沒有交流賽資料。</div>'}
+            </div>
+          `;
+        } else {
+          body = h2h.length
+            ? h2hRows(h2h)
+            : `<div class="standings-team-detail-empty">目前沒有可顯示的官方對戰戰績。</div>`;
+        }
       } else {
         const recentHtml = recent.length
           ? recent.map(game => `
@@ -282,7 +298,13 @@
       return `
         <section class="standings-team-detail" id="standingsTeamDetail">
           <div class="standings-team-detail-head">
-            <div><span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026・${standingsSubTitle()}</span><strong>${escapeHtml(team)}</strong></div>
+            <div class="standings-team-detail-heading">
+              <span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026・${standingsSubTitle()}</span>
+              <div class="standings-team-title-line">
+                <strong>${escapeHtml(team)}</strong>
+                ${summary ? `<span class="standings-team-game-count"><b>應賽 ${Number(summary.expectedGames)||0}</b><i></i><b>已賽 ${Number(summary.playedGames)||0}</b></span>` : ''}
+              </div>
+            </div>
             <button type="button" class="standings-team-detail-close" data-standings-team-close aria-label="關閉球隊詳情">×</button>
           </div>
           <div class="standings-team-detail-tabs">
