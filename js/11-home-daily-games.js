@@ -328,6 +328,7 @@
           const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
+          const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
           const showScore = status === 'live' || status === 'final';
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
@@ -337,7 +338,7 @@
           return `
             <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
-                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                <span class="home-game-status status-${escapeAttr(status)} ${lineupReady ? 'is-lineup-ready' : ''}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
                   ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
                   : ''}
