@@ -16,6 +16,7 @@
     const KBO_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/kbo-live-games';
     const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
     const LEAGUE_STANDINGS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-standings-state';
+    const LEAGUE_TEAM_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-team-detail';
     const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
     const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
