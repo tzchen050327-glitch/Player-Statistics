@@ -613,6 +613,11 @@
     return '';
   }
 
+  function pregameStarterForSide(detail, side) {
+    const starter = side === 'away' ? detail?.pregame?.awayStarter : detail?.pregame?.homeStarter;
+    return starter || {};
+  }
+
   function defenseMap(detail, side) {
     const raw = detail?.lineups?.[side] || {}, map = {};
     const fielders = Array.isArray(raw.fielders) ? raw.fielders : rawRoster(detail,side);
@@ -620,7 +625,12 @@
       const key = positionKey(entry?.position || entry?.pos || ''), name = compactName(entry?.name || entry?.fullName || '');
       if (key && name) map[key] = name;
     }
-    const pitcher = compactName(raw?.pitcher?.fullName || raw?.pitcher?.name || detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || '');
+    const starter = pregameStarterForSide(detail, side);
+    const status = String(detail?.status || '').toLowerCase();
+    const livePitcher = ['live','suspended','final'].includes(status)
+      ? compactName(detail?.current?.pitcher?.fullName || detail?.current?.pitcher?.name || raw?.pitcher?.fullName || raw?.pitcher?.name || '')
+      : '';
+    const pitcher = livePitcher || compactName(raw?.pitcher?.fullName || raw?.pitcher?.name || starter?.fullName || starter?.name || '');
     if (pitcher) map.p = pitcher;
     return map;
   }
@@ -990,8 +1000,13 @@
   }
 
   function currentPitcherInfo(detail,side) {
-    const direct=detail?.lineups?.[side]?.pitcher||{}, current=detail?.current?.pitcher||{}, name=compactName(direct.fullName||direct.name||current.fullName||current.name||'');
-    const stats=direct.stats||direct||current.stats||current;
+    const direct=detail?.lineups?.[side]?.pitcher||{}, current=detail?.current?.pitcher||{}, starter=pregameStarterForSide(detail,side);
+    const status=String(detail?.status||'').toLowerCase();
+    const liveName=['live','suspended','final'].includes(status)
+      ? compactName(current.fullName||current.name||direct.fullName||direct.name||'')
+      : '';
+    const name=liveName||compactName(direct.fullName||direct.name||starter.fullName||starter.name||current.fullName||current.name||'');
+    const stats=(liveName ? (current.stats||current||direct.stats||direct) : (direct.stats||direct||starter.stats||starter||current.stats||current));
     return {name:name||'投手資料讀取中',pitches:safeCell(stats.pitches??stats.pitchCount??''),ip:safeCell(stats.ip??stats.innings??''),hits:safeCell(stats.hits??stats.h??''),homeRuns:safeCell(stats.homeRuns??stats.hr??''),walks:safeCell(stats.walks??stats.bb??''),strikeouts:safeCell(stats.so??stats.strikeouts??''),era:safeCell(stats.era??'')};
   }
 
