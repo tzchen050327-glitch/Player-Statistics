@@ -174,7 +174,7 @@
             ${standingsButton('中華職棒','cpbl',isCpbl,'data-standings-league')}
             ${standingsButton('日本職棒','npb',!isCpbl,'data-standings-league')}
           </div>
-          <div class="standings-secondary-tabs" aria-label="${isCpbl ? '中職季別' : '日職聯盟'}">
+          <div class="standings-secondary-tabs ${isCpbl ? 'is-three' : 'is-two'}" aria-label="${isCpbl ? '中職季別' : '日職聯盟'}">
             ${secondary}
           </div>
         </div>
