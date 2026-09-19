@@ -6620,3 +6620,10 @@ html[data-theme="dark"] .app-date-today:hover{
     gap:6px;
   }
 }
+
+.home-game-status.is-lineup-ready{
+  border:1px solid #b9b7eb;
+  background:linear-gradient(135deg,#e5f5ff 0%,#eeeaff 58%,#e3d9ff 100%);
+  color:#58438f;
+  box-shadow:0 2px 8px rgba(91,79,156,.12),inset 0 1px 0 rgba(255,255,255,.78);
+}
