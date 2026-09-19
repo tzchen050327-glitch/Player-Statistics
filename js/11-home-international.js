@@ -1481,7 +1481,8 @@
       const existingScroller = host.querySelector('.home-games-scroller');
       if (existingScroller) {
         const captured = captureHomeDailyGamesScroll(existingScroller);
-        if (captured) homeDailyGamesScrollState.set(key, captured);
+        const existingKey = String(existingScroller.dataset.homeGamesKey || key);
+        if (captured) homeDailyGamesScrollState.set(existingKey, captured);
       }
       const cached = homeDailyGamesCache.get(key) || null;
       const loading = homeDailyGamesLoading.has(key);
@@ -1502,7 +1503,7 @@
       } else if (!games.length) {
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${displayRows.map(({ game, sourceIndex }) => {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game, sourceIndex }) => {
           const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
@@ -1597,6 +1598,14 @@
           </div>
           ${bodyHtml}
         </section>`;
+
+      const renderedScroller = host.querySelector('.home-games-scroller');
+      const savedScrollState = homeDailyGamesScrollState.get(key) || null;
+      restoreHomeDailyGamesScroll(renderedScroller, savedScrollState);
+      renderedScroller?.addEventListener('scroll', () => {
+        const captured = captureHomeDailyGamesScroll(renderedScroller);
+        if (captured) homeDailyGamesScrollState.set(key, captured);
+      }, { passive:true });
 
       host.querySelector('.home-games-retry')?.addEventListener('click', () => {
         homeDailyGamesCache.delete(key);
