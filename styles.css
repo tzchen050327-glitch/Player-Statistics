@@ -6568,3 +6568,55 @@ html[data-theme="dark"] .app-date-today:hover{
   .standings-h2h-record{font-size:10px;}
   .standings-schedule-row{grid-template-columns:52px minmax(0,1fr) 48px;gap:6px;}
 }
+
+.standings-team-detail-heading{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.standings-team-title-line{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.standings-team-game-count{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:#7b8997;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.standings-team-game-count b{
+  color:#5f7183;
+  font-weight:950;
+}
+.standings-team-game-count i{
+  width:1px;
+  height:10px;
+  background:#d7dee5;
+}
+.standings-h2h-section + .standings-h2h-section{
+  margin-top:16px;
+}
+.standings-h2h-section-title{
+  display:block;
+  margin:0 0 7px 2px;
+  color:#8e6a1c;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+@media(max-width:600px){
+  .standings-team-title-line{
+    gap:6px;
+  }
+  .standings-team-game-count{
+    font-size:8px;
+    gap:6px;
+  }
+}
