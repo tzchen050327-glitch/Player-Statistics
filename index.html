@@ -91,6 +91,15 @@
             <div id="homeTemplateGrid" class="template-grid home-template-grid"></div>
           </section>
 
+          <button id="homeStandingsBtn" class="panel home-standings-entry" type="button" aria-label="開啟戰績排名">
+            <span class="home-standings-entry-icon" aria-hidden="true">🏆</span>
+            <span class="home-standings-entry-copy">
+              <strong>戰績排名</strong>
+              <small>中職・日職</small>
+            </span>
+            <span class="home-standings-entry-arrow" aria-hidden="true">›</span>
+          </button>
+
           <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各聯盟時間">
             <div class="home-time-zone-head">
               <h2>各地時間</h2>
@@ -146,6 +155,21 @@
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
+    </section>
+
+    <section id="standingsPage" class="hidden standings-page">
+      <div class="standings-page-top">
+        <button id="standingsBackHomeBtn" class="press-btn standings-back-home" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel standings-page-panel">
+        <div class="standings-page-head">
+          <div>
+            <span class="standings-page-kicker">STANDINGS</span>
+            <h2>戰績排名</h2>
+          </div>
+        </div>
+        <div id="standingsPageContent" class="standings-page-content" aria-live="polite"></div>
+      </section>
     </section>
 
     <section id="playerPage" class="hidden">
