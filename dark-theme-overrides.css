@@ -238,3 +238,59 @@ html[data-theme="dark"] .sync-source-meta::before{
   background:#4aa377 !important;
   box-shadow:0 0 0 3px rgba(74,163,119,.14) !important;
 }
+
+
+/* Season picker: readable black-gold dark mode */
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-shell{
+  border-color:#3b3528 !important;
+  background:linear-gradient(180deg,#111317 0%,#0c0e11 100%) !important;
+  color:#f1e8d6 !important;
+  box-shadow:0 30px 90px rgba(0,0,0,.62) !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-shell::before{
+  background:linear-gradient(90deg,#174f86 0 76%,#d1a33a 76% 100%) !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-head{
+  border-bottom-color:#343028 !important;
+  background:linear-gradient(180deg,#15171a 0%,#101215 100%) !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-kicker{
+  color:#d8aa42 !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-head h2,
+html[data-theme="dark"] #seasonPickerTitle{
+  color:#f5ecd9 !important;
+  text-shadow:none !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-close{
+  border-color:#6b603f !important;
+  background:#14161a !important;
+  color:#f0e7d6 !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-option{
+  border-color:#34383f !important;
+  background:#15191e !important;
+  color:#f1e8d6 !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-option:hover{
+  border-color:#6d5a2d !important;
+  background:#201b12 !important;
+  color:#ffd66a !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-option.active{
+  border-color:#c99b35 !important;
+  background:linear-gradient(90deg,#211b11 0%,#17191d 100%) !important;
+  color:#fff3d4 !important;
+  box-shadow:inset 4px 0 #d5a53d !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-radio{
+  border-color:#b7c5d3 !important;
+  background:#f5f7fa !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-option.active .filter-choice-radio{
+  border-color:#d4a43a !important;
+  box-shadow:0 0 0 3px rgba(212,164,58,.18) !important;
+}
+html[data-theme="dark"] #seasonPickerDialog .filter-choice-option.active .filter-choice-radio::after{
+  background:#174f86 !important;
+}
