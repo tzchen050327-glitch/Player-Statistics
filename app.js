@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.48';
+    const APP_VERSION = 'v4.49';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.48';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.48';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.49';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.49';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -10493,6 +10493,7 @@ bg2: {
     function renderAll() {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
+      const standingsPageActive = currentPage === 'standings';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
       const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
       if (forceOfficialRefreshBtn) {
@@ -10500,23 +10501,26 @@ bg2: {
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || standingsPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
+      els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
       if (els.pageSubtitle) {
-        els.pageSubtitle.textContent = playerPageActive
-          ? (errorPageActive
-              ? '失誤紀錄｜CPBL 官方'
-              : (playerScope(player) === 'international'
-                  ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
-                  : `球員設定｜${scopeLabel(playerScope(player))}`))
-          : homePageBreadcrumb();
+        els.pageSubtitle.textContent = standingsPageActive
+          ? '戰績排名'
+          : (playerPageActive
+              ? (errorPageActive
+                  ? '失誤紀錄｜CPBL 官方'
+                  : (playerScope(player) === 'international'
+                      ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
+                      : `球員設定｜${scopeLabel(playerScope(player))}`))
+              : homePageBreadcrumb());
       }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || standingsPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
@@ -13549,6 +13553,18 @@ bg2: {
         btn.disabled = false;
         btn.textContent = originalText;
       }
+    });
+
+    els.homeStandingsBtn?.addEventListener('click', () => {
+      currentPage = 'standings';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.standingsBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
     });
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
