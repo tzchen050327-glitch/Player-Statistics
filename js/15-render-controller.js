@@ -36,6 +36,7 @@
     function renderAll() {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
+      const standingsPageActive = currentPage === 'standings';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
       const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
       if (forceOfficialRefreshBtn) {
@@ -43,23 +44,26 @@
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || standingsPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
+      els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
       if (els.pageSubtitle) {
-        els.pageSubtitle.textContent = playerPageActive
-          ? (errorPageActive
-              ? '失誤紀錄｜CPBL 官方'
-              : (playerScope(player) === 'international'
-                  ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
-                  : `球員設定｜${scopeLabel(playerScope(player))}`))
-          : homePageBreadcrumb();
+        els.pageSubtitle.textContent = standingsPageActive
+          ? '戰績排名'
+          : (playerPageActive
+              ? (errorPageActive
+                  ? '失誤紀錄｜CPBL 官方'
+                  : (playerScope(player) === 'international'
+                      ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
+                      : `球員設定｜${scopeLabel(playerScope(player))}`))
+              : homePageBreadcrumb());
       }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || standingsPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
