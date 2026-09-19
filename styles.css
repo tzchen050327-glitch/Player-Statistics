@@ -5981,3 +5981,134 @@ html[data-theme="dark"] .app-date-today:hover{
   }
 }
 /* ===== HOME LINEUP READY BADGE END ===== */
+
+
+/* ---------- Standings entry / blank standings page ---------- */
+.home-standings-entry{
+  width:100%;
+  flex:0 0 auto;
+  min-height:58px;
+  margin:0;
+  padding:9px 10px;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  border-radius:16px;
+  text-align:left;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.home-standings-entry-icon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:#fff5d9;
+  font-size:17px;
+  line-height:1;
+}
+.home-standings-entry-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.home-standings-entry-copy strong{
+  color:#173555;
+  font-size:13px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.home-standings-entry-copy small{
+  color:#7f8fa1;
+  font-size:9px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.home-standings-entry-arrow{
+  color:#a0782a;
+  font-size:24px;
+  line-height:1;
+  font-weight:800;
+}
+.home-standings-entry:hover{
+  border-color:#d5ad47;
+  box-shadow:0 5px 14px rgba(93,70,16,.10);
+}
+.home-standings-entry:active{transform:translateY(1px);}
+.home-standings-entry:focus-visible{
+  outline:2px solid #c79a39;
+  outline-offset:2px;
+}
+
+.standings-page{
+  min-height:calc(100vh - 150px);
+}
+.standings-page-top{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  margin-bottom:12px;
+}
+.standings-back-home{
+  min-height:40px;
+}
+.standings-page-panel{
+  min-height:calc(100vh - 220px);
+  padding:18px;
+}
+.standings-page-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:14px;
+  border-bottom:1px solid #dbe3ec;
+}
+.standings-page-kicker{
+  display:block;
+  margin-bottom:4px;
+  color:#a0782a;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.standings-page-head h2{
+  margin:0;
+  color:#173555;
+  font-size:24px;
+}
+.standings-page-content{
+  min-height:420px;
+  padding-top:18px;
+}
+
+@container (max-width:145px){
+  .home-standings-entry{
+    min-height:50px;
+    grid-template-columns:26px minmax(0,1fr) 14px;
+    gap:5px;
+    padding:7px 6px;
+    border-radius:14px;
+  }
+  .home-standings-entry-icon{
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    font-size:14px;
+  }
+  .home-standings-entry-copy strong{font-size:11px;}
+  .home-standings-entry-copy small{font-size:7.5px;}
+  .home-standings-entry-arrow{font-size:18px;}
+}
+
+@media(max-width:760px){
+  .standings-page-panel{
+    min-height:calc(100vh - 190px);
+    padding:14px;
+  }
+  .standings-page-content{min-height:360px;}
+}
