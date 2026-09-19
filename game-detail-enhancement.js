@@ -1001,13 +1001,26 @@
 
   function currentPitcherInfo(detail,side) {
     const direct=detail?.lineups?.[side]?.pitcher||{}, current=detail?.current?.pitcher||{}, starter=pregameStarterForSide(detail,side);
+    const directStats=direct?.stats||direct, currentStats=current?.stats||{}, starterStats=starter?.stats||starter;
     const status=String(detail?.status||'').toLowerCase();
     const liveName=['live','suspended','final'].includes(status)
       ? compactName(current.fullName||current.name||direct.fullName||direct.name||'')
       : '';
     const name=liveName||compactName(direct.fullName||direct.name||starter.fullName||starter.name||current.fullName||current.name||'');
-    const stats=(liveName ? (current.stats||current||direct.stats||direct) : (direct.stats||direct||starter.stats||starter||current.stats||current));
-    return {name:name||'投手資料讀取中',pitches:safeCell(stats.pitches??stats.pitchCount??''),ip:safeCell(stats.ip??stats.innings??''),hits:safeCell(stats.hits??stats.h??''),homeRuns:safeCell(stats.homeRuns??stats.hr??''),walks:safeCell(stats.walks??stats.bb??''),strikeouts:safeCell(stats.so??stats.strikeouts??''),era:safeCell(stats.era??'')};
+    const stat=(...values)=>{
+      for(const value of values) if(value!==undefined&&value!==null&&String(value)!=='') return safeCell(value);
+      return '';
+    };
+    return {
+      name:name||'投手資料讀取中',
+      pitches:stat(currentStats.pitches,currentStats.pitchCount,directStats.pitches,directStats.pitchCount,starterStats.pitches,starterStats.pitchCount),
+      ip:stat(currentStats.ip,currentStats.innings,directStats.ip,directStats.innings,starterStats.ip,starterStats.innings),
+      hits:stat(currentStats.hits,currentStats.h,directStats.hits,directStats.h,starterStats.hits,starterStats.h),
+      homeRuns:stat(currentStats.homeRuns,currentStats.hr,directStats.homeRuns,directStats.hr,starterStats.homeRuns,starterStats.hr),
+      walks:stat(currentStats.walks,currentStats.bb,directStats.walks,directStats.bb,starterStats.walks,starterStats.bb),
+      strikeouts:stat(currentStats.so,currentStats.strikeouts,directStats.so,directStats.strikeouts,starterStats.so,starterStats.strikeouts),
+      era:stat(currentStats.era,directStats.era,starterStats.era)
+    };
   }
 
   function renderPitcherPanel(detail,side) {
