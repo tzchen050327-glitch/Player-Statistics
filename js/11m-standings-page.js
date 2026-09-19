@@ -23,6 +23,7 @@
     let standingsOfficialCacheAt = 0;
     let standingsOfficialLoading = false;
     let standingsOfficialError = '';
+    let standingsAutoRefreshTimer = null;
 
     function standingsPreviewRows() {
       if (standingsUiState.league === 'cpbl') return STANDINGS_PREVIEW_TEAMS.cpbl;
@@ -50,6 +51,13 @@
         return standingsOfficialCache?.cpbl?.[standingsUiState.cpblView] || null;
       }
       return standingsOfficialCache?.npb?.[standingsUiState.npbView] || null;
+    }
+
+    function standingsCurrentMeta() {
+      if (!standingsOfficialCache?.meta) return null;
+      return standingsUiState.league === 'cpbl'
+        ? (standingsOfficialCache.meta.cpbl || null)
+        : (standingsOfficialCache.meta.npb || null);
     }
 
     function standingsDisplayRows() {
@@ -98,25 +106,77 @@
 
     function standingsStatusMeta() {
       if (standingsOfficialLoading && !standingsOfficialCache) {
-        return { title:'正在讀取官方戰績', detail:'正在連線 CPBL 與 NPB 官網…', state:'loading' };
+        return { title:'正在讀取戰績', detail:'正在讀取官方基準與即時結算狀態…', state:'loading' };
       }
       if (standingsOfficialError && !standingsOfficialCache) {
-        return { title:'官方戰績讀取失敗', detail:standingsOfficialError, state:'error' };
+        return { title:'戰績讀取失敗', detail:standingsOfficialError, state:'error' };
       }
+
       const section = standingsCurrentOfficialSection();
-      if (section) {
-        const league = standingsUiState.league === 'cpbl' ? 'CPBL' : 'NPB';
-        const officialDate = String(section.officialDate || '').trim();
-        const fetched = standingsFetchedTime();
+      const meta = standingsCurrentMeta();
+      const league = standingsUiState.league === 'cpbl' ? 'CPBL' : 'NPB';
+      const officialDate = String(section?.officialDate || '').trim();
+      const fetched = standingsFetchedTime();
+      const state = String(meta?.status || 'official-only');
+      const applied = Number(meta?.appliedGames || 0);
+      const scheduled = Number(meta?.scheduledGames || 0);
+
+      if (state === 'base') {
         return {
-          title:`${league} 官方戰績已載入`,
-          detail:officialDate
-            ? `官網資料截至 ${officialDate.replaceAll('-', '/')}｜抓取時間 ${fetched || '剛剛'}`
-            : `抓取時間 ${fetched || '剛剛'}`,
+          title:`${league} 今日官方基準已建立`,
+          detail:`Final 已結算 ${applied} / ${scheduled || '—'} 場｜基準不會在比賽中重抓`,
           state:'ok'
         };
       }
-      return { title:'等待官方戰績資料', detail:'尚未完成首次讀取。', state:'idle' };
+      if (state === 'live') {
+        return {
+          title:`${league} 今日戰績即時結算中`,
+          detail:`Final 已結算 ${applied} / ${scheduled || '—'} 場｜每場 Final 後直接加勝敗和`,
+          state:'ok'
+        };
+      }
+      if (state === 'pending_reconcile') {
+        return {
+          title:`${league} 今日賽事已完成`,
+          detail:`已結算 ${applied} / ${scheduled || applied} 場｜等待跨日與官網核對`,
+          state:'ok'
+        };
+      }
+      if (state === 'confirmed') {
+        return {
+          title:`${league} 已與官方戰績核對一致`,
+          detail:meta?.reconciledAt ? `核對完成 ${new Date(meta.reconciledAt).toLocaleString('zh-TW',{hour12:false})}` : '跨日核對完成',
+          state:'ok'
+        };
+      }
+      if (state === 'mismatch') {
+        const count = Number(meta?.mismatch?.count || 0);
+        return {
+          title:`${league} 官方戰績與本地結算有差異`,
+          detail:`目前有 ${count || '未知'} 筆差異，後端會延後再次核對，不會直接覆蓋本地結果`,
+          state:'error'
+        };
+      }
+      if (section) {
+        return {
+          title:`${league} 官方戰績已載入`,
+          detail:officialDate
+            ? `官網資料截至 ${officialDate.replaceAll('-', '/')}｜尚未進入今日 T-30 基準`
+            : `抓取時間 ${fetched || '剛剛'}｜尚未進入今日 T-30 基準`,
+          state:'ok'
+        };
+      }
+      return { title:'等待戰績資料', detail:'尚未完成首次讀取。', state:'idle' };
+    }
+
+    function scheduleStandingsAutoRefresh() {
+      if (standingsAutoRefreshTimer) clearTimeout(standingsAutoRefreshTimer);
+      standingsAutoRefreshTimer = null;
+      if (currentPage !== 'standings') return;
+      standingsAutoRefreshTimer = setTimeout(() => {
+        if (currentPage !== 'standings') return;
+        void loadOfficialStandings({ force:true });
+      }, 120000);
     }
 
     async function loadOfficialStandings({ force = false } = {}) {
@@ -184,7 +244,7 @@
             <span class="standings-overview-label">${isCpbl ? 'CPBL' : 'NPB'} 2026</span>
             <strong>${standingsSubTitle()}戰績</strong>
           </div>
-          <span class="standings-preview-badge">${hasOfficial ? '官方資料' : (standingsOfficialLoading ? '讀取中' : '待載入')}</span>
+          <span class="standings-preview-badge">${hasOfficial ? (['live','pending_reconcile'].includes(String(standingsCurrentMeta()?.status || '')) ? '即時結算' : '官方資料') : (standingsOfficialLoading ? '讀取中' : '待載入')}</span>
         </div>
 
         <div class="standings-sync-status standings-sync-status-${status.state}" role="status">
@@ -249,4 +309,5 @@
       if (!standingsOfficialCache && !standingsOfficialLoading) {
         void loadOfficialStandings();
       }
+      scheduleStandingsAutoRefresh();
     }
