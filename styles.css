@@ -5991,7 +5991,7 @@ html[data-theme="dark"] .app-date-today:hover{
   margin:0;
   padding:8px 10px;
   display:grid;
-  grid-template-columns:28px minmax(0,1fr) 16px;
+  grid-template-columns:28px minmax(0,1fr);
   align-items:center;
   gap:8px;
   border-radius:15px;
@@ -6018,12 +6018,6 @@ html[data-theme="dark"] .app-date-today:hover{
   line-height:1.1;
   font-weight:900;
   white-space:nowrap;
-}
-.home-standings-entry-arrow{
-  justify-self:end;
-  font-size:21px;
-  line-height:1;
-  font-weight:800;
 }
 .home-standings-entry:hover{
   border-color:#d5ad47;
@@ -6080,7 +6074,7 @@ html[data-theme="dark"] .app-date-today:hover{
 @container (max-width:145px){
   .home-standings-entry{
     min-height:46px;
-    grid-template-columns:24px minmax(0,1fr) 12px;
+    grid-template-columns:24px minmax(0,1fr);
     gap:5px;
     padding:7px 6px;
     border-radius:13px;
@@ -6092,7 +6086,6 @@ html[data-theme="dark"] .app-date-today:hover{
   }
   .home-standings-entry-icon svg{width:15px;height:15px;}
   .home-standings-entry>strong{font-size:10.5px;}
-  .home-standings-entry-arrow{font-size:17px;}
 }
 
 @media(max-width:760px){
