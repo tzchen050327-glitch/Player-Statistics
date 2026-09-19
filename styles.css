@@ -6356,3 +6356,215 @@ html[data-theme="dark"] .app-date-today:hover{
   0%,100%{opacity:.55;transform:scale(.92)}
   50%{opacity:1;transform:scale(1)}
 }
+
+
+/* ---------- Standings team drilldown ---------- */
+.standings-team-row{
+  width:100%;
+  border:0;
+  background:transparent;
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
+}
+.standings-team-row:hover{
+  background:#f7f9fc;
+}
+.standings-team-row.selected{
+  background:#fff9ea;
+}
+.standings-team-row.selected .standings-team-name{
+  color:#8a650f;
+}
+.standings-team-row:focus-visible{
+  position:relative;
+  z-index:1;
+  outline:2px solid #c89a34;
+  outline-offset:-2px;
+}
+.standings-team-detail{
+  margin-top:14px;
+  overflow:hidden;
+  border:1px solid #d9e2eb;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 7px 22px rgba(29,52,75,.06);
+}
+.standings-team-detail-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:14px 15px 11px;
+}
+.standings-team-detail-head > div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.standings-team-detail-head span{
+  color:#9b7a31;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.1em;
+}
+.standings-team-detail-head strong{
+  color:#1f3e5b;
+  font-size:18px;
+  line-height:1.2;
+}
+.standings-team-detail-close{
+  flex:0 0 auto;
+  width:32px;
+  height:32px;
+  border:1px solid #d9e1e9;
+  border-radius:10px;
+  background:#f7f9fb;
+  color:#718295;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+}
+.standings-team-detail-tabs{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  padding:0 12px 12px;
+}
+.standings-team-detail-tabs button{
+  min-height:38px;
+  border:1px solid #dde4eb;
+  border-radius:11px;
+  background:#f5f8fb;
+  color:#6e8093;
+  font:inherit;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.standings-team-detail-tabs button.active{
+  border-color:#b68825;
+  background:#fff3cf;
+  color:#8a620e;
+}
+.standings-team-detail-body{
+  border-top:1px solid #e7edf3;
+  padding:12px;
+}
+.standings-h2h-list{
+  display:grid;
+  gap:8px;
+}
+.standings-h2h-row{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 11px;
+  border:1px solid #e4eaf0;
+  border-radius:12px;
+  background:#fafbfd;
+}
+.standings-h2h-opponent{
+  min-width:0;
+  color:#294863;
+  font-size:12px;
+  font-weight:900;
+}
+.standings-h2h-record{
+  flex:0 0 auto;
+  color:#75879a;
+  font-size:11px;
+  font-weight:800;
+}
+.standings-h2h-record b{
+  color:#173b5d;
+  font-weight:950;
+}
+.standings-schedule-section + .standings-schedule-section{
+  margin-top:16px;
+}
+.standings-schedule-section-title{
+  display:block;
+  margin:0 0 7px 2px;
+  color:#8e6a1c;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+.standings-schedule-row{
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr) 54px;
+  align-items:center;
+  gap:8px;
+  min-height:55px;
+  padding:8px 6px;
+  border-bottom:1px solid #edf1f5;
+}
+.standings-schedule-row:last-child{
+  border-bottom:0;
+}
+.standings-schedule-date,
+.standings-schedule-match,
+.standings-schedule-result{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.standings-schedule-date strong,
+.standings-schedule-match strong,
+.standings-schedule-result strong{
+  color:#29445f;
+  font-size:11px;
+  font-weight:950;
+}
+.standings-schedule-date span,
+.standings-schedule-match span,
+.standings-schedule-result span{
+  color:#8a98a7;
+  font-size:9px;
+  line-height:1.25;
+}
+.standings-schedule-match strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.standings-schedule-result{
+  align-items:flex-end;
+  text-align:right;
+}
+.standings-schedule-result.is-w strong{color:#28805a;}
+.standings-schedule-result.is-l strong{color:#b25454;}
+.standings-schedule-result.is-t strong{color:#8a6e2c;}
+.standings-schedule-result.upcoming strong{
+  color:#9a741f;
+  font-size:9px;
+}
+.standings-team-detail-empty{
+  padding:18px 10px;
+  color:#7d8d9d;
+  font-size:11px;
+  text-align:center;
+  line-height:1.5;
+}
+.standings-team-detail-empty.compact{
+  padding:10px 6px;
+}
+.standings-team-detail-empty.error{
+  color:#b54e4e;
+}
+
+@media(max-width:600px){
+  .standings-team-detail{border-radius:14px;}
+  .standings-team-detail-head{padding:13px 12px 10px;}
+  .standings-team-detail-head strong{font-size:16px;}
+  .standings-team-detail-body{padding:10px;}
+  .standings-h2h-row{min-height:44px;padding:9px 10px;}
+  .standings-h2h-opponent{font-size:11px;}
+  .standings-h2h-record{font-size:10px;}
+  .standings-schedule-row{grid-template-columns:52px minmax(0,1fr) 48px;gap:6px;}
+}
