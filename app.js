@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.45';
+    const APP_VERSION = 'v4.46';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.45';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.45';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.46';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.46';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -7253,10 +7253,17 @@ bg2: {
       host.classList.remove('hidden');
 
       const key = `${league}|${date}`;
+      const existingScroller = host.querySelector('.home-games-scroller');
+      if (existingScroller) {
+        const captured = captureHomeDailyGamesScroll(existingScroller);
+        const existingKey = String(existingScroller.dataset.homeGamesKey || key);
+        if (captured) homeDailyGamesScrollState.set(existingKey, captured);
+      }
       const cached = homeDailyGamesCache.get(key) || null;
       const loading = homeDailyGamesLoading.has(key);
       const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
       const games = Array.isArray(cached?.games) ? cached.games : [];
+      const displayRows = homeDailyGamesDisplayRows(games);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);
       const dateLabel = date.replaceAll('-', '/');
@@ -7271,7 +7278,8 @@ bg2: {
       } else if (!games.length) {
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}">${games.map((game, gameIndex) => {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game, sourceIndex }) => {
+          const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const showScore = status === 'live' || status === 'final';
@@ -7281,7 +7289,7 @@ bg2: {
           const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
           const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
           return `
-            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${gameIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
+            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
                 ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
@@ -7365,6 +7373,14 @@ bg2: {
           </div>
           ${bodyHtml}
         </section>`;
+
+      const renderedScroller = host.querySelector('.home-games-scroller');
+      const savedScrollState = homeDailyGamesScrollState.get(key) || null;
+      restoreHomeDailyGamesScroll(renderedScroller, savedScrollState);
+      renderedScroller?.addEventListener('scroll', () => {
+        const captured = captureHomeDailyGamesScroll(renderedScroller);
+        if (captured) homeDailyGamesScrollState.set(key, captured);
+      }, { passive:true });
 
       host.querySelector('.home-games-retry')?.addEventListener('click', () => {
         homeDailyGamesCache.delete(key);
