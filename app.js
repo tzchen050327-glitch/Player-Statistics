@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.53';
+    const APP_VERSION = 'v4.54';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -20,8 +20,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
     const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
     const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.53';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.53';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.54';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.54';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -5841,263 +5841,6 @@ bg2: {
       return [String(competition||''), String(year||'')].join('|');
     }
 
-    async function loadInternationalTeams(competition, year) {
-      const key=internationalTeamListKey(competition,year);
-      if (!competition || !year || internationalTeamCache.has(key) || internationalTeamLoading.has(key)) return;
-      internationalTeamLoading.add(key);
-      try {
-        const data=await baseballRequest('international-teams',{competition,year:Number(year)});
-        const teams=Array.isArray(data?.teams) ? data.teams.map(normalizeInternationalTeamName).filter(Boolean) : [];
-        internationalTeamCache.set(key,[...new Set(teams)]);
-      } catch (error) {
-        console.error('國際賽球隊載入失敗',error);
-        internationalTeamCache.set(key,[]);
-      } finally {
-        internationalTeamLoading.delete(key);
-        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year)) {
-          renderRecentPlayers();
-        }
-      }
-    }
-
-    async function syncStoredInternationalRosterMetadata(competition, year, team, entries = []) {
-      const normalizedTeam = normalizeInternationalTeamName(team);
-      for (const entry of entries || []) {
-        const officialId = String(entry?.id || '');
-        const officialName = String(entry?.name || '');
-        const player = players.find(p =>
-          playerScope(p) === 'international'
-          && playerSpecialCompetition(p) === competition
-          && internationalEdition(p) === String(year)
-          && internationalTeam(p) === normalizedTeam
-          && (
-            (officialId && String(p.externalPlayerId || '') === officialId)
-            || (officialName && String(p.externalOfficialName || '') === officialName)
-          )
-        );
-        if (!player) continue;
-
-        let changed = false;
-        const number = String(entry?.number || '').trim();
-        if (number && number !== '—' && String(player.number || '') !== number) {
-          player.number = number;
-          changed = true;
-        }
-        if (entry?.zhName && player.name !== entry.zhName) {
-          player.name = entry.zhName;
-          changed = true;
-        }
-        if (officialName && player.externalOfficialName !== officialName) {
-          player.externalOfficialName = officialName;
-          changed = true;
-        }
-        if (entry?.position && player.externalPosition !== entry.position) {
-          player.externalPosition = entry.position;
-          changed = true;
-        }
-        if (changed) {
-          player.updatedAt = Date.now();
-          await savePlayer(player);
-        }
-      }
-    }
-
-    async function loadInternationalRoster(competition, year, team) {
-      const key=internationalRosterKey(competition,year,team);
-      if (!competition || !year || !team || internationalRosterCache.has(key) || internationalRosterLoading.has(key)) return;
-      internationalRosterLoading.add(key);
-      try {
-        const data=await baseballRequest('international-roster',{competition,year:Number(year),team});
-        const roster=data.roster||{players:[]};
-        internationalRosterCache.set(key,roster);
-        await syncStoredInternationalRosterMetadata(competition,year,team,roster.players||[]);
-      } catch (error) {
-        console.error('國際賽 roster 載入失敗',error);
-        internationalRosterCache.set(key,{players:[],error:error?.message||'球員名單載入失敗'});
-      } finally {
-        internationalRosterLoading.delete(key);
-        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year) && homeInternationalTeamFilter===team) {
-          renderRecentPlayers();
-        }
-      }
-    }
-
-    async function openInternationalRosterPlayer(entry, competition, year, team) {
-      if (!entry) return;
-      const officialId=String(entry.id||'');
-      let player=players.find(p =>
-        playerScope(p)==='international'
-        && playerSpecialCompetition(p)===competition
-        && internationalEdition(p)===String(year)
-        && internationalTeam(p)===normalizeInternationalTeamName(team)
-        && (String(p.externalPlayerId||'')===officialId || String(p.externalOfficialName||'')===String(entry.name||''))
-      );
-
-      if (!player) {
-        let type=entry.type==='pitcher'?'pitcher':'hitter';
-        if (type==='pitcher' && !entry.pitcher && entry.hitter) type='hitter';
-        if (type==='hitter' && !entry.hitter && entry.pitcher) type='pitcher';
-        player={
-          id:uid(),
-          name:entry.zhName||entry.name||'未命名球員',
-          number:String(entry.number||'—'),
-          type,
-          scope:'international',
-          stats:type==='pitcher'
-            ? externalPitcherStatsToLocal(entry.pitcher||{})
-            : externalHitterStatsToLocal(entry.hitter||{}),
-          pitcherLastMetric:type==='pitcher'?'wl':undefined,
-          selectedPhotoId:null,photoTransforms:{},
-          externalCompetition:competition,
-          externalTeam:normalizeInternationalTeamName(team),
-          externalYear:Number(year)||CURRENT_YEAR,
-          externalProvider:'INT',
-          externalPlayerId:officialId,
-          externalOfficialName:entry.name||'',
-          externalPosition:entry.position||'',
-          internationalSource:'MLB International Baseball',
-          createdAt:Date.now(),updatedAt:Date.now(),lastUsedAt:Date.now()
-        };
-        await savePlayer(player);
-      } else {
-        player.name=entry.zhName||player.name||entry.name;
-        player.number=String(entry.number||player.number||'—');
-        player.externalOfficialName=entry.name||player.externalOfficialName||'';
-        player.externalPosition=entry.position||player.externalPosition||'';
-        if (player.type==='pitcher' && entry.pitcher) player.stats=externalPitcherStatsToLocal(entry.pitcher);
-        if (player.type==='hitter' && entry.hitter) player.stats=externalHitterStatsToLocal(entry.hitter);
-        await savePlayer(player);
-      }
-      await selectPlayer(player.id);
-    }
-    function renderInternationalExplorer() {
-      if (!els.homeInternationalExplorer) return;
-      if (homeZone !== 'international') {
-        els.homeInternationalExplorer.classList.add('hidden');
-        els.homeInternationalExplorer.innerHTML = '';
-        return;
-      }
-
-      const zonePlayers = players.filter(p => playerScope(p) === 'international');
-      const competition = homeSpecialFilter || '';
-      const years = competition ? (INTERNATIONAL_TOURNAMENT_YEARS[competition] || []) : [];
-      if (homeInternationalEditionFilter && !years.map(String).includes(String(homeInternationalEditionFilter))) {
-        homeInternationalEditionFilter = '';
-      }
-
-      const year = homeInternationalEditionFilter || '';
-      const matchingYearPlayers = competition && year
-        ? zonePlayers.filter(p => playerSpecialCompetition(p) === competition && internationalEdition(p) === String(year))
-        : [];
-      const teamListKey=competition&&year ? internationalTeamListKey(competition,year) : '';
-      const catalogTeams = INTERNATIONAL_TEAM_CATALOG[`${competition}:${year}`] || [];
-      const remoteTeams = teamListKey ? (internationalTeamCache.get(teamListKey) || []) : [];
-      if (competition && year && !internationalTeamCache.has(teamListKey) && !internationalTeamLoading.has(teamListKey)) {
-        void loadInternationalTeams(competition,year);
-      }
-      const teams = [...new Set([
-        ...catalogTeams,
-        ...remoteTeams,
-        ...matchingYearPlayers.map(internationalTeam).filter(Boolean)
-      ])].sort((a,b) => a.localeCompare(b,'zh-Hant'));
-      if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
-        homeInternationalTeamFilter = '';
-      }
-
-      const team = homeInternationalTeamFilter || '';
-      const localTeamPlayers = competition && year && team
-        ? matchingYearPlayers.filter(p => internationalTeam(p) === team)
-        : [];
-      localTeamPlayers.sort((a,b) => String(a.number||'').localeCompare(String(b.number||''),'zh-Hant',{numeric:true}));
-      const rosterKey=competition&&year&&team ? internationalRosterKey(competition,year,team) : '';
-      const rosterData=rosterKey ? internationalRosterCache.get(rosterKey) : null;
-      const remotePlayers=Array.isArray(rosterData?.players) ? rosterData.players : [];
-      if (competition && year && team && !rosterData && !internationalRosterLoading.has(rosterKey)) {
-        void loadInternationalRoster(competition,year,team);
-      }
-
-      const competitionOptions = ['<option value="">選擇賽事</option>']
-        .concat(INTERNATIONAL_COMPETITIONS.map(key => {
-          const meta=INTERNATIONAL_TOURNAMENT_META[key]||{name:key};
-          return '<option value="'+escapeHtml(key)+'" '+(competition===key?'selected':'')+'>'+escapeHtml(meta.name)+'</option>';
-        })).join('');
-      const yearOptions = ['<option value="">選擇年份</option>']
-        .concat(years.map(value => '<option value="'+value+'" '+(String(year)===String(value)?'selected':'')+'>'+value+'</option>')).join('');
-      const teamOptions = ['<option value="">選擇球隊</option>']
-        .concat(teams.map(value => '<option value="'+escapeHtml(value)+'" '+(team===value?'selected':'')+'>'+escapeHtml(value)+'</option>')).join('');
-      let playerOptions = ['<option value="">'+(internationalRosterLoading.has(rosterKey)?'載入球員中…':'選擇球員')+'</option>'];
-      if (remotePlayers.length) {
-        playerOptions=playerOptions.concat(remotePlayers.map(player =>
-          '<option value="remote:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number||'—')+' '+escapeHtml(player.zhName||player.name)+'</option>'
-        ));
-      } else {
-        playerOptions=playerOptions.concat(localTeamPlayers.map(player =>
-          '<option value="local:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number)+' '+escapeHtml(player.name)+'</option>'
-        ));
-      }
-      playerOptions=playerOptions.join('');
-
-      const path = [
-        competition ? (INTERNATIONAL_TOURNAMENT_META[competition]?.name || competition) : '',
-        year,
-        team
-      ].filter(Boolean).join(' → ');
-
-      let emptyText='';
-      if (competition && year && !teams.length) {
-        emptyText=internationalTeamLoading.has(teamListKey)?'正在載入這屆參賽球隊…':'這個賽事年份目前沒有可用的球隊資料。';
-      } else if (competition && year && team && rosterData?.error) {
-        emptyText='球員名單讀取失敗：'+rosterData.error;
-      } else if (competition && year && team && rosterData && !remotePlayers.length && !localTeamPlayers.length) {
-        emptyText='官方來源目前沒有回傳這支代表隊的球員名單。';
-      }
-
-      els.homeInternationalExplorer.innerHTML =
-        '<div class="intl-explorer-head"><strong>國際賽資料庫</strong><span>賽事 → 年份 → 球隊 → 球員</span></div>' +
-        '<div class="intl-select-flow">' +
-          '<label class="intl-select-step"><span>1．賽事</span><select id="intlCompetitionSelect">'+competitionOptions+'</select></label>' +
-          '<label class="intl-select-step"><span>2．年份</span><select id="intlYearSelect" '+(!competition?'disabled':'')+'>'+yearOptions+'</select></label>' +
-          '<label class="intl-select-step"><span>3．球隊</span><select id="intlTeamSelect" '+(!(competition&&year)?'disabled':'')+'>'+teamOptions+'</select></label>' +
-          '<label class="intl-select-step"><span>4．球員</span><select id="intlPlayerSelect" '+(!(competition&&year&&team)?'disabled':'')+'>'+playerOptions+'</select></label>' +
-        '</div>' +
-        (path ? '<div class="intl-flow-path">'+escapeHtml(path)+'</div>' : '') +
-        (emptyText ? '<div class="intl-flow-empty">'+escapeHtml(emptyText)+'</div>' : '');
-      els.homeInternationalExplorer.classList.remove('hidden');
-
-      const competitionSelect=document.getElementById('intlCompetitionSelect');
-      const yearSelect=document.getElementById('intlYearSelect');
-      const teamSelect=document.getElementById('intlTeamSelect');
-      const playerSelect=document.getElementById('intlPlayerSelect');
-
-      competitionSelect?.addEventListener('change', () => {
-        homeSpecialFilter=competitionSelect.value||'';
-        homeInternationalEditionFilter='';
-        homeInternationalTeamFilter='';
-        renderRecentPlayers();
-      });
-      yearSelect?.addEventListener('change', () => {
-        homeInternationalEditionFilter=yearSelect.value||'';
-        homeInternationalTeamFilter='';
-        renderRecentPlayers();
-      });
-      teamSelect?.addEventListener('change', () => {
-        homeInternationalTeamFilter=teamSelect.value||'';
-        renderRecentPlayers();
-      });
-      playerSelect?.addEventListener('change', async () => {
-        const value=playerSelect.value||'';
-        if (!value) return;
-        if (value.startsWith('local:')) {
-          await selectPlayer(value.slice(6));
-          return;
-        }
-        if (value.startsWith('remote:')) {
-          const id=value.slice(7);
-          const entry=remotePlayers.find(item => String(item.id)===id);
-          if (entry) await openInternationalRosterPlayer(entry,competition,year,team);
-        }
-      });
-    }
     function playerDisplayTeam(player) {
       if (playerScope(player) === 'cpbl') return normalizeTeamName(player?.cpblTeam || '');
       if (isUsPlayer(player)) return mlbTeamZh(String(player?.externalCurrentOrganization || player?.externalCurrentTeam || player?.externalTeam || '').trim());
@@ -6245,7 +5988,6 @@ bg2: {
       if (homeProCountry === 'KR') return '首頁｜各國職棒｜韓國｜KBO';
       return '首頁｜各國職棒';
     }
-
     function renderHomePlayerFilters() {
       const international = homeRootSection === 'international';
       if (international) homeZone = 'international';
@@ -6295,6 +6037,112 @@ bg2: {
       renderInternationalExplorer();
     }
 
+    function renderRecentPlayers() {
+      renderHomePlayerFilters();
+      if (els.pageSubtitle && currentPage === 'home') {
+        els.pageSubtitle.textContent = homePageBreadcrumb();
+      }
+      els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
+      renderHomeDailyGames();
+
+      if (homeRootSection === 'international') {
+        if (els.homePlayerCount) els.homePlayerCount.textContent = '';
+        if (els.recent) els.recent.innerHTML = '';
+        return;
+      }
+
+      const zonePlayers = homeContextPlayers();
+      let list = [...zonePlayers];
+
+      list.sort((a, b) => {
+        const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
+        if (used) return used;
+        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
+      });
+
+      if (els.homePlayerCount) {
+        els.homePlayerCount.textContent = `${list.length} / ${zonePlayers.length} 名`;
+      }
+
+      els.recent.innerHTML = list.length ? list.map(p => {
+        const meta = playerSourceMeta(p);
+        return `
+          <button class="player-btn home-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
+            <span class="home-player-number">#${escapeHtml(p.number)}</span>
+            <span>
+              <span class="home-player-name">${escapeHtml(p.name)}</span>
+              <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
+            </span>
+          </button>`;
+      }).join('') : '<div class="empty" style="grid-column:1/-1">這個分類目前沒有符合條件的球員。</div>';
+
+      els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
+        btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
+      });
+    }
+
+    function renderAllPlayersDialog() {
+      let zonePlayers = homeContextPlayers();
+      const cpblDialog = homeRootSection !== 'international' && homeProCountry === 'TW';
+
+      els.allCpblFilters?.classList.toggle('hidden', !cpblDialog);
+      if (cpblDialog) {
+        if (els.allLevelFilters) els.allLevelFilters.value = homeLevelFilter;
+        if (els.allTeamFilters) els.allTeamFilters.value = homeTeamFilter;
+        syncAllFilterTriggerLabels();
+
+        zonePlayers = zonePlayers.filter(player => {
+          const levelOk = homeLevelFilter === 'ALL' || homePlayerLevel(player) === homeLevelFilter;
+          const teamOk = !homeTeamFilter || homePlayerTeam(player) === homeTeamFilter;
+          return levelOk && teamOk;
+        });
+      }
+
+      const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
+      const hitters = zonePlayers.filter(p => p.type === 'hitter');
+
+      const allPlayerDialogLines = p => {
+        const scope = playerScope(p);
+        const role = p.type === 'pitcher' ? '投手' : '打者';
+        const competition = scope === 'cpbl' ? '中職' : playerSpecialCompetition(p);
+        const team = scope === 'international'
+          ? internationalTeam(p)
+          : (scope === 'cpbl'
+              ? normalizeTeamName(p.cpblTeam || '')
+              : (isUsPlayer(p)
+                  ? mlbTeamZh(String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim())
+                  : String(p.externalTeam || '').trim()));
+        const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
+        const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
+        const cpblLevel = scope === 'cpbl'
+          ? (String(p.cpblCurrentLevel || '').toUpperCase() === 'D' ? '二軍' : (p.cpblCurrentLevel ? '一軍' : ''))
+          : '';
+        return {
+          first: `#${p.number || '—'} ${p.name || '未命名球員'}`,
+          second: [role, competition, team].filter(Boolean).join('｜'),
+          third: [crossRole, isUsPlayer(p) ? (p.externalCurrentLevel || '') : (year || cpblLevel)].filter(Boolean).join('｜') || ' '
+        };
+      };
+
+      const make = list => list.length ? list.map(p => {
+        const lines = allPlayerDialogLines(p);
+        return `
+          <button class="player-btn all-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
+            <span class="all-player-line all-player-line-main">${escapeHtml(lines.first)}</span>
+            <span class="all-player-line all-player-line-meta">${escapeHtml(lines.second)}</span>
+            <span class="all-player-line all-player-line-extra">${escapeHtml(lines.third)}</span>
+          </button>`;
+      }).join('') : '<div class="empty">目前沒有符合篩選條件的球員。</div>';
+
+      els.allPitchers.innerHTML = make(pitchers);
+      els.allHitters.innerHTML = make(hitters);
+      els.allDialog.querySelectorAll('[data-player-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await selectPlayer(btn.dataset.playerId);
+          els.allDialog.close();
+        });
+      });
+    }
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
     const homeDailyGamesScrollState = new Map();
@@ -6533,7 +6381,210 @@ bg2: {
       return games;
     }
 
+    async function loadHomeDailyGames(league, date, { force = false } = {}) {
+      const key = `${league}|${date}`;
+      const now = Date.now();
+      const cached = homeDailyGamesCache.get(key);
+      const age = cached ? now - Number(cached.at || 0) : Infinity;
+      if (!force && cached && age < HOME_DAILY_GAMES_TTL) return cached.games || [];
+      // Even forced refreshes are coalesced for a short floor to avoid double-clicks / rapid tab changes.
+      if (force && cached && age < HOME_DAILY_GAMES_FORCE_FLOOR) return cached.games || [];
+      if (homeDailyGamesLoading.has(key)) return null;
 
+      homeDailyGamesLoading.add(key);
+      try {
+        let games = await leagueDailyGamesRequest(league, date);
+        if (league === 'CPBL') {
+          games = (Array.isArray(games) ? games : []).filter(game => String(game?.kindCode || 'A').toUpperCase() !== 'D');
+        }
+
+        // Outer cards use only the daily schedule feed. Single-game detail is fetched only after the user opens a game.
+
+        homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
+        return games;
+      } catch (error) {
+        homeDailyGamesCache.set(key, {
+          at:Date.now(),
+          games:Array.isArray(cached?.games) ? cached.games : [],
+          error:error?.message || '當日賽事讀取失敗。'
+        });
+        return null;
+      } finally {
+        homeDailyGamesLoading.delete(key);
+        if (currentPage === 'home' && homeDailyGamesLeague() === league && String(els.gameDate?.value || '') === date) {
+          renderHomeDailyGames({ skipLoad:true });
+        }
+      }
+    }
+
+    function renderHomeDailyGames({ force = false, skipLoad = false } = {}) {
+      const host = els.homeDailyGames;
+      if (!host) return;
+
+      const league = homeDailyGamesLeague();
+      const date = String(els.gameDate?.value || localISODate());
+      if (!league || homeRootSection === 'international') {
+        host.classList.add('hidden');
+        host.innerHTML = '';
+        return;
+      }
+      host.classList.remove('hidden');
+
+      const key = `${league}|${date}`;
+      const existingScroller = host.querySelector('.home-games-scroller');
+      if (existingScroller) {
+        const captured = captureHomeDailyGamesScroll(existingScroller);
+        const existingKey = String(existingScroller.dataset.homeGamesKey || key);
+        if (captured) homeDailyGamesScrollState.set(existingKey, captured);
+      }
+      const cached = homeDailyGamesCache.get(key) || null;
+      const loading = homeDailyGamesLoading.has(key);
+      const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
+      const games = Array.isArray(cached?.games) ? cached.games : [];
+      const displayRows = homeDailyGamesDisplayRows(games);
+      const error = String(cached?.error || '');
+      const leagueLabel = homeDailyGamesLeagueLabel(league);
+      const dateLabel = date.replaceAll('-', '/');
+
+      let bodyHtml = '';
+      if (!cached && !loading) {
+        bodyHtml = '<div class="home-games-state">正在讀取官方賽程…</div>';
+      } else if (loading && !games.length) {
+        bodyHtml = '<div class="home-games-state"><span class="home-games-loading-dot"></span>正在讀取官方賽程…</div>';
+      } else if (error && !games.length) {
+        bodyHtml = `<div class="home-games-state error"><span>${escapeHtml(error)}</span><button class="press-btn home-games-retry" type="button">重新整理</button></div>`;
+      } else if (!games.length) {
+        bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
+      } else {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game, sourceIndex }) => {
+          const gameKey = homeDailyGameStableKey(game);
+          const status = String(game?.status || 'scheduled').toLowerCase();
+          const statusLabel = homeDailyGameStatusLabel(game);
+          const showScore = status === 'live' || status === 'final';
+          const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
+          const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
+          const venue = String(game?.venue || '').trim();
+          const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
+          const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
+          return `
+            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
+              <div class="home-game-card-top">
+                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
+                ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
+                  ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
+                  : ''}
+              </div>
+              <div class="home-game-team">
+                <span class="home-game-team-name">${escapeHtml(awayName || '客隊')}</span>
+                <strong class="home-game-score">${escapeHtml(awayScore)}</strong>
+              </div>
+              <div class="home-game-team">
+                <span class="home-game-team-name">${escapeHtml(homeName || '主隊')}</span>
+                <strong class="home-game-score">${escapeHtml(homeScore)}</strong>
+              </div>
+              <div class="home-game-venue">${escapeHtml(venue || '場地未提供')}</div>
+            </article>`;
+        }).join('')}</div>`;
+      }
+
+      scheduleHomeDailyGamesAutoRefresh();
+      host.innerHTML = `
+        <section class="home-daily-games-shell">
+          <div class="home-daily-games-head">
+            <div class="home-daily-games-title">
+              <strong>當日賽事</strong>
+              <span class="home-league-live-row">
+                <span>${escapeHtml(leagueLabel)}</span>
+                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
+                  <svg class="battery-player battery-pitcher battery-pitcher-formal" viewBox="0 0 44 44" aria-hidden="true">
+                    <g class="battery-pitcher-figure">
+                      <g class="battery-pitcher-core">
+                        <path class="battery-cap" d="M9 8.7c1.2-4 4.4-6.2 8.4-5.5 2.8.5 4.7 2.1 5.8 4.7l-9.3 1.9Z"></path>
+                        <circle class="battery-skin" cx="16.4" cy="10.8" r="4.2"></circle>
+                        <path class="battery-uniform" d="M12.8 15.1c2-1.2 5.7-1.1 7.8.2l3.5 9.4-3.5 3.2-4-7.3-3.1 7.1-4-2.2Z"></path>
+                      </g>
+                      <path class="battery-drive-leg" d="M13.9 24.2 9.2 36.7l4.2 1.1 4.7-10.6-1.4-3.7Z"></path>
+                      <path class="battery-stride-leg" d="M18.4 24.2c3.6 2.5 6 6.1 7.9 10.1l-3.8 1.9c-1.9-3.5-4.1-6.1-6.6-7.6Z"></path>
+                      <g class="battery-throw-arm-formal">
+                        <path d="M20 16.3c4.7.3 8.7 2.8 12.1 5.9l-2.4 3.1c-3-2.4-6.3-4-10.5-4.3Z"></path>
+                        <circle class="battery-hand" cx="31.8" cy="23.5" r="1.7"></circle>
+                      </g>
+                      <g class="battery-glove-side-formal">
+                        <path class="battery-glove-arm" d="M12.7 16.5 7 20.8l2 3.4 6.5-3.5Z"></path>
+                        <ellipse class="battery-glove" cx="6.8" cy="22" rx="3.8" ry="3.1"></ellipse>
+                      </g>
+                    </g>
+                  </svg>
+                  <span class="battery-ball"><i></i></span>
+                  <svg class="battery-player battery-catcher" viewBox="0 0 44 44" aria-hidden="true">
+                    <g class="battery-catcher-crouch">
+                      <path class="battery-mask" d="M14 5.6c2.2-2.1 6.4-2.4 9-.6l1.7 4.5-2.4 5.2-7.7-.4-2.1-5.1Z"></path>
+                      <path class="battery-mask-line" d="M14.5 8.6h9.2M16.1 5.8l-.3 7.1M21.2 5.5l.7 7.4"></path>
+                      <path class="battery-chest" d="M13.7 14.1c3-1.2 7.5-1 10 .5l2.2 10-5.3 2.8-4.2-1-4.6-2.4Z"></path>
+                      <path class="battery-catcher-leg" d="m14 23.6-7 7.6 3.7 3.5 7.5-5.4 6.8 5.2 3.4-3.4-6.4-7.5Z"></path>
+                      <path class="battery-receive-arm" d="M13.8 16.1 6.7 19l1.6 3.7 7.8-2.6Z"></path>
+                      <ellipse class="battery-mitt" cx="5.7" cy="20.7" rx="4.2" ry="3.4"></ellipse>
+                    </g>
+                    <g class="battery-catcher-stand">
+                      <path class="battery-mask" d="M14.8 3.8c2.2-2 6.2-2.2 8.8-.4l1.5 4.1-2.1 4.9-7.6-.3-2-4.9Z"></path>
+                      <path class="battery-mask-line" d="M15.2 6.6h9M16.8 4l-.3 7M21.8 3.9l.6 7"></path>
+                      <path class="battery-chest" d="M14.1 12.1c3.1-1.2 7.2-1.1 9.7.4l2 10.2-4.6 2.2-4.4-.5-4.2-2.8Z"></path>
+                      <path class="battery-stand-leg" d="m15.3 22.1-3.7 14.7 4.1.8 3.5-10.7 4 10.5 4-1.2-4.1-14Z"></path>
+                      <g class="battery-return-arm">
+                        <path d="M22.8 13.5c4.9 1 8.3 4.1 10.7 7.1l-2.6 2.5c-2.8-2.8-5.8-4.7-9.4-5.2Z"></path>
+                        <circle class="battery-hand" cx="33.4" cy="21.9" r="1.7"></circle>
+                      </g>
+                      <g class="battery-catcher-glove-side">
+                        <path class="battery-glove-arm" d="M14.2 14.3 8.1 18l1.7 3.3 6.8-3.4Z"></path>
+                        <ellipse class="battery-glove" cx="7.7" cy="19.4" rx="3.4" ry="2.9"></ellipse>
+                      </g>
+                    </g>
+                  </svg>
+                </span>` : ''}
+              </span>
+            </div>
+            <div class="home-daily-games-meta">
+              <span>${escapeHtml(dateLabel)}</span>
+              ${games.length ? `<span>${games.length} 場</span>` : ''}
+              ${loading && games.length ? '<span>更新中…</span>' : ''}
+            </div>
+          </div>
+          ${bodyHtml}
+        </section>`;
+
+      const renderedScroller = host.querySelector('.home-games-scroller');
+      const savedScrollState = homeDailyGamesScrollState.get(key) || null;
+      restoreHomeDailyGamesScroll(renderedScroller, savedScrollState);
+      renderedScroller?.addEventListener('scroll', () => {
+        const captured = captureHomeDailyGamesScroll(renderedScroller);
+        if (captured) homeDailyGamesScrollState.set(key, captured);
+      }, { passive:true });
+
+      host.querySelector('.home-games-retry')?.addEventListener('click', () => {
+        homeDailyGamesCache.delete(key);
+        renderHomeDailyGames({ force:true });
+      });
+      if (homeGameDetailSupported(league)) {
+        host.querySelectorAll('[data-game-detail-index]').forEach(card => {
+          const open = () => {
+            const index = Number(card.dataset.gameDetailIndex);
+            const game = games[index];
+            if (game) openHomeGameDetail(game, league, date);
+          };
+          card.addEventListener('click', open);
+          card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              open();
+            }
+          });
+        });
+      }
+
+      if (!skipLoad && (force || !cached || !fresh) && !loading) {
+        void loadHomeDailyGames(league, date, { force }).then(() => {});
+      }
+    }
     function homeGameDetailSupported(league) {
       return league === 'CPBL' || league === 'NPB';
     }
@@ -7206,316 +7257,261 @@ bg2: {
       if (event?.detail?.connected) stopHomeDailyGamesAutoRefresh();
       else scheduleHomeDailyGamesAutoRefresh();
     });
-
-    async function loadHomeDailyGames(league, date, { force = false } = {}) {
-      const key = `${league}|${date}`;
-      const now = Date.now();
-      const cached = homeDailyGamesCache.get(key);
-      const age = cached ? now - Number(cached.at || 0) : Infinity;
-      if (!force && cached && age < HOME_DAILY_GAMES_TTL) return cached.games || [];
-      // Even forced refreshes are coalesced for a short floor to avoid double-clicks / rapid tab changes.
-      if (force && cached && age < HOME_DAILY_GAMES_FORCE_FLOOR) return cached.games || [];
-      if (homeDailyGamesLoading.has(key)) return null;
-
-      homeDailyGamesLoading.add(key);
+    async function loadInternationalTeams(competition, year) {
+      const key=internationalTeamListKey(competition,year);
+      if (!competition || !year || internationalTeamCache.has(key) || internationalTeamLoading.has(key)) return;
+      internationalTeamLoading.add(key);
       try {
-        let games = await leagueDailyGamesRequest(league, date);
-        if (league === 'CPBL') {
-          games = (Array.isArray(games) ? games : []).filter(game => String(game?.kindCode || 'A').toUpperCase() !== 'D');
-        }
-
-        // Outer cards use only the daily schedule feed. Single-game detail is fetched only after the user opens a game.
-
-        homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
-        return games;
+        const data=await baseballRequest('international-teams',{competition,year:Number(year)});
+        const teams=Array.isArray(data?.teams) ? data.teams.map(normalizeInternationalTeamName).filter(Boolean) : [];
+        internationalTeamCache.set(key,[...new Set(teams)]);
       } catch (error) {
-        homeDailyGamesCache.set(key, {
-          at:Date.now(),
-          games:Array.isArray(cached?.games) ? cached.games : [],
-          error:error?.message || '當日賽事讀取失敗。'
-        });
-        return null;
+        console.error('國際賽球隊載入失敗',error);
+        internationalTeamCache.set(key,[]);
       } finally {
-        homeDailyGamesLoading.delete(key);
-        if (currentPage === 'home' && homeDailyGamesLeague() === league && String(els.gameDate?.value || '') === date) {
-          renderHomeDailyGames({ skipLoad:true });
+        internationalTeamLoading.delete(key);
+        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year)) {
+          renderRecentPlayers();
         }
       }
     }
 
-    function renderHomeDailyGames({ force = false, skipLoad = false } = {}) {
-      const host = els.homeDailyGames;
-      if (!host) return;
+    async function syncStoredInternationalRosterMetadata(competition, year, team, entries = []) {
+      const normalizedTeam = normalizeInternationalTeamName(team);
+      for (const entry of entries || []) {
+        const officialId = String(entry?.id || '');
+        const officialName = String(entry?.name || '');
+        const player = players.find(p =>
+          playerScope(p) === 'international'
+          && playerSpecialCompetition(p) === competition
+          && internationalEdition(p) === String(year)
+          && internationalTeam(p) === normalizedTeam
+          && (
+            (officialId && String(p.externalPlayerId || '') === officialId)
+            || (officialName && String(p.externalOfficialName || '') === officialName)
+          )
+        );
+        if (!player) continue;
 
-      const league = homeDailyGamesLeague();
-      const date = String(els.gameDate?.value || localISODate());
-      if (!league || homeRootSection === 'international') {
-        host.classList.add('hidden');
-        host.innerHTML = '';
-        return;
-      }
-      host.classList.remove('hidden');
-
-      const key = `${league}|${date}`;
-      const existingScroller = host.querySelector('.home-games-scroller');
-      if (existingScroller) {
-        const captured = captureHomeDailyGamesScroll(existingScroller);
-        const existingKey = String(existingScroller.dataset.homeGamesKey || key);
-        if (captured) homeDailyGamesScrollState.set(existingKey, captured);
-      }
-      const cached = homeDailyGamesCache.get(key) || null;
-      const loading = homeDailyGamesLoading.has(key);
-      const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
-      const games = Array.isArray(cached?.games) ? cached.games : [];
-      const displayRows = homeDailyGamesDisplayRows(games);
-      const error = String(cached?.error || '');
-      const leagueLabel = homeDailyGamesLeagueLabel(league);
-      const dateLabel = date.replaceAll('-', '/');
-
-      let bodyHtml = '';
-      if (!cached && !loading) {
-        bodyHtml = '<div class="home-games-state">正在讀取官方賽程…</div>';
-      } else if (loading && !games.length) {
-        bodyHtml = '<div class="home-games-state"><span class="home-games-loading-dot"></span>正在讀取官方賽程…</div>';
-      } else if (error && !games.length) {
-        bodyHtml = `<div class="home-games-state error"><span>${escapeHtml(error)}</span><button class="press-btn home-games-retry" type="button">重新整理</button></div>`;
-      } else if (!games.length) {
-        bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
-      } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game, sourceIndex }) => {
-          const gameKey = homeDailyGameStableKey(game);
-          const status = String(game?.status || 'scheduled').toLowerCase();
-          const statusLabel = homeDailyGameStatusLabel(game);
-          const showScore = status === 'live' || status === 'final';
-          const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
-          const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
-          const venue = String(game?.venue || '').trim();
-          const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
-          const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
-          return `
-            <article class="home-game-card status-${escapeAttr(status)} ${homeGameDetailSupported(league) ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${homeGameDetailSupported(league) ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"` : ''}>
-              <div class="home-game-card-top">
-                <span class="home-game-status status-${escapeAttr(status)}">${escapeHtml(statusLabel)}</span>
-                ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
-                  ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
-                  : ''}
-              </div>
-              <div class="home-game-team">
-                <span class="home-game-team-name">${escapeHtml(awayName || '客隊')}</span>
-                <strong class="home-game-score">${escapeHtml(awayScore)}</strong>
-              </div>
-              <div class="home-game-team">
-                <span class="home-game-team-name">${escapeHtml(homeName || '主隊')}</span>
-                <strong class="home-game-score">${escapeHtml(homeScore)}</strong>
-              </div>
-              <div class="home-game-venue">${escapeHtml(venue || '場地未提供')}</div>
-            </article>`;
-        }).join('')}</div>`;
-      }
-
-      scheduleHomeDailyGamesAutoRefresh();
-      host.innerHTML = `
-        <section class="home-daily-games-shell">
-          <div class="home-daily-games-head">
-            <div class="home-daily-games-title">
-              <strong>當日賽事</strong>
-              <span class="home-league-live-row">
-                <span>${escapeHtml(leagueLabel)}</span>
-                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
-                  <svg class="battery-player battery-pitcher battery-pitcher-formal" viewBox="0 0 44 44" aria-hidden="true">
-                    <g class="battery-pitcher-figure">
-                      <g class="battery-pitcher-core">
-                        <path class="battery-cap" d="M9 8.7c1.2-4 4.4-6.2 8.4-5.5 2.8.5 4.7 2.1 5.8 4.7l-9.3 1.9Z"></path>
-                        <circle class="battery-skin" cx="16.4" cy="10.8" r="4.2"></circle>
-                        <path class="battery-uniform" d="M12.8 15.1c2-1.2 5.7-1.1 7.8.2l3.5 9.4-3.5 3.2-4-7.3-3.1 7.1-4-2.2Z"></path>
-                      </g>
-                      <path class="battery-drive-leg" d="M13.9 24.2 9.2 36.7l4.2 1.1 4.7-10.6-1.4-3.7Z"></path>
-                      <path class="battery-stride-leg" d="M18.4 24.2c3.6 2.5 6 6.1 7.9 10.1l-3.8 1.9c-1.9-3.5-4.1-6.1-6.6-7.6Z"></path>
-                      <g class="battery-throw-arm-formal">
-                        <path d="M20 16.3c4.7.3 8.7 2.8 12.1 5.9l-2.4 3.1c-3-2.4-6.3-4-10.5-4.3Z"></path>
-                        <circle class="battery-hand" cx="31.8" cy="23.5" r="1.7"></circle>
-                      </g>
-                      <g class="battery-glove-side-formal">
-                        <path class="battery-glove-arm" d="M12.7 16.5 7 20.8l2 3.4 6.5-3.5Z"></path>
-                        <ellipse class="battery-glove" cx="6.8" cy="22" rx="3.8" ry="3.1"></ellipse>
-                      </g>
-                    </g>
-                  </svg>
-                  <span class="battery-ball"><i></i></span>
-                  <svg class="battery-player battery-catcher" viewBox="0 0 44 44" aria-hidden="true">
-                    <g class="battery-catcher-crouch">
-                      <path class="battery-mask" d="M14 5.6c2.2-2.1 6.4-2.4 9-.6l1.7 4.5-2.4 5.2-7.7-.4-2.1-5.1Z"></path>
-                      <path class="battery-mask-line" d="M14.5 8.6h9.2M16.1 5.8l-.3 7.1M21.2 5.5l.7 7.4"></path>
-                      <path class="battery-chest" d="M13.7 14.1c3-1.2 7.5-1 10 .5l2.2 10-5.3 2.8-4.2-1-4.6-2.4Z"></path>
-                      <path class="battery-catcher-leg" d="m14 23.6-7 7.6 3.7 3.5 7.5-5.4 6.8 5.2 3.4-3.4-6.4-7.5Z"></path>
-                      <path class="battery-receive-arm" d="M13.8 16.1 6.7 19l1.6 3.7 7.8-2.6Z"></path>
-                      <ellipse class="battery-mitt" cx="5.7" cy="20.7" rx="4.2" ry="3.4"></ellipse>
-                    </g>
-                    <g class="battery-catcher-stand">
-                      <path class="battery-mask" d="M14.8 3.8c2.2-2 6.2-2.2 8.8-.4l1.5 4.1-2.1 4.9-7.6-.3-2-4.9Z"></path>
-                      <path class="battery-mask-line" d="M15.2 6.6h9M16.8 4l-.3 7M21.8 3.9l.6 7"></path>
-                      <path class="battery-chest" d="M14.1 12.1c3.1-1.2 7.2-1.1 9.7.4l2 10.2-4.6 2.2-4.4-.5-4.2-2.8Z"></path>
-                      <path class="battery-stand-leg" d="m15.3 22.1-3.7 14.7 4.1.8 3.5-10.7 4 10.5 4-1.2-4.1-14Z"></path>
-                      <g class="battery-return-arm">
-                        <path d="M22.8 13.5c4.9 1 8.3 4.1 10.7 7.1l-2.6 2.5c-2.8-2.8-5.8-4.7-9.4-5.2Z"></path>
-                        <circle class="battery-hand" cx="33.4" cy="21.9" r="1.7"></circle>
-                      </g>
-                      <g class="battery-catcher-glove-side">
-                        <path class="battery-glove-arm" d="M14.2 14.3 8.1 18l1.7 3.3 6.8-3.4Z"></path>
-                        <ellipse class="battery-glove" cx="7.7" cy="19.4" rx="3.4" ry="2.9"></ellipse>
-                      </g>
-                    </g>
-                  </svg>
-                </span>` : ''}
-              </span>
-            </div>
-            <div class="home-daily-games-meta">
-              <span>${escapeHtml(dateLabel)}</span>
-              ${games.length ? `<span>${games.length} 場</span>` : ''}
-              ${loading && games.length ? '<span>更新中…</span>' : ''}
-            </div>
-          </div>
-          ${bodyHtml}
-        </section>`;
-
-      const renderedScroller = host.querySelector('.home-games-scroller');
-      const savedScrollState = homeDailyGamesScrollState.get(key) || null;
-      restoreHomeDailyGamesScroll(renderedScroller, savedScrollState);
-      renderedScroller?.addEventListener('scroll', () => {
-        const captured = captureHomeDailyGamesScroll(renderedScroller);
-        if (captured) homeDailyGamesScrollState.set(key, captured);
-      }, { passive:true });
-
-      host.querySelector('.home-games-retry')?.addEventListener('click', () => {
-        homeDailyGamesCache.delete(key);
-        renderHomeDailyGames({ force:true });
-      });
-      if (homeGameDetailSupported(league)) {
-        host.querySelectorAll('[data-game-detail-index]').forEach(card => {
-          const open = () => {
-            const index = Number(card.dataset.gameDetailIndex);
-            const game = games[index];
-            if (game) openHomeGameDetail(game, league, date);
-          };
-          card.addEventListener('click', open);
-          card.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              open();
-            }
-          });
-        });
-      }
-
-      if (!skipLoad && (force || !cached || !fresh) && !loading) {
-        void loadHomeDailyGames(league, date, { force }).then(() => {});
+        let changed = false;
+        const number = String(entry?.number || '').trim();
+        if (number && number !== '—' && String(player.number || '') !== number) {
+          player.number = number;
+          changed = true;
+        }
+        if (entry?.zhName && player.name !== entry.zhName) {
+          player.name = entry.zhName;
+          changed = true;
+        }
+        if (officialName && player.externalOfficialName !== officialName) {
+          player.externalOfficialName = officialName;
+          changed = true;
+        }
+        if (entry?.position && player.externalPosition !== entry.position) {
+          player.externalPosition = entry.position;
+          changed = true;
+        }
+        if (changed) {
+          player.updatedAt = Date.now();
+          await savePlayer(player);
+        }
       }
     }
 
-    function renderRecentPlayers() {
-      renderHomePlayerFilters();
-      if (els.pageSubtitle && currentPage === 'home') {
-        els.pageSubtitle.textContent = homePageBreadcrumb();
+    async function loadInternationalRoster(competition, year, team) {
+      const key=internationalRosterKey(competition,year,team);
+      if (!competition || !year || !team || internationalRosterCache.has(key) || internationalRosterLoading.has(key)) return;
+      internationalRosterLoading.add(key);
+      try {
+        const data=await baseballRequest('international-roster',{competition,year:Number(year),team});
+        const roster=data.roster||{players:[]};
+        internationalRosterCache.set(key,roster);
+        await syncStoredInternationalRosterMetadata(competition,year,team,roster.players||[]);
+      } catch (error) {
+        console.error('國際賽 roster 載入失敗',error);
+        internationalRosterCache.set(key,{players:[],error:error?.message||'球員名單載入失敗'});
+      } finally {
+        internationalRosterLoading.delete(key);
+        if (homeZone==='international' && homeSpecialFilter===competition && String(homeInternationalEditionFilter)===String(year) && homeInternationalTeamFilter===team) {
+          renderRecentPlayers();
+        }
       }
-      els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
-      renderHomeDailyGames();
-
-      if (homeRootSection === 'international') {
-        if (els.homePlayerCount) els.homePlayerCount.textContent = '';
-        if (els.recent) els.recent.innerHTML = '';
-        return;
-      }
-
-      const zonePlayers = homeContextPlayers();
-      let list = [...zonePlayers];
-
-      list.sort((a, b) => {
-        const used = (b.lastUsedAt || 0) - (a.lastUsedAt || 0);
-        if (used) return used;
-        return String(a.number || '').localeCompare(String(b.number || ''), 'zh-Hant', { numeric: true });
-      });
-
-      if (els.homePlayerCount) {
-        els.homePlayerCount.textContent = `${list.length} / ${zonePlayers.length} 名`;
-      }
-
-      els.recent.innerHTML = list.length ? list.map(p => {
-        const meta = playerSourceMeta(p);
-        return `
-          <button class="player-btn home-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
-            <span class="home-player-number">#${escapeHtml(p.number)}</span>
-            <span>
-              <span class="home-player-name">${escapeHtml(p.name)}</span>
-              <span class="home-player-meta">${escapeHtml(meta || '點擊進入球員設定')}</span>
-            </span>
-          </button>`;
-      }).join('') : '<div class="empty" style="grid-column:1/-1">這個分類目前沒有符合條件的球員。</div>';
-
-      els.recent.querySelectorAll('[data-player-id]').forEach(btn => {
-        btn.addEventListener('click', () => selectPlayer(btn.dataset.playerId));
-      });
     }
 
-    function renderAllPlayersDialog() {
-      let zonePlayers = homeContextPlayers();
-      const cpblDialog = homeRootSection !== 'international' && homeProCountry === 'TW';
+    async function openInternationalRosterPlayer(entry, competition, year, team) {
+      if (!entry) return;
+      const officialId=String(entry.id||'');
+      let player=players.find(p =>
+        playerScope(p)==='international'
+        && playerSpecialCompetition(p)===competition
+        && internationalEdition(p)===String(year)
+        && internationalTeam(p)===normalizeInternationalTeamName(team)
+        && (String(p.externalPlayerId||'')===officialId || String(p.externalOfficialName||'')===String(entry.name||''))
+      );
 
-      els.allCpblFilters?.classList.toggle('hidden', !cpblDialog);
-      if (cpblDialog) {
-        if (els.allLevelFilters) els.allLevelFilters.value = homeLevelFilter;
-        if (els.allTeamFilters) els.allTeamFilters.value = homeTeamFilter;
-        syncAllFilterTriggerLabels();
-
-        zonePlayers = zonePlayers.filter(player => {
-          const levelOk = homeLevelFilter === 'ALL' || homePlayerLevel(player) === homeLevelFilter;
-          const teamOk = !homeTeamFilter || homePlayerTeam(player) === homeTeamFilter;
-          return levelOk && teamOk;
-        });
-      }
-
-      const pitchers = zonePlayers.filter(p => p.type === 'pitcher');
-      const hitters = zonePlayers.filter(p => p.type === 'hitter');
-
-      const allPlayerDialogLines = p => {
-        const scope = playerScope(p);
-        const role = p.type === 'pitcher' ? '投手' : '打者';
-        const competition = scope === 'cpbl' ? '中職' : playerSpecialCompetition(p);
-        const team = scope === 'international'
-          ? internationalTeam(p)
-          : (scope === 'cpbl'
-              ? normalizeTeamName(p.cpblTeam || '')
-              : (isUsPlayer(p)
-                  ? mlbTeamZh(String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim())
-                  : String(p.externalTeam || '').trim()));
-        const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
-        const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
-        const cpblLevel = scope === 'cpbl'
-          ? (String(p.cpblCurrentLevel || '').toUpperCase() === 'D' ? '二軍' : (p.cpblCurrentLevel ? '一軍' : ''))
-          : '';
-        return {
-          first: `#${p.number || '—'} ${p.name || '未命名球員'}`,
-          second: [role, competition, team].filter(Boolean).join('｜'),
-          third: [crossRole, isUsPlayer(p) ? (p.externalCurrentLevel || '') : (year || cpblLevel)].filter(Boolean).join('｜') || ' '
+      if (!player) {
+        let type=entry.type==='pitcher'?'pitcher':'hitter';
+        if (type==='pitcher' && !entry.pitcher && entry.hitter) type='hitter';
+        if (type==='hitter' && !entry.hitter && entry.pitcher) type='pitcher';
+        player={
+          id:uid(),
+          name:entry.zhName||entry.name||'未命名球員',
+          number:String(entry.number||'—'),
+          type,
+          scope:'international',
+          stats:type==='pitcher'
+            ? externalPitcherStatsToLocal(entry.pitcher||{})
+            : externalHitterStatsToLocal(entry.hitter||{}),
+          pitcherLastMetric:type==='pitcher'?'wl':undefined,
+          selectedPhotoId:null,photoTransforms:{},
+          externalCompetition:competition,
+          externalTeam:normalizeInternationalTeamName(team),
+          externalYear:Number(year)||CURRENT_YEAR,
+          externalProvider:'INT',
+          externalPlayerId:officialId,
+          externalOfficialName:entry.name||'',
+          externalPosition:entry.position||'',
+          internationalSource:'MLB International Baseball',
+          createdAt:Date.now(),updatedAt:Date.now(),lastUsedAt:Date.now()
         };
-      };
+        await savePlayer(player);
+      } else {
+        player.name=entry.zhName||player.name||entry.name;
+        player.number=String(entry.number||player.number||'—');
+        player.externalOfficialName=entry.name||player.externalOfficialName||'';
+        player.externalPosition=entry.position||player.externalPosition||'';
+        if (player.type==='pitcher' && entry.pitcher) player.stats=externalPitcherStatsToLocal(entry.pitcher);
+        if (player.type==='hitter' && entry.hitter) player.stats=externalHitterStatsToLocal(entry.hitter);
+        await savePlayer(player);
+      }
+      await selectPlayer(player.id);
+    }
+    function renderInternationalExplorer() {
+      if (!els.homeInternationalExplorer) return;
+      if (homeZone !== 'international') {
+        els.homeInternationalExplorer.classList.add('hidden');
+        els.homeInternationalExplorer.innerHTML = '';
+        return;
+      }
 
-      const make = list => list.length ? list.map(p => {
-        const lines = allPlayerDialogLines(p);
-        return `
-          <button class="player-btn all-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
-            <span class="all-player-line all-player-line-main">${escapeHtml(lines.first)}</span>
-            <span class="all-player-line all-player-line-meta">${escapeHtml(lines.second)}</span>
-            <span class="all-player-line all-player-line-extra">${escapeHtml(lines.third)}</span>
-          </button>`;
-      }).join('') : '<div class="empty">目前沒有符合篩選條件的球員。</div>';
+      const zonePlayers = players.filter(p => playerScope(p) === 'international');
+      const competition = homeSpecialFilter || '';
+      const years = competition ? (INTERNATIONAL_TOURNAMENT_YEARS[competition] || []) : [];
+      if (homeInternationalEditionFilter && !years.map(String).includes(String(homeInternationalEditionFilter))) {
+        homeInternationalEditionFilter = '';
+      }
 
-      els.allPitchers.innerHTML = make(pitchers);
-      els.allHitters.innerHTML = make(hitters);
-      els.allDialog.querySelectorAll('[data-player-id]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          await selectPlayer(btn.dataset.playerId);
-          els.allDialog.close();
-        });
+      const year = homeInternationalEditionFilter || '';
+      const matchingYearPlayers = competition && year
+        ? zonePlayers.filter(p => playerSpecialCompetition(p) === competition && internationalEdition(p) === String(year))
+        : [];
+      const teamListKey=competition&&year ? internationalTeamListKey(competition,year) : '';
+      const catalogTeams = INTERNATIONAL_TEAM_CATALOG[`${competition}:${year}`] || [];
+      const remoteTeams = teamListKey ? (internationalTeamCache.get(teamListKey) || []) : [];
+      if (competition && year && !internationalTeamCache.has(teamListKey) && !internationalTeamLoading.has(teamListKey)) {
+        void loadInternationalTeams(competition,year);
+      }
+      const teams = [...new Set([
+        ...catalogTeams,
+        ...remoteTeams,
+        ...matchingYearPlayers.map(internationalTeam).filter(Boolean)
+      ])].sort((a,b) => a.localeCompare(b,'zh-Hant'));
+      if (homeInternationalTeamFilter && !teams.includes(homeInternationalTeamFilter)) {
+        homeInternationalTeamFilter = '';
+      }
+
+      const team = homeInternationalTeamFilter || '';
+      const localTeamPlayers = competition && year && team
+        ? matchingYearPlayers.filter(p => internationalTeam(p) === team)
+        : [];
+      localTeamPlayers.sort((a,b) => String(a.number||'').localeCompare(String(b.number||''),'zh-Hant',{numeric:true}));
+      const rosterKey=competition&&year&&team ? internationalRosterKey(competition,year,team) : '';
+      const rosterData=rosterKey ? internationalRosterCache.get(rosterKey) : null;
+      const remotePlayers=Array.isArray(rosterData?.players) ? rosterData.players : [];
+      if (competition && year && team && !rosterData && !internationalRosterLoading.has(rosterKey)) {
+        void loadInternationalRoster(competition,year,team);
+      }
+
+      const competitionOptions = ['<option value="">選擇賽事</option>']
+        .concat(INTERNATIONAL_COMPETITIONS.map(key => {
+          const meta=INTERNATIONAL_TOURNAMENT_META[key]||{name:key};
+          return '<option value="'+escapeHtml(key)+'" '+(competition===key?'selected':'')+'>'+escapeHtml(meta.name)+'</option>';
+        })).join('');
+      const yearOptions = ['<option value="">選擇年份</option>']
+        .concat(years.map(value => '<option value="'+value+'" '+(String(year)===String(value)?'selected':'')+'>'+value+'</option>')).join('');
+      const teamOptions = ['<option value="">選擇球隊</option>']
+        .concat(teams.map(value => '<option value="'+escapeHtml(value)+'" '+(team===value?'selected':'')+'>'+escapeHtml(value)+'</option>')).join('');
+      let playerOptions = ['<option value="">'+(internationalRosterLoading.has(rosterKey)?'載入球員中…':'選擇球員')+'</option>'];
+      if (remotePlayers.length) {
+        playerOptions=playerOptions.concat(remotePlayers.map(player =>
+          '<option value="remote:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number||'—')+' '+escapeHtml(player.zhName||player.name)+'</option>'
+        ));
+      } else {
+        playerOptions=playerOptions.concat(localTeamPlayers.map(player =>
+          '<option value="local:'+escapeHtml(player.id)+'">#'+escapeHtml(player.number)+' '+escapeHtml(player.name)+'</option>'
+        ));
+      }
+      playerOptions=playerOptions.join('');
+
+      const path = [
+        competition ? (INTERNATIONAL_TOURNAMENT_META[competition]?.name || competition) : '',
+        year,
+        team
+      ].filter(Boolean).join(' → ');
+
+      let emptyText='';
+      if (competition && year && !teams.length) {
+        emptyText=internationalTeamLoading.has(teamListKey)?'正在載入這屆參賽球隊…':'這個賽事年份目前沒有可用的球隊資料。';
+      } else if (competition && year && team && rosterData?.error) {
+        emptyText='球員名單讀取失敗：'+rosterData.error;
+      } else if (competition && year && team && rosterData && !remotePlayers.length && !localTeamPlayers.length) {
+        emptyText='官方來源目前沒有回傳這支代表隊的球員名單。';
+      }
+
+      els.homeInternationalExplorer.innerHTML =
+        '<div class="intl-explorer-head"><strong>國際賽資料庫</strong><span>賽事 → 年份 → 球隊 → 球員</span></div>' +
+        '<div class="intl-select-flow">' +
+          '<label class="intl-select-step"><span>1．賽事</span><select id="intlCompetitionSelect">'+competitionOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>2．年份</span><select id="intlYearSelect" '+(!competition?'disabled':'')+'>'+yearOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>3．球隊</span><select id="intlTeamSelect" '+(!(competition&&year)?'disabled':'')+'>'+teamOptions+'</select></label>' +
+          '<label class="intl-select-step"><span>4．球員</span><select id="intlPlayerSelect" '+(!(competition&&year&&team)?'disabled':'')+'>'+playerOptions+'</select></label>' +
+        '</div>' +
+        (path ? '<div class="intl-flow-path">'+escapeHtml(path)+'</div>' : '') +
+        (emptyText ? '<div class="intl-flow-empty">'+escapeHtml(emptyText)+'</div>' : '');
+      els.homeInternationalExplorer.classList.remove('hidden');
+
+      const competitionSelect=document.getElementById('intlCompetitionSelect');
+      const yearSelect=document.getElementById('intlYearSelect');
+      const teamSelect=document.getElementById('intlTeamSelect');
+      const playerSelect=document.getElementById('intlPlayerSelect');
+
+      competitionSelect?.addEventListener('change', () => {
+        homeSpecialFilter=competitionSelect.value||'';
+        homeInternationalEditionFilter='';
+        homeInternationalTeamFilter='';
+        renderRecentPlayers();
+      });
+      yearSelect?.addEventListener('change', () => {
+        homeInternationalEditionFilter=yearSelect.value||'';
+        homeInternationalTeamFilter='';
+        renderRecentPlayers();
+      });
+      teamSelect?.addEventListener('change', () => {
+        homeInternationalTeamFilter=teamSelect.value||'';
+        renderRecentPlayers();
+      });
+      playerSelect?.addEventListener('change', async () => {
+        const value=playerSelect.value||'';
+        if (!value) return;
+        if (value.startsWith('local:')) {
+          await selectPlayer(value.slice(6));
+          return;
+        }
+        if (value.startsWith('remote:')) {
+          const id=value.slice(7);
+          const entry=remotePlayers.find(item => String(item.id)===id);
+          if (entry) await openInternationalRosterPlayer(entry,competition,year,team);
+        }
       });
     }
 
