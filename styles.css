@@ -6338,3 +6338,20 @@ html[data-theme="dark"] .app-date-today:hover{
   .standings-pct,
   .standings-gb{font-size:10px;}
 }
+
+.standings-sync-status-ok .standings-sync-dot{
+  background:#3f9b72;
+  box-shadow:0 0 0 3px rgba(63,155,114,.14);
+}
+.standings-sync-status-loading .standings-sync-dot{
+  background:#c69529;
+  animation:standingsPulse 1.2s ease-in-out infinite;
+}
+.standings-sync-status-error .standings-sync-dot{
+  background:#c55252;
+  box-shadow:0 0 0 3px rgba(197,82,82,.13);
+}
+@keyframes standingsPulse{
+  0%,100%{opacity:.55;transform:scale(.92)}
+  50%{opacity:1;transform:scale(1)}
+}
