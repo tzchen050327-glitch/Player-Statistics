@@ -175,6 +175,19 @@
       }
     });
 
+    window.addEventListener('cpbl-live-day-update', event => {
+      const updateDate = String(event?.detail?.detail?.date || event?.detail?.row?.game_date || '');
+      const selectedDate = String(els.gameDate?.value || localISODate());
+      if (!updateDate || updateDate !== selectedDate) return;
+      if (currentPage !== 'home' || homeDailyGamesLeague() !== 'CPBL') return;
+      // Realtime means the backend cache changed (lineup, score, inning, final, etc.).
+      // Re-read the lightweight daily feed so lineupReady/status/score are reflected immediately.
+      const key = `CPBL|${updateDate}`;
+      const cached = homeDailyGamesCache.get(key);
+      if (cached) cached.at = 0;
+      void loadHomeDailyGames('CPBL', updateDate, { force:true });
+    });
+
     function homeDailyGamesLeague() {
       if (homeRootSection === 'international') return '';
       if (homeProCountry === 'TW') return 'CPBL';
