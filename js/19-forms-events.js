@@ -958,6 +958,7 @@
     els.homeStandingsBtn?.addEventListener('click', () => {
       currentPage = 'standings';
       renderAll();
+      void loadOfficialStandings({ force:true });
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
