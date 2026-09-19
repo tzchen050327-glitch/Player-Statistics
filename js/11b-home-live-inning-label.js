@@ -45,6 +45,7 @@
 
     homeDailyGameStatusLabel = function homeDailyGameStatusLabelWithInning(game) {
       const status = String(game?.status || '').toLowerCase();
+      const league = homeDailyGamesLeague();
       if (status === 'final') return '已結束';
       if (status === 'live') {
         const direct = String(game?.inningLabel || '').trim();
@@ -56,6 +57,7 @@
         return '比賽中';
       }
       if (status === 'cancelled') return '取消／延期';
+      if ((league === 'CPBL' || league === 'NPB') && game?.lineupReady) return '先發打序';
       return String(game?.time || '').trim() || '未開打';
     };
 
