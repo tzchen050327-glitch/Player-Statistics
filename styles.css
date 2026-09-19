@@ -6113,7 +6113,8 @@ html[data-theme="dark"] .app-date-today:hover{
   background:#f5f8fb;
 }
 .standings-primary-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
-.standings-secondary-tabs{grid-template-columns:repeat(3,minmax(0,1fr));}
+.standings-secondary-tabs.is-three{grid-template-columns:repeat(3,minmax(0,1fr));}
+.standings-secondary-tabs.is-two{grid-template-columns:repeat(2,minmax(0,1fr));}
 .standings-switch-btn{
   min-height:42px;
   padding:8px 12px;
