@@ -513,3 +513,16 @@ html[data-theme="dark"] .standings-team-detail-empty{
 html[data-theme="dark"] .standings-team-detail-empty.error{
   color:#d97878 !important;
 }
+
+html[data-theme="dark"] .standings-team-game-count{
+  color:#8e9aa7 !important;
+}
+html[data-theme="dark"] .standings-team-game-count b{
+  color:#b7c2ce !important;
+}
+html[data-theme="dark"] .standings-team-game-count i{
+  background:#3b4148 !important;
+}
+html[data-theme="dark"] .standings-h2h-section-title{
+  color:#d0a94e !important;
+}
