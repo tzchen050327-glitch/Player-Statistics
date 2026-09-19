@@ -23,6 +23,11 @@
     let standingsOfficialCacheAt = 0;
     let standingsOfficialLoading = false;
     let standingsOfficialError = '';
+    let standingsSelectedTeam = '';
+    let standingsTeamTab = 'h2h';
+    let standingsTeamDetailLoading = false;
+    let standingsTeamDetailError = '';
+    const standingsTeamDetailCache = new Map();
 
     function standingsPreviewRows() {
       if (standingsUiState.league === 'cpbl') return STANDINGS_PREVIEW_TEAMS.cpbl;
@@ -202,6 +207,127 @@
       }
     }
 
+    function standingsCurrentView() {
+      return standingsUiState.league === 'cpbl' ? standingsUiState.cpblView : standingsUiState.npbView;
+    }
+
+    function standingsTeamDetailKey(team) {
+      return `${standingsUiState.league}|${standingsCurrentView()}|${team}`;
+    }
+
+    function standingsGameOpponent(game, team) {
+      return String(game?.away || '') === team ? String(game?.home || '') : String(game?.away || '');
+    }
+
+    function standingsGameSide(game, team) {
+      return String(game?.away || '') === team ? '客' : '主';
+    }
+
+    function standingsGameScore(game, team) {
+      if (game?.awayScore === null || game?.awayScore === undefined || game?.homeScore === null || game?.homeScore === undefined) return '';
+      const mine = String(game?.away || '') === team ? Number(game.awayScore) : Number(game.homeScore);
+      const other = String(game?.away || '') === team ? Number(game.homeScore) : Number(game.awayScore);
+      return `${mine} : ${other}`;
+    }
+
+    function standingsTeamDetailHtml(team) {
+      if (!team) return '';
+      const key = standingsTeamDetailKey(team);
+      const data = standingsTeamDetailCache.get(key) || null;
+      const h2h = Array.isArray(data?.h2h) ? data.h2h : [];
+      const recent = Array.isArray(data?.recent) ? data.recent : [];
+      const upcoming = Array.isArray(data?.upcoming) ? data.upcoming : [];
+
+      let body = '';
+      if (standingsTeamDetailLoading && !data) {
+        body = `<div class="standings-team-detail-empty">正在讀取 ${escapeHtml(team)} 的資料…</div>`;
+      } else if (standingsTeamDetailError && !data) {
+        body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
+      } else if (standingsTeamTab === 'h2h') {
+        body = h2h.length
+          ? `<div class="standings-h2h-list">${h2h.map(item => `
+              <div class="standings-h2h-row">
+                <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
+                <span class="standings-h2h-record"><b>${Number(item.wins)||0}</b>勝 <b>${Number(item.losses)||0}</b>敗 <b>${Number(item.ties)||0}</b>和</span>
+              </div>
+            `).join('')}</div>`
+          : `<div class="standings-team-detail-empty">目前沒有可顯示的官方對戰戰績。</div>`;
+      } else {
+        const recentHtml = recent.length
+          ? recent.map(game => `
+              <div class="standings-schedule-row">
+                <div class="standings-schedule-date"><strong>${escapeHtml(String(game.date||'').slice(5).replace('-','/'))}</strong><span>${escapeHtml(game.time||'')}</span></div>
+                <div class="standings-schedule-match"><strong>${escapeHtml(standingsGameOpponent(game,team))}</strong><span>${standingsGameSide(game,team)}場・${escapeHtml(game.venue||'')}</span></div>
+                <div class="standings-schedule-result is-${String(game.result||'').toLowerCase()}"><strong>${escapeHtml(standingsGameScore(game,team))}</strong><span>${game.result==='W'?'勝':game.result==='L'?'敗':game.result==='T'?'和':''}</span></div>
+              </div>
+            `).join('')
+          : `<div class="standings-team-detail-empty compact">沒有近期已結束賽事。</div>`;
+
+        const upcomingHtml = upcoming.length
+          ? upcoming.map(game => `
+              <div class="standings-schedule-row">
+                <div class="standings-schedule-date"><strong>${escapeHtml(String(game.date||'').slice(5).replace('-','/'))}</strong><span>${escapeHtml(game.time||'')}</span></div>
+                <div class="standings-schedule-match"><strong>${escapeHtml(standingsGameOpponent(game,team))}</strong><span>${standingsGameSide(game,team)}場・${escapeHtml(game.venue||'')}</span></div>
+                <div class="standings-schedule-result upcoming"><strong>${String(game.status||'')==='live'?'LIVE':'未開打'}</strong><span></span></div>
+              </div>
+            `).join('')
+          : `<div class="standings-team-detail-empty compact">目前沒有抓到接下來的賽程。</div>`;
+
+        body = `
+          <div class="standings-schedule-section"><span class="standings-schedule-section-title">最近賽果</span>${recentHtml}</div>
+          <div class="standings-schedule-section"><span class="standings-schedule-section-title">接下來賽程</span>${upcomingHtml}</div>
+        `;
+      }
+
+      return `
+        <section class="standings-team-detail" id="standingsTeamDetail">
+          <div class="standings-team-detail-head">
+            <div><span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026</span><strong>${escapeHtml(team)}</strong></div>
+            <button type="button" class="standings-team-detail-close" data-standings-team-close aria-label="關閉球隊詳情">×</button>
+          </div>
+          <div class="standings-team-detail-tabs">
+            <button type="button" class="${standingsTeamTab==='h2h'?'active':''}" data-standings-team-tab="h2h">對戰成績</button>
+            <button type="button" class="${standingsTeamTab==='schedule'?'active':''}" data-standings-team-tab="schedule">賽程</button>
+          </div>
+          <div class="standings-team-detail-body">${body}</div>
+        </section>
+      `;
+    }
+
+    async function loadStandingsTeamDetail(team, { force = false } = {}) {
+      if (!team) return null;
+      const key = standingsTeamDetailKey(team);
+      if (!force && standingsTeamDetailCache.has(key)) return standingsTeamDetailCache.get(key);
+      if (standingsTeamDetailLoading) return null;
+      standingsTeamDetailLoading = true;
+      standingsTeamDetailError = '';
+      renderStandingsPage();
+      try {
+        const response = await fetch(LEAGUE_TEAM_DETAIL_API_URL, {
+          method:'POST',
+          headers:{ 'content-type':'application/json' },
+          body:JSON.stringify({
+            appKey:CPBL_APP_KEY,
+            league:standingsUiState.league.toUpperCase(),
+            team,
+            view:standingsCurrentView()
+          })
+        });
+        const text = await response.text();
+        let data = {};
+        try { data = JSON.parse(text || '{}'); } catch {}
+        if (!response.ok || data?.ok !== true) throw new Error(data?.error || `球隊資料讀取失敗（${response.status}）`);
+        standingsTeamDetailCache.set(key, data);
+        return data;
+      } catch (error) {
+        standingsTeamDetailError = error?.message || '球隊資料讀取失敗。';
+        return null;
+      } finally {
+        standingsTeamDetailLoading = false;
+        if (currentPage === 'standings' && standingsSelectedTeam === team) renderStandingsPage();
+      }
+    }
+
     function renderStandingsPage() {
       if (!els.standingsPageContent) return;
       const isCpbl = standingsUiState.league === 'cpbl';
@@ -256,26 +382,30 @@
           </div>
           <div class="standings-table-body">
             ${rows.map(row => `
-              <div class="standings-team-row">
+              <button type="button" class="standings-team-row ${standingsSelectedTeam === String(row.team || '') ? 'selected' : ''}" data-standings-team="${escapeHtml(String(row.team || ''))}">
                 <span class="standings-rank">${escapeHtml(String(row.rank ?? '—'))}</span>
                 <span class="standings-team-name">${escapeHtml(String(row.team || ''))}</span>
                 <span class="standings-record">${escapeHtml(standingsRecord(row))}</span>
                 <span class="standings-pct">${escapeHtml(standingsPct(row))}</span>
                 <span class="standings-gb">${escapeHtml(standingsGb(row))}</span>
-              </div>
+              </button>
             `).join('')}
           </div>
         </div>
 
+        ${standingsTeamDetailHtml(standingsSelectedTeam)}
+
         <div class="standings-flow-note">
           <span class="standings-flow-icon" aria-hidden="true">✓</span>
-          <span>目前已接官方基準資料。下一步可接：比賽 Final 後直接加勝敗，再於跨日與官方戰績核對。</span>
+          <span>官方基準由後端保存；比賽 Final 後直接更新勝敗和，跨日再與官方戰績核對。</span>
         </div>
       `;
 
       els.standingsPageContent.querySelectorAll('[data-standings-league]').forEach(btn => {
         btn.addEventListener('click', () => {
           standingsUiState.league = btn.dataset.standingsLeague === 'npb' ? 'npb' : 'cpbl';
+          standingsSelectedTeam = '';
+          standingsTeamDetailError = '';
           localStorage.setItem('standingsLeague', standingsUiState.league);
           renderStandingsPage();
         });
@@ -285,6 +415,8 @@
           const value = btn.dataset.standingsCpbl;
           if (!['first','second','annual'].includes(value)) return;
           standingsUiState.cpblView = value;
+          standingsSelectedTeam = '';
+          standingsTeamDetailError = '';
           localStorage.setItem('standingsCpblView', value);
           renderStandingsPage();
         });
@@ -292,9 +424,35 @@
       els.standingsPageContent.querySelectorAll('[data-standings-npb]').forEach(btn => {
         btn.addEventListener('click', () => {
           standingsUiState.npbView = btn.dataset.standingsNpb === 'pacific' ? 'pacific' : 'central';
+          standingsSelectedTeam = '';
+          standingsTeamDetailError = '';
           localStorage.setItem('standingsNpbView', standingsUiState.npbView);
           renderStandingsPage();
         });
+      });
+
+      els.standingsPageContent.querySelectorAll('[data-standings-team]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const team = String(btn.dataset.standingsTeam || '');
+          if (!team) return;
+          standingsSelectedTeam = team;
+          standingsTeamTab = 'h2h';
+          standingsTeamDetailError = '';
+          renderStandingsPage();
+          void loadStandingsTeamDetail(team);
+          requestAnimationFrame(() => document.getElementById('standingsTeamDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }));
+        });
+      });
+      els.standingsPageContent.querySelectorAll('[data-standings-team-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          standingsTeamTab = btn.dataset.standingsTeamTab === 'schedule' ? 'schedule' : 'h2h';
+          renderStandingsPage();
+        });
+      });
+      els.standingsPageContent.querySelector('[data-standings-team-close]')?.addEventListener('click', () => {
+        standingsSelectedTeam = '';
+        standingsTeamDetailError = '';
+        renderStandingsPage();
       });
 
       if (!standingsOfficialCache && !standingsOfficialLoading) {
