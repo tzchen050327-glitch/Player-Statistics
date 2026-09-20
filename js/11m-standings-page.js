@@ -353,6 +353,18 @@
               ${interleague.length ? h2hRows(interleague) : '<div class="standings-team-detail-empty compact">目前沒有交流賽資料。</div>'}
             </div>
           `;
+        } else if (standingsUiState.league === 'mlb') {
+          const leagueLabel = String(data?.leagueGroup || '') === 'AL' ? '美聯' : (String(data?.leagueGroup || '') === 'NL' ? '國聯' : '同聯盟');
+          body = `
+            <div class="standings-h2h-section">
+              <span class="standings-h2h-section-title">${leagueLabel}對戰</span>
+              ${h2h.length ? h2hRows(h2h) : '<div class="standings-team-detail-empty compact">目前沒有同聯盟對戰資料。</div>'}
+            </div>
+            <div class="standings-h2h-section">
+              <span class="standings-h2h-section-title">跨聯盟對戰</span>
+              ${interleague.length ? h2hRows(interleague) : '<div class="standings-team-detail-empty compact">目前沒有跨聯盟對戰資料。</div>'}
+            </div>
+          `;
         } else {
           body = h2h.length
             ? h2hRows(h2h)
