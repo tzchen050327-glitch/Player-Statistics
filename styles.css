@@ -6632,6 +6632,7 @@ html[data-theme="dark"] .app-date-today:hover{
 
 
 @media(max-width:760px){
-  .standings-primary-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .standings-primary-tabs{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .standings-primary-tabs .standings-switch-btn{padding-left:6px;padding-right:6px;font-size:12px;}
   .standings-secondary-tabs.is-six{grid-template-columns:repeat(3,minmax(0,1fr));}
 }
