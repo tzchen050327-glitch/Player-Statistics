@@ -6492,20 +6492,23 @@ html[data-theme="dark"] .app-date-today:hover{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  color:#294863;
+  color:#f5f8fc;
   font-size:12px;
   font-weight:900;
 }
 .standings-h2h-value{
-  color:#173b5d;
+  color:#eef4fa;
   font-size:11px;
   font-weight:900;
   text-align:right;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
 }
+.standings-h2h-row > .standings-h2h-value:nth-child(3){
+  color:#f1c96b;
+}
 .standings-h2h-record{
-  color:#173b5d;
+  color:#eef4fa;
 }
 .standings-schedule-section + .standings-schedule-section{
   margin-top:16px;
