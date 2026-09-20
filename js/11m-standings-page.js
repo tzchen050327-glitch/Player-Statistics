@@ -186,7 +186,8 @@
 
     function standingsStatusMeta() {
       if (standingsOfficialLoading && !standingsOfficialCache) {
-        return { title:'正在讀取戰績', detail:'正在讀取官方基準與即時結算狀態…', state:'loading' };
+        const liveBaseline = ['cpbl','npb'].includes(standingsUiState.league);
+        return { title:'正在讀取戰績', detail:liveBaseline ? '正在讀取官方基準與即時結算狀態…' : '正在讀取官方戰績…', state:'loading' };
       }
       if (standingsOfficialError && !standingsOfficialCache) {
         return { title:'戰績讀取失敗', detail:standingsOfficialError, state:'error' };
@@ -238,6 +239,16 @@
         };
       }
       if (section) {
+        const liveBaseline = ['cpbl','npb'].includes(standingsUiState.league);
+        if (!liveBaseline) {
+          return {
+            title:`${league} 官方戰績已載入`,
+            detail:officialDate
+              ? `官網資料截至 ${officialDate.replaceAll('-', '/')}｜例行賽進行中`
+              : `抓取時間 ${fetched || '剛剛'}｜官方戰績定期更新`,
+            state:'ok'
+          };
+        }
         return {
           title:`${league} 官方戰績已載入`,
           detail:officialDate
