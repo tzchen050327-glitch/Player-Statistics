@@ -223,13 +223,11 @@
     }
 
     async function leagueDailyGamesRequest(league, date) {
-      const requestUrl = league === 'NPB'
-        ? NPB_GAMES_API_URL
-        : league === 'KBO'
-          ? KBO_GAMES_API_URL
-          : league === 'MLB'
-            ? LEAGUE_GAMES_B_API_URL
-            : LEAGUE_GAMES_A_API_URL;
+      const requestUrl = league === 'KBO'
+        ? KBO_GAMES_API_URL
+        : league === 'MLB'
+          ? LEAGUE_GAMES_B_API_URL
+          : LEAGUE_GAMES_A_API_URL;
       const response = await fetch(requestUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
