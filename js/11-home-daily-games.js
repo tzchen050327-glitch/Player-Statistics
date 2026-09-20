@@ -118,6 +118,11 @@
         // MLB games span much more of the day, so poll it less aggressively.
         return league === 'MLB' ? 2 * 60 * 1000 : league === 'NPB' ? 45 * 1000 : 30 * 1000;
       }
+      if (league === 'NPB' && (Array.isArray(games) ? games : []).some(game => String(game?.status || '').toLowerCase() === 'cancelled')) {
+        // NPB official pages can temporarily surface ambiguous cancellation text.
+        // Keep rechecking today's card instead of freezing a potentially stale cancelled state.
+        return 45 * 1000;
+      }
       const scheduled = (Array.isArray(games) ? games : []).filter(game => String(game?.status || '').toLowerCase() === 'scheduled');
       if (!scheduled.length) return 0;
       const starts = scheduled.map(game => homeDailyGamesStartMs(league, date, game?.time)).filter(Number.isFinite);
@@ -243,6 +248,19 @@
         throw new Error(data?.error || `當日賽事讀取失敗（${response.status}）`);
       }
       let games = Array.isArray(data.games) ? data.games : [];
+      if (league === 'NPB') {
+        games = games.map(game => {
+          const status = String(game?.status || '').toLowerCase();
+          const awayScore = game?.awayScore;
+          const homeScore = game?.homeScore;
+          const hasScore = awayScore !== null && awayScore !== undefined && awayScore !== ''
+            || homeScore !== null && homeScore !== undefined && homeScore !== '';
+          if (status === 'cancelled' && hasScore) {
+            return { ...game, status:String(date || '') < localISODate() ? 'final' : 'live' };
+          }
+          return game;
+        });
+      }
       // CPBL schedule history can occasionally omit an end marker and look live/scheduled.
       // A date before today is immutable history in the UI, so normalize those states to FINAL.
       if (league === 'CPBL' && String(date || '') < localISODate()) {
