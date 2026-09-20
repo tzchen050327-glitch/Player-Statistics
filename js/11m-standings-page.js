@@ -718,7 +718,7 @@
           standingsTeamTab = 'h2h';
           standingsTeamDetailError = '';
           renderStandingsPage();
-          void loadStandingsTeamDetail(team);
+          void loadStandingsTeamDetail(team, { force:true });
           requestAnimationFrame(() => document.getElementById('standingsTeamDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }));
         });
       });
