@@ -97,6 +97,18 @@
     let standingsTeamDetailLoading = false;
     let standingsTeamDetailError = '';
     const standingsTeamDetailCache = new Map();
+    let standingsAutoRefreshTimer = null;
+
+    function ensureStandingsAutoRefresh() {
+      if (standingsAutoRefreshTimer) return;
+      standingsAutoRefreshTimer = setInterval(() => {
+        if (currentPage !== 'standings') return;
+        if (!['cpbl','npb'].includes(standingsUiState.league)) return;
+        const state = String(standingsCurrentMeta()?.status || '');
+        if (!['base','live','pending_reconcile'].includes(state)) return;
+        void loadOfficialStandings({ force:true });
+      }, 60 * 1000);
+    }
 
     function standingsLeagueCode() {
       return ({ cpbl:'CPBL', npb:'NPB', kbo:'KBO', mlb:'MLB' })[standingsUiState.league] || 'CPBL';
@@ -723,4 +735,5 @@
       });
 
       if (!standingsOfficialCache && !standingsOfficialLoading) void loadOfficialStandings();
+      ensureStandingsAutoRefresh();
     }
