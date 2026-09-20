@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.98';
+    const APP_VERSION = 'v4.99';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -41,8 +41,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
     const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
     const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.98';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.98';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.99';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.99';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9425,6 +9425,8 @@ bg2: {
       } else if (standingsTeamDetailError && !data) {
         body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
       } else if (standingsTeamTab === 'h2h') {
+        const selectedStandingRow = standingsDisplayRows().find(row => String(row?.team || '') === String(team || '')) || null;
+        const selectedTeamPct = Number(selectedStandingRow?.pct);
         const h2hRows = (list, mode = 'default') => {
           const expectedFor = item => {
             const explicit = Number(item?.expectedGames);
@@ -9445,12 +9447,18 @@ bg2: {
                 const ties = Number(item?.ties) || 0;
                 const played = Number.isFinite(Number(item?.playedGames)) ? Number(item.playedGames) : wins + losses + ties;
                 const expected = expectedFor(item);
-                const pct = wins + losses > 0 ? (wins / (wins + losses)).toFixed(3).replace(/^0/, '') : '.000';
+                const pctNumber = wins + losses > 0 ? wins / (wins + losses) : 0;
+                const pct = pctNumber.toFixed(3).replace(/^0/, '');
+                const roundedH2h = Number(pctNumber.toFixed(3));
+                const roundedTeam = Number.isFinite(selectedTeamPct) ? Number(selectedTeamPct.toFixed(3)) : null;
+                const pctTone = roundedTeam === null
+                  ? 'is-equal'
+                  : (roundedH2h > roundedTeam ? 'is-above' : (roundedH2h < roundedTeam ? 'is-below' : 'is-equal'));
                 return `
                   <div class="standings-h2h-row">
                     <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
                     <span class="standings-h2h-value">${expected || '—'}/${played}</span>
-                    <span class="standings-h2h-value">${pct}</span>
+                    <span class="standings-h2h-value standings-h2h-pct ${pctTone}">${pct}</span>
                     <span class="standings-h2h-value standings-h2h-record">${wins}-${losses}-${ties}</span>
                   </div>
                 `;
