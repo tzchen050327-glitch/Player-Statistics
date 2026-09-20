@@ -158,6 +158,51 @@
       }));
     }
 
+    function standingsExpectedGames() {
+      if (standingsUiState.league === 'cpbl') return standingsUiState.cpblView === 'annual' ? 120 : 60;
+      if (standingsUiState.league === 'npb') return 143;
+      if (standingsUiState.league === 'kbo') return 144;
+      return 162;
+    }
+
+    function standingsMinFinalPct(row) {
+      const expected = standingsExpectedGames();
+      const games = Math.max(0, Number(row?.games) || 0);
+      const wins = Math.max(0, Number(row?.wins) || 0);
+      const losses = Math.max(0, Number(row?.losses) || 0);
+      const remaining = Math.max(0, expected - games);
+      const denominator = wins + losses + remaining;
+      return denominator > 0 ? wins / denominator : 0;
+    }
+
+    function standingsMaxFinalPct(row) {
+      const expected = standingsExpectedGames();
+      const games = Math.max(0, Number(row?.games) || 0);
+      const wins = Math.max(0, Number(row?.wins) || 0);
+      const losses = Math.max(0, Number(row?.losses) || 0);
+      const remaining = Math.max(0, expected - games);
+      const denominator = wins + losses + remaining;
+      return denominator > 0 ? (wins + remaining) / denominator : 0;
+    }
+
+    function standingsClinchLabel(row, rows) {
+      if (!row?.official || Number(row?.rank) !== 1 || !Array.isArray(rows) || rows.length < 2) return '';
+      const leaderMin = standingsMinFinalPct(row);
+      const rivals = rows.filter(other => other !== row && other?.official);
+      if (!rivals.length) return '';
+      const clinched = rivals.every(other => leaderMin > standingsMaxFinalPct(other) + 1e-12);
+      if (!clinched) return '';
+
+      if (standingsUiState.league === 'cpbl') {
+        if (standingsUiState.cpblView === 'first') return '上半季封王';
+        if (standingsUiState.cpblView === 'second') return '下半季封王';
+        return '年度第一確定';
+      }
+      if (standingsUiState.league === 'npb') return standingsUiState.npbView === 'pacific' ? '洋聯封王' : '央聯封王';
+      if (standingsUiState.league === 'kbo') return '例行賽第一確定';
+      return `${standingsSubTitle()}封王`;
+    }
+
     function standingsRecord(row) {
       if (!row?.official) return '—';
       return `${Number(row.wins) || 0}-${Number(row.losses) || 0}-${Number(row.ties) || 0}`;
@@ -576,7 +621,10 @@
             ${rows.map(row => `
               <button type="button" class="standings-team-row ${standingsSelectedTeam === String(row.team || '') ? 'selected' : ''}" data-standings-team="${escapeHtml(String(row.team || ''))}">
                 <span class="standings-rank">${escapeHtml(String(row.rank ?? '—'))}</span>
-                <span class="standings-team-name">${escapeHtml(standingsTeamTableLabel(row))}</span>
+                <span class="standings-team-name">
+                  <span class="standings-team-name-text">${escapeHtml(standingsTeamTableLabel(row))}</span>
+                  ${standingsClinchLabel(row, rows) ? `<span class="standings-clinch-badge">${escapeHtml(standingsClinchLabel(row, rows))}</span>` : ''}
+                </span>
                 <span class="standings-record">${escapeHtml(standingsRecord(row))}</span>
                 <span class="standings-pct">${escapeHtml(standingsPct(row))}</span>
                 <span class="standings-gb">${escapeHtml(standingsGb(row))}</span>
