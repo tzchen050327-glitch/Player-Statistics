@@ -326,7 +326,7 @@
       const data = standingsTeamDetailCache.get(key) || null;
       const h2h = Array.isArray(data?.h2h) ? data.h2h : [];
       const interleague = Array.isArray(data?.interleague) ? data.interleague : [];
-      const otherDivisions = Array.isArray(data?.otherDivisions) ? data.otherDivisions : [];
+      const divisionH2h = data?.divisionH2h && typeof data.divisionH2h === 'object' ? data.divisionH2h : {};
       const summary = data?.summary || null;
       const recent = Array.isArray(data?.recent) ? data.recent : [];
       const upcoming = Array.isArray(data?.upcoming) ? data.upcoming : [];
@@ -355,20 +355,23 @@
             </div>
           `;
         } else if (standingsUiState.league === 'mlb') {
-          const divisionLabel = ({
-            alEast:'美聯東區', alCentral:'美聯中區', alWest:'美聯西區',
-            nlEast:'國聯東區', nlCentral:'國聯中區', nlWest:'國聯西區'
-          })[String(data?.divisionGroup || '')] || '同分區';
-          body = `
-            <div class="standings-h2h-section">
-              <span class="standings-h2h-section-title">${divisionLabel}對戰</span>
-              ${h2h.length ? h2hRows(h2h) : '<div class="standings-team-detail-empty compact">目前沒有同分區對戰資料。</div>'}
-            </div>
-            <div class="standings-h2h-section">
-              <span class="standings-h2h-section-title">其他分區對戰</span>
-              ${otherDivisions.length ? h2hRows(otherDivisions) : '<div class="standings-team-detail-empty compact">目前沒有其他分區對戰資料。</div>'}
-            </div>
-          `;
+          const divisions = [
+            ['alEast','美聯東區'],
+            ['alCentral','美聯中區'],
+            ['alWest','美聯西區'],
+            ['nlEast','國聯東區'],
+            ['nlCentral','國聯中區'],
+            ['nlWest','國聯西區']
+          ];
+          body = divisions.map(([key,label]) => {
+            const rows = Array.isArray(divisionH2h?.[key]) ? divisionH2h[key] : [];
+            return `
+              <div class="standings-h2h-section">
+                <span class="standings-h2h-section-title">${label}</span>
+                ${rows.length ? h2hRows(rows) : '<div class="standings-team-detail-empty compact">目前沒有對戰資料。</div>'}
+              </div>
+            `;
+          }).join('');
         } else {
           body = h2h.length
             ? h2hRows(h2h)
