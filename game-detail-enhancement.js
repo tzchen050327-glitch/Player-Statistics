@@ -831,7 +831,7 @@
     const game=detail?.game||{}, last=Array.isArray(detail?.plays)&&detail.plays.length?detail.plays.at(-1):null;
     return [detail?.league,detail?.date,detail?.status,detail?.competition,detail?.competitionLabel,detail?.statsScope,game.id,game.awayScore,game.homeScore,detail?.updatedAt,detail?.current?.outs,
       detail?.current?.pitcher?.name,detail?.current?.batter?.name,JSON.stringify(detail?.scoreboard||{}),JSON.stringify(detail?.lineups||{}),
-      JSON.stringify(detail?.current?.runners||{}),JSON.stringify(detail?.current?.baseState||{}),detail?.current?.bases,last?.inning,last?.half,last?.batter,last?.pitcher,last?.result,last?.bases,last?.rbi,
+      JSON.stringify(detail?.current?.runners||{}),JSON.stringify(detail?.current?.baseState||{}),JSON.stringify(detail?.decisions||detail?.gameDecisions||{}),detail?.current?.bases,last?.inning,last?.half,last?.batter,last?.pitcher,last?.result,last?.bases,last?.rbi,
       JSON.stringify(last?.baseStateAfter||{}),JSON.stringify(last?.runnersAfter||{}),
       effectiveCurrentBatter(detail)?.name||effectiveCurrentBatter(detail)?.fullName||'',currentOuts(detail)].map(v=>String(v??'')).join('|');
   }
@@ -852,6 +852,35 @@
     const game=detail?.game||{}, head=board.innings.map(x=>`<th>${esc(x)}</th>`).join('');
     const cells=values=>board.innings.map((_,i)=>`<td>${esc(safeCell(values[i]))}</td>`).join('');
     return `<section class="gdx-scoreboard game-detail-enhanced-marker" data-gdx="scoreboard"><div class="gdx-section-head"><strong>計分板</strong></div><div class="gdx-scoreboard-scroll"><table><thead><tr><th class="gdx-team-col">球隊</th>${head}<th>R</th><th>H</th><th>E</th></tr></thead><tbody><tr><th class="gdx-team-col">${esc(game.away||'客隊')}</th>${cells(board.away)}<td class="gdx-total">${esc(board.awayTotals.R)}</td><td>${esc(board.awayTotals.H)}</td><td>${esc(board.awayTotals.E)}</td></tr><tr><th class="gdx-team-col">${esc(game.home||'主隊')}</th>${cells(board.home)}<td class="gdx-total">${esc(board.homeTotals.R)}</td><td>${esc(board.homeTotals.H)}</td><td>${esc(board.homeTotals.E)}</td></tr></tbody></table></div></section>`;
+  }
+
+  function renderGameDecisions(detail) {
+    if (String(detail?.league||'').toUpperCase() !== 'CPBL') return '';
+    if (String(detail?.status||'').toLowerCase() !== 'final') return '';
+    const d=detail?.decisions||detail?.gameDecisions||null;
+    if(!d)return '';
+    const formatPitcher=(player,suffix)=>{
+      const name=compactName(player?.name||player?.fullName||'');
+      if(!name)return '—';
+      const count=Number(player?.count);
+      const countHtml=Number.isFinite(count)&&count>0
+        ? `<span>（${esc(String(Math.floor(count)))}${esc(suffix)}）</span>`
+        : '';
+      return `<strong>${esc(name)}</strong>${countHtml}`;
+    };
+    const holds=Array.isArray(d?.holds)?d.holds.filter(Boolean):[];
+    const holdHtml=holds.length
+      ? holds.map(player=>formatPitcher(player,'中繼')).join('<br>')
+      : '—';
+    const gwrbi=compactName(d?.winningRbi?.name||d?.winningRbi?.fullName||'');
+    const rows=[
+      ['勝投',formatPitcher(d?.winningPitcher,'勝')],
+      ['敗投',formatPitcher(d?.losingPitcher,'敗')],
+      ['中繼成功',holdHtml],
+      ['救援成功',formatPitcher(d?.savePitcher,'救援')],
+      ['勝利打點',gwrbi?`<strong>${esc(gwrbi)}</strong>`:'—']
+    ];
+    return `<section class="gdx-decisions game-detail-enhanced-marker" data-gdx="decisions"><div class="gdx-section-head"><strong>比賽紀錄</strong></div><div class="gdx-decisions-grid">${rows.map(([label,value])=>`<div class="gdx-decision-row"><span class="gdx-decision-label">${esc(label)}</span><div class="gdx-decision-value">${value}</div></div>`).join('')}</div></section>`;
   }
 
   function compactLineupPaResult(play) {
@@ -1222,7 +1251,7 @@
       const landscapeHtml=renderLandscapeBoard(detail,board);
       if (body.querySelector('[data-gdx="landscape"]')) patchOrReplace(body,'[data-gdx="landscape"]',landscapeHtml,detail);
       else if (portrait) portrait.insertAdjacentHTML('beforebegin',landscapeHtml);
-      body.querySelectorAll('[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="last-play"]').forEach(node=>node.remove());
+      body.querySelectorAll('[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="decisions"],[data-gdx="last-play"]').forEach(node=>node.remove());
     } else {
       body.querySelector('[data-gdx="landscape"]')?.remove();
 
@@ -1238,6 +1267,13 @@
       const scoreExtra=body.querySelector('[data-gdx="scoreboard"]');
       if (scoreExtra) patchOrReplace(body,'[data-gdx="scoreboard"]',scoreHtml,detail);
       else (body.querySelector('[data-gdx="live"]')||scoreCard).insertAdjacentHTML('afterend',scoreHtml);
+
+      const decisionsHtml=isCpbl?renderGameDecisions(detail):'';
+      const decisions=body.querySelector('[data-gdx="decisions"]');
+      if(decisionsHtml){
+        if(decisions) patchOrReplace(body,'[data-gdx="decisions"]',decisionsHtml,detail);
+        else (body.querySelector('[data-gdx="scoreboard"]')||scoreCard).insertAdjacentHTML('afterend',decisionsHtml);
+      }else decisions?.remove();
 
       const playSection=body.querySelector('.game-detail-play-section'), prevHtml=renderPreviousPlay(detail), prev=body.querySelector('[data-gdx="last-play"]');
       if (prevHtml) {
