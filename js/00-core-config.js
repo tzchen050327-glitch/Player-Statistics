@@ -5,23 +5,42 @@
     const DB_NAME = 'baseball-player-card-test-v1';
     const DB_VERSION = 1;
     const STORES = { players: 'players', photos: 'photos', games: 'games' };
-    const CPBL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-client';
-    const CPBL_DAILY_CACHE_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-daily-cache';
-    const CPBL_OFFICIAL_REFRESH_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-official-season-refresh';
-    const CPBL_CURRENT_ROSTER_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-current-roster';
-    const CPBL_POSTSEASON_DAILY_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-daily';
-    const BASEBALL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/baseball-client';
-    const LEAGUE_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-daily-games';
-    const NPB_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-live-games';
-    const KBO_GAMES_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/kbo-live-games';
-    const NPB_PREGAME_STARTERS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-pregame-starters';
-    const LEAGUE_STANDINGS_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-standings-state';
-    const LEAGUE_TEAM_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-team-detail';
-    const LEAGUE_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/league-game-detail';
-    const CPBL_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-game-detail';
-    const CPBL_MINOR_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-minor-game-detail-cache';
-    const CPBL_POSTSEASON_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-postseason-detail';
-    const NPB_GAME_DETAIL_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-game-detail';
+    // Supabase split:
+    // A = CPBL / NPB live, play-by-play, and current-season data.
+    // B = KBO / MLB-MiLB / international / historical data.
+    // Until B is fully provisioned, it intentionally falls back to A so production behavior is unchanged.
+    const SUPABASE_A_FUNCTIONS_BASE = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1';
+    const SUPABASE_B_FUNCTIONS_BASE = String(window.__BASEBALL_SUPABASE_B_FUNCTIONS_BASE__ || SUPABASE_A_FUNCTIONS_BASE).replace(/\/+$/, '');
+    const SUPABASE_B_READY = SUPABASE_B_FUNCTIONS_BASE !== SUPABASE_A_FUNCTIONS_BASE;
+
+    const CPBL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-client`;
+    const CPBL_HISTORY_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/cpbl-client`;
+    const CPBL_DAILY_CACHE_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-daily-cache`;
+    const CPBL_OFFICIAL_REFRESH_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-official-season-refresh`;
+    const CPBL_CURRENT_ROSTER_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-current-roster`;
+    const CPBL_POSTSEASON_DAILY_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-daily`;
+
+    const BASEBALL_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/baseball-client`;
+    const BASEBALL_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/baseball-client`;
+    const BASEBALL_API_URL = BASEBALL_A_API_URL;
+
+    const LEAGUE_GAMES_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-daily-games`;
+    const LEAGUE_GAMES_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-daily-games`;
+    const LEAGUE_GAMES_API_URL = LEAGUE_GAMES_A_API_URL;
+    const NPB_GAMES_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-live-games`;
+    const KBO_GAMES_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/kbo-live-games`;
+    const NPB_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-pregame-starters`;
+
+    const LEAGUE_STANDINGS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-standings-state`;
+    const LEAGUE_TEAM_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-team-detail`;
+    const LEAGUE_GAME_DETAIL_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-game-detail`;
+    const LEAGUE_GAME_DETAIL_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-game-detail`;
+    const LEAGUE_GAME_DETAIL_API_URL = LEAGUE_GAME_DETAIL_A_API_URL;
+
+    const CPBL_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-game-detail`;
+    const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
+    const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
+    const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
     const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.83';
     const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.83';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
