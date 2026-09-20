@@ -6305,6 +6305,10 @@ html[data-theme="dark"] .app-date-today:hover{
   text-align:right;
   font-variant-numeric:tabular-nums;
 }
+.standings-gb.is-magic{
+  color:#ff5f63;
+  font-weight:950;
+}
 .standings-flow-note{
   display:flex;
   align-items:flex-start;
