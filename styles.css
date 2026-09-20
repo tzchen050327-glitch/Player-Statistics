@@ -6504,8 +6504,14 @@ html[data-theme="dark"] .app-date-today:hover{
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
 }
-.standings-h2h-row > .standings-h2h-value:nth-child(3){
+.standings-h2h-pct.is-above{
   color:#f1c96b;
+}
+.standings-h2h-pct.is-below{
+  color:#e39a5c;
+}
+.standings-h2h-pct.is-equal{
+  color:#c9d1d9;
 }
 .standings-h2h-record{
   color:#eef4fa;
