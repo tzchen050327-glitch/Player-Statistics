@@ -337,6 +337,8 @@
       } else if (standingsTeamDetailError && !data) {
         body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
       } else if (standingsTeamTab === 'h2h') {
+        const selectedStandingRow = standingsDisplayRows().find(row => String(row?.team || '') === String(team || '')) || null;
+        const selectedTeamPct = Number(selectedStandingRow?.pct);
         const h2hRows = (list, mode = 'default') => {
           const expectedFor = item => {
             const explicit = Number(item?.expectedGames);
@@ -357,12 +359,18 @@
                 const ties = Number(item?.ties) || 0;
                 const played = Number.isFinite(Number(item?.playedGames)) ? Number(item.playedGames) : wins + losses + ties;
                 const expected = expectedFor(item);
-                const pct = wins + losses > 0 ? (wins / (wins + losses)).toFixed(3).replace(/^0/, '') : '.000';
+                const pctNumber = wins + losses > 0 ? wins / (wins + losses) : 0;
+                const pct = pctNumber.toFixed(3).replace(/^0/, '');
+                const roundedH2h = Number(pctNumber.toFixed(3));
+                const roundedTeam = Number.isFinite(selectedTeamPct) ? Number(selectedTeamPct.toFixed(3)) : null;
+                const pctTone = roundedTeam === null
+                  ? 'is-equal'
+                  : (roundedH2h > roundedTeam ? 'is-above' : (roundedH2h < roundedTeam ? 'is-below' : 'is-equal'));
                 return `
                   <div class="standings-h2h-row">
                     <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
                     <span class="standings-h2h-value">${expected || '—'}/${played}</span>
-                    <span class="standings-h2h-value">${pct}</span>
+                    <span class="standings-h2h-value standings-h2h-pct ${pctTone}">${pct}</span>
                     <span class="standings-h2h-value standings-h2h-record">${wins}-${losses}-${ties}</span>
                   </div>
                 `;
