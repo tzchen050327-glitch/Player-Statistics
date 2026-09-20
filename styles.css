@@ -6697,3 +6697,10 @@ html[data-theme="dark"] .app-date-today:hover{
   .standings-primary-tabs .standings-switch-btn{padding-left:6px;padding-right:6px;font-size:12px;}
   .standings-secondary-tabs.is-six{grid-template-columns:repeat(3,minmax(0,1fr));}
 }
+
+
+/* Magic number emphasis */
+.standings-team-row .standings-gb.is-magic{
+  color:#ff4d4f !important;
+  font-weight:950;
+}
