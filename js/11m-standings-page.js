@@ -1,21 +1,28 @@
     const standingsUiState = {
-      league: localStorage.getItem('standingsLeague') === 'npb' ? 'npb' : 'cpbl',
+      league: ['cpbl','npb','kbo','mlb'].includes(localStorage.getItem('standingsLeague'))
+        ? localStorage.getItem('standingsLeague')
+        : 'cpbl',
       cpblView: ['first','second','annual'].includes(localStorage.getItem('standingsCpblView'))
         ? localStorage.getItem('standingsCpblView')
         : 'annual',
-      npbView: localStorage.getItem('standingsNpbView') === 'pacific' ? 'pacific' : 'central'
+      npbView: localStorage.getItem('standingsNpbView') === 'pacific' ? 'pacific' : 'central',
+      kboView: 'regular',
+      mlbView: ['alEast','alCentral','alWest','nlEast','nlCentral','nlWest'].includes(localStorage.getItem('standingsMlbView'))
+        ? localStorage.getItem('standingsMlbView')
+        : 'alEast'
     };
 
     const STANDINGS_PREVIEW_TEAMS = {
-      cpbl:[
-        '中信兄弟','統一7-ELEVEn獅','樂天桃猿','味全龍','富邦悍將','台鋼雄鷹'
-      ],
-      central:[
-        '阪神虎','橫濱DeNA灣星','讀賣巨人','中日龍','廣島東洋鯉魚','東京養樂多燕子'
-      ],
-      pacific:[
-        '福岡軟銀鷹','北海道日本火腿鬥士','歐力士猛牛','東北樂天金鷲','埼玉西武獅','千葉羅德海洋'
-      ]
+      cpbl:['中信兄弟','統一7-ELEVEn獅','樂天桃猿','味全龍','富邦悍將','台鋼雄鷹'],
+      central:['阪神虎','橫濱DeNA灣星','讀賣巨人','中日龍','廣島東洋鯉魚','東京養樂多燕子'],
+      pacific:['福岡軟銀鷹','北海道日本火腿鬥士','歐力士猛牛','東北樂天金鷲','埼玉西武獅','千葉羅德海洋'],
+      kbo:['KT巫師','三星獅','LG雙子','KIA虎','斗山熊','NC恐龍','SSG登陸者','樂天巨人','韓華鷹','培證英雄'],
+      alEast:['洋基','紅襪','藍鳥','光芒','金鶯'],
+      alCentral:['守護者','老虎','皇家','雙城','白襪'],
+      alWest:['水手','太空人','遊騎兵','天使','運動家'],
+      nlEast:['費城人','大都會','勇士','馬林魚','國民'],
+      nlCentral:['釀酒人','小熊','紅雀','紅人','海盜'],
+      nlWest:['道奇','教士','巨人','響尾蛇','洛磯']
     };
 
     const STANDINGS_CACHE_MS = 5 * 60 * 1000;
@@ -29,11 +36,15 @@
     let standingsTeamDetailError = '';
     const standingsTeamDetailCache = new Map();
 
+    function standingsLeagueCode() {
+      return ({ cpbl:'CPBL', npb:'NPB', kbo:'KBO', mlb:'MLB' })[standingsUiState.league] || 'CPBL';
+    }
+
     function standingsPreviewRows() {
       if (standingsUiState.league === 'cpbl') return STANDINGS_PREVIEW_TEAMS.cpbl;
-      return standingsUiState.npbView === 'pacific'
-        ? STANDINGS_PREVIEW_TEAMS.pacific
-        : STANDINGS_PREVIEW_TEAMS.central;
+      if (standingsUiState.league === 'npb') return STANDINGS_PREVIEW_TEAMS[standingsUiState.npbView] || STANDINGS_PREVIEW_TEAMS.central;
+      if (standingsUiState.league === 'kbo') return STANDINGS_PREVIEW_TEAMS.kbo;
+      return STANDINGS_PREVIEW_TEAMS[standingsUiState.mlbView] || STANDINGS_PREVIEW_TEAMS.alEast;
     }
 
     function standingsSubTitle() {
@@ -42,7 +53,12 @@
           ? '上半季'
           : (standingsUiState.cpblView === 'second' ? '下半季' : '全年度');
       }
-      return standingsUiState.npbView === 'pacific' ? '洋聯' : '央聯';
+      if (standingsUiState.league === 'npb') return standingsUiState.npbView === 'pacific' ? '洋聯' : '央聯';
+      if (standingsUiState.league === 'kbo') return '例行賽';
+      return ({
+        alEast:'美聯東區', alCentral:'美聯中區', alWest:'美聯西區',
+        nlEast:'國聯東區', nlCentral:'國聯中區', nlWest:'國聯西區'
+      })[standingsUiState.mlbView] || '美聯東區';
     }
 
     function standingsButton(label, value, active, attr) {
@@ -51,17 +67,15 @@
 
     function standingsCurrentOfficialSection() {
       if (!standingsOfficialCache) return null;
-      if (standingsUiState.league === 'cpbl') {
-        return standingsOfficialCache?.cpbl?.[standingsUiState.cpblView] || null;
-      }
-      return standingsOfficialCache?.npb?.[standingsUiState.npbView] || null;
+      if (standingsUiState.league === 'cpbl') return standingsOfficialCache?.cpbl?.[standingsUiState.cpblView] || null;
+      if (standingsUiState.league === 'npb') return standingsOfficialCache?.npb?.[standingsUiState.npbView] || null;
+      if (standingsUiState.league === 'kbo') return standingsOfficialCache?.kbo?.regular || null;
+      return standingsOfficialCache?.mlb?.[standingsUiState.mlbView] || null;
     }
 
     function standingsCurrentMeta() {
       if (!standingsOfficialCache?.meta) return null;
-      return standingsUiState.league === 'cpbl'
-        ? (standingsOfficialCache.meta.cpbl || null)
-        : (standingsOfficialCache.meta.npb || null);
+      return standingsOfficialCache.meta?.[standingsUiState.league] || null;
     }
 
     function standingsDisplayRows() {
@@ -118,7 +132,7 @@
 
       const section = standingsCurrentOfficialSection();
       const meta = standingsCurrentMeta();
-      const league = standingsUiState.league === 'cpbl' ? 'CPBL' : 'NPB';
+      const league = standingsLeagueCode();
       const officialDate = String(section?.officialDate || '').trim();
       const fetched = standingsFetchedTime();
       const state = String(meta?.status || 'official-only');
@@ -208,7 +222,10 @@
     }
 
     function standingsCurrentView() {
-      return standingsUiState.league === 'cpbl' ? standingsUiState.cpblView : standingsUiState.npbView;
+      if (standingsUiState.league === 'cpbl') return standingsUiState.cpblView;
+      if (standingsUiState.league === 'npb') return standingsUiState.npbView;
+      if (standingsUiState.league === 'kbo') return 'regular';
+      return standingsUiState.mlbView;
     }
 
     function standingsTeamDetailKey(team) {
@@ -299,7 +316,7 @@
         <section class="standings-team-detail" id="standingsTeamDetail">
           <div class="standings-team-detail-head">
             <div class="standings-team-detail-heading">
-              <span>${standingsUiState.league==='cpbl'?'CPBL':'NPB'} 2026・${standingsSubTitle()}</span>
+              <span>${standingsLeagueCode()} 2026・${standingsSubTitle()}</span>
               <div class="standings-team-title-line">
                 <strong>${escapeHtml(team)}</strong>
                 ${summary ? `<span class="standings-team-game-count"><b>應賽 ${Number(summary.expectedGames)||0}</b><i></i><b>已賽 ${Number(summary.playedGames)||0}</b></span>` : ''}
@@ -352,35 +369,65 @@
 
     function renderStandingsPage() {
       if (!els.standingsPageContent) return;
-      const isCpbl = standingsUiState.league === 'cpbl';
+      const league = standingsUiState.league;
+      const isCpbl = league === 'cpbl';
+      const isNpb = league === 'npb';
+      const isKbo = league === 'kbo';
+      const isMlb = league === 'mlb';
       const rows = standingsDisplayRows();
       const status = standingsStatusMeta();
       const hasOfficial = rows.some(row => row.official);
-      const secondary = isCpbl
-        ? [
-            standingsButton('上半季','first',standingsUiState.cpblView === 'first','data-standings-cpbl'),
-            standingsButton('下半季','second',standingsUiState.cpblView === 'second','data-standings-cpbl'),
-            standingsButton('全年度','annual',standingsUiState.cpblView === 'annual','data-standings-cpbl')
-          ].join('')
-        : [
-            standingsButton('央聯','central',standingsUiState.npbView === 'central','data-standings-npb'),
-            standingsButton('洋聯','pacific',standingsUiState.npbView === 'pacific','data-standings-npb')
-          ].join('');
+
+      let secondary = '';
+      let secondaryClass = 'is-one';
+      let secondaryLabel = '聯盟分區';
+      if (isCpbl) {
+        secondaryClass = 'is-three';
+        secondaryLabel = '中職季別';
+        secondary = [
+          standingsButton('上半季','first',standingsUiState.cpblView === 'first','data-standings-cpbl'),
+          standingsButton('下半季','second',standingsUiState.cpblView === 'second','data-standings-cpbl'),
+          standingsButton('全年度','annual',standingsUiState.cpblView === 'annual','data-standings-cpbl')
+        ].join('');
+      } else if (isNpb) {
+        secondaryClass = 'is-two';
+        secondaryLabel = '日職聯盟';
+        secondary = [
+          standingsButton('央聯','central',standingsUiState.npbView === 'central','data-standings-npb'),
+          standingsButton('洋聯','pacific',standingsUiState.npbView === 'pacific','data-standings-npb')
+        ].join('');
+      } else if (isKbo) {
+        secondaryLabel = '韓職聯盟';
+        secondary = standingsButton('例行賽','regular',true,'data-standings-kbo');
+      } else {
+        secondaryClass = 'is-six';
+        secondaryLabel = '美職分區';
+        secondary = [
+          standingsButton('美東','alEast',standingsUiState.mlbView === 'alEast','data-standings-mlb'),
+          standingsButton('美中','alCentral',standingsUiState.mlbView === 'alCentral','data-standings-mlb'),
+          standingsButton('美西','alWest',standingsUiState.mlbView === 'alWest','data-standings-mlb'),
+          standingsButton('國東','nlEast',standingsUiState.mlbView === 'nlEast','data-standings-mlb'),
+          standingsButton('國中','nlCentral',standingsUiState.mlbView === 'nlCentral','data-standings-mlb'),
+          standingsButton('國西','nlWest',standingsUiState.mlbView === 'nlWest','data-standings-mlb')
+        ].join('');
+      }
 
       els.standingsPageContent.innerHTML = `
         <div class="standings-controls">
           <div class="standings-primary-tabs" aria-label="聯盟">
             ${standingsButton('中華職棒','cpbl',isCpbl,'data-standings-league')}
-            ${standingsButton('日本職棒','npb',!isCpbl,'data-standings-league')}
+            ${standingsButton('日本職棒','npb',isNpb,'data-standings-league')}
+            ${standingsButton('韓國職棒','kbo',isKbo,'data-standings-league')}
+            ${standingsButton('美國職棒','mlb',isMlb,'data-standings-league')}
           </div>
-          <div class="standings-secondary-tabs ${isCpbl ? 'is-three' : 'is-two'}" aria-label="${isCpbl ? '中職季別' : '日職聯盟'}">
+          <div class="standings-secondary-tabs ${secondaryClass}" aria-label="${secondaryLabel}">
             ${secondary}
           </div>
         </div>
 
         <div class="standings-overview">
           <div class="standings-overview-copy">
-            <span class="standings-overview-label">${isCpbl ? 'CPBL' : 'NPB'} 2026</span>
+            <span class="standings-overview-label">${standingsLeagueCode()} 2026</span>
             <strong>${standingsSubTitle()}戰績</strong>
           </div>
           <span class="standings-preview-badge">${hasOfficial ? (['live','pending_reconcile'].includes(String(standingsCurrentMeta()?.status || '')) ? '即時結算' : '官方資料') : (standingsOfficialLoading ? '讀取中' : '待載入')}</span>
@@ -396,11 +443,7 @@
 
         <div class="standings-table-card">
           <div class="standings-table-head" aria-hidden="true">
-            <span>排名</span>
-            <span>球隊</span>
-            <span>戰績</span>
-            <span>勝率</span>
-            <span>勝差</span>
+            <span>排名</span><span>球隊</span><span>戰績</span><span>勝率</span><span>勝差</span>
           </div>
           <div class="standings-table-body">
             ${rows.map(row => `
@@ -419,13 +462,17 @@
 
         <div class="standings-flow-note">
           <span class="standings-flow-icon" aria-hidden="true">✓</span>
-          <span>官方基準由後端保存；比賽 Final 後直接更新勝敗和，跨日再與官方戰績核對。</span>
+          <span>${isCpbl || isNpb
+            ? '官方基準由 B 後端保存；比賽 Final 後直接更新勝敗和，跨日再與官方戰績核對。'
+            : '官方戰績由 B 後端集中快取；韓職與美職目前以官方排名定期刷新。'}</span>
         </div>
       `;
 
       els.standingsPageContent.querySelectorAll('[data-standings-league]').forEach(btn => {
         btn.addEventListener('click', () => {
-          standingsUiState.league = btn.dataset.standingsLeague === 'npb' ? 'npb' : 'cpbl';
+          const value = String(btn.dataset.standingsLeague || '');
+          if (!['cpbl','npb','kbo','mlb'].includes(value)) return;
+          standingsUiState.league = value;
           standingsSelectedTeam = '';
           standingsTeamDetailError = '';
           localStorage.setItem('standingsLeague', standingsUiState.league);
@@ -449,6 +496,17 @@
           standingsSelectedTeam = '';
           standingsTeamDetailError = '';
           localStorage.setItem('standingsNpbView', standingsUiState.npbView);
+          renderStandingsPage();
+        });
+      });
+      els.standingsPageContent.querySelectorAll('[data-standings-mlb]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const value = String(btn.dataset.standingsMlb || '');
+          if (!['alEast','alCentral','alWest','nlEast','nlCentral','nlWest'].includes(value)) return;
+          standingsUiState.mlbView = value;
+          standingsSelectedTeam = '';
+          standingsTeamDetailError = '';
+          localStorage.setItem('standingsMlbView', value);
           renderStandingsPage();
         });
       });
@@ -477,7 +535,5 @@
         renderStandingsPage();
       });
 
-      if (!standingsOfficialCache && !standingsOfficialLoading) {
-        void loadOfficialStandings();
-      }
+      if (!standingsOfficialCache && !standingsOfficialLoading) void loadOfficialStandings();
     }
