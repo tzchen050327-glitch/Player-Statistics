@@ -48,6 +48,45 @@
       const raw = String(value || '').trim();
       return MLB_STANDINGS_ZH.get(raw) || raw;
     }
+    const MLB_STANDINGS_FULL_ZH = new Map([
+      ['響尾蛇','亞利桑那響尾蛇'],
+      ['勇士','亞特蘭大勇士'],
+      ['金鶯','巴爾的摩金鶯'],
+      ['紅襪','波士頓紅襪'],
+      ['小熊','芝加哥小熊'],
+      ['白襪','芝加哥白襪'],
+      ['紅人','辛辛那提紅人'],
+      ['守護者','克里夫蘭守護者'],
+      ['洛磯','科羅拉多洛磯'],
+      ['老虎','底特律老虎'],
+      ['太空人','休士頓太空人'],
+      ['皇家','堪薩斯市皇家'],
+      ['天使','洛杉磯天使'],
+      ['道奇','洛杉磯道奇'],
+      ['馬林魚','邁阿密馬林魚'],
+      ['釀酒人','密爾瓦基釀酒人'],
+      ['雙城','明尼蘇達雙城'],
+      ['大都會','紐約大都會'],
+      ['洋基','紐約洋基'],
+      ['運動家','運動家'],
+      ['費城人','費城費城人'],
+      ['海盜','匹茲堡海盜'],
+      ['教士','聖地牙哥教士'],
+      ['巨人','舊金山巨人'],
+      ['水手','西雅圖水手'],
+      ['紅雀','聖路易紅雀'],
+      ['光芒','坦帕灣光芒'],
+      ['遊騎兵','德州遊騎兵'],
+      ['藍鳥','多倫多藍鳥'],
+      ['國民','華盛頓國民']
+    ]);
+
+    function standingsTeamTableLabel(row) {
+      const raw = String(row?.team || '').trim();
+      if (standingsUiState.league !== 'mlb') return raw;
+      const zh = mlbStandingsTeamZh(raw || row?.sourceTeam);
+      return MLB_STANDINGS_FULL_ZH.get(zh) || zh;
+    }
     const STANDINGS_CACHE_MS = 5 * 60 * 1000;
     let standingsOfficialCache = null;
     let standingsOfficialCacheAt = 0;
@@ -472,7 +511,7 @@
             ${rows.map(row => `
               <button type="button" class="standings-team-row ${standingsSelectedTeam === String(row.team || '') ? 'selected' : ''}" data-standings-team="${escapeHtml(String(row.team || ''))}">
                 <span class="standings-rank">${escapeHtml(String(row.rank ?? '—'))}</span>
-                <span class="standings-team-name">${escapeHtml(String(row.team || ''))}</span>
+                <span class="standings-team-name">${escapeHtml(standingsTeamTableLabel(row))}</span>
                 <span class="standings-record">${escapeHtml(standingsRecord(row))}</span>
                 <span class="standings-pct">${escapeHtml(standingsPct(row))}</span>
                 <span class="standings-gb">${escapeHtml(standingsGb(row))}</span>
