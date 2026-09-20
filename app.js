@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.90';
+    const APP_VERSION = 'v4.91';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -41,8 +41,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
     const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
     const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.90';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.90';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.91';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.91';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9113,6 +9113,29 @@ bg2: {
       nlWest:['道奇','教士','巨人','響尾蛇','洛磯']
     };
 
+    const MLB_STANDINGS_ZH = new Map([
+      ['Arizona Diamondbacks','響尾蛇'],['Diamondbacks','響尾蛇'],['D-backs','響尾蛇'],
+      ['Atlanta Braves','勇士'],['Braves','勇士'],['Baltimore Orioles','金鶯'],['Orioles','金鶯'],
+      ['Boston Red Sox','紅襪'],['Red Sox','紅襪'],['Chicago Cubs','小熊'],['Cubs','小熊'],
+      ['Chicago White Sox','白襪'],['White Sox','白襪'],['Cincinnati Reds','紅人'],['Reds','紅人'],
+      ['Cleveland Guardians','守護者'],['Guardians','守護者'],['Colorado Rockies','洛磯'],['Rockies','洛磯'],
+      ['Detroit Tigers','老虎'],['Tigers','老虎'],['Houston Astros','太空人'],['Astros','太空人'],
+      ['Kansas City Royals','皇家'],['Royals','皇家'],['Los Angeles Angels','天使'],['Angels','天使'],
+      ['Los Angeles Dodgers','道奇'],['Dodgers','道奇'],['Miami Marlins','馬林魚'],['Marlins','馬林魚'],
+      ['Milwaukee Brewers','釀酒人'],['Brewers','釀酒人'],['Minnesota Twins','雙城'],['Twins','雙城'],
+      ['New York Mets','大都會'],['Mets','大都會'],['New York Yankees','洋基'],['Yankees','洋基'],
+      ['Athletics','運動家'],['Oakland Athletics','運動家'],['Sacramento Athletics','運動家'],
+      ['Philadelphia Phillies','費城人'],['Phillies','費城人'],['Pittsburgh Pirates','海盜'],['Pirates','海盜'],
+      ['San Diego Padres','教士'],['Padres','教士'],['San Francisco Giants','巨人'],['Giants','巨人'],
+      ['Seattle Mariners','水手'],['Mariners','水手'],['St. Louis Cardinals','紅雀'],['Cardinals','紅雀'],
+      ['Tampa Bay Rays','光芒'],['Rays','光芒'],['Texas Rangers','遊騎兵'],['Rangers','遊騎兵'],
+      ['Toronto Blue Jays','藍鳥'],['Blue Jays','藍鳥'],['Washington Nationals','國民'],['Nationals','國民']
+    ]);
+
+    function mlbStandingsTeamZh(value) {
+      const raw = String(value || '').trim();
+      return MLB_STANDINGS_ZH.get(raw) || raw;
+    }
     const STANDINGS_CACHE_MS = 5 * 60 * 1000;
     let standingsOfficialCache = null;
     let standingsOfficialCacheAt = 0;
@@ -9169,7 +9192,7 @@ bg2: {
     function standingsDisplayRows() {
       const section = standingsCurrentOfficialSection();
       if (Array.isArray(section?.rows) && section.rows.length) {
-        return section.rows.map(row => ({ ...row, official:true }));
+        return section.rows.map(row => standingsUiState.league === 'mlb' ? ({ ...row, team:mlbStandingsTeamZh(row?.team || row?.sourceTeam), official:true }) : ({ ...row, official:true }));
       }
       return standingsPreviewRows().map((team,index) => ({
         rank:index + 1,
