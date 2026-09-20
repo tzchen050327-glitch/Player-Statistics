@@ -10,7 +10,7 @@
     // B = KBO / MLB-MiLB / international / historical data.
     // Until B is fully provisioned, it intentionally falls back to A so production behavior is unchanged.
     const SUPABASE_A_FUNCTIONS_BASE = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1';
-    const SUPABASE_B_FUNCTIONS_BASE = String(window.__BASEBALL_SUPABASE_B_FUNCTIONS_BASE__ || SUPABASE_A_FUNCTIONS_BASE).replace(/\/+$/, '');
+    const SUPABASE_B_FUNCTIONS_BASE = String(window.__BASEBALL_SUPABASE_B_FUNCTIONS_BASE__ || 'https://qprxdenajyumsoywwfaw.supabase.co/functions/v1').replace(/\/+$/, '');
     const SUPABASE_B_READY = SUPABASE_B_FUNCTIONS_BASE !== SUPABASE_A_FUNCTIONS_BASE;
 
     const CPBL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-client`;
