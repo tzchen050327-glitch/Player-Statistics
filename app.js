@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v4.96';
+    const APP_VERSION = 'v4.97';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -41,8 +41,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
     const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
     const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.96';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.96';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v4.97';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v4.97';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -9206,8 +9206,8 @@ bg2: {
       if (standingsUiState.league === 'npb') return standingsUiState.npbView === 'pacific' ? '洋聯' : '央聯';
       if (standingsUiState.league === 'kbo') return '例行賽';
       return ({
-        alEast:'美聯東區', alCentral:'美聯中區', alWest:'美聯西區',
-        nlEast:'國聯東區', nlCentral:'國聯中區', nlWest:'國聯西區'
+        alEast:'美國東區', alCentral:'美國中區', alWest:'美國西區',
+        nlEast:'國家東區', nlCentral:'國家中區', nlWest:'國家西區'
       })[standingsUiState.mlbView] || '美聯東區';
     }
 
@@ -9425,12 +9425,39 @@ bg2: {
       } else if (standingsTeamDetailError && !data) {
         body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
       } else if (standingsTeamTab === 'h2h') {
-        const h2hRows = list => `<div class="standings-h2h-list">${list.map(item => `
-          <div class="standings-h2h-row">
-            <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
-            <span class="standings-h2h-record"><b>${Number(item.wins)||0}</b>勝 <b>${Number(item.losses)||0}</b>敗 <b>${Number(item.ties)||0}</b>和</span>
-          </div>
-        `).join('')}</div>`;
+        const h2hRows = (list, mode = 'default') => {
+          const expectedFor = item => {
+            const explicit = Number(item?.expectedGames);
+            if (Number.isFinite(explicit) && explicit > 0) return explicit;
+            if (standingsUiState.league === 'cpbl') return standingsUiState.cpblView === 'annual' ? 24 : 12;
+            if (standingsUiState.league === 'npb') return mode === 'interleague' ? 3 : 25;
+            if (standingsUiState.league === 'kbo') return 16;
+            return 0;
+          };
+          return `
+            <div class="standings-h2h-table">
+              <div class="standings-h2h-head" aria-hidden="true">
+                <span>球隊</span><span>應/已賽</span><span>勝率</span><span>戰績</span>
+              </div>
+              <div class="standings-h2h-list">${list.map(item => {
+                const wins = Number(item?.wins) || 0;
+                const losses = Number(item?.losses) || 0;
+                const ties = Number(item?.ties) || 0;
+                const played = Number.isFinite(Number(item?.playedGames)) ? Number(item.playedGames) : wins + losses + ties;
+                const expected = expectedFor(item);
+                const pct = wins + losses > 0 ? (wins / (wins + losses)).toFixed(3).replace(/^0/, '') : '.000';
+                return `
+                  <div class="standings-h2h-row">
+                    <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
+                    <span class="standings-h2h-value">${expected || '—'}/${played}</span>
+                    <span class="standings-h2h-value">${pct}</span>
+                    <span class="standings-h2h-value standings-h2h-record">${wins}-${losses}-${ties}</span>
+                  </div>
+                `;
+              }).join('')}</div>
+            </div>
+          `;
+        };
         if (standingsUiState.league === 'npb') {
           body = `
             <div class="standings-h2h-section">
@@ -9439,17 +9466,17 @@ bg2: {
             </div>
             <div class="standings-h2h-section">
               <span class="standings-h2h-section-title">交流賽</span>
-              ${interleague.length ? h2hRows(interleague) : '<div class="standings-team-detail-empty compact">目前沒有交流賽資料。</div>'}
+              ${interleague.length ? h2hRows(interleague, 'interleague') : '<div class="standings-team-detail-empty compact">目前沒有交流賽資料。</div>'}
             </div>
           `;
         } else if (standingsUiState.league === 'mlb') {
           const divisions = [
-            ['alEast','美聯東區'],
-            ['alCentral','美聯中區'],
-            ['alWest','美聯西區'],
-            ['nlEast','國聯東區'],
-            ['nlCentral','國聯中區'],
-            ['nlWest','國聯西區']
+            ['alEast','美國東區'],
+            ['alCentral','美國中區'],
+            ['alWest','美國西區'],
+            ['nlEast','國家東區'],
+            ['nlCentral','國家中區'],
+            ['nlWest','國家西區']
           ];
           body = divisions.map(([key,label]) => {
             const rows = Array.isArray(divisionH2h?.[key]) ? divisionH2h[key] : [];
@@ -9583,12 +9610,12 @@ bg2: {
         secondaryClass = 'is-six';
         secondaryLabel = '美職分區';
         secondary = [
-          standingsButton('美東','alEast',standingsUiState.mlbView === 'alEast','data-standings-mlb'),
-          standingsButton('美中','alCentral',standingsUiState.mlbView === 'alCentral','data-standings-mlb'),
-          standingsButton('美西','alWest',standingsUiState.mlbView === 'alWest','data-standings-mlb'),
-          standingsButton('國東','nlEast',standingsUiState.mlbView === 'nlEast','data-standings-mlb'),
-          standingsButton('國中','nlCentral',standingsUiState.mlbView === 'nlCentral','data-standings-mlb'),
-          standingsButton('國西','nlWest',standingsUiState.mlbView === 'nlWest','data-standings-mlb')
+          standingsButton('美國東區','alEast',standingsUiState.mlbView === 'alEast','data-standings-mlb'),
+          standingsButton('美國中區','alCentral',standingsUiState.mlbView === 'alCentral','data-standings-mlb'),
+          standingsButton('美國西區','alWest',standingsUiState.mlbView === 'alWest','data-standings-mlb'),
+          standingsButton('國家東區','nlEast',standingsUiState.mlbView === 'nlEast','data-standings-mlb'),
+          standingsButton('國家中區','nlCentral',standingsUiState.mlbView === 'nlCentral','data-standings-mlb'),
+          standingsButton('國家西區','nlWest',standingsUiState.mlbView === 'nlWest','data-standings-mlb')
         ].join('');
       }
 
