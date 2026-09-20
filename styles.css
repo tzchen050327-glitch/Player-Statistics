@@ -6454,16 +6454,34 @@ html[data-theme="dark"] .app-date-today:hover{
   border-top:1px solid #e7edf3;
   padding:12px;
 }
+.standings-h2h-table{
+  display:grid;
+  gap:7px;
+}
+.standings-h2h-head,
+.standings-h2h-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 64px 54px 72px;
+  align-items:center;
+  column-gap:8px;
+}
+.standings-h2h-head{
+  padding:0 11px;
+  color:#8a98a7;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.03em;
+  text-align:right;
+}
+.standings-h2h-head span:first-child{
+  text-align:left;
+}
 .standings-h2h-list{
   display:grid;
   gap:8px;
 }
 .standings-h2h-row{
   min-height:46px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
   padding:10px 11px;
   border:1px solid #e4eaf0;
   border-radius:12px;
@@ -6471,19 +6489,23 @@ html[data-theme="dark"] .app-date-today:hover{
 }
 .standings-h2h-opponent{
   min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
   color:#294863;
   font-size:12px;
   font-weight:900;
 }
-.standings-h2h-record{
-  flex:0 0 auto;
-  color:#75879a;
-  font-size:11px;
-  font-weight:800;
-}
-.standings-h2h-record b{
+.standings-h2h-value{
   color:#173b5d;
-  font-weight:950;
+  font-size:11px;
+  font-weight:900;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.standings-h2h-record{
+  color:#173b5d;
 }
 .standings-schedule-section + .standings-schedule-section{
   margin-top:16px;
@@ -6565,9 +6587,12 @@ html[data-theme="dark"] .app-date-today:hover{
   .standings-team-detail-head{padding:13px 12px 10px;}
   .standings-team-detail-head strong{font-size:16px;}
   .standings-team-detail-body{padding:10px;}
+  .standings-h2h-head,
+  .standings-h2h-row{grid-template-columns:minmax(0,1fr) 56px 48px 64px;column-gap:6px;}
+  .standings-h2h-head{padding:0 10px;font-size:8px;}
   .standings-h2h-row{min-height:44px;padding:9px 10px;}
   .standings-h2h-opponent{font-size:11px;}
-  .standings-h2h-record{font-size:10px;}
+  .standings-h2h-value{font-size:10px;}
   .standings-schedule-row{grid-template-columns:52px minmax(0,1fr) 48px;gap:6px;}
 }
 
