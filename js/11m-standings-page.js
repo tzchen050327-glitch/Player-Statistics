@@ -213,8 +213,24 @@
       return Number(row.pct).toFixed(3).replace(/^0/, '');
     }
 
-    function standingsGb(row) {
+    function standingsMagicNumber(row, rows) {
+      if (!row?.official || Number(row?.rank) !== 1 || !Array.isArray(rows) || rows.length < 2) return '';
+      const expected = standingsExpectedGames();
+      const leaderWins = Math.max(0, Number(row?.wins) || 0);
+      const rivals = rows.filter(other => other !== row && other?.official);
+      if (!rivals.length) return '';
+      const magic = Math.max(...rivals.map(other => {
+        const losses = Math.max(0, Number(other?.losses) || 0);
+        const ties = Math.max(0, Number(other?.ties) || 0);
+        return Math.max(0, expected + 1 - leaderWins - losses - ties);
+      }));
+      return `M${magic}`;
+    }
+
+    function standingsGb(row, rows) {
       if (!row?.official) return '—';
+      const magic = standingsMagicNumber(row, rows);
+      if (magic) return magic;
       const value = String(row.gb ?? '-').trim();
       return value || '-';
     }
@@ -382,8 +398,6 @@
       } else if (standingsTeamDetailError && !data) {
         body = `<div class="standings-team-detail-empty error">${escapeHtml(standingsTeamDetailError)}</div>`;
       } else if (standingsTeamTab === 'h2h') {
-        const selectedStandingRow = standingsDisplayRows().find(row => String(row?.team || '') === String(team || '')) || null;
-        const selectedTeamPct = Number(selectedStandingRow?.pct);
         const h2hRows = (list, mode = 'default') => {
           const expectedFor = item => {
             const explicit = Number(item?.expectedGames);
@@ -406,11 +420,9 @@
                 const expected = expectedFor(item);
                 const pctNumber = wins + losses > 0 ? wins / (wins + losses) : 0;
                 const pct = pctNumber.toFixed(3).replace(/^0/, '');
-                const roundedH2h = Number(pctNumber.toFixed(3));
-                const roundedTeam = Number.isFinite(selectedTeamPct) ? Number(selectedTeamPct.toFixed(3)) : null;
-                const pctTone = roundedTeam === null
-                  ? 'is-equal'
-                  : (roundedH2h > roundedTeam ? 'is-above' : (roundedH2h < roundedTeam ? 'is-below' : 'is-equal'));
+                const pctTone = wins > losses
+                  ? 'is-above'
+                  : (wins < losses ? 'is-below' : 'is-equal');
                 return `
                   <div class="standings-h2h-row">
                     <span class="standings-h2h-opponent">${escapeHtml(item.opponent)}</span>
@@ -627,7 +639,7 @@
                 </span>
                 <span class="standings-record">${escapeHtml(standingsRecord(row))}</span>
                 <span class="standings-pct">${escapeHtml(standingsPct(row))}</span>
-                <span class="standings-gb">${escapeHtml(standingsGb(row))}</span>
+                <span class="standings-gb">${escapeHtml(standingsGb(row, rows))}</span>
               </button>
             `).join('')}
           </div>
