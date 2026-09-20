@@ -6267,12 +6267,33 @@ html[data-theme="dark"] .app-date-today:hover{
 }
 .standings-team-name{
   min-width:0;
+  display:flex;
+  align-items:center;
+  gap:7px;
   color:#203c58;
   font-size:13px;
   font-weight:900;
   line-height:1.25;
+}
+.standings-team-name-text{
+  min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.standings-clinch-badge{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:3px 7px;
+  border:1px solid rgba(214,169,74,.55);
+  border-radius:999px;
+  background:rgba(214,169,74,.14);
+  color:#d6a94a;
+  font-size:9px;
+  font-weight:950;
+  line-height:1;
   white-space:nowrap;
 }
 .standings-record,
@@ -6325,7 +6346,8 @@ html[data-theme="dark"] .app-date-today:hover{
   .standings-table-head{padding:7px 8px;font-size:8px;}
   .standings-team-row{min-height:51px;padding:8px;}
   .standings-rank{width:26px;height:26px;font-size:11px;}
-  .standings-team-name{font-size:11.5px;}
+  .standings-team-name{font-size:11.5px;gap:5px;}
+  .standings-clinch-badge{min-height:18px;padding:3px 5px;font-size:8px;}
   .standings-record,
   .standings-pct,
   .standings-gb{font-size:10.5px;}
@@ -6337,6 +6359,7 @@ html[data-theme="dark"] .app-date-today:hover{
     gap:4px;
   }
   .standings-team-name{font-size:10.5px;}
+  .standings-clinch-badge{padding:2px 4px;font-size:7.5px;}
   .standings-record,
   .standings-pct,
   .standings-gb{font-size:10px;}
