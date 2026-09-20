@@ -1,10 +1,38 @@
+    function useSecondaryCpblBackend(action, payload = {}) {
+      if (!SUPABASE_B_READY) return false;
+      const year = Number(payload?.year);
+      if (['season-history','season-histories'].includes(action)) return true;
+      if (action === 'season-stats' && Number.isInteger(year) && year < CURRENT_YEAR) return true;
+      return false;
+    }
+
+    function useSecondaryBaseballBackend(action, payload = {}) {
+      if (!SUPABASE_B_READY) return false;
+      if (String(action || '').startsWith('international-')) return true;
+
+      const provider = String(payload?.provider || '').toUpperCase();
+      if (['US','MLB','MILB','KBO'].includes(provider)) return true;
+
+      if (provider === 'NPB') {
+        if (action === 'season-years') return true;
+        const year = Number(payload?.year);
+        if (action === 'season-stats' && Number.isInteger(year) && year < CURRENT_YEAR) return true;
+        return false;
+      }
+
+      // Generic historical/career requests belong to B once B is enabled.
+      return ['career','career-history','history','season-history','season-histories'].includes(String(action || ''));
+    }
+
     async function cpblRequest(action, payload = {}) {
       const requestKindCode = String(payload?.kindCode || 'A').toUpperCase();
       const requestUrl = ['current-roster','current-rosters'].includes(action)
         ? CPBL_CURRENT_ROSTER_API_URL
         : action === 'daily' && ['A','D','E','C'].includes(requestKindCode)
           ? CPBL_DAILY_CACHE_API_URL
-          : CPBL_API_URL;
+          : useSecondaryCpblBackend(action, payload)
+            ? CPBL_HISTORY_API_URL
+            : CPBL_API_URL;
       const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
@@ -22,7 +50,10 @@
     }
 
     async function baseballRequest(action, payload = {}) {
-      const response = await fetch(BASEBALL_API_URL, {
+      const requestUrl = useSecondaryBaseballBackend(action, payload)
+        ? BASEBALL_B_API_URL
+        : BASEBALL_A_API_URL;
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({
