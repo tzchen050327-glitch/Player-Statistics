@@ -24,17 +24,6 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Reject app.js-only source edits
-        shell: bash
-        run: |
-          CHANGED="$(git diff --name-only HEAD^ HEAD || true)"
-          if printf '%s\n' "$CHANGED" | grep -qx 'app.js'; then
-            if ! printf '%s\n' "$CHANGED" | grep -Eq '^js/.*\.js$'; then
-              echo 'app.js is generated. Edit js/*.js instead.' >&2
-              exit 1
-            fi
-          fi
-
       - name: Bump source version
         shell: python
         run: |
@@ -44,7 +33,12 @@ jobs:
           old = str(data.get('version', '')).strip()
           m = re.fullmatch(r'v(\d+)\.(\d+)', old)
           if not m: raise SystemExit(f'Unsupported version format: {old!r}')
-          new = f'v{int(m.group(1))}.{int(m.group(2))+1:02d}'
+          major = int(m.group(1))
+          minor = int(m.group(2)) + 1
+          if minor >= 100:
+              major += minor // 100
+              minor %= 100
+          new = f'v{major}.{minor:02d}'
           cache_tag = new.replace('.', '')
           Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
 
@@ -80,13 +74,15 @@ jobs:
           p.write_text(text, encoding='utf-8')
           print(f'{old} -> {new}')
 
-      - name: Generate and verify app.js
+      - name: Verify modular sources
+        shell: bash
         run: |
-          python3 scripts/build-app.py
-          python3 scripts/build-app.py --check
-          node --check app.js
           node --check js/module-loader.js
           node --check service-worker.js
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            node --check "js/$name"
+          done < js/module-order.txt
 
       - name: Verify version consistency
         shell: python
@@ -94,10 +90,14 @@ jobs:
           import json
           from pathlib import Path
           v = json.loads(Path('version.json').read_text(encoding='utf-8'))['version']
-          app = Path('app.js').read_text(encoding='utf-8')
+          source = '\n'.join(
+              (Path('js') / name).read_text(encoding='utf-8')
+              for name in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines()
+              if name.strip()
+          )
           html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('service-worker.js').read_text(encoding='utf-8')
-          assert f"const APP_VERSION = '{v}'" in app
+          assert f"const APP_VERSION = '{v}'" in source
           assert f'content="{v}"' in html
           assert f'./js/module-loader.js?v={v}' in html
           assert f'./js/module-loader.js?v={v}' in sw
@@ -108,6 +108,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.json index.html service-worker.js manifest.webmanifest app.js js
+          git add version.json index.html service-worker.js manifest.webmanifest js
           git commit -m "chore: auto bump app version [skip version bump]" || exit 0
           git push
