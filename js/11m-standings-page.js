@@ -639,7 +639,7 @@
                 </span>
                 <span class="standings-record">${escapeHtml(standingsRecord(row))}</span>
                 <span class="standings-pct">${escapeHtml(standingsPct(row))}</span>
-                <span class="standings-gb">${escapeHtml(standingsGb(row, rows))}</span>
+                <span class="standings-gb ${standingsMagicNumber(row, rows) ? 'is-magic' : ''}">${escapeHtml(standingsGb(row, rows))}</span>
               </button>
             `).join('')}
           </div>
