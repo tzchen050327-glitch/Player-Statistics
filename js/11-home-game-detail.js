@@ -36,7 +36,9 @@
             : (cpblKindCode === 'E' || cpblKindCode === 'C' ? CPBL_POSTSEASON_DETAIL_API_URL : CPBL_GAME_DETAIL_API_URL))
         : league === 'NPB'
           ? NPB_GAME_DETAIL_API_URL
-          : LEAGUE_GAME_DETAIL_API_URL;
+          : (league === 'MLB' || league === 'KBO')
+            ? LEAGUE_GAME_DETAIL_B_API_URL
+            : LEAGUE_GAME_DETAIL_A_API_URL;
       const response = await fetch(detailApiUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
@@ -101,7 +103,10 @@
       const endpoint = league === 'NPB'
         ? NPB_PREGAME_STARTERS_API_URL
         : (() => {
-            const url = new URL(LEAGUE_GAME_DETAIL_API_URL);
+            const base = (league === 'MLB' || league === 'KBO')
+              ? LEAGUE_GAME_DETAIL_B_API_URL
+              : LEAGUE_GAME_DETAIL_A_API_URL;
+            const url = new URL(base);
             url.pathname = url.pathname.replace(/\/[^/]+$/, '/pregame-starters');
             return url.toString();
           })();
