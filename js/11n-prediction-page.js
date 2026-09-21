@@ -651,49 +651,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return data;
     }
 
-    async function predictionDirectMlbGame(date) {
-      const [standing, daily] = await Promise.all([
-        predictionStandingData('MLB', date),
-        predictionPost(LEAGUE_GAMES_B_API_URL, { appKey:CPBL_APP_KEY, action:'daily-games', league:'MLB', date })
-      ]);
-      const games = (Array.isArray(daily?.games) ? daily.games : [])
-        .filter(game => !['final','cancelled','postponed'].includes(String(game?.status || '').toLowerCase()))
-        .map(game => {
-          const awayHit = predictionStandingHit(standing, game?.away);
-          const homeHit = predictionStandingHit(standing, game?.home);
-          const awayRow = awayHit?.row || {};
-          const homeRow = homeHit?.row || {};
-          const away = String(awayRow?.team || game?.away || '客隊');
-          const home = String(homeRow?.team || game?.home || '主隊');
-          const factors = [];
-          const seasonHome = predictionPairHomeProbability(Number(awayRow?.pct), Number(homeRow?.pct));
-          if (seasonHome !== null) factors.push({ key:'season', label:'球季戰績', _base:45, homeProbability:seasonHome * 100, detail:`${away} ${(Number(awayRow?.pct || 0) * 100).toFixed(1)}%｜${home} ${(Number(homeRow?.pct || 0) * 100).toFixed(1)}%` });
-          const recentHome = predictionPairHomeProbability(Number(awayRow?.last10Pct), Number(homeRow?.last10Pct));
-          if (recentHome !== null) factors.push({ key:'recent', label:'近10場', _base:20, homeProbability:recentHome * 100, detail:`${away} ${Number(awayRow?.last10Wins || 0)}-${Number(awayRow?.last10Losses || 0)}｜${home} ${Number(homeRow?.last10Wins || 0)}-${Number(homeRow?.last10Losses || 0)}` });
-          const venueHome = predictionPairHomeProbability(Number(awayRow?.awayPct), Number(homeRow?.homePct));
-          if (venueHome !== null) factors.push({ key:'venue', label:'主客場表現', _base:10, homeProbability:venueHome * 100, detail:`${away} 客場 ${Number(awayRow?.awayWins || 0)}-${Number(awayRow?.awayLosses || 0)}｜${home} 主場 ${Number(homeRow?.homeWins || 0)}-${Number(homeRow?.homeLosses || 0)}` });
-          const total = factors.reduce((sum, f) => sum + f._base, 0) || 1;
-          const pHome = Math.max(.08, Math.min(.92, factors.reduce((sum, f) => sum + f._base * f.homeProbability / 100, 0) / total));
-          const pAway = 1 - pHome;
-          return {
-            id:String(game?.id || ''), date, time:String(game?.time || ''), venue:String(game?.venue || ''), status:String(game?.status || 'scheduled'),
-            away, home,
-            awayProbability:Number((pAway * 100).toFixed(1)),
-            homeProbability:Number((pHome * 100).toFixed(1)),
-            pick:pHome >= pAway ? home : away,
-            confidence:Number((Math.max(pHome, pAway) * 100).toFixed(1)),
-            factors:factors.map(({ _base, ...f }) => ({ ...f, weight:Number((_base / total * 100).toFixed(1)), homeProbability:Number(f.homeProbability.toFixed(1)) }))
-          };
-        });
-      return {
-        ok:true, league:'MLB', mode:'game', date, games, cache:false,
-        model:{
-          name:'DiamondScope MLB Game Model v1.1',
-          factors:['球季戰績 45%','近10場 20%','主客場表現 10%'],
-          note:'MLB 直接使用官方 standings 的主場／客場 split 與近10場資料，不再逐隊呼叫 team-detail，因此不會走原本容易發生 546 的重型路徑。'
-        }
-      };
-    }
     async function loadPredictionPageData({ force=false } = {}) {
       const key = predictionKey();
       if (predictionLoading.has(key)) return;
@@ -708,14 +665,25 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         const mode = predictionUiState.mode;
         const date = predictionDate();
         let data;
-        if (mode === 'game' && league === 'MLB') {
-          data = await predictionDirectMlbGame(date);
+
+        if (mode === 'postseason') {
+          data = await predictionBuildPostseason(league, date);
         } else {
           data = await predictionPost(PREDICTION_API_URL, {
             appKey:CPBL_APP_KEY, league, mode, date, force
           });
-          if (mode === 'game') data = await predictionRefineVenue(data, league, date);
+          if (league === 'CPBL' && Array.isArray(data?.games)) {
+            data.games = data.games.filter(game => {
+              const text = [
+                game?.away, game?.home, game?.competition,
+                game?.competitionLabel, game?.kindCode
+              ].filter(Boolean).join(' ');
+              return !/二軍|farm|minor/i.test(text);
+            });
+          }
+          data = await predictionRefineVenue(data, league, date);
         }
+
         predictionDataCache.set(key, data);
       } catch (error) {
         predictionErrors.set(key, error instanceof Error ? error.message : String(error));
@@ -724,6 +692,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         if (currentPage === 'prediction') renderPredictionPage();
       }
     }
+
     function bindPredictionEvents() {
       if (!els.predictionPageContent) return;
 
