@@ -91,6 +91,17 @@
             <div id="homeTemplateGrid" class="template-grid home-template-grid"></div>
           </section>
 
+          <button id="homePredictionBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟預測專區">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 18.5 9 13l3.5 3.2L20 7.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.5 7.5H20v4.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="6" cy="7" r="2" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+            </span>
+            <strong>預測專區</strong>
+          </button>
+
           <button id="homeStandingsBtn" class="panel home-standings-entry" type="button" aria-label="開啟戰績排名">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -156,6 +167,21 @@
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
+    </section>
+
+    <section id="predictionPage" class="hidden prediction-page">
+      <div class="prediction-page-top">
+        <button id="predictionBackHomeBtn" class="press-btn prediction-back-home" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel prediction-page-panel">
+        <div class="prediction-page-head">
+          <div>
+            <span class="prediction-page-kicker">PREDICTION</span>
+            <h2>預測專區</h2>
+          </div>
+        </div>
+        <div id="predictionPageContent" class="prediction-page-content" aria-live="polite"></div>
+      </section>
     </section>
 
     <section id="standingsPage" class="hidden standings-page">
