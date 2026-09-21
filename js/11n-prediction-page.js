@@ -1,6 +1,6 @@
 const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     const predictionUiState = {
-      league: ['cpbl','npb','kbo','mlb'].includes(localStorage.getItem('predictionLeague'))
+      league: ['cpbl','npb','kbo'].includes(localStorage.getItem('predictionLeague'))
         ? localStorage.getItem('predictionLeague')
         : 'cpbl',
       mode: ['game','postseason'].includes(localStorage.getItem('predictionMode'))
@@ -37,8 +37,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return {
         cpbl:'中華職棒',
         npb:'日本職棒',
-        kbo:'韓國職棒',
-        mlb:'美國職棒'
+        kbo:'韓國職棒'
       }[predictionUiState.league] || '中華職棒';
     }
 
@@ -47,13 +46,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         central:'央聯',
         pacific:'洋聯',
         regular:'KBO',
-        annual:'全年度',
-        alEast:'美聯東區',
-        alCentral:'美聯中區',
-        alWest:'美聯西區',
-        nlEast:'國聯東區',
-        nlCentral:'國聯中區',
-        nlWest:'國聯西區'
+        annual:'全年度'
       }[String(group || '')] || '';
     }
 
@@ -443,7 +436,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       els.predictionPageContent.querySelectorAll('[data-prediction-league]').forEach(btn => {
         btn.addEventListener('click', () => {
           const league = String(btn.dataset.predictionLeague || '');
-          if (!['cpbl','npb','kbo','mlb'].includes(league)) return;
+          if (!['cpbl','npb','kbo'].includes(league)) return;
           predictionUiState.league = league;
           localStorage.setItem('predictionLeague', league);
           renderPredictionPage();
@@ -477,7 +470,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           ${predictionLeagueButton('中華職棒','cpbl')}
           ${predictionLeagueButton('日本職棒','npb')}
           ${predictionLeagueButton('韓國職棒','kbo')}
-          ${predictionLeagueButton('美國職棒','mlb')}
         </div>
 
         <div class="prediction-mode-controls" aria-label="預測類型">
