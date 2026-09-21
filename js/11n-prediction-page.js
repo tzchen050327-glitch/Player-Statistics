@@ -61,6 +61,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const s = String(status || '').toLowerCase();
       if (s === 'live') return '比賽中';
       if (s === 'suspended') return '暫停';
+      if (s === 'final') return '比賽結束';
       return '未開打';
     }
 
@@ -79,7 +80,108 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       `;
     }
 
-    function predictionGameCard(game) {
+    function predictionHistoryPoints(game) {
+      const source = Array.isArray(game?.history) ? game.history : [];
+      const points = source
+        .map(point => ({
+          ...point,
+          sequence:Number(point?.sequence ?? 0),
+          label:String(point?.label || ''),
+          homeProbability:Math.max(0, Math.min(100, Number(point?.homeProbability) || 0)),
+          awayProbability:Math.max(0, Math.min(100, Number(point?.awayProbability) || 0))
+        }))
+        .filter(point => point.label)
+        .sort((a, b) => a.sequence - b.sequence);
+
+      if (!points.some(point => point.sequence === 0 || point.label === '賽前預測')) {
+        const home = Math.max(0, Math.min(100, Number(game?.pregameHomeProbability ?? game?.homeProbability) || 0));
+        const away = Math.max(0, Math.min(100, Number(game?.pregameAwayProbability ?? game?.awayProbability) || (100 - home)));
+        points.unshift({
+          key:'pregame',
+          sequence:0,
+          label:'賽前預測',
+          homeProbability:home,
+          awayProbability:away,
+          trigger:'pregame'
+        });
+      }
+      return points;
+    }
+
+    function predictionHistoryAxisLabel(label) {
+      const value = String(label || '');
+      if (value === '賽前預測') return value;
+      const match = value.match(/(\d+)局([上下])/);
+      return match ? `${match[1]}${match[2]}` : value;
+    }
+
+    function predictionWinChart(game) {
+      const points = predictionHistoryPoints(game);
+      if (!points.length) return '';
+
+      const away = String(game?.away || '客隊');
+      const home = String(game?.home || '主隊');
+      const width = Math.max(360, 112 + Math.max(0, points.length - 1) * 72);
+      const height = 226;
+      const left = 68;
+      const right = 22;
+      const top = 26;
+      const bottom = 54;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const xFor = index => points.length === 1
+        ? left + plotWidth / 2
+        : left + (plotWidth * index / (points.length - 1));
+      const yFor = probability => top + ((100 - probability) / 100) * plotHeight;
+      const polyline = points.map((point, index) => `${xFor(index).toFixed(1)},${yFor(point.homeProbability).toFixed(1)}`).join(' ');
+      const last = points[points.length - 1];
+      const lastHome = Number(last?.homeProbability || 0);
+      const lastAway = Number(last?.awayProbability || (100 - lastHome));
+
+      const pointSvg = points.map((point, index) => {
+        const x = xFor(index);
+        const y = yFor(point.homeProbability);
+        const axisLabel = escapeHtml(predictionHistoryAxisLabel(point.label));
+        const valueY = y < top + 18 ? y + 20 : y - 9;
+        const current = index === points.length - 1;
+        return `
+          <g class="prediction-chart-point ${current ? 'is-current' : ''}">
+            <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${current ? 5.2 : 4.1}"></circle>
+            <text class="prediction-chart-value" x="${x.toFixed(1)}" y="${valueY.toFixed(1)}" text-anchor="middle">${Number(point.homeProbability).toFixed(1)}%</text>
+            <text class="prediction-chart-x-label" x="${x.toFixed(1)}" y="${height - 20}" text-anchor="middle">${axisLabel}</text>
+          </g>
+        `;
+      }).join('');
+
+      return `
+        <section class="prediction-win-chart" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
+          <div class="prediction-win-chart-head">
+            <div>
+              <strong>勝率走勢</strong>
+              <span>每半局結束更新</span>
+            </div>
+            <div class="prediction-chart-current">
+              <span>目前勝率</span>
+              <b>${escapeHtml(away)} ${lastAway.toFixed(1)}%｜${escapeHtml(home)} ${lastHome.toFixed(1)}%</b>
+            </div>
+          </div>
+          <div class="prediction-chart-scroll">
+            <svg class="prediction-chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img">
+              <line class="prediction-chart-grid" x1="${left}" x2="${width - right}" y1="${top}" y2="${top}"></line>
+              <line class="prediction-chart-midline" x1="${left}" x2="${width - right}" y1="${yFor(50)}" y2="${yFor(50)}"></line>
+              <line class="prediction-chart-grid" x1="${left}" x2="${width - right}" y1="${top + plotHeight}" y2="${top + plotHeight}"></line>
+              <text class="prediction-chart-side-label top" x="8" y="${top + 4}">${escapeHtml(home)} 100%</text>
+              <text class="prediction-chart-mid-label" x="8" y="${yFor(50) + 4}">50%</text>
+              <text class="prediction-chart-side-label bottom" x="8" y="${top + plotHeight + 4}">${escapeHtml(away)} 100%</text>
+              <polyline class="prediction-chart-line" points="${polyline}"></polyline>
+              ${pointSvg}
+            </svg>
+          </div>
+        </section>
+      `;
+    }
+
+    function predictionGameCard(game, index=0, total=1) {
       const away = escapeHtml(game?.away || '客隊');
       const home = escapeHtml(game?.home || '主隊');
       const awayPct = Math.max(0, Math.min(100, Number(game?.awayProbability) || 0));
@@ -126,6 +228,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
               </div>
             `).join('')}
           </div>
+
+          ${predictionWinChart(game)}
+          <div class="prediction-game-page" aria-label="第 ${index + 1} 場，共 ${total} 場">${index + 1} / ${total}</div>
         </article>
       `;
     }
@@ -141,7 +246,22 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           </div>
         `;
       }
-      return `<div class="prediction-game-list">${games.map(predictionGameCard).join('')}</div>`;
+      return `
+        <div class="prediction-game-carousel-shell">
+          <div class="prediction-game-swipe-head">
+            <span>左右滑動切換場次</span>
+            <b data-prediction-carousel-counter>1 / ${games.length}</b>
+          </div>
+          <div class="prediction-game-list" data-prediction-carousel>
+            ${games.map((game, index) => predictionGameCard(game, index, games.length)).join('')}
+          </div>
+          ${games.length > 1 ? `
+            <div class="prediction-carousel-dots" aria-label="場次切換">
+              ${games.map((_, index) => `<button type="button" class="${index === 0 ? 'active' : ''}" data-prediction-slide="${index}" aria-label="第 ${index + 1} 場"></button>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
     }
 
 
@@ -749,6 +869,49 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       els.predictionPageContent.querySelectorAll('[data-prediction-refresh]').forEach(btn => {
         btn.addEventListener('click', () => void loadPredictionPageData({ force:true }));
       });
+
+      const carousel = els.predictionPageContent.querySelector('[data-prediction-carousel]');
+      if (carousel) {
+        const cards = [...carousel.querySelectorAll('.prediction-game-card')];
+        const dots = [...els.predictionPageContent.querySelectorAll('[data-prediction-slide]')];
+        const counter = els.predictionPageContent.querySelector('[data-prediction-carousel-counter]');
+        let scrollFrame = 0;
+        const activeIndex = () => {
+          if (!cards.length) return 0;
+          let best = 0;
+          let distance = Infinity;
+          cards.forEach((card, index) => {
+            const d = Math.abs(card.offsetLeft - carousel.scrollLeft - carousel.offsetLeft);
+            if (d < distance) { distance = d; best = index; }
+          });
+          return best;
+        };
+        const syncCarousel = () => {
+          scrollFrame = 0;
+          const index = activeIndex();
+          dots.forEach((dot, dotIndex) => {
+            dot.classList.toggle('active', dotIndex === index);
+            if (dotIndex === index) dot.setAttribute('aria-current', 'true');
+            else dot.removeAttribute('aria-current');
+          });
+          if (counter) counter.textContent = `${index + 1} / ${cards.length}`;
+        };
+        carousel.addEventListener('scroll', () => {
+          if (scrollFrame) cancelAnimationFrame(scrollFrame);
+          scrollFrame = requestAnimationFrame(syncCarousel);
+        }, { passive:true });
+        dots.forEach((dot, index) => {
+          dot.addEventListener('click', () => {
+            const card = cards[index];
+            if (!card) return;
+            carousel.scrollTo({
+              left:card.offsetLeft - carousel.offsetLeft,
+              behavior:'smooth'
+            });
+          });
+        });
+        syncCarousel();
+      }
     }
 
     function renderPredictionPage() {
