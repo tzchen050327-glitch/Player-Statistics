@@ -121,9 +121,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
-      const width = Math.max(360, 112 + Math.max(0, points.length - 1) * 72);
+      const width = Math.max(410, 145 + Math.max(0, points.length - 1) * 72);
       const height = 226;
-      const left = 68;
+      const left = 108;
       const right = 22;
       const top = 26;
       const bottom = 54;
@@ -881,7 +881,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           let best = 0;
           let distance = Infinity;
           cards.forEach((card, index) => {
-            const d = Math.abs(card.offsetLeft - carousel.scrollLeft - carousel.offsetLeft);
+            const d = Math.abs(card.getBoundingClientRect().left - carousel.getBoundingClientRect().left);
             if (d < distance) { distance = d; best = index; }
           });
           return best;
@@ -905,7 +905,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             const card = cards[index];
             if (!card) return;
             carousel.scrollTo({
-              left:card.offsetLeft - carousel.offsetLeft,
+              left:Math.max(0, card.offsetLeft - (cards[0]?.offsetLeft || 0)),
               behavior:'smooth'
             });
           });
