@@ -56,6 +56,7 @@
         if (Number.isFinite(inning) && inning > 0) return `${inning}局${half}`;
         return '比賽中';
       }
+      // Preserve official postponement/cancellation reasons for every league.
       if (status === 'cancelled' || status === 'postponed') {
         const reason = String(
           game?.postponementReason
