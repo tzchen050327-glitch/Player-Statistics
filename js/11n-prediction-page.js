@@ -19,7 +19,7 @@
           ${predictionLeagueButton('美國職棒','mlb')}
         </div>
 
-        <section class="prediction-workspace">
+        <section class="prediction-workspace" aria-label="今日賽事預測">
           <div class="prediction-workspace-head">
             <div>
               <span>GAME PREDICTION</span>
