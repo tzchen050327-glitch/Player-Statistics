@@ -234,6 +234,179 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       `;
     }
 
+    function predictionNormTeam(value) {
+      return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    async function predictionPost(url, body) {
+      const response = await fetch(url, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify(body)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+      return data;
+    }
+
+    function predictionStandingHit(standing, team) {
+      const target = predictionNormTeam(team);
+      for (const [section, value] of Object.entries(standing || {})) {
+        const rows = Array.isArray(value?.rows) ? value.rows : [];
+        const row = rows.find(item => {
+          const names = [item?.team, item?.sourceTeam].map(predictionNormTeam).filter(Boolean);
+          return names.includes(target);
+        });
+        if (row) return { section, row };
+      }
+      return null;
+    }
+
+    function predictionPairHomeProbability(awayValue, homeValue) {
+      const a = Number(awayValue);
+      const h = Number(homeValue);
+      if (!Number.isFinite(a) || !Number.isFinite(h) || a < 0 || h < 0 || a + h <= 0) return null;
+      return Math.max(.08, Math.min(.92, h / (a + h)));
+    }
+
+    function predictionRecentVenue(detail, team, side) {
+      const rows = Array.isArray(detail?.recent) ? detail.recent : [];
+      let wins = 0, losses = 0, ties = 0;
+      for (const game of rows) {
+        const isSide = side === 'home'
+          ? predictionNormTeam(game?.home) === predictionNormTeam(team)
+          : predictionNormTeam(game?.away) === predictionNormTeam(team);
+        if (!isSide) continue;
+        const result = String(game?.result || '');
+        if (result === 'W') wins++;
+        else if (result === 'L') losses++;
+        else if (result === 'T') ties++;
+      }
+      const games = wins + losses + ties;
+      if (games < 2) return null;
+      return {
+        wins, losses, ties, games,
+        value:(wins + ties * .5 + 1) / (games + 2)
+      };
+    }
+
+    function predictionReweightGame(game, venueFactor=null) {
+      const baseWeights = { season:45, h2h:20, recent:20, venue:10, starter:5 };
+      const factors = (Array.isArray(game?.factors) ? game.factors : [])
+        .filter(f => String(f?.key || '') !== 'home' && String(f?.key || '') !== 'venue')
+        .map(f => ({ ...f, _base:Number(baseWeights[String(f?.key || '')] || 0) }))
+        .filter(f => f._base > 0 && Number.isFinite(Number(f?.homeProbability)));
+      if (venueFactor) factors.push({ ...venueFactor, _base:10 });
+      const total = factors.reduce((sum, f) => sum + f._base, 0);
+      if (!total) return game;
+      const pHome = Math.max(.08, Math.min(.92, factors.reduce((sum, f) => sum + f._base * Number(f.homeProbability) / 100, 0) / total));
+      const pAway = 1 - pHome;
+      const homeName = String(game?.home || '');
+      const awayName = String(game?.away || '');
+      return {
+        ...game,
+        homeProbability:Number((pHome * 100).toFixed(1)),
+        awayProbability:Number((pAway * 100).toFixed(1)),
+        pick:pHome >= pAway ? homeName : awayName,
+        confidence:Number((Math.max(pHome, pAway) * 100).toFixed(1)),
+        factors:factors.map(({ _base, ...f }) => ({ ...f, weight:Number((_base / total * 100).toFixed(1)) }))
+      };
+    }
+
+    async function predictionStandingData(league, date) {
+      const data = await predictionPost(LEAGUE_STANDINGS_API_URL, {
+        appKey:CPBL_APP_KEY, action:'current', league, date
+      });
+      return data?.[String(league || '').toLowerCase()] || {};
+    }
+
+    async function predictionRefineVenue(data, league, date) {
+      if (!data || !Array.isArray(data.games) || !data.games.length) return data;
+      let standing = {};
+      try { standing = await predictionStandingData(league, date); } catch {}
+      const teams = [...new Set(data.games.flatMap(game => [game?.away, game?.home]).filter(Boolean))];
+      const details = new Map();
+      await Promise.all(teams.map(async team => {
+        try {
+          const hit = predictionStandingHit(standing, team);
+          const view = league === 'CPBL' ? 'annual' : league === 'KBO' ? 'regular' : (hit?.section || 'central');
+          const detail = await predictionPost(LEAGUE_TEAM_DETAIL_API_URL, {
+            appKey:CPBL_APP_KEY, league, team, view
+          });
+          details.set(predictionNormTeam(team), detail);
+        } catch {
+          details.set(predictionNormTeam(team), null);
+        }
+      }));
+      data.games = data.games.map(game => {
+        const away = String(game?.away || '');
+        const home = String(game?.home || '');
+        const awaySplit = predictionRecentVenue(details.get(predictionNormTeam(away)), away, 'away');
+        const homeSplit = predictionRecentVenue(details.get(predictionNormTeam(home)), home, 'home');
+        let venueFactor = null;
+        if (awaySplit && homeSplit) {
+          const pHome = predictionPairHomeProbability(awaySplit.value, homeSplit.value);
+          if (pHome !== null) venueFactor = {
+            key:'venue',
+            label:'主客場表現',
+            homeProbability:Number((pHome * 100).toFixed(1)),
+            detail:`${away} 近期客場 ${awaySplit.wins}-${awaySplit.losses}-${awaySplit.ties}｜${home} 近期主場 ${homeSplit.wins}-${homeSplit.losses}-${homeSplit.ties}`
+          };
+        }
+        return predictionReweightGame(game, venueFactor);
+      });
+      data.model = {
+        ...(data.model || {}),
+        name:'DiamondScope Game Model v1.1',
+        factors:['球季戰績 45%','本季對戰 20%（有資料時）','近期狀態 20%','主客場表現 10%（有資料時）','先發投手 5%（有資料時）'],
+        note:'主客場不再固定加成；只使用實際主場／客場表現，樣本不足時直接移除此因子並重新分配權重。'
+      };
+      return data;
+    }
+
+    async function predictionDirectMlbGame(date) {
+      const [standing, daily] = await Promise.all([
+        predictionStandingData('MLB', date),
+        predictionPost(LEAGUE_GAMES_B_API_URL, { appKey:CPBL_APP_KEY, action:'daily-games', league:'MLB', date })
+      ]);
+      const games = (Array.isArray(daily?.games) ? daily.games : [])
+        .filter(game => !['final','cancelled','postponed'].includes(String(game?.status || '').toLowerCase()))
+        .map(game => {
+          const awayHit = predictionStandingHit(standing, game?.away);
+          const homeHit = predictionStandingHit(standing, game?.home);
+          const awayRow = awayHit?.row || {};
+          const homeRow = homeHit?.row || {};
+          const away = String(awayRow?.team || game?.away || '客隊');
+          const home = String(homeRow?.team || game?.home || '主隊');
+          const factors = [];
+          const seasonHome = predictionPairHomeProbability(Number(awayRow?.pct), Number(homeRow?.pct));
+          if (seasonHome !== null) factors.push({ key:'season', label:'球季戰績', _base:45, homeProbability:seasonHome * 100, detail:`${away} ${(Number(awayRow?.pct || 0) * 100).toFixed(1)}%｜${home} ${(Number(homeRow?.pct || 0) * 100).toFixed(1)}%` });
+          const recentHome = predictionPairHomeProbability(Number(awayRow?.last10Pct), Number(homeRow?.last10Pct));
+          if (recentHome !== null) factors.push({ key:'recent', label:'近10場', _base:20, homeProbability:recentHome * 100, detail:`${away} ${Number(awayRow?.last10Wins || 0)}-${Number(awayRow?.last10Losses || 0)}｜${home} ${Number(homeRow?.last10Wins || 0)}-${Number(homeRow?.last10Losses || 0)}` });
+          const venueHome = predictionPairHomeProbability(Number(awayRow?.awayPct), Number(homeRow?.homePct));
+          if (venueHome !== null) factors.push({ key:'venue', label:'主客場表現', _base:10, homeProbability:venueHome * 100, detail:`${away} 客場 ${Number(awayRow?.awayWins || 0)}-${Number(awayRow?.awayLosses || 0)}｜${home} 主場 ${Number(homeRow?.homeWins || 0)}-${Number(homeRow?.homeLosses || 0)}` });
+          const total = factors.reduce((sum, f) => sum + f._base, 0) || 1;
+          const pHome = Math.max(.08, Math.min(.92, factors.reduce((sum, f) => sum + f._base * f.homeProbability / 100, 0) / total));
+          const pAway = 1 - pHome;
+          return {
+            id:String(game?.id || ''), date, time:String(game?.time || ''), venue:String(game?.venue || ''), status:String(game?.status || 'scheduled'),
+            away, home,
+            awayProbability:Number((pAway * 100).toFixed(1)),
+            homeProbability:Number((pHome * 100).toFixed(1)),
+            pick:pHome >= pAway ? home : away,
+            confidence:Number((Math.max(pHome, pAway) * 100).toFixed(1)),
+            factors:factors.map(({ _base, ...f }) => ({ ...f, weight:Number((_base / total * 100).toFixed(1)), homeProbability:Number(f.homeProbability.toFixed(1)) }))
+          };
+        });
+      return {
+        ok:true, league:'MLB', mode:'game', date, games, cache:false,
+        model:{
+          name:'DiamondScope MLB Game Model v1.1',
+          factors:['球季戰績 45%','近10場 20%','主客場表現 10%'],
+          note:'MLB 直接使用官方 standings 的主場／客場 split 與近10場資料，不再逐隊呼叫 team-detail，因此不會走原本容易發生 546 的重型路徑。'
+        }
+      };
+    }
     async function loadPredictionPageData({ force=false } = {}) {
       const key = predictionKey();
       if (predictionLoading.has(key)) return;
@@ -244,19 +417,18 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       if (currentPage === 'prediction') renderPredictionPage();
 
       try {
-        const response = await fetch(PREDICTION_API_URL, {
-          method:'POST',
-          headers:{ 'content-type':'application/json' },
-          body:JSON.stringify({
-            appKey:CPBL_APP_KEY,
-            league:predictionLeagueCode(),
-            mode:predictionUiState.mode,
-            date:predictionDate(),
-            force
-          })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+        const league = predictionLeagueCode();
+        const mode = predictionUiState.mode;
+        const date = predictionDate();
+        let data;
+        if (mode === 'game' && league === 'MLB') {
+          data = await predictionDirectMlbGame(date);
+        } else {
+          data = await predictionPost(PREDICTION_API_URL, {
+            appKey:CPBL_APP_KEY, league, mode, date, force
+          });
+          if (mode === 'game') data = await predictionRefineVenue(data, league, date);
+        }
         predictionDataCache.set(key, data);
       } catch (error) {
         predictionErrors.set(key, error instanceof Error ? error.message : String(error));
@@ -265,7 +437,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         if (currentPage === 'prediction') renderPredictionPage();
       }
     }
-
     function bindPredictionEvents() {
       if (!els.predictionPageContent) return;
 
