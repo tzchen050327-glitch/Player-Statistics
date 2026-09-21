@@ -33,6 +33,7 @@
 11k-cpbl-defense-substitutions.js
 11l-mlb-home-new-york-time.js
 11m-standings-page.js
+11n-prediction-page.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
