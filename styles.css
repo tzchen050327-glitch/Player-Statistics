@@ -6919,7 +6919,7 @@ html[data-theme="dark"] .app-date-today:hover{
 }
 .prediction-controls{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
   padding:5px;
   border:1px solid var(--line);
@@ -7484,7 +7484,7 @@ html[data-theme="dark"] .app-date-today:hover{
 }
 .prediction-stage-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  grid-template-columns:repeat(var(--prediction-stage-count,3),minmax(0,1fr));
   gap:8px;
 }
 .prediction-stage-cell{
@@ -7523,7 +7523,7 @@ html[data-theme="dark"] .app-date-today:hover{
     padding:12px 0;
   }
   .prediction-stage-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(var(--prediction-stage-count,3),minmax(0,1fr));
     gap:7px;
   }
   .prediction-stage-cell{
