@@ -37,7 +37,7 @@ async function getModuleShell() {
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean)
-    .map(name => `./js/${name}`);
+    .map(name => `./js/${name}?v=${encodeURIComponent(CACHE_VERSION)}`);
   if (!modules.length) throw new Error('Module order is empty');
   return modules;
 }
@@ -119,23 +119,27 @@ self.addEventListener('fetch', event => {
   if (isCoreAsset) {
     event.respondWith((async () => {
       const requestedVersion = String(url.searchParams.get('v') || '').trim();
-      const versionMismatch = Boolean(requestedVersion && requestedVersion !== CACHE_VERSION);
+      const cache = await caches.open(CACHE_NAME);
 
-      // A new index.html can be controlled briefly by the previous Service Worker.
-      // Never let an older worker satisfy a newer ?v= request from its stale cache.
-      if (versionMismatch) {
+      // Versioned core assets must be network-first.
+      // Never let an unversioned/stale cached module satisfy a newer ?v= request.
+      if (requestedVersion) {
         try {
-          return await fetch(request, { cache:'no-store' });
-        } catch {
-          return Response.error();
-        }
+          const response = await fetch(request, { cache:'no-store' });
+          if (response?.ok) {
+            cache.put(request, response.clone()).catch(() => {});
+            return response;
+          }
+        } catch {}
+        const exact = await cache.match(request);
+        if (exact) return exact;
+        return Response.error();
       }
 
-      const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(request, { ignoreSearch:true });
+      const cached = await cache.match(request);
       if (cached) return cached;
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache:'no-store' });
         if (response?.ok) {
           cache.put(request, response.clone()).catch(() => {});
           return response;
