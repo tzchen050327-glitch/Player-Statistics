@@ -439,7 +439,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             <strong>${escapeHtml(row?.team || '')}</strong>
             <span>${group ? `${escapeHtml(group)}｜` : ''}${escapeHtml(row?.record || '')}</span>
           </div>
-          <div class="prediction-stage-grid">
+          <div class="prediction-stage-grid" style="--prediction-stage-count:${Math.max(1, metrics.length)}">
             ${metrics.map(metric => {
               const p = Math.max(0, Math.min(100, Number(row?.[metric.key]) || 0));
               return `
