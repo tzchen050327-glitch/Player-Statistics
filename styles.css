@@ -7473,6 +7473,18 @@ html[data-theme="dark"] .app-date-today:hover{
 .prediction-postseason-list-stages{
   padding:0 14px 14px;
 }
+.prediction-postseason-group + .prediction-postseason-group{
+  margin-top:10px;
+}
+.prediction-postseason-group-title{
+  margin:0 14px;
+  padding:11px 0 8px;
+  border-bottom:1px solid var(--line);
+  color:#e9eef5;
+  font-size:13px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
 .prediction-postseason-row-stages{
   display:grid;
   grid-template-columns:minmax(145px,.72fr) minmax(0,2.28fr);
