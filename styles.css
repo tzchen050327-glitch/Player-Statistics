@@ -7383,3 +7383,81 @@ html[data-theme="dark"] .app-date-today:hover{
     flex-direction:column;
   }
 }
+
+
+/* Prediction readability v2 */
+.prediction-postseason-head{
+  color:#d5dfeb;
+  font-size:10px;
+  font-weight:950;
+}
+.prediction-postseason-team strong{
+  color:#f8fbff;
+  font-size:14px;
+  font-weight:950;
+  letter-spacing:.01em;
+}
+.prediction-postseason-team span{
+  color:#c3cfdd;
+  font-size:10px;
+  font-weight:750;
+}
+.prediction-postseason-meter>span{
+  color:#e5ebf2;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.prediction-postseason-row>b{
+  background:transparent !important;
+  font-size:13px;
+  font-weight:950;
+  text-shadow:0 1px 8px rgba(0,0,0,.35);
+}
+.prediction-postseason-track .is-high{background:#d9a529;}
+.prediction-postseason-track .is-mid{background:#aab8c8;}
+.prediction-postseason-track .is-low{background:#d48758;}
+.prediction-postseason-row>b.is-high{
+  color:#ffd15c;
+}
+.prediction-postseason-row>b.is-mid{
+  color:#e5edf6;
+}
+.prediction-postseason-row>b.is-low{
+  color:#ffb07c;
+}
+.prediction-sim-count{
+  color:#d9c58f;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
+.prediction-model-note strong{
+  color:#f7f9fc;
+  font-size:11px;
+}
+.prediction-model-note span{
+  color:#bcc8d6;
+  font-size:10px;
+}
+.prediction-factor-row strong{
+  color:#f5f8fc;
+  font-size:11px;
+  font-weight:900;
+}
+.prediction-factor-row span{
+  color:#bdc9d7;
+  font-size:10px;
+}
+.prediction-factor-row>b{
+  color:#f0c65f;
+  font-size:11px;
+  font-weight:950;
+}
+@media(max-width:600px){
+  .prediction-postseason-team strong{font-size:12.5px;}
+  .prediction-postseason-team span{font-size:9px;}
+  .prediction-postseason-meter>span{font-size:9px;}
+  .prediction-postseason-row>b{font-size:11.5px;}
+  .prediction-postseason-head{font-size:9px;}
+}
