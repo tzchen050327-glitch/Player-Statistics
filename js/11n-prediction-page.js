@@ -10,6 +10,15 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     const predictionDataCache = new Map();
     const predictionLoading = new Set();
     const predictionErrors = new Map();
+    const PREDICTION_HISTORY_SUPABASE_URL = String(SUPABASE_B_FUNCTIONS_BASE || '').replace(/\/functions\/v1\/?$/,'');
+    const PREDICTION_HISTORY_PUBLIC_KEY = 'sb_publishable_uinDyff0LufJDS8WrjoMYw_-W_QO_96';
+    const PREDICTION_SUPABASE_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js';
+    let predictionRealtimeClient = null;
+    let predictionRealtimeChannel = null;
+    let predictionRealtimeTarget = '';
+    let predictionRealtimeLoader = null;
+    let predictionRealtimeReloadTimer = 0;
+    let predictionGameSlideIndex = 0;
 
     function predictionLeagueCode() {
       return String(predictionUiState.league || 'cpbl').toUpperCase();
@@ -121,7 +130,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
-      const width = Math.max(410, 145 + Math.max(0, points.length - 1) * 72);
+      const width = Math.max(340, 145 + Math.max(0, points.length - 1) * 72);
       const height = 226;
       const left = 108;
       const right = 22;
@@ -843,6 +852,101 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       }
     }
 
+    function predictionLoadSupabaseSdk() {
+      if (window.supabase?.createClient) return Promise.resolve(window.supabase);
+      if (predictionRealtimeLoader) return predictionRealtimeLoader;
+      predictionRealtimeLoader = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = PREDICTION_SUPABASE_CDN;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => reject(new Error('Prediction Realtime SDK timeout')), 10000);
+        script.onload = () => {
+          clearTimeout(timer);
+          if (window.supabase?.createClient) resolve(window.supabase);
+          else reject(new Error('Prediction Realtime SDK unavailable'));
+        };
+        script.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error('Prediction Realtime SDK failed to load'));
+        };
+        document.head.appendChild(script);
+      }).catch(error => {
+        predictionRealtimeLoader = null;
+        throw error;
+      });
+      return predictionRealtimeLoader;
+    }
+
+    async function predictionRealtimeGetClient() {
+      if (predictionRealtimeClient) return predictionRealtimeClient;
+      const sdk = await predictionLoadSupabaseSdk();
+      predictionRealtimeClient = sdk.createClient(
+        PREDICTION_HISTORY_SUPABASE_URL,
+        PREDICTION_HISTORY_PUBLIC_KEY,
+        {
+          auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false },
+          realtime:{ params:{ eventsPerSecond:4 } }
+        }
+      );
+      return predictionRealtimeClient;
+    }
+
+    function predictionScheduleRealtimeReload(row) {
+      const league = predictionLeagueCode();
+      const date = predictionDate();
+      if (predictionUiState.mode !== 'game' || currentPage !== 'prediction') return;
+      if (String(row?.league || '').toUpperCase() !== league) return;
+      if (String(row?.game_date || '') !== date) return;
+
+      if (predictionRealtimeReloadTimer) clearTimeout(predictionRealtimeReloadTimer);
+      predictionRealtimeReloadTimer = setTimeout(() => {
+        predictionRealtimeReloadTimer = 0;
+        if (predictionUiState.mode !== 'game' || currentPage !== 'prediction') return;
+        const key = predictionKey();
+        predictionDataCache.delete(key);
+        void loadPredictionPageData({ force:false, silent:true });
+      }, 900);
+    }
+
+    async function predictionStopRealtime() {
+      const old = predictionRealtimeChannel;
+      predictionRealtimeChannel = null;
+      predictionRealtimeTarget = '';
+      if (old && predictionRealtimeClient) {
+        try { await predictionRealtimeClient.removeChannel(old); } catch {}
+      }
+    }
+
+    async function predictionSyncRealtime() {
+      if (predictionUiState.mode !== 'game' || currentPage !== 'prediction') {
+        if (predictionRealtimeChannel) void predictionStopRealtime();
+        return;
+      }
+      const league = predictionLeagueCode();
+      const date = predictionDate();
+      const target = `${league}|${date}`;
+      if (predictionRealtimeChannel && predictionRealtimeTarget === target) return;
+
+      await predictionStopRealtime();
+      predictionRealtimeTarget = target;
+      try {
+        const client = await predictionRealtimeGetClient();
+        if (predictionRealtimeTarget !== target || currentPage !== 'prediction' || predictionUiState.mode !== 'game') return;
+        predictionRealtimeChannel = client
+          .channel(`prediction-history-${league}-${date}-${Math.random().toString(36).slice(2,8)}`)
+          .on('postgres_changes', {
+            event:'*',
+            schema:'public',
+            table:'league_prediction_history',
+            filter:`league=eq.${league}`
+          }, payload => predictionScheduleRealtimeReload(payload?.new || payload?.old || {}))
+          .subscribe();
+      } catch (error) {
+        console.warn('prediction realtime unavailable', error);
+      }
+    }
+
     function bindPredictionEvents() {
       if (!els.predictionPageContent) return;
 
@@ -851,6 +955,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           const league = String(btn.dataset.predictionLeague || '');
           if (!['cpbl','npb','kbo'].includes(league)) return;
           predictionUiState.league = league;
+          predictionGameSlideIndex = 0;
           localStorage.setItem('predictionLeague', league);
           renderPredictionPage();
         });
@@ -861,6 +966,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           const mode = String(btn.dataset.predictionMode || '');
           if (!['game','postseason'].includes(mode)) return;
           predictionUiState.mode = mode;
+          predictionGameSlideIndex = 0;
           localStorage.setItem('predictionMode', mode);
           renderPredictionPage();
         });
@@ -894,6 +1000,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             if (dotIndex === index) dot.setAttribute('aria-current', 'true');
             else dot.removeAttribute('aria-current');
           });
+          predictionGameSlideIndex = index;
           if (counter) counter.textContent = `${index + 1} / ${cards.length}`;
         };
         carousel.addEventListener('scroll', () => {
@@ -910,6 +1017,13 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             });
           });
         });
+        const initialIndex = Math.max(0, Math.min(cards.length - 1, Number(predictionGameSlideIndex) || 0));
+        if (cards[initialIndex]) {
+          carousel.scrollTo({
+            left:Math.max(0, cards[initialIndex].offsetLeft - (cards[0]?.offsetLeft || 0)),
+            behavior:'auto'
+          });
+        }
         syncCarousel();
       }
     }
@@ -937,5 +1051,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       `;
 
       bindPredictionEvents();
+      void predictionSyncRealtime();
       if (!data && !loading && !error) void loadPredictionPageData();
     }
