@@ -468,11 +468,36 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           </div>
         `;
       }
+
+      const npbGroups = predictionUiState.league === 'npb'
+        ? [
+            { key:'pacific', label:'洋聯' },
+            { key:'central', label:'央聯' }
+          ]
+        : null;
+
+      const listHtml = npbGroups
+        ? npbGroups.map(group => {
+            const groupTeams = teams.filter(row => String(row?.group || '') === group.key);
+            if (!groupTeams.length) return '';
+            return `
+              <section class="prediction-postseason-group" aria-label="${group.label}">
+                <div class="prediction-postseason-group-title">${group.label}</div>
+                <div class="prediction-postseason-list prediction-postseason-list-stages">
+                  ${groupTeams.map(row => predictionPostseasonRow(row, metrics)).join('')}
+                </div>
+              </section>
+            `;
+          }).join('')
+        : `
+            <div class="prediction-postseason-list prediction-postseason-list-stages">
+              ${teams.map(row => predictionPostseasonRow(row, metrics)).join('')}
+            </div>
+          `;
+
       return `
         <div class="prediction-postseason-stage-note">依目前戰績模擬例行賽最終排名與各階段資格</div>
-        <div class="prediction-postseason-list prediction-postseason-list-stages">
-          ${teams.map(row => predictionPostseasonRow(row, metrics)).join('')}
-        </div>
+        ${listHtml}
         <div class="prediction-sim-count">Monte Carlo 模擬 ${Number(data?.iterations || 0).toLocaleString()} 次</div>
       `;
     }
