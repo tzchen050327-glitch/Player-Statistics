@@ -10,6 +10,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     const predictionDataCache = new Map();
     const predictionLoading = new Set();
     const predictionErrors = new Map();
+    let predictionLiveTimer = null;
 
     function predictionLeagueCode() {
       return String(predictionUiState.league || 'cpbl').toUpperCase();
@@ -85,7 +86,11 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const awayPct = Math.max(0, Math.min(100, Number(game?.awayProbability) || 0));
       const homePct = Math.max(0, Math.min(100, Number(game?.homeProbability) || 0));
       const factors = Array.isArray(game?.factors) ? game.factors : [];
-      const meta = [game?.time, game?.venue].filter(Boolean).map(escapeHtml).join('｜');
+      const meta = [
+        String(game?.status || '').toLowerCase() === 'live' ? game?.inningLabel : '',
+        game?.time,
+        game?.venue
+      ].filter(Boolean).map(escapeHtml).join('｜');
       return `
         <article class="prediction-game-card">
           <div class="prediction-game-top">
@@ -118,7 +123,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
                   <strong>${escapeHtml(f?.label || '')}</strong>
                   <span>${escapeHtml(f?.detail || '')}</span>
                 </div>
-                <b>${Number(f?.weight || 0).toFixed(1)}%</b>
+                <b>${f?.displayValue ? escapeHtml(f.displayValue) : `${Number(f?.weight || 0).toFixed(1)}%`}</b>
               </div>
             `).join('')}
           </div>
@@ -634,6 +639,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
     async function predictionRefineVenue(data, league, date) {
       if (!data || !Array.isArray(data.games) || !data.games.length) return data;
+      if (league === 'CPBL' && Number(data?.model?.version || 0) >= 2) return data;
       let standing = {};
       try { standing = await predictionStandingData(league, date); } catch {}
       const teams = [...new Set(data.games.flatMap(game => [game?.away, game?.home]).filter(Boolean))];
@@ -676,14 +682,14 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return data;
     }
 
-    async function loadPredictionPageData({ force=false } = {}) {
+    async function loadPredictionPageData({ force=false, silent=false } = {}) {
       const key = predictionKey();
       if (predictionLoading.has(key)) return;
       if (!force && predictionDataCache.has(key)) return;
 
       predictionLoading.add(key);
       predictionErrors.delete(key);
-      if (currentPage === 'prediction') renderPredictionPage();
+      if (!silent && currentPage === 'prediction') renderPredictionPage();
 
       try {
         const league = predictionLeagueCode();
@@ -746,6 +752,36 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       });
     }
 
+    function predictionSyncLiveTimer(data) {
+      if (predictionLiveTimer) {
+        clearInterval(predictionLiveTimer);
+        predictionLiveTimer = null;
+      }
+
+      const today = predictionDate() === localISODate();
+      const cpblGameMode = predictionUiState.league === 'cpbl' && predictionUiState.mode === 'game';
+      const games = Array.isArray(data?.games) ? data.games : [];
+      const hasLive = games.some(game => String(game?.status || '').toLowerCase() === 'live');
+      const hasScheduled = games.some(game => String(game?.status || '').toLowerCase() === 'scheduled');
+
+      if (currentPage !== 'prediction' || !today || !cpblGameMode || (!hasLive && !hasScheduled)) return;
+
+      const intervalMs = hasLive ? 30000 : 120000;
+      predictionLiveTimer = setInterval(() => {
+        if (
+          currentPage !== 'prediction' ||
+          predictionUiState.league !== 'cpbl' ||
+          predictionUiState.mode !== 'game' ||
+          predictionDate() !== localISODate()
+        ) {
+          clearInterval(predictionLiveTimer);
+          predictionLiveTimer = null;
+          return;
+        }
+        void loadPredictionPageData({ force:true, silent:true });
+      }, intervalMs);
+    }
+
     function renderPredictionPage() {
       if (!els.predictionPageContent) return;
       const key = predictionKey();
@@ -769,5 +805,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       `;
 
       bindPredictionEvents();
+      predictionSyncLiveTimer(data);
       if (!data && !loading && !error) void loadPredictionPageData();
     }
