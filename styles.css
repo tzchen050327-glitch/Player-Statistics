@@ -6867,3 +6867,176 @@ html[data-theme="dark"] .app-date-today:hover{
   .prediction-league-btn{padding:7px 4px;font-size:11px;}
   .prediction-workspace{padding:13px;}
 }
+
+
+/* ---------- Prediction hub ---------- */
+.home-prediction-entry{
+  margin-bottom:10px;
+}
+.home-prediction-entry .home-standings-entry-icon{
+  color:#d2a13b;
+}
+.prediction-page{
+  min-height:calc(100vh - 150px);
+}
+.prediction-page-top{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  margin-bottom:12px;
+}
+.prediction-back-home{
+  min-height:40px;
+}
+.prediction-page-panel{
+  min-height:calc(100vh - 220px);
+  padding:18px;
+}
+.prediction-page-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.prediction-page-kicker{
+  display:block;
+  margin-bottom:4px;
+  color:#c7952d;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.prediction-page-head h2{
+  margin:0;
+  color:var(--text);
+  font-size:24px;
+}
+.prediction-page-content{
+  min-height:420px;
+  padding-top:18px;
+}
+.prediction-controls{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  padding:5px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:color-mix(in srgb,var(--panel) 88%,var(--bg));
+}
+.prediction-league-btn{
+  min-height:42px;
+  padding:8px 12px;
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  color:var(--muted);
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+}
+.prediction-league-btn:hover{
+  border-color:var(--line);
+  color:var(--text);
+}
+.prediction-league-btn.active{
+  color:#fff8e8;
+  border-color:#ad7d18;
+  background:linear-gradient(180deg,#a67817 0%,#79540b 100%);
+}
+.prediction-workspace{
+  margin-top:14px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+}
+.prediction-workspace-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 16px;
+  border-bottom:1px solid var(--line);
+}
+.prediction-workspace-head>div{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.prediction-workspace-head>div>span{
+  color:#c7952d;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+.prediction-workspace-head strong{
+  color:var(--text);
+  font-size:18px;
+}
+.prediction-stage-badge{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border:1px solid #81611f;
+  border-radius:999px;
+  color:#ddb24f;
+  font-size:10px;
+  font-weight:900;
+}
+.prediction-empty-state{
+  min-height:260px;
+  padding:44px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+}
+.prediction-empty-icon{
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  margin-bottom:3px;
+  border:1px solid #85651f;
+  border-radius:14px;
+  color:#d5a73d;
+}
+.prediction-empty-icon svg{
+  width:25px;
+  height:25px;
+}
+.prediction-empty-state strong{
+  color:var(--text);
+  font-size:16px;
+}
+.prediction-empty-state span{
+  max-width:560px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.65;
+}
+@media(max-width:760px){
+  .prediction-page-panel{
+    min-height:calc(100vh - 190px);
+    padding:14px;
+  }
+  .prediction-page-content{
+    min-height:360px;
+    padding-top:14px;
+  }
+  .prediction-controls{
+    gap:5px;
+    padding:4px;
+  }
+  .prediction-league-btn{
+    min-height:39px;
+    padding:7px 6px;
+    font-size:11px;
+  }
+  .prediction-page-head h2{font-size:23px;}
+}
