@@ -140,44 +140,338 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return `<div class="prediction-game-list">${games.map(predictionGameCard).join('')}</div>`;
     }
 
-    function predictionPostseasonRow(row) {
-      const p = Math.max(0, Math.min(100, Number(row?.probability) || 0));
+
+    function predictionHash(text) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < String(text || '').length; i += 1) {
+        h ^= String(text)[i].charCodeAt(0);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    function predictionRng(seed) {
+      let x = Number(seed) || 123456789;
+      return () => {
+        x ^= x << 13;
+        x ^= x >>> 17;
+        x ^= x << 5;
+        return (x >>> 0) / 4294967296;
+      };
+    }
+
+    function predictionRowStrength(row) {
+      const wins = Number(row?.wins || 0);
+      const losses = Number(row?.losses || 0);
+      const played = wins + losses;
+      const raw = played > 0 ? wins / played : .5;
+      return Math.max(.28, Math.min(.72, .5 + (raw - .5) * .82));
+    }
+
+    function predictionRankRows(rows) {
+      return [...rows].sort((a, b) => {
+        const ap = Number(a?.pct || 0);
+        const bp = Number(b?.pct || 0);
+        if (bp !== ap) return bp - ap;
+        if (Number(b?.wins || 0) !== Number(a?.wins || 0)) return Number(b?.wins || 0) - Number(a?.wins || 0);
+        if (Number(a?.losses || 0) !== Number(b?.losses || 0)) return Number(a?.losses || 0) - Number(b?.losses || 0);
+        return Number(a?.currentRank || 99) - Number(b?.currentRank || 99);
+      });
+    }
+
+    function predictionSimRow(row, totalGames, rng) {
+      let wins = Number(row?.wins || 0);
+      let losses = Number(row?.losses || 0);
+      const ties = Number(row?.ties || 0);
+      const games = Number(row?.games || (wins + losses + ties));
+      const remaining = Math.max(0, Number(totalGames || 0) - games);
+      const strength = predictionRowStrength(row);
+      for (let i = 0; i < remaining; i += 1) {
+        if (rng() < strength) wins += 1;
+        else losses += 1;
+      }
+      return {
+        team:String(row?.team || ''),
+        wins,
+        losses,
+        ties,
+        pct:(wins + losses) > 0 ? wins / (wins + losses) : .5,
+        currentRank:Number(row?.rank || 99)
+      };
+    }
+
+    function predictionRows(section) {
+      return Array.isArray(section?.rows) ? section.rows : [];
+    }
+
+    function predictionPercent(count, iterations) {
+      return Number(((Number(count || 0) / Math.max(1, Number(iterations || 1))) * 100).toFixed(1));
+    }
+
+    function predictionCurrentRecord(row) {
+      return `${Number(row?.wins || 0)}-${Number(row?.losses || 0)}-${Number(row?.ties || 0)}`;
+    }
+
+    function predictionCpblStages(standing, date, iterations=5000) {
+      const firstRows = predictionRows(standing?.first);
+      const secondRows = predictionRows(standing?.second);
+      const annualRows = predictionRows(standing?.annual);
+      const teams = annualRows.map(row => String(row?.team || '')).filter(Boolean);
+      const counts = new Map(teams.map(team => [team, { half:0, postseason:0, direct:0 }]));
+      const secondStarted = secondRows.some(row => Number(row?.games || 0) > 0);
+      const activeHalf = secondStarted ? 'second' : 'first';
+      const activeLabel = secondStarted ? '下半季冠軍' : '上半季冠軍';
+      const rng = predictionRng(predictionHash(`CPBL|${date}|${JSON.stringify(standing)}`));
+
+      for (let sim = 0; sim < iterations; sim += 1) {
+        const firstFinal = [];
+        const secondFinal = [];
+        const annualFinal = [];
+
+        for (const annual of annualRows) {
+          const team = String(annual?.team || '');
+          const first = firstRows.find(row => String(row?.team || '') === team) || { team, wins:0, losses:0, ties:0, games:0, rank:99 };
+          const second = secondRows.find(row => String(row?.team || '') === team) || { team, wins:0, losses:0, ties:0, games:0, rank:99 };
+          const strength = predictionRowStrength(annual);
+
+          let fw = Number(first?.wins || 0), fl = Number(first?.losses || 0);
+          let sw = Number(second?.wins || 0), sl = Number(second?.losses || 0);
+          let aw = Number(annual?.wins || 0), al = Number(annual?.losses || 0);
+
+          const firstRemaining = Math.max(0, 60 - Number(first?.games || (fw + fl + Number(first?.ties || 0))));
+          const secondRemaining = Math.max(0, 60 - Number(second?.games || (sw + sl + Number(second?.ties || 0))));
+
+          for (let i = 0; i < firstRemaining; i += 1) {
+            if (rng() < strength) { fw += 1; aw += 1; }
+            else { fl += 1; al += 1; }
+          }
+          for (let i = 0; i < secondRemaining; i += 1) {
+            if (rng() < strength) { sw += 1; aw += 1; }
+            else { sl += 1; al += 1; }
+          }
+
+          firstFinal.push({ team, wins:fw, losses:fl, pct:(fw + fl) ? fw / (fw + fl) : .5, currentRank:Number(first?.rank || 99) });
+          secondFinal.push({ team, wins:sw, losses:sl, pct:(sw + sl) ? sw / (sw + sl) : .5, currentRank:Number(second?.rank || 99) });
+          annualFinal.push({ team, wins:aw, losses:al, pct:(aw + al) ? aw / (aw + al) : .5, currentRank:Number(annual?.rank || 99) });
+        }
+
+        const firstRank = predictionRankRows(firstFinal);
+        const secondRank = predictionRankRows(secondFinal);
+        const annualRank = predictionRankRows(annualFinal);
+        const firstChampion = firstRank[0]?.team || '';
+        const secondChampion = secondRank[0]?.team || '';
+        const activeChampion = activeHalf === 'second' ? secondChampion : firstChampion;
+        if (activeChampion && counts.has(activeChampion)) counts.get(activeChampion).half += 1;
+
+        const qualified = new Set();
+        let direct = '';
+
+        if (firstChampion && secondChampion && firstChampion !== secondChampion) {
+          qualified.add(firstChampion);
+          qualified.add(secondChampion);
+          const f = annualRank.find(row => row.team === firstChampion);
+          const s = annualRank.find(row => row.team === secondChampion);
+          if (f && s) {
+            if (f.pct === s.pct) direct = rng() < .5 ? firstChampion : secondChampion;
+            else direct = f.pct > s.pct ? firstChampion : secondChampion;
+          }
+          const extra = annualRank.find(row => !qualified.has(row.team));
+          if (extra) qualified.add(extra.team);
+        } else {
+          annualRank.slice(0, 3).forEach(row => qualified.add(row.team));
+          direct = annualRank[0]?.team || '';
+        }
+
+        qualified.forEach(team => {
+          if (counts.has(team)) counts.get(team).postseason += 1;
+        });
+        if (direct && counts.has(direct)) counts.get(direct).direct += 1;
+      }
+
+      return {
+        ok:true,
+        league:'CPBL',
+        mode:'postseason',
+        date,
+        iterations,
+        activeHalf,
+        stageMetrics:[
+          { key:'halfTitleProbability', label:activeLabel },
+          { key:'postseasonProbability', label:'進季後賽' },
+          { key:'directFinalProbability', label:'直進台灣大賽' }
+        ],
+        teams:annualRows.map(row => {
+          const team = String(row?.team || '');
+          const count = counts.get(team) || {};
+          return {
+            team,
+            group:'annual',
+            record:predictionCurrentRecord(row),
+            rank:Number(row?.rank || 99),
+            halfTitleProbability:predictionPercent(count.half, iterations),
+            postseasonProbability:predictionPercent(count.postseason, iterations),
+            directFinalProbability:predictionPercent(count.direct, iterations)
+          };
+        }).sort((a,b) => b.postseasonProbability - a.postseasonProbability || b.directFinalProbability - a.directFinalProbability || a.rank - b.rank),
+        model:{
+          name:'DiamondScope CPBL Postseason Model v2',
+          note:`同時模擬上、下半季與全年戰績；「${activeLabel}」會直接納入季後賽與台灣大賽資格判定。`
+        }
+      };
+    }
+
+    function predictionNpbStages(standing, date, iterations=5000) {
+      const sections = ['central','pacific'];
+      const allRows = sections.flatMap(section => predictionRows(standing?.[section]).map(row => ({ ...row, _group:section })));
+      const counts = new Map(allRows.map(row => [String(row?.team || ''), { cs:0, first:0, final:0 }]));
+      const rng = predictionRng(predictionHash(`NPB|${date}|${JSON.stringify(standing)}`));
+
+      for (let sim = 0; sim < iterations; sim += 1) {
+        for (const section of sections) {
+          const rows = predictionRows(standing?.[section]);
+          const ranked = predictionRankRows(rows.map(row => predictionSimRow(row, 143, rng)));
+          ranked.slice(0,3).forEach((row,index) => {
+            const count = counts.get(row.team);
+            if (!count) return;
+            count.cs += 1;
+            if (index === 0) count.final += 1;
+            else count.first += 1;
+          });
+        }
+      }
+
+      return {
+        ok:true,
+        league:'NPB',
+        mode:'postseason',
+        date,
+        iterations,
+        stageMetrics:[
+          { key:'postseasonProbability', label:'進CS' },
+          { key:'firstStageProbability', label:'CS首輪' },
+          { key:'finalStageProbability', label:'直進Final Stage' }
+        ],
+        teams:allRows.map(row => {
+          const team = String(row?.team || '');
+          const count = counts.get(team) || {};
+          return {
+            team,
+            group:row._group,
+            record:predictionCurrentRecord(row),
+            rank:Number(row?.rank || 99),
+            postseasonProbability:predictionPercent(count.cs, iterations),
+            firstStageProbability:predictionPercent(count.first, iterations),
+            finalStageProbability:predictionPercent(count.final, iterations)
+          };
+        }).sort((a,b) => b.postseasonProbability - a.postseasonProbability || b.finalStageProbability - a.finalStageProbability || a.rank - b.rank),
+        model:{
+          name:'DiamondScope NPB Postseason Model v2',
+          note:'央聯、洋聯分開模擬；聯盟第1直接進CS Final Stage，第2、3名進CS首輪。'
+        }
+      };
+    }
+
+    function predictionKboStages(standing, date, iterations=5000) {
+      const rows = predictionRows(standing?.regular);
+      const counts = new Map(rows.map(row => [String(row?.team || ''), { postseason:0, wildcard:0, semi:0, playoff:0, final:0 }]));
+      const rng = predictionRng(predictionHash(`KBO|${date}|${JSON.stringify(standing)}`));
+
+      for (let sim = 0; sim < iterations; sim += 1) {
+        const ranked = predictionRankRows(rows.map(row => predictionSimRow(row, 144, rng)));
+        ranked.slice(0,5).forEach((row,index) => {
+          const count = counts.get(row.team);
+          if (!count) return;
+          count.postseason += 1;
+          if (index === 0) count.final += 1;
+          else if (index === 1) count.playoff += 1;
+          else if (index === 2) count.semi += 1;
+          else count.wildcard += 1;
+        });
+      }
+
+      return {
+        ok:true,
+        league:'KBO',
+        mode:'postseason',
+        date,
+        iterations,
+        stageMetrics:[
+          { key:'postseasonProbability', label:'進季後賽' },
+          { key:'wildCardProbability', label:'外卡戰' },
+          { key:'semiPlayoffProbability', label:'直進準附加賽' },
+          { key:'playoffProbability', label:'直進附加賽' },
+          { key:'directFinalProbability', label:'直進韓國大賽' }
+        ],
+        teams:rows.map(row => {
+          const team = String(row?.team || '');
+          const count = counts.get(team) || {};
+          return {
+            team,
+            group:'regular',
+            record:predictionCurrentRecord(row),
+            rank:Number(row?.rank || 99),
+            postseasonProbability:predictionPercent(count.postseason, iterations),
+            wildCardProbability:predictionPercent(count.wildcard, iterations),
+            semiPlayoffProbability:predictionPercent(count.semi, iterations),
+            playoffProbability:predictionPercent(count.playoff, iterations),
+            directFinalProbability:predictionPercent(count.final, iterations)
+          };
+        }).sort((a,b) => b.postseasonProbability - a.postseasonProbability || b.directFinalProbability - a.directFinalProbability || a.rank - b.rank),
+        model:{
+          name:'DiamondScope KBO Postseason Model v2',
+          note:'依例行賽最終名次拆分外卡、準附加賽、附加賽與直接進韓國大賽的機率。'
+        }
+      };
+    }
+
+    async function predictionBuildPostseason(league, date) {
+      const standing = await predictionStandingData(league, date);
+      if (league === 'CPBL') return predictionCpblStages(standing, date);
+      if (league === 'NPB') return predictionNpbStages(standing, date);
+      return predictionKboStages(standing, date);
+    }
+
+    function predictionPostseasonRow(row, metrics) {
       const group = predictionGroupLabel(row?.group);
       return `
-        <div class="prediction-postseason-row">
+        <div class="prediction-postseason-row prediction-postseason-row-stages">
           <div class="prediction-postseason-team">
             <strong>${escapeHtml(row?.team || '')}</strong>
-            <span>${group ? `${escapeHtml(group)}｜` : ''}${escapeHtml(row?.record || '')}${row?.firstHalfChampion ? '｜上半季冠軍' : ''}</span>
+            <span>${group ? `${escapeHtml(group)}｜` : ''}${escapeHtml(row?.record || '')}</span>
           </div>
-          <div class="prediction-postseason-meter">
-            <div class="prediction-postseason-track">
-              <span class="${predictionPctClass(p)}" style="width:${p}%"></span>
-            </div>
-            <span>${escapeHtml(row?.status || '')}</span>
+          <div class="prediction-stage-grid">
+            ${metrics.map(metric => {
+              const p = Math.max(0, Math.min(100, Number(row?.[metric.key]) || 0));
+              return `
+                <div class="prediction-stage-cell">
+                  <span>${escapeHtml(metric.label)}</span>
+                  <b class="${predictionPctClass(p)}">${p.toFixed(1)}%</b>
+                  <div class="prediction-postseason-track" aria-hidden="true">
+                    <span class="${predictionPctClass(p)}" style="width:${p}%"></span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
-          <b class="${predictionPctClass(p)}">${p.toFixed(1)}%</b>
         </div>
       `;
     }
 
     function predictionPostseasonContent(data) {
       const teams = Array.isArray(data?.teams) ? data.teams : [];
-      if (!teams.length) {
+      const metrics = Array.isArray(data?.stageMetrics) ? data.stageMetrics : [];
+      if (!teams.length || !metrics.length) {
         return `
           <div class="prediction-empty-state">
             <strong>目前沒有季後賽模擬資料</strong>
-            <span>戰績資料建立後會自動產生季後賽機率。</span>
+            <span>戰績資料建立後會自動產生各階段晉級機率。</span>
           </div>
         `;
       }
       return `
-        <div class="prediction-postseason-head">
-          <span>球隊</span>
-          <span>模型狀態</span>
-          <span>季後賽機率</span>
-        </div>
-        <div class="prediction-postseason-list">
-          ${teams.map(predictionPostseasonRow).join('')}
+        <div class="prediction-postseason-stage-note">依目前戰績模擬例行賽最終排名與各階段資格</div>
+        <div class="prediction-postseason-list prediction-postseason-list-stages">
+          ${teams.map(row => predictionPostseasonRow(row, metrics)).join('')}
         </div>
         <div class="prediction-sim-count">Monte Carlo 模擬 ${Number(data?.iterations || 0).toLocaleString()} 次</div>
       `;
