@@ -533,3 +533,65 @@ html[data-theme="dark"] .home-game-status.is-lineup-ready{
   color:#c9ddff !important;
   box-shadow:0 2px 9px rgba(27,20,57,.34),inset 0 1px 0 rgba(190,211,255,.08) !important;
 }
+
+
+/* Prediction page */
+html[data-theme="dark"] .prediction-page-panel{
+  border-color:#34383e !important;
+  background:linear-gradient(180deg,#111419 0%,#0d1014 100%) !important;
+}
+html[data-theme="dark"] .prediction-page-head{
+  border-bottom-color:#343028 !important;
+}
+html[data-theme="dark"] .prediction-page-kicker{
+  color:#d7ad48 !important;
+}
+html[data-theme="dark"] .prediction-page-head h2{
+  color:#f3ead8 !important;
+}
+html[data-theme="dark"] .prediction-controls{
+  border-color:#343941 !important;
+  background:#0f1216 !important;
+}
+html[data-theme="dark"] .prediction-league-btn{
+  color:#9ca8b7 !important;
+}
+html[data-theme="dark"] .prediction-league-btn:hover{
+  border-color:#4a4230 !important;
+  background:#17191d !important;
+  color:#f0e7d5 !important;
+}
+html[data-theme="dark"] .prediction-league-btn.active{
+  border-color:#a97d22 !important;
+  background:linear-gradient(180deg,#8a6418 0%,#6d4c0d 100%) !important;
+  color:#fff3d4 !important;
+}
+html[data-theme="dark"] .prediction-workspace{
+  border-color:#343941 !important;
+  background:#111419 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .prediction-workspace-head{
+  border-bottom-color:#343941 !important;
+}
+html[data-theme="dark"] .prediction-workspace-head>div>span{
+  color:#d0a94f !important;
+}
+html[data-theme="dark"] .prediction-workspace-head strong{
+  color:#f3ead8 !important;
+}
+html[data-theme="dark"] .prediction-stage-badge{
+  border-color:#5a4923 !important;
+  background:#211b11 !important;
+  color:#e6bd5a !important;
+}
+html[data-theme="dark"] .prediction-empty-icon{
+  background:#211b11 !important;
+  color:#e0b653 !important;
+}
+html[data-theme="dark"] .prediction-empty-state strong{
+  color:#f3ead8 !important;
+}
+html[data-theme="dark"] .prediction-empty-state>span{
+  color:#9ca8b7 !important;
+}
