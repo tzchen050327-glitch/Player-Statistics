@@ -56,7 +56,11 @@
         if (Number.isFinite(inning) && inning > 0) return `${inning}局${half}`;
         return '比賽中';
       }
-      if (status === 'cancelled') return '取消／延期';
+      if (status === 'cancelled') {
+        const reason = String(game?.postponementReason || '').trim();
+        if (reason) return reason;
+        return league === 'NPB' ? '延賽' : '取消／延期';
+      }
       if ((league === 'CPBL' || league === 'NPB') && game?.lineupReady) return '先發打序';
       return String(game?.time || '').trim() || '未開打';
     };
