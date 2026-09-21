@@ -6753,7 +6753,7 @@ html[data-theme="dark"] .app-date-today:hover{
 }
 .prediction-controls{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
   padding:5px;
   border:1px solid #dbe3ec;
@@ -6863,7 +6863,7 @@ html[data-theme="dark"] .app-date-today:hover{
     padding:14px;
   }
   .prediction-page-content{min-height:360px;}
-  .prediction-controls{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .prediction-controls{grid-template-columns:repeat(3,minmax(0,1fr));}
   .prediction-league-btn{padding:7px 4px;font-size:11px;}
   .prediction-workspace{padding:13px;}
 }
@@ -7460,4 +7460,80 @@ html[data-theme="dark"] .app-date-today:hover{
   .prediction-postseason-meter>span{font-size:9px;}
   .prediction-postseason-row>b{font-size:11.5px;}
   .prediction-postseason-head{font-size:9px;}
+}
+
+
+/* Prediction postseason stages v3 */
+.prediction-postseason-stage-note{
+  padding:12px 14px 4px;
+  color:#c7d1dc;
+  font-size:10px;
+  font-weight:800;
+}
+.prediction-postseason-list-stages{
+  padding:0 14px 14px;
+}
+.prediction-postseason-row-stages{
+  display:grid;
+  grid-template-columns:minmax(145px,.72fr) minmax(0,2.28fr);
+  gap:16px;
+  align-items:center;
+  min-height:82px;
+  padding:13px 0;
+  border-top:1px solid var(--line);
+}
+.prediction-stage-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  gap:8px;
+}
+.prediction-stage-cell{
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid rgba(151,165,181,.22);
+  border-radius:11px;
+  background:rgba(255,255,255,.025);
+}
+.prediction-stage-cell>span{
+  display:block;
+  min-height:26px;
+  margin-bottom:4px;
+  color:#c6d1dd;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.35;
+}
+.prediction-stage-cell>b{
+  display:block;
+  margin-bottom:7px;
+  font-size:15px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-stage-cell>b.is-high{color:#ffd15c;}
+.prediction-stage-cell>b.is-mid{color:#e5edf6;}
+.prediction-stage-cell>b.is-low{color:#ffb07c;}
+.prediction-stage-cell .prediction-postseason-track{
+  height:6px;
+}
+@media(max-width:760px){
+  .prediction-postseason-row-stages{
+    grid-template-columns:1fr;
+    gap:9px;
+    padding:12px 0;
+  }
+  .prediction-stage-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .prediction-stage-cell{
+    padding:8px;
+  }
+  .prediction-stage-cell>span{
+    min-height:24px;
+    font-size:8.5px;
+  }
+  .prediction-stage-cell>b{
+    font-size:13px;
+  }
 }
