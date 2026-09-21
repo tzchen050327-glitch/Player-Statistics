@@ -1,7 +1,7 @@
 {
-  "name": "球員戰績圖片",
-  "short_name": "球員戰績",
-  "description": "球員逐打席與投球戰績圖片產生器",
+  "name": "DiamondScope｜棒球視界",
+  "short_name": "DiamondScope",
+  "description": "棒球即時比分、球員數據、戰績排名與預測分析平台",
   "lang": "zh-Hant-TW",
   "start_url": "./index.html?v=v5.14",
   "scope": "./",
