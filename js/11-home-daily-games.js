@@ -211,7 +211,11 @@
       const league = homeDailyGamesLeague();
       if (status === 'final') return '已結束';
       if (status === 'live') return String(game?.inningLabel || '').trim() || '比賽中';
-      if (status === 'cancelled') return league === 'NPB' ? (String(game?.postponementReason || '').trim() || '延賽') : '取消／延期';
+      if (status === 'cancelled') {
+        const reason = String(game?.postponementReason || '').trim();
+        if (reason) return reason;
+        return league === 'NPB' ? '延賽' : '取消／延期';
+      }
       if ((league === 'CPBL' || league === 'NPB') && game?.lineupReady) return '先發打序';
       return String(game?.time || '').trim() || '未開打';
     }
