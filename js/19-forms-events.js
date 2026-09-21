@@ -955,6 +955,18 @@
       }
     });
 
+    els.homePredictionBtn?.addEventListener('click', () => {
+      currentPage = 'prediction';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.predictionBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
     els.homeStandingsBtn?.addEventListener('click', () => {
       currentPage = 'standings';
       renderAll();
