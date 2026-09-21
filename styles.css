@@ -7087,3 +7087,299 @@ html[data-theme="dark"] .app-date-today:hover{
     font-size:12px;
   }
 }
+
+
+/* Prediction results v1 */
+.prediction-workspace-head small{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+.prediction-game-list{
+  display:grid;
+  gap:12px;
+  padding:14px;
+}
+.prediction-game-card{
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 94%,var(--bg));
+}
+.prediction-game-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+.prediction-game-top>div{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.prediction-game-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:22px;
+  padding:4px 7px;
+  border:1px solid #765d22;
+  border-radius:999px;
+  color:#ddb24f;
+  font-size:9px;
+  font-weight:950;
+}
+.prediction-game-meta{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+.prediction-pick-badge{
+  flex:0 0 auto;
+  padding:6px 8px;
+  border:1px solid #7e611f;
+  border-radius:999px;
+  color:#e5bb55;
+  font-size:10px;
+  font-weight:950;
+}
+.prediction-matchup{
+  display:grid;
+  gap:8px;
+}
+.prediction-team-line{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.prediction-team-line strong{
+  color:var(--text);
+  font-size:14px;
+}
+.prediction-team-line b{
+  color:#dcb151;
+  font-size:15px;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-probability-track{
+  width:100%;
+  height:10px;
+  display:flex;
+  overflow:hidden;
+  border-radius:999px;
+  background:#1a2129;
+}
+.prediction-probability-away{
+  display:block;
+  height:100%;
+  background:#6d7f91;
+}
+.prediction-probability-home{
+  display:block;
+  height:100%;
+  background:#b18425;
+}
+.prediction-factor-list{
+  display:grid;
+  gap:6px;
+  margin-top:13px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.prediction-factor-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+}
+.prediction-factor-row>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.prediction-factor-row strong{
+  color:var(--text);
+  font-size:10px;
+}
+.prediction-factor-row span{
+  overflow:hidden;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.4;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-factor-row>b{
+  color:#d6a94a;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-postseason-head,
+.prediction-postseason-row{
+  display:grid;
+  grid-template-columns:minmax(130px,1fr) minmax(120px,1fr) 82px;
+  gap:12px;
+  align-items:center;
+}
+.prediction-postseason-head{
+  padding:10px 14px 8px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:900;
+}
+.prediction-postseason-head span:last-child{text-align:right;}
+.prediction-postseason-list{
+  padding:0 14px 14px;
+}
+.prediction-postseason-row{
+  min-height:58px;
+  padding:10px 0;
+  border-top:1px solid var(--line);
+}
+.prediction-postseason-team{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.prediction-postseason-team strong{
+  color:var(--text);
+  font-size:12px;
+}
+.prediction-postseason-team span{
+  color:var(--muted);
+  font-size:9px;
+}
+.prediction-postseason-meter{
+  display:grid;
+  grid-template-columns:minmax(60px,1fr) auto;
+  gap:8px;
+  align-items:center;
+}
+.prediction-postseason-meter>span{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+}
+.prediction-postseason-track{
+  height:7px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#1c232b;
+}
+.prediction-postseason-track>span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+}
+.prediction-postseason-row>b{
+  text-align:right;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-postseason-track .is-high,
+.prediction-postseason-row>b.is-high{background:#b98a27;color:#e9bf5c;}
+.prediction-postseason-track .is-mid,
+.prediction-postseason-row>b.is-mid{background:#7f8fa0;color:#c9d4df;}
+.prediction-postseason-track .is-low,
+.prediction-postseason-row>b.is-low{background:#a66e4b;color:#d69a74;}
+.prediction-sim-count{
+  padding:0 14px 14px;
+  color:var(--muted);
+  font-size:9px;
+  text-align:right;
+}
+.prediction-model-note{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px 14px;
+  border-top:1px solid var(--line);
+}
+.prediction-model-note>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.prediction-model-note strong{
+  color:var(--text);
+  font-size:10px;
+}
+.prediction-model-note span{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.45;
+}
+.prediction-refresh-btn{
+  flex:0 0 auto;
+  min-height:30px;
+  padding:5px 9px;
+  border:1px solid #80631f;
+  border-radius:9px;
+  background:transparent;
+  color:#d9ad4a;
+  font:inherit;
+  font-size:9px;
+  font-weight:900;
+}
+.prediction-loading-state,
+.prediction-error-state{
+  min-height:220px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:24px;
+  text-align:center;
+}
+.prediction-loading-state strong,
+.prediction-error-state strong{
+  color:var(--text);
+  font-size:13px;
+}
+.prediction-error-state span{
+  max-width:520px;
+  color:var(--muted);
+  font-size:10px;
+}
+.prediction-loading-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#d6a94a;
+  box-shadow:0 0 0 4px rgba(214,169,74,.14);
+  animation:predictionPulse 1.1s ease-in-out infinite;
+}
+@keyframes predictionPulse{
+  0%,100%{opacity:.45;transform:scale(.9)}
+  50%{opacity:1;transform:scale(1.08)}
+}
+@media(max-width:600px){
+  .prediction-game-top{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .prediction-pick-badge{align-self:flex-start;}
+  .prediction-postseason-head,
+  .prediction-postseason-row{
+    grid-template-columns:minmax(105px,1fr) minmax(90px,.9fr) 62px;
+    gap:7px;
+  }
+  .prediction-postseason-head{padding-left:10px;padding-right:10px;}
+  .prediction-postseason-list{padding-left:10px;padding-right:10px;}
+  .prediction-postseason-team strong{font-size:10.5px;}
+  .prediction-postseason-team span,
+  .prediction-postseason-meter>span{font-size:8px;}
+  .prediction-postseason-row>b{font-size:10px;}
+  .prediction-model-note{
+    flex-direction:column;
+  }
+}
