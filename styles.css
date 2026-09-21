@@ -7040,3 +7040,50 @@ html[data-theme="dark"] .app-date-today:hover{
   }
   .prediction-page-head h2{font-size:23px;}
 }
+
+
+/* Prediction mode switch */
+.prediction-mode-controls{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+  padding:5px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:color-mix(in srgb,var(--panel) 88%,var(--bg));
+}
+.prediction-mode-btn{
+  min-height:42px;
+  padding:8px 12px;
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  color:var(--muted);
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease;
+}
+.prediction-mode-btn:hover{
+  border-color:var(--line);
+  color:var(--text);
+}
+.prediction-mode-btn:active{transform:translateY(1px);}
+.prediction-mode-btn.active{
+  color:#fff8e8;
+  border-color:#ad7d18;
+  background:linear-gradient(180deg,#a67817 0%,#79540b 100%);
+}
+@media(max-width:760px){
+  .prediction-mode-controls{
+    gap:5px;
+    padding:4px;
+  }
+  .prediction-mode-btn{
+    min-height:39px;
+    padding:7px 6px;
+    font-size:12px;
+  }
+}
