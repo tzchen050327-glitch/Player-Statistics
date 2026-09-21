@@ -7549,3 +7549,240 @@ html[data-theme="dark"] .app-date-today:hover{
     font-size:13px;
   }
 }
+
+/* Prediction swipe + probability history chart v4 */
+.prediction-game-carousel-shell{
+  min-width:0;
+}
+.prediction-game-swipe-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px 0;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850;
+}
+.prediction-game-swipe-head>b{
+  flex:0 0 auto;
+  color:#d9b252;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-game-list{
+  display:flex;
+  grid-template-columns:none;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:visible;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:14px;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.prediction-game-list::-webkit-scrollbar{
+  display:none;
+}
+.prediction-game-card{
+  flex:0 0 100%;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+}
+.prediction-pick-badge{
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.prediction-factor-row{
+  grid-template-columns:minmax(0,1fr) max-content;
+  align-items:start;
+}
+.prediction-factor-row>div{
+  min-width:0;
+  overflow:visible;
+}
+.prediction-factor-row span{
+  overflow:visible;
+  text-overflow:clip;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.prediction-factor-row>b{
+  align-self:start;
+  white-space:nowrap;
+}
+.prediction-game-page{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-carousel-dots{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:6px;
+  padding:0 14px 14px;
+}
+.prediction-carousel-dots button{
+  width:7px;
+  height:7px;
+  padding:0;
+  border:0;
+  border-radius:999px;
+  background:#56616d;
+  cursor:pointer;
+  transition:width .18s ease,background .18s ease;
+}
+.prediction-carousel-dots button.active{
+  width:20px;
+  background:#d4a437;
+}
+.prediction-win-chart{
+  min-width:0;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+.prediction-win-chart-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+.prediction-win-chart-head>div:first-child{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.prediction-win-chart-head strong{
+  color:var(--text);
+  font-size:11px;
+  font-weight:950;
+}
+.prediction-win-chart-head span{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.35;
+}
+.prediction-chart-current{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:2px;
+  text-align:right;
+}
+.prediction-chart-current>b{
+  max-width:100%;
+  color:#e6bd58;
+  font-size:10px;
+  font-weight:950;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.prediction-chart-scroll{
+  width:100%;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  border:1px solid rgba(151,165,181,.18);
+  border-radius:11px;
+  background:rgba(255,255,255,.018);
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.prediction-chart-svg{
+  display:block;
+  max-width:none;
+  font-family:inherit;
+}
+.prediction-chart-grid{
+  stroke:rgba(170,185,201,.18);
+  stroke-width:1;
+}
+.prediction-chart-midline{
+  stroke:rgba(224,188,94,.52);
+  stroke-width:1.2;
+  stroke-dasharray:5 5;
+}
+.prediction-chart-line{
+  fill:none;
+  stroke:#d5a73d;
+  stroke-width:2.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-point circle{
+  fill:#111820;
+  stroke:#d5a73d;
+  stroke-width:2;
+}
+.prediction-chart-point.is-current circle{
+  fill:#d5a73d;
+  stroke:#f5d77f;
+  stroke-width:2.2;
+}
+.prediction-chart-value{
+  fill:#e8c76d;
+  font-size:9px;
+  font-weight:900;
+}
+.prediction-chart-x-label{
+  fill:#aebbc9;
+  font-size:8.5px;
+  font-weight:800;
+}
+.prediction-chart-side-label{
+  fill:#c8d2dd;
+  font-size:8px;
+  font-weight:900;
+}
+.prediction-chart-mid-label{
+  fill:#e1bb5a;
+  font-size:8.5px;
+  font-weight:950;
+}
+@media(max-width:600px){
+  .prediction-game-swipe-head{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .prediction-game-list{
+    gap:10px;
+    padding:12px;
+    scroll-padding-inline:12px;
+  }
+  .prediction-game-card{
+    flex-basis:100%;
+    padding:14px 12px;
+  }
+  .prediction-factor-row{
+    gap:7px;
+  }
+  .prediction-factor-row span{
+    font-size:9.5px;
+    line-height:1.5;
+  }
+  .prediction-win-chart-head{
+    flex-direction:column;
+    gap:6px;
+  }
+  .prediction-chart-current{
+    align-items:flex-start;
+    text-align:left;
+  }
+}
+
