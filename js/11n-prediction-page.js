@@ -404,9 +404,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       livePoints.forEach(({ point, pointIndex }) => {
         const trigger = String(point?.trigger || '');
         const raw = String(point?.label || '');
-        let label = predictionHistoryTriggerLabel(point);
+        let label = predictionCompactEventLabel(point);
         if (trigger === 'half-inning') {
-          const half = raw.match(/\d+局[上下]/)?.[0] || raw;
           label = predictionCompactEventLabel(point);
         } else if (trigger === 'game-final') {
           label = '比賽結束';
