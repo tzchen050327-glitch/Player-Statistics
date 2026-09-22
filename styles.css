@@ -9707,3 +9707,6 @@ body.pregame-center-open{
 
 /* ===== UNIFIED MATCHUP CENTER END ===== */
 
+.pregame-tabs.is-two{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
