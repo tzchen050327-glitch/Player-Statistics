@@ -455,7 +455,7 @@
     }
 
     function homePregameMatchupPanel(center, gameInfo, game) {
-      if (!center) return '<div class="pregame-center-loading">正在整理賽前對戰資料…</div>';
+      if (!center) return '<div class="pregame-center-loading">當日對戰資料尚未建立。</div>';
       const matchup = center?.matchup || {};
       const h2h = matchup?.h2h || null;
       const away = String(gameInfo?.away || game?.away || '客隊');
@@ -553,25 +553,17 @@
     function homeMatchCenterDataPanel(tab, gameInfo, game) {
       if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
       const center = activeHomeGameDetail?.pregameCenter || null;
-      const bullpen = activeHomeGameDetail?.bullpenStatus || null;
-      const loading = Boolean(activeHomeGameDetail?.pregameExtrasLoading);
-      const error = String(activeHomeGameDetail?.pregameExtrasError || '');
-      const source = tab === 'bullpen' ? bullpen : center;
-      const updateTime = homeMatchCenterDisplayTime(source?.fetchedAt || source?.updatedAt || activeHomeGameDetail?.pregameExtrasUpdatedAt || 0);
+      const updateTime = homeMatchCenterDisplayTime(center?.fetchedAt || center?.updatedAt || 0);
       return `
         <section class="match-center-data-panel">
           <div class="match-center-data-tools">
             <span>
-              ${tab === 'bullpen' ? '賽前牛棚使用狀況' : '兩隊賽前資料比較'}
-              ${updateTime ? `<small class="match-center-update-time">更新 ${escapeHtml(updateTime)}</small>` : ''}
+              兩隊賽前資料比較
+              ${updateTime ? `<small class="match-center-update-time">鎖定 ${escapeHtml(updateTime)}</small>` : ''}
             </span>
-            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '更新資料'}</button>
           </div>
-          ${error ? `<div class="pregame-center-error">${escapeHtml(error)}</div>` : ''}
           <div class="pregame-center-body">
-            ${tab === 'bullpen'
-              ? homeBullpenPanel(bullpen, gameInfo, game)
-              : homePregameMatchupPanel(center, gameInfo, game)}
+            ${homePregameMatchupPanel(center, gameInfo, game)}
           </div>
         </section>
       `;
@@ -639,9 +631,9 @@
       if (pregame && activeHomeGameDetail?.pregameCenter) {
         const existing = activeHomeGameDetail.pregameCenter.starters || {};
         activeHomeGameDetail.pregameCenter.starters = {
-          away:pregame?.awayStarter || existing?.away || null,
-          home:pregame?.homeStarter || existing?.home || null,
-          source:pregame?.source || existing?.source || ''
+          away:existing?.away || pregame?.awayStarter || null,
+          home:existing?.home || pregame?.homeStarter || null,
+          source:existing?.source || pregame?.source || ''
         };
       }
       const centerTab = String(activeHomeGameDetail?.centerTab || '') === 'overview' ? 'overview' : 'play';
@@ -709,12 +701,8 @@
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
-          if (tab === 'overview' && !activeHomeGameDetail.pregameCenter) {
-            void refreshHomePregameExtras(false);
-          }
         });
       });
-      body.querySelector('#homePregameExtrasRefresh')?.addEventListener('click', () => void refreshHomePregameExtras(true));
       updateHomeGameDetailRefreshCountdown();
     }
 
@@ -864,7 +852,7 @@
       const key = homeGameDetailKey(league, date, game);
       const requestedTab = ['play','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
-      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:null, pregameExtrasLoading:false, pregameExtrasError:'' };
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
@@ -880,9 +868,6 @@
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       refreshActiveHomeGameDetail();
-      if (defaultTab !== 'play') {
-        void refreshHomePregameExtras(false);
-      }
     }
 
 
