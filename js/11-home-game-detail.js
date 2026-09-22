@@ -548,17 +548,32 @@
       `;
     }
 
+    function homeMatchCenterDisplayTime(value) {
+      const ms = typeof value === 'number' ? value : Date.parse(String(value || ''));
+      if (!Number.isFinite(ms)) return '';
+      return new Intl.DateTimeFormat('zh-TW', {
+        hour:'2-digit',
+        minute:'2-digit',
+        hour12:false
+      }).format(new Date(ms));
+    }
+
     function homeMatchCenterDataPanel(tab, gameInfo, game) {
       if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
       const center = activeHomeGameDetail?.pregameCenter || null;
       const bullpen = activeHomeGameDetail?.bullpenStatus || null;
       const loading = Boolean(activeHomeGameDetail?.pregameExtrasLoading);
       const error = String(activeHomeGameDetail?.pregameExtrasError || '');
+      const source = tab === 'bullpen' ? bullpen : center;
+      const updateTime = homeMatchCenterDisplayTime(source?.fetchedAt || source?.updatedAt || activeHomeGameDetail?.pregameExtrasUpdatedAt || 0);
       return `
         <section class="match-center-data-panel">
           <div class="match-center-data-tools">
-            <span>${tab === 'bullpen' ? '賽前牛棚使用狀況' : '兩隊賽前資料比較'}</span>
-            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '重新讀取'}</button>
+            <span>
+              ${tab === 'bullpen' ? '賽前牛棚使用狀況' : '兩隊賽前資料比較'}
+              ${updateTime ? `<small class="match-center-update-time">更新 ${escapeHtml(updateTime)}</small>` : ''}
+            </span>
+            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '更新資料'}</button>
           </div>
           ${error ? `<div class="pregame-center-error">${escapeHtml(error)}</div>` : ''}
           <div class="pregame-center-body">
@@ -589,6 +604,7 @@
           ? await homeBullpenStatusRequest(league, date, game, force)
           : await homePregameCenterRequest(league, date, game, force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pregameExtrasUpdatedAt = Date.now();
         if (tab === 'bullpen') {
           activeHomeGameDetail.bullpenStatus = data;
         } else {
@@ -634,6 +650,8 @@
       const gameInfo = detail?.game || game || {};
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
+      const detailCacheAt = activeHomeGameDetail ? Number(homeGameDetailCache.get(activeHomeGameDetail.key)?.at || 0) : 0;
+      const detailUpdateTime = homeMatchCenterDisplayTime(detail?.updatedAt || detail?.fetchedAt || detailCacheAt || 0);
       const pregame = detail?.pregame || null;
       if (pregame && activeHomeGameDetail?.pregameCenter) {
         const existing = activeHomeGameDetail.pregameCenter.starters || {};
@@ -674,7 +692,7 @@
       body.innerHTML = `
         <header class="game-detail-sticky-head">
           <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回賽事</button>
-          <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}</span></div>
+          <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
         <nav class="match-center-tabs ${supportsBullpen ? '' : 'is-two'}" aria-label="對戰中心分類">
