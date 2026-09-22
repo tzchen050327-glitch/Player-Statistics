@@ -846,6 +846,32 @@
       }
     }
 
+    async function refreshHomeGameOverviewFromDaily(game, league, date, key) {
+      if (!['CPBL','NPB'].includes(league) || !game?.id) return;
+      try {
+        const dailyKey = `${league}|${date}`;
+        const dailyCached = homeDailyGamesCache.get(dailyKey);
+        if (dailyCached) dailyCached.at = 0;
+
+        const games = await loadHomeDailyGames(league, date, { force:true });
+        if (!Array.isArray(games) || !activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+
+        const gameId = String(game?.id || '');
+        const fresh = games.find(item => String(item?.id || '') === gameId)
+          || games.find(item => String(item?.away || '') === String(game?.away || '') && String(item?.home || '') === String(game?.home || ''));
+        if (!fresh?.overview) return;
+
+        activeHomeGameDetail.game = { ...activeHomeGameDetail.game, ...fresh };
+        activeHomeGameDetail.pregameCenter = fresh.overview;
+
+        const cachedDetail = homeGameDetailCache.get(key)?.detail || null;
+        const detail = cachedDetail || { status:fresh?.status || game?.status, game:fresh, plays:[] };
+        renderHomeGameDetail(detail, activeHomeGameDetail.game);
+      } catch (error) {
+        console.warn('matchup overview refresh', error);
+      }
+    }
+
     function openHomeGameDetail(game, league, date, options = {}) {
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
@@ -867,6 +893,7 @@
       const cached = homeGameDetailCache.get(key);
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
+      void refreshHomeGameOverviewFromDaily(game, league, date, key);
       refreshActiveHomeGameDetail();
     }
 
