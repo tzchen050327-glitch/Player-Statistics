@@ -271,16 +271,16 @@
           <div><span>PRE-GAME CENTER</span><strong>對戰中心</strong><small>${escapeHtml(leagueLabel)}</small></div>
           <button class="pregame-refresh-btn" type="button" data-pregame-refresh>重新讀取</button>
         </header>
-        <nav class="pregame-tabs">
+        <nav class="pregame-tabs ${league === 'NPB' ? 'is-two' : ''}">
           <button type="button" data-pregame-tab="play">逐打席紀錄</button>
           <button type="button" data-pregame-tab="overview" class="${pregameCenterTab === 'overview' ? 'active' : ''}">對戰總覽</button>
-          <button type="button" data-pregame-tab="bullpen" class="${pregameCenterTab === 'bullpen' ? 'active' : ''}">牛棚狀態</button>
+          ${league === 'CPBL' ? `<button type="button" data-pregame-tab="bullpen" class="${pregameCenterTab === 'bullpen' ? 'active' : ''}">牛棚狀態</button>` : ''}
         </nav>
         <main class="pregame-center-content">
           ${loading && !data ? '<div class="pregame-loading"><span></span><strong>正在整理賽前資料…</strong></div>' : ''}
           ${error ? `<div class="pregame-error">${escapeHtml(error)}</div>` : ''}
           ${pregameCenterTab === 'overview' && data ? renderPregameOverview(data) : ''}
-          ${pregameCenterTab === 'bullpen'
+          ${league === 'CPBL' && pregameCenterTab === 'bullpen'
             ? (bullpenData ? renderBullpenPage(bullpenData) : '<div class="pregame-loading"><span></span><strong>正在讀取牛棚狀況…</strong></div>')
             : ''}
         </main>
@@ -299,10 +299,11 @@
             }
             return;
           }
-          if (!['overview','bullpen'].includes(tab)) return;
+          const allowed = league === 'CPBL' ? ['overview','bullpen'] : ['overview'];
+          if (!allowed.includes(tab)) return;
           pregameCenterTab = tab;
           renderPregameCenter();
-          if (tab === 'bullpen' && !pregameBullpenCache.get(key)?.data) void loadPregameBullpen();
+          if (tab === 'bullpen' && league === 'CPBL' && !pregameBullpenCache.get(key)?.data) void loadPregameBullpen();
         });
       });
 
