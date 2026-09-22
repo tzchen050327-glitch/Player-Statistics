@@ -3,9 +3,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       league: ['cpbl','npb','kbo'].includes(localStorage.getItem('predictionLeague'))
         ? localStorage.getItem('predictionLeague')
         : 'cpbl',
-      mode: ['game','postseason'].includes(localStorage.getItem('predictionMode'))
-        ? localStorage.getItem('predictionMode')
-        : 'game'
+      mode: 'postseason'
     };
     const predictionDataCache = new Map();
     const predictionLoading = new Set();
@@ -1151,7 +1149,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       try {
         const league = predictionLeagueCode();
-        const mode = predictionUiState.mode;
+        const mode = 'postseason';
         const date = predictionDate();
         let data;
 
@@ -1427,11 +1425,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           ${predictionLeagueButton('中華職棒','cpbl')}
           ${predictionLeagueButton('日本職棒','npb')}
           ${predictionLeagueButton('韓國職棒','kbo')}
-        </div>
-
-        <div class="prediction-mode-controls" aria-label="預測類型">
-          ${predictionModeButton('比賽預測','game')}
-          ${predictionModeButton('季後賽預測','postseason')}
         </div>
 
         ${predictionWorkspace(data, loading, error)}
