@@ -359,42 +359,49 @@
       </article>`;
     }
 
+    async function homeMatchCenterPost(url, payload, label, timeoutMs = 10000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method:'POST',
+          headers:{ 'content-type':'application/json' },
+          body:JSON.stringify(payload),
+          signal:controller.signal
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.ok) throw new Error(data?.error || `${label}讀取失敗（${response.status}）`);
+        return data;
+      } catch (error) {
+        if (error?.name === 'AbortError') throw new Error(`${label}讀取逾時，請再試一次`);
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     async function homePregameCenterRequest(league, date, game, force = false) {
-      const response = await fetch(LEAGUE_PREGAME_CENTER_API_URL, {
-        method:'POST',
-        headers:{ 'content-type':'application/json' },
-        body:JSON.stringify({
-          appKey:CPBL_APP_KEY,
-          league,
-          date,
-          gameId:String(game?.id || ''),
-          away:String(game?.away || ''),
-          home:String(game?.home || ''),
-          force:Boolean(force)
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.ok) throw new Error(data?.error || `賽前對戰資料讀取失敗（${response.status}）`);
-      return data;
+      return homeMatchCenterPost(LEAGUE_PREGAME_CENTER_API_URL, {
+        appKey:CPBL_APP_KEY,
+        league,
+        date,
+        gameId:String(game?.id || ''),
+        away:String(game?.away || ''),
+        home:String(game?.home || ''),
+        force:Boolean(force)
+      }, '對戰總覽', 9000);
     }
 
     async function homeBullpenStatusRequest(league, date, game, force = false) {
-      const response = await fetch(LEAGUE_BULLPEN_STATUS_API_URL, {
-        method:'POST',
-        headers:{ 'content-type':'application/json' },
-        body:JSON.stringify({
-          appKey:CPBL_APP_KEY,
-          league,
-          date,
-          gameId:String(game?.id || ''),
-          away:String(game?.away || ''),
-          home:String(game?.home || ''),
-          force:Boolean(force)
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.ok) throw new Error(data?.error || `牛棚資料讀取失敗（${response.status}）`);
-      return data;
+      return homeMatchCenterPost(LEAGUE_BULLPEN_STATUS_API_URL, {
+        appKey:CPBL_APP_KEY,
+        league,
+        date,
+        gameId:String(game?.id || ''),
+        away:String(game?.away || ''),
+        home:String(game?.home || ''),
+        force:Boolean(force)
+      }, '牛棚資料', 14000);
     }
 
     function homePregameRecordText(record) {
@@ -541,16 +548,17 @@
       const cachedDetail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
       renderHomeGameDetail(cachedDetail, game);
       try {
-        const [center, bullpen] = await Promise.all([
+        const [centerResult, bullpenResult] = await Promise.allSettled([
           homePregameCenterRequest(league, date, game, force),
           homeBullpenStatusRequest(league, date, game, force)
         ]);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        activeHomeGameDetail.pregameCenter = center;
-        activeHomeGameDetail.bullpenStatus = bullpen;
-      } catch (error) {
-        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        activeHomeGameDetail.pregameExtrasError = error?.message || '賽前資料讀取失敗。';
+        if (centerResult.status === 'fulfilled') activeHomeGameDetail.pregameCenter = centerResult.value;
+        if (bullpenResult.status === 'fulfilled') activeHomeGameDetail.bullpenStatus = bullpenResult.value;
+        const failures = [];
+        if (centerResult.status === 'rejected') failures.push(centerResult.reason?.message || '對戰總覽讀取失敗');
+        if (bullpenResult.status === 'rejected') failures.push(bullpenResult.reason?.message || '牛棚資料讀取失敗');
+        activeHomeGameDetail.pregameExtrasError = failures.join('｜');
       } finally {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pregameExtrasLoading = false;
