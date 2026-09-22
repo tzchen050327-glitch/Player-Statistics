@@ -19,7 +19,7 @@
 <section class="section"><h2>版本一致性</h2><div id="versions" class="grid"></div></section>
 <section class="section"><h2>前端靜態資源</h2><div class="sub">會實際抓取 index 內的 CSS、JS、manifest，檢查 HTTP、內容類型、版本參數與是否誤回 HTML。</div><div id="resourcesWrap" style="margin-top:10px"></div></section>
 <section class="section"><h2>PWA / Service Worker / Cache</h2><div id="pwa" class="grid"></div></section>
-<section class="section"><h2>API / Edge Functions</h2><div class="sub">自動從 app.js 掃描 Supabase Functions 端點，再用 OPTIONS 做可達性檢查；新增 API 後不必手動補名單。</div><div id="apisWrap" style="margin-top:10px"></div></section>
+<section class="section"><h2>API / Edge Functions</h2><div class="sub">自動從核心設定模組掃描 Supabase Functions 端點，再用 OPTIONS 做可達性檢查；新增 API 後不必手動補名單。</div><div id="apisWrap" style="margin-top:10px"></div></section>
 <section class="section"><h2>前台執行錯誤</h2><div class="sub">主程式會記錄 JavaScript 錯誤、資源載入失敗、未處理 Promise、網路層 5xx 與本地資源 4xx。最多保留 120 筆／7 天；舊版本紀錄保留供追查，但不影響目前版本健康狀態。</div><div id="runtimeWrap" style="margin-top:10px"></div></section>
 <section class="section"><h2>CPBL 後台資料健康</h2><div id="cpblStatus" class="sub">讀取中…</div><div id="cpblIssues" style="margin-top:8px"></div><h3>Scheduler</h3><div id="schedulers" class="grid"></div><h3>今日比賽快取</h3><div id="gamesWrap"></div></section>
 <section class="section"><h2>瀏覽器 / 裝置環境</h2><div id="environment" class="grid"></div></section>
@@ -41,24 +41,28 @@ async function getText(url,init={}){const started=performance.now();const r=awai
 function tableHtml(headers,rows){return `<div style="overflow:auto"><table><thead><tr>${headers.map(x=>`<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${headers.length}" class="muted">沒有資料</td></tr>`}</tbody></table></div>`;}
 
 async function probeCore(state){
-  const [ver,index,app,sw]=await Promise.all([
+  const [ver,index,core,sw]=await Promise.all([
     getText('./version.json').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
     getText('./index.html').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
-    getText('./app.js').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
+    getText('./js/00-core-config.js').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e})),
     getText('./service-worker.js').catch(e=>({ok:false,status:0,text:'',contentType:'',duration:0,error:e}))
   ]);
-  state.raw={ver,index,app,sw};
-  for(const [name,res] of Object.entries({version:ver,index,app,serviceWorker:sw})) if(!res.ok) pushIssue(state,'error','版本',`${name} 無法讀取`,res.error?.message||`HTTP ${res.status}`);
+  state.raw={ver,index,core,sw};
+  for(const [name,res] of Object.entries({version:ver,index,coreConfig:core,serviceWorker:sw})) {
+    if(!res.ok) pushIssue(state,'error','版本',`${name} 無法讀取`,res.error?.message||`HTTP ${res.status}`);
+  }
+
   let versionJson='';
   try{versionJson=JSON.parse(ver.text||'{}').version||'';}catch{pushIssue(state,'error','版本','version.json 不是有效 JSON');}
   const indexMeta=(index.text.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i)||[])[1]||'';
-  const appVersion=(app.text.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
+  const coreVersion=(core.text.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
   const swAssetVersion=(sw.text.match(/styles\.css\?v=([^'",\s]+)/i)||[])[1]||'';
   const cacheName=(sw.text.match(/const\s+CACHE_NAME\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
-  state.versions={versionJson,indexMeta,appVersion,swAssetVersion,cacheName};
-  const vals=[versionJson,indexMeta,appVersion,swAssetVersion].filter(Boolean);
+  state.versions={versionJson,indexMeta,coreVersion,swAssetVersion,cacheName};
+
+  const vals=[versionJson,indexMeta,coreVersion,swAssetVersion].filter(Boolean);
   if(vals.length<4) pushIssue(state,'error','版本','版本來源不完整',JSON.stringify(state.versions));
-  else if(new Set(vals).size!==1) pushIssue(state,'error','版本','version.json / index / app.js / service-worker.js 版本不一致',vals.join(' / '));
+  else if(new Set(vals).size!==1) pushIssue(state,'error','版本','version.json / index / core config / service-worker.js 版本不一致',vals.join(' / '));
 
   const doc=new DOMParser().parseFromString(index.text||'','text/html');
   const assets=[];
@@ -68,8 +72,23 @@ async function probeCore(state){
     const kind=el.tagName==='SCRIPT'?'js':el.getAttribute('rel')==='stylesheet'?'css':'manifest';
     assets.push({kind,url});
   });
+
+  // 00-core-config.js is loaded dynamically by module-loader, so index.html does not contain
+  // a direct script tag for it. Probe it explicitly because it is a boot-critical asset.
+  const expectedVersion=versionJson||indexMeta||coreVersion||'';
+  const coreAsset=`./js/00-core-config.js${expectedVersion?`?v=${encodeURIComponent(expectedVersion)}`:''}`;
+  if(!assets.some(x=>/\/00-core-config\.js(?:\?|$)/.test(x.url))) assets.push({kind:'js',url:coreAsset});
   state.assetDefs=assets;
-  state.apiDefs=[...app.text.matchAll(/const\s+([A-Z0-9_]+_API_URL)\s*=\s*['"]([^'"]+)['"]/g)].map(m=>({name:m[1],url:m[2]})).filter(x=>/\/functions\/v1\//.test(x.url));
+
+  const baseA=(core.text.match(/const\s+SUPABASE_A_FUNCTIONS_BASE\s*=\s*['"]([^'"]+)['"]/i)||[])[1]||'';
+  const baseB=(core.text.match(/const\s+SUPABASE_B_FUNCTIONS_BASE\s*=.*?['"](https:\/\/[^'"]+\/functions\/v1)['"]/s)||[])[1]||'';
+  const bases={SUPABASE_A_FUNCTIONS_BASE:baseA,SUPABASE_B_FUNCTIONS_BASE:baseB};
+  const defs=[];
+  for(const m of core.text.matchAll(/const\s+([A-Z0-9_]+_API_URL)\s*=\s*`\$\{(SUPABASE_[AB]_FUNCTIONS_BASE)\}\/([^`]+)`/g)){
+    const base=bases[m[2]]||'';
+    if(base) defs.push({name:m[1],url:`${base}/${m[3]}`});
+  }
+  state.apiDefs=defs;
 }
 
 async function probeResources(state){
@@ -77,7 +96,8 @@ async function probeResources(state){
   const signatures={
     'styles.css':['--','body'],
     'game-detail-enhancement.css':['gdx-scoreboard'],
-    'app.js':['APP_VERSION'],
+    '00-core-config.js':['APP_VERSION','SUPABASE_A_FUNCTIONS_BASE'],
+    'module-loader.js':['bootModularApp'],
     'diagnostic-runtime.js':['baseball-site-diagnostics-runtime-v1'],
     'game-detail-enhancement.js':['gdx-scoreboard']
   };
@@ -230,7 +250,7 @@ function render(state){
   const currentRuntimeErrors=(state.runtimeCurrent||[]).filter(x=>x.level==='error').length,historicalRuntimeErrors=(state.runtimeHistorical||[]).filter(x=>x.level==='error').length;$('#summary').innerHTML=[['版本',state.versions.versionJson||'—'],['錯誤',errors],['警告',warnings],['靜態資源',`${okResources}/${state.resources.length}`],['API',`${okApis}/${state.apis.length}`],['前台錯誤',currentRuntimeErrors],['歷史錯誤',historicalRuntimeErrors]].map(([a,b])=>`<div class="card"><span class="sub">${esc(a)}</span><b class="${a==='錯誤'&&errors?'error':a==='警告'&&warnings?'warning':''}">${esc(b)}</b></div>`).join('');
   $('#issues').innerHTML=state.issues.length?state.issues.sort((a,b)=>levelRank(b.level)-levelRank(a.level)).map(x=>`<div class="issue ${esc(x.level)}"><b>${esc(x.area)}</b>｜${esc(x.message)}${x.detail?`<div class="small mono">${esc(x.detail)}</div>`:''}</div>`).join(''):'<div class="issue ok"><b>OK</b>｜目前沒有偵測到異常。</div>';
 
-  const v=state.versions;$('#versions').innerHTML=[['version.json',v.versionJson],['index meta',v.indexMeta],['app.js APP_VERSION',v.appVersion],['SW 資源版本',v.swAssetVersion],['SW cache name',v.cacheName]].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono">${esc(b||'—')}</strong></div>`).join('');
+  const v=state.versions;$('#versions').innerHTML=[['version.json',v.versionJson],['index meta',v.indexMeta],['core config APP_VERSION',v.coreVersion],['SW 資源版本',v.swAssetVersion],['SW cache name',v.cacheName]].map(([a,b])=>`<div class="mini"><span class="sub">${esc(a)}</span><strong class="mono">${esc(b||'—')}</strong></div>`).join('');
 
   $('#resourcesWrap').innerHTML=tableHtml(['類型','資源','版本','HTTP','Content-Type','時間','判定'],state.resources.map(x=>`<tr><td>${esc(x.kind)}</td><td class="mono">${esc(x.path)}</td><td>${esc(x.declared||'—')}</td><td>${esc(x.status||'—')}</td><td class="mono">${esc(x.contentType||'—')}</td><td>${esc(ms(x.duration))}</td><td><span class="pill ${esc(x.level)}">${esc(x.message)}</span></td></tr>`));
 
