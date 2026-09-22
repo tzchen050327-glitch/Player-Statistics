@@ -1,32 +1,32 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v570-auto';
-const CACHE_VERSION = 'v5.70';
+const CACHE_NAME = 'baseball-player-card-pwa-v571-auto';
+const CACHE_VERSION = 'v5.71';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const APP_SHELL = [
   './',
   './index.html',
   './diagnostics.html',
-  './styles.css?v=v5.70',
-  './dark-theme-overrides.css?v=v5.70',
-  './diagnostic-runtime.js?v=v5.70',
-  './live-static-update.js?v=v5.70',
-  './cpbl-realtime.js?v=v5.70',
-  './npb-realtime.js?v=v5.70',
-  './postseason-history.css?v=v5.70',
-  './js/module-loader.js?v=v5.70',
+  './styles.css?v=v5.71',
+  './dark-theme-overrides.css?v=v5.71',
+  './diagnostic-runtime.js?v=v5.71',
+  './live-static-update.js?v=v5.71',
+  './cpbl-realtime.js?v=v5.71',
+  './npb-realtime.js?v=v5.71',
+  './postseason-history.css?v=v5.71',
+  './js/module-loader.js?v=v5.71',
   MODULE_ORDER_URL,
-  './postseason-history.js?v=v5.70',
-  './cpbl-cache-router.js?v=v5.70',
-  './game-detail-enhancement.css?v=v5.70',
-  './report-layout.css?v=v5.70',
-  './landscape-state.css?v=v5.70',
-  './game-detail-enhancement.js?v=v5.70',
-  './report-layout.js?v=v5.70',
-  './manifest.webmanifest?v=v5.70',
-  './icon-192.png?v=v5.70',
-  './icon-512.png?v=v5.70',
-  './favicon-32.png?v=v5.70',
-  './favicon-16.png?v=v5.70'
+  './postseason-history.js?v=v5.71',
+  './cpbl-cache-router.js?v=v5.71',
+  './game-detail-enhancement.css?v=v5.71',
+  './report-layout.css?v=v5.71',
+  './landscape-state.css?v=v5.71',
+  './game-detail-enhancement.js?v=v5.71',
+  './report-layout.js?v=v5.71',
+  './manifest.webmanifest?v=v5.71',
+  './icon-192.png?v=v5.71',
+  './icon-512.png?v=v5.71',
+  './favicon-32.png?v=v5.71',
+  './favicon-16.png?v=v5.71'
 ];
 
 async function getModuleShell() {
