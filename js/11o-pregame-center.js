@@ -23,7 +23,7 @@
       overlay = document.createElement('div');
       overlay.id = 'pregameCenterOverlay';
       overlay.className = 'pregame-center-overlay hidden';
-      overlay.innerHTML = '<div class="pregame-center-sheet" role="dialog" aria-modal="true" aria-label="賽前對戰中心"><div id="pregameCenterBody"></div></div>';
+      overlay.innerHTML = '<div class="pregame-center-sheet" role="dialog" aria-modal="true" aria-label="對戰中心"><div id="pregameCenterBody"></div></div>';
       document.body.appendChild(overlay);
       overlay.addEventListener('click', event => {
         if (event.target === overlay) closePregameCenter();
@@ -168,14 +168,6 @@
         </section>
 
         <section class="pregame-section">
-          <div class="pregame-section-head"><strong>先發打序</strong><span>${data?.lineup?.confirmed ? '正式打序' : '尚未完整公布'}</span></div>
-          <div class="pregame-two-col">
-            ${pregameLineupCard(data?.lineup?.away, away, '客隊')}
-            ${pregameLineupCard(data?.lineup?.home, home, '主隊')}
-          </div>
-        </section>
-
-        <section class="pregame-section">
           <div class="pregame-section-head">
             <strong>牛棚狀況</strong>
             <button class="pregame-inline-btn" type="button" data-pregame-tab="bullpen">查看完整牛棚</button>
@@ -276,12 +268,13 @@
       body.innerHTML = `
         <header class="pregame-center-head">
           <button class="pregame-close-btn" type="button" data-pregame-close>← 返回</button>
-          <div><span>PRE-GAME CENTER</span><strong>賽前對戰中心</strong><small>${escapeHtml(leagueLabel)}</small></div>
+          <div><span>PRE-GAME CENTER</span><strong>對戰中心</strong><small>${escapeHtml(leagueLabel)}</small></div>
           <button class="pregame-refresh-btn" type="button" data-pregame-refresh>重新讀取</button>
         </header>
         <nav class="pregame-tabs">
+          <button type="button" data-pregame-tab="play">逐打席紀錄</button>
           <button type="button" data-pregame-tab="overview" class="${pregameCenterTab === 'overview' ? 'active' : ''}">對戰總覽</button>
-          <button type="button" data-pregame-tab="bullpen" class="${pregameCenterTab === 'bullpen' ? 'active' : ''}">牛棚狀況</button>
+          <button type="button" data-pregame-tab="bullpen" class="${pregameCenterTab === 'bullpen' ? 'active' : ''}">牛棚狀態</button>
         </nav>
         <main class="pregame-center-content">
           ${loading && !data ? '<div class="pregame-loading"><span></span><strong>正在整理賽前資料…</strong></div>' : ''}
@@ -298,6 +291,14 @@
       body.querySelectorAll('[data-pregame-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
           const tab = String(btn.dataset.pregameTab || '');
+          if (tab === 'play') {
+            const current = activePregameCenter;
+            if (current && typeof openHomeGameDetail === 'function') {
+              closePregameCenter();
+              openHomeGameDetail(current.game, current.league, current.date, { tab:'play' });
+            }
+            return;
+          }
           if (!['overview','bullpen'].includes(tab)) return;
           pregameCenterTab = tab;
           renderPregameCenter();
