@@ -214,8 +214,16 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const rowSvg = slots.map((slot,index) => {
         const y = yFor(index);
         const point = pointByKey.get(slot.key);
-        const x = point ? xFor(point.homeProbability) : null;
-        const pct = point ? Number(point.homeProbability).toFixed(1) : '';
+        const homePct = point ? Math.max(0, Math.min(100, Number(point.homeProbability) || 0)) : 50;
+        const awayPct = point ? Math.max(0, Math.min(100, Number(point.awayProbability ?? (100 - homePct)) || 0)) : 50;
+        const x = point ? xFor(homePct) : null;
+        const onAwaySide = point && homePct < 50;
+        const onHomeSide = point && homePct > 50;
+        const displayPct = point ? (onAwaySide ? awayPct : onHomeSide ? homePct : 50) : 0;
+        const labelX = point
+          ? Math.min(plotRight - 7, Math.max(plotLeft + 7, x + (onAwaySide ? -7 : onHomeSide ? 7 : 0)))
+          : 0;
+        const labelAnchor = onAwaySide ? 'end' : onHomeSide ? 'start' : 'middle';
         const isLast = point && latest && String(point?.key || '') === String(latest?.key || '');
         return `
           <g class="prediction-lr-row ${point ? 'is-complete' : 'is-pending'}">
@@ -224,7 +232,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             <text class="prediction-lr-label" x="2" y="${y + 3.2}">${escapeHtml(slot.label)}</text>
             ${point ? `
               <circle class="prediction-lr-point ${isLast ? 'is-current' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${isLast ? 5.2 : 3.5}"></circle>
-              <text class="prediction-lr-value" x="${Math.min(plotRight - 18, Math.max(plotLeft + 18, x)).toFixed(1)}" y="${(y - 6.5).toFixed(1)}" text-anchor="middle">${pct}%</text>
+              <text class="prediction-lr-value" x="${labelX.toFixed(1)}" y="${(y - 6.5).toFixed(1)}" text-anchor="${labelAnchor}">${displayPct.toFixed(1)}%</text>
             ` : ''}
           </g>
         `;
@@ -239,8 +247,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             </div>
             <div class="prediction-lr-center">50%</div>
             <div class="prediction-lr-team prediction-lr-home">
-              <b>${latestHome.toFixed(1)}%</b>
               <strong>${escapeHtml(home)}</strong>
+              <b>${latestHome.toFixed(1)}%</b>
             </div>
           </div>
 
@@ -284,18 +292,21 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             <span class="prediction-pick-badge">較看好 ${escapeHtml(game?.pick || '')} ${Number(game?.confidence || 0).toFixed(1)}%</span>
           </div>
 
-          <div class="prediction-matchup">
-            <div class="prediction-team-line">
-              <strong>${away}</strong>
-              <b>${awayPct.toFixed(1)}%</b>
+          <div class="prediction-matchup prediction-matchup-split">
+            <div class="prediction-matchup-teams">
+              <div class="prediction-matchup-side prediction-matchup-away">
+                <strong>${away}</strong>
+                <b>${awayPct.toFixed(1)}%</b>
+              </div>
+              <div class="prediction-matchup-mid">50%</div>
+              <div class="prediction-matchup-side prediction-matchup-home">
+                <strong>${home}</strong>
+                <b>${homePct.toFixed(1)}%</b>
+              </div>
             </div>
             <div class="prediction-probability-track" aria-hidden="true">
               <span class="prediction-probability-away" style="width:${awayPct}%"></span>
               <span class="prediction-probability-home" style="width:${homePct}%"></span>
-            </div>
-            <div class="prediction-team-line">
-              <strong>${home}</strong>
-              <b>${homePct.toFixed(1)}%</b>
             </div>
           </div>
 
