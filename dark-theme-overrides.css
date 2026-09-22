@@ -833,3 +833,96 @@ html[data-theme="dark"] .bullpen-member-row>span{
   color:#8d9aa7 !important;
 }
 
+/* Match center black-gold detail surfaces v2 */
+html[data-theme="dark"] .gdx-scoreboard,
+html[data-theme="dark"] .gdx-decisions,
+html[data-theme="dark"] .gdx-last-play,
+html[data-theme="dark"] .gdx-bases-card,
+html[data-theme="dark"] .gdx-current-stack{
+  border-color:#4b4025 !important;
+  background:linear-gradient(180deg,#171714,#11130f) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.22), inset 0 1px 0 rgba(224,185,86,.05) !important;
+}
+html[data-theme="dark"] .gdx-section-head,
+html[data-theme="dark"] .gdx-last-play-head{
+  color:#e3bd61 !important;
+  border-color:#3b3423 !important;
+  background:linear-gradient(90deg,rgba(211,169,74,.09),rgba(211,169,74,.015)) !important;
+}
+html[data-theme="dark"] .gdx-scoreboard table{
+  color:#dde5ec !important;
+}
+html[data-theme="dark"] .gdx-scoreboard th,
+html[data-theme="dark"] .gdx-scoreboard td{
+  border-top-color:#2d302b !important;
+}
+html[data-theme="dark"] .gdx-scoreboard thead th{
+  background:#181a17 !important;
+  color:#b8a36d !important;
+}
+html[data-theme="dark"] .gdx-scoreboard .gdx-team-col{
+  background:#151713 !important;
+  color:#f0d384 !important;
+}
+html[data-theme="dark"] .gdx-scoreboard thead .gdx-team-col{
+  background:#181a17 !important;
+  color:#b8a36d !important;
+}
+html[data-theme="dark"] .gdx-scoreboard .gdx-total{
+  color:#f0c65f !important;
+}
+html[data-theme="dark"] .gdx-decisions-grid{
+  border-top-color:#393425 !important;
+}
+html[data-theme="dark"] .gdx-decision-row{
+  border-bottom-color:#302f28 !important;
+}
+html[data-theme="dark"] .gdx-decision-row:nth-child(odd){
+  border-right-color:#302f28 !important;
+}
+html[data-theme="dark"] .gdx-decision-label{
+  color:#a89b79 !important;
+}
+html[data-theme="dark"] .gdx-decision-value,
+html[data-theme="dark"] .gdx-decision-value strong{
+  color:#f0e5c9 !important;
+}
+html[data-theme="dark"] .gdx-decision-value span{
+  color:#bcae88 !important;
+}
+html[data-theme="dark"] .gdx-last-play strong{
+  color:#f1e8d6 !important;
+}
+html[data-theme="dark"] .gdx-last-play span,
+html[data-theme="dark"] .gdx-last-play-meta{
+  color:#a9b1b8 !important;
+}
+
+/* Keep PA result colors readable in dark mode. */
+html[data-theme="dark"] .game-detail-pa-main .game-detail-pa-result.is-hit{
+  color:#ff8a8a !important;
+  background:rgba(255,86,86,.18) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,108,108,.16);
+}
+html[data-theme="dark"] .game-detail-pa-main .game-detail-pa-result.is-homer{
+  color:#d9a6ff !important;
+  background:rgba(171,93,255,.20) !important;
+  box-shadow:inset 0 0 0 1px rgba(201,147,255,.18);
+}
+html[data-theme="dark"] .game-detail-pa-main .game-detail-pa-result.is-free-pass{
+  color:#82efb5 !important;
+  background:rgba(76,210,132,.18) !important;
+  box-shadow:inset 0 0 0 1px rgba(103,223,160,.16);
+}
+html[data-theme="dark"] .game-detail-pa-main .game-detail-pa-result.is-sacrifice{
+  color:#91c9ff !important;
+  background:rgba(74,151,255,.18) !important;
+  box-shadow:inset 0 0 0 1px rgba(116,185,255,.16);
+}
+html[data-theme="dark"] .game-detail-pa-main strong{
+  color:#f0e7d5 !important;
+}
+html[data-theme="dark"] .game-detail-pa-meta{
+  color:#94a0ab !important;
+}
+
