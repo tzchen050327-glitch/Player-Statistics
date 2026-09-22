@@ -965,7 +965,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
     function predictionWorkspace(data, loading, error) {
       const modeGame = predictionUiState.mode === 'game';
-      const title = modeGame ? '比賽預測' : '季後賽預測';
+      const title = '預測專區';
       const kicker = modeGame ? 'GAME PREDICTION' : 'POSTSEASON PREDICTION';
       const date = predictionDate().replaceAll('-', '/');
 
