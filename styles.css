@@ -9889,3 +9889,99 @@ body.pregame-center-open{
   }
 }
 
+/* Prediction freshness + interactive history details v11 */
+.prediction-model-actions{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.prediction-refresh-btn.is-recalculate{
+  border-color:#8b6c24;
+  color:#efc45c;
+}
+.prediction-data-time,
+.prediction-game-updated{
+  color:#83909d !important;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-lr-row.is-clickable{
+  cursor:pointer;
+  outline:none;
+}
+.prediction-lr-row.is-clickable:hover .prediction-lr-row-line,
+.prediction-lr-row.is-clickable:focus .prediction-lr-row-line{
+  stroke:rgba(227,190,91,.30);
+}
+.prediction-lr-row.is-clickable:hover .prediction-lr-label,
+.prediction-lr-row.is-clickable:focus .prediction-lr-label{
+  fill:#f0c65f;
+}
+.prediction-point-detail{
+  margin-top:8px;
+  padding:10px 11px;
+  border:1px solid rgba(214,169,74,.22);
+  border-radius:11px;
+  background:rgba(214,169,74,.045);
+}
+.prediction-point-detail.hidden{
+  display:none;
+}
+.prediction-point-detail-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.prediction-point-detail-head strong{
+  color:#e9c35e;
+  font-size:10px;
+  font-weight:950;
+}
+.prediction-point-detail-head span{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
+.prediction-point-detail-prob{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:7px;
+}
+.prediction-point-detail-prob span{
+  color:#b8c4cf;
+  font-size:9px;
+  font-weight:850;
+}
+.prediction-point-detail-prob b{
+  color:var(--text);
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-point-detail p{
+  margin:6px 0 0;
+  color:#a7b3be;
+  font-size:8.5px;
+  line-height:1.55;
+}
+.prediction-point-detail .prediction-point-detail-delta{
+  color:#e5c46d;
+  font-weight:900;
+}
+.prediction-point-detail .prediction-point-factor{
+  color:#c1ccd5;
+}
+@media(max-width:600px){
+  .prediction-model-note{
+    align-items:stretch;
+  }
+  .prediction-model-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .prediction-model-actions .prediction-refresh-btn{
+    width:100%;
+  }
+}
+
