@@ -84,7 +84,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             ${factors.length ? `<span>${factors.map(escapeHtml).join(' ・ ')}</span>` : ''}
             ${data.model.note ? `<span>${escapeHtml(data.model.note)}</span>` : ''}
           </div>
-          <button type="button" class="prediction-refresh-btn" data-prediction-refresh>重新計算</button>
+          <button type="button" class="prediction-refresh-btn" data-prediction-refresh>重新讀取</button>
         </div>
       `;
     }
@@ -894,7 +894,11 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           data = await predictionBuildPostseason(league, date);
         } else {
           data = await predictionPost(PREDICTION_API_URL, {
-            appKey:CPBL_APP_KEY, league, mode, date, force
+            appKey:CPBL_APP_KEY,
+            league,
+            mode,
+            date,
+            force: mode === 'game' ? false : force
           });
           if (league === 'CPBL' && Array.isArray(data?.games)) {
             data.games = data.games.filter(game => {
@@ -1038,7 +1042,12 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       });
 
       els.predictionPageContent.querySelectorAll('[data-prediction-refresh]').forEach(btn => {
-        btn.addEventListener('click', () => void loadPredictionPageData({ force:true }));
+        btn.addEventListener('click', () => {
+          const key = predictionKey();
+          predictionDataCache.delete(key);
+          predictionErrors.delete(key);
+          void loadPredictionPageData({ force:false });
+        });
       });
 
       const carousel = els.predictionPageContent.querySelector('[data-prediction-carousel]');
