@@ -9985,3 +9985,17 @@ body.pregame-center-open{
   }
 }
 
+/* Match-center data freshness */
+.match-center-data-tools>span{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.match-center-update-time{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
+
