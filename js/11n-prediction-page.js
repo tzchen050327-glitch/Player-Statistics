@@ -143,6 +143,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       if (label === '牛棚更新' || trigger === 'bullpen-refresh') return '牛棚更新';
       if (label === '先發公布' || trigger === 'starter-published') return '先發公布';
       if (label === '打線公布' || trigger === 'lineup-published') return '打線公布';
+      if (label === '比賽結束' || trigger === 'game-final') return '比賽結束';
       if (/\d+局[上下]/.test(label)) return `${label}結束`;
       return label || '賽前預測';
     }
@@ -246,6 +247,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         const half = label.match(/\d+局[上下]/)?.[0] || label;
         reason = `${half}結束，依比分與即時比賽內容重新計算`;
         factorKey = 'live-score';
+      } else if (trigger === 'game-final' || label === '比賽結束') {
+        reason = '比賽結束，依最終結果固定勝率';
+        factorKey = 'final-result';
       } else if (trigger === 'initial' || label === '初始預測') {
         reason = '建立初始賽前預測';
       } else if (trigger === 'pregame' || label === '賽前預測') {
@@ -304,6 +308,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         if (key === 'starter' || label === '先發公布') pointByKey.set('starter', point);
         else if (key === 'bullpen' || label === '牛棚更新') pointByKey.set('bullpen', point);
         else if (key === 'lineup' || label === '打線公布') pointByKey.set('lineup', point);
+        else if (key === 'final' || label === '比賽結束' || String(point?.trigger || '') === 'game-final') pointByKey.set('final', point);
         else {
           const match = label.match(/(\d+)局([上下])/);
           if (match) pointByKey.set(`inning-${match[1]}-${match[2] === '下' ? 'bottom' : 'top'}`, point);
@@ -326,6 +331,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       for (let inning = 1; inning <= inningLimit; inning++) {
         slots.push({ key:`inning-${inning}-top`, label:`${inning}局上半` });
         slots.push({ key:`inning-${inning}-bottom`, label:`${inning}局下半` });
+      }
+      if (pointByKey.has('final')) {
+        slots.push({ key:'final', label:'比賽結束' });
       }
 
       const width = 320;
@@ -489,7 +497,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           <div class="prediction-empty-state">
             <div class="prediction-empty-icon" aria-hidden="true">✓</div>
             <strong>目前沒有待預測賽事</strong>
-            <span>已結束與延賽場次不會重新計算預測；可切換日期查看尚未開打的賽事。</span>
+            <span>延賽場次不會重新計算；已結束比賽會保留完整預測走勢與最終結果。</span>
           </div>
         `;
       }
