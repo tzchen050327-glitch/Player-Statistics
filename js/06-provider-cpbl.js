@@ -2,6 +2,17 @@
       return kindCode === 'D' ? '二軍' : '一軍';
     }
 
+    function cpblTeamCodeFromName(name = '') {
+      const team = normalizeTeamName(String(name || '').replace(/二軍$/,'').trim());
+      if (team === '味全龍') return 'AAA';
+      if (team === '中信兄弟') return 'ACN';
+      if (team === '統一7-ELEVEn獅' || team === '統一獅') return 'ADD';
+      if (team === '富邦悍將') return 'AEO';
+      if (team === '樂天桃猿') return 'AJL';
+      if (team === '台鋼雄鷹') return 'AKP';
+      return '';
+    }
+
     function promiseTimeout(promise, ms, message = '操作逾時') {
       return Promise.race([
         promise,
@@ -29,7 +40,8 @@
           if (!current?.team) continue;
 
           player.cpblTeam = normalizeTeamName(current.team);
-          if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
+          const rosterTeamCode = cpblTeamCodeFromName(player.cpblTeam) || String(current.teamCode || '').trim();
+          if (rosterTeamCode) player.cpblTeamCode = rosterTeamCode;
           if (current.number) player.number = String(current.number);
           if (['A','D'].includes(String(current.level || '').toUpperCase())) player.cpblCurrentLevel = String(current.level).toUpperCase();
 
@@ -784,7 +796,8 @@
           photoTransforms: {},
           cpblAcnt: acnt,
           cpblTeam: normalizeTeamName(official?.team || item?.teamName || ''),
-          cpblTeamCode: String(official?.teamCode || item?.teamCode || '').trim(),
+          cpblTeamCode: cpblTeamCodeFromName(official?.team || item?.teamName || '')
+            || String(official?.teamCode || item?.teamCode || '').trim(),
           cpblCurrentLevel: '',
           cpblPosition: position,
           createdAt: now,
@@ -800,8 +813,9 @@
         else if ((!player.number || player.number === '—') && item?.number) player.number = String(item.number).trim();
         if (official?.team) player.cpblTeam = normalizeTeamName(official.team);
         else if (!player.cpblTeam && item?.teamName) player.cpblTeam = normalizeTeamName(item.teamName);
-        if (official?.teamCode) player.cpblTeamCode = String(official.teamCode).trim();
-        else if (!player.cpblTeamCode && item?.teamCode) player.cpblTeamCode = String(item.teamCode).trim();
+        const resolvedTeamCode = cpblTeamCodeFromName(player.cpblTeam)
+          || String(official?.teamCode || item?.teamCode || '').trim();
+        if (resolvedTeamCode) player.cpblTeamCode = resolvedTeamCode;
         if (position) {
           player.cpblPosition = position;
           repairStoredCpblPlayerType(player, position);
