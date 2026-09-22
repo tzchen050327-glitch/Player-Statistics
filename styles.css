@@ -9760,3 +9760,86 @@ body.pregame-center-open{
   z-index:2 !important;
 }
 
+/* Prediction split matchup + side-aware ladder labels v9 */
+.prediction-matchup-split{
+  gap:8px;
+}
+.prediction-matchup-teams{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:end;
+  gap:8px;
+}
+.prediction-matchup-side{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.prediction-matchup-side>strong{
+  min-width:0;
+  overflow:hidden;
+  color:var(--text);
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-matchup-side>b{
+  color:#dcb151;
+  font-size:19px;
+  line-height:1;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-matchup-away{
+  align-items:flex-start;
+  text-align:left;
+}
+.prediction-matchup-home{
+  align-items:flex-end;
+  text-align:right;
+}
+.prediction-matchup-mid{
+  align-self:center;
+  padding:2px 6px;
+  border:1px solid rgba(214,169,74,.24);
+  border-radius:999px;
+  color:#bfa45c;
+  font-size:7.5px;
+  font-weight:950;
+}
+
+/* Both chart sides keep the same information order: team name, then percentage. */
+.prediction-lr-team{
+  flex-direction:column;
+  gap:1px;
+}
+.prediction-lr-away{
+  align-items:flex-start;
+}
+.prediction-lr-home{
+  align-items:flex-end;
+}
+.prediction-lr-team>strong{
+  order:1;
+}
+.prediction-lr-team>b{
+  order:2;
+}
+@media(max-width:600px){
+  .prediction-matchup-teams{
+    gap:5px;
+  }
+  .prediction-matchup-side>strong{
+    font-size:11px;
+  }
+  .prediction-matchup-side>b{
+    font-size:18px;
+  }
+  .prediction-matchup-mid{
+    font-size:7px;
+    padding:2px 5px;
+  }
+}
+
