@@ -9566,6 +9566,9 @@ body.pregame-center-open{
   background:rgba(247,249,251,.97);
   backdrop-filter:blur(14px);
 }
+ .match-center-tabs.is-two{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
 .match-center-tabs>button{
   position:relative;
   min-width:0;
