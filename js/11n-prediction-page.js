@@ -77,14 +77,19 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     function predictionModelNote(data) {
       if (!data?.model) return '';
       const factors = Array.isArray(data.model.factors) ? data.model.factors : [];
+      const updateTime = predictionDisplayTime(data?.fetchedAt || data?.updatedAt || '');
       return `
         <div class="prediction-model-note">
           <div>
             <strong>${escapeHtml(data.model.name || 'DiamondScope Model')}</strong>
             ${factors.length ? `<span>${factors.map(escapeHtml).join(' ・ ')}</span>` : ''}
             ${data.model.note ? `<span>${escapeHtml(data.model.note)}</span>` : ''}
+            ${updateTime ? `<span class="prediction-data-time">資料更新 ${escapeHtml(updateTime)}</span>` : ''}
           </div>
-          <button type="button" class="prediction-refresh-btn" data-prediction-refresh>重新讀取</button>
+          <div class="prediction-model-actions">
+            <button type="button" class="prediction-refresh-btn" data-prediction-refresh>更新資料</button>
+            ${predictionUiState.mode === 'game' ? '<button type="button" class="prediction-refresh-btn is-recalculate" data-prediction-recalculate>重新計算預測</button>' : ''}
+          </div>
         </div>
       `;
     }
@@ -204,7 +209,90 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       };
     }
 
-    function predictionWinChart(game) {
+    function predictionDisplayTime(value) {
+      const ms = Date.parse(String(value || ''));
+      if (!Number.isFinite(ms)) return '';
+      return new Intl.DateTimeFormat('zh-TW', {
+        month:'2-digit',
+        day:'2-digit',
+        hour:'2-digit',
+        minute:'2-digit',
+        hour12:false
+      }).format(new Date(ms));
+    }
+
+    function predictionPointInsight(game, points, index) {
+      const point = points[index] || null;
+      const previous = index > 0 ? points[index - 1] : null;
+      if (!point) return null;
+
+      const away = String(game?.away || '客隊');
+      const home = String(game?.home || '主隊');
+      const trigger = String(point?.trigger || '');
+      const label = String(point?.label || '');
+      let reason = predictionHistoryTriggerLabel(point);
+      let factorKey = '';
+
+      if (trigger === 'starter-published' || label === '先發公布') {
+        reason = '先發投手公布後重新計算';
+        factorKey = 'starter';
+      } else if (trigger === 'bullpen-refresh' || label === '牛棚更新') {
+        reason = '前一日賽事結束，依牛棚負荷重新計算';
+        factorKey = 'bullpen';
+      } else if (trigger === 'lineup-published' || label === '打線公布') {
+        reason = '先發打序公布後重新計算';
+        factorKey = 'lineup';
+      } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
+        const half = label.match(/\d+局[上下]/)?.[0] || label;
+        reason = `${half}結束，依比分與即時比賽內容重新計算`;
+        factorKey = 'live-score';
+      } else if (trigger === 'initial' || label === '初始預測') {
+        reason = '建立初始賽前預測';
+      } else if (trigger === 'pregame' || label === '賽前預測') {
+        reason = '賽前資料更新後重新計算';
+      }
+
+      const awayPct = Number(point?.awayProbability);
+      const homePct = Number(point?.homeProbability);
+      const prevAway = Number(previous?.awayProbability);
+      const prevHome = Number(previous?.homeProbability);
+      let delta = '第一個預測節點';
+      if ([awayPct, homePct, prevAway, prevHome].every(Number.isFinite)) {
+        const awayDelta = awayPct - prevAway;
+        const homeDelta = homePct - prevHome;
+        if (Math.max(Math.abs(awayDelta), Math.abs(homeDelta)) < 0.05) {
+          delta = '與上一個節點相比沒有明顯變化';
+        } else {
+          const useAway = Math.abs(awayDelta) >= Math.abs(homeDelta);
+          const team = useAway ? away : home;
+          const value = useAway ? awayDelta : homeDelta;
+          delta = `${team} ${value > 0 ? '+' : ''}${value.toFixed(1)} 個百分點`;
+        }
+      }
+
+      const factors = Array.isArray(game?.factors) ? game.factors : [];
+      const factor = factorKey
+        ? factors.find(item => {
+            const key = String(item?.key || '');
+            if (factorKey === 'live-score') return /live|score|inning/i.test(key) || /半局比分|即時比分/.test(String(item?.label || ''));
+            return key === factorKey;
+          }) || null
+        : null;
+
+      const isLatest = index === points.length - 1;
+      const factorDetail = isLatest && factor?.detail
+        ? `${String(factor?.label || reason)}：${String(factor.detail)}`
+        : '';
+
+      const score = Number.isFinite(Number(point?.awayScore)) && Number.isFinite(Number(point?.homeScore))
+        ? `${away} ${Number(point.awayScore)}：${Number(point.homeScore)} ${home}`
+        : '';
+      const time = predictionDisplayTime(point?.updatedAt || point?.createdAt || '');
+
+      return { reason, delta, factorDetail, score, time, awayPct, homePct };
+    }
+
+    function predictionWinChart(game, gameIndex = 0) {
       const points = predictionHistoryPoints(game);
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
@@ -278,8 +366,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           : 0;
         const labelAnchor = onAwaySide ? 'end' : onHomeSide ? 'start' : 'middle';
         const isLast = point && latest && String(point?.key || '') === String(latest?.key || '');
+        const pointIndex = point ? points.findIndex(item => item === point) : -1;
         return `
-          <g class="prediction-lr-row ${point ? 'is-complete' : 'is-pending'}">
+          <g class="prediction-lr-row ${point ? 'is-complete is-clickable' : 'is-pending'}" ${point ? `data-prediction-point-index="${pointIndex}" tabindex="0" role="button" aria-label="${escapeHtml(slot.label)} 詳細資料"` : ''}>
             <line class="prediction-lr-row-line" x1="${plotLeft}" x2="${plotRight}" y1="${y}" y2="${y}"></line>
             <circle class="prediction-lr-status" cx="${labelWidth - 8}" cy="${y}" r="${point ? 3.2 : 2.4}"></circle>
             <text class="prediction-lr-label" x="2" y="${y + 3.2}">${escapeHtml(slot.label)}</text>
@@ -292,7 +381,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       }).join('');
 
       return `
-        <section class="prediction-win-chart prediction-win-chart-lr" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
+        <section class="prediction-win-chart prediction-win-chart-lr" data-prediction-game-index="${gameIndex}" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
           <div class="prediction-lr-head">
             <div class="prediction-lr-team prediction-lr-away">
               <strong>${escapeHtml(away)}</strong>
@@ -323,6 +412,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
               ${rowSvg}
             </svg>
           </div>
+          <div class="prediction-point-detail hidden" data-prediction-point-detail aria-live="polite"></div>
         </section>
       `;
     }
@@ -333,6 +423,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const awayPct = Math.max(0, Math.min(100, Number(game?.awayProbability) || 0));
       const homePct = Math.max(0, Math.min(100, Number(game?.homeProbability) || 0));
       const factors = Array.isArray(game?.factors) ? game.factors : [];
+      const latestHistory = predictionHistoryPoints(game).at(-1) || null;
+      const dataTime = predictionDisplayTime(latestHistory?.updatedAt || latestHistory?.createdAt || '');
       const meta = [
         String(game?.status || '').toLowerCase() === 'live' ? game?.inningLabel : '',
         game?.time,
@@ -344,6 +436,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             <div>
               <span class="prediction-game-status">${predictionStatusLabel(game?.status)}</span>
               ${meta ? `<span class="prediction-game-meta">${meta}</span>` : ''}
+              ${dataTime ? `<span class="prediction-game-meta prediction-game-updated">更新 ${escapeHtml(dataTime)}</span>` : ''}
             </div>
             <span class="prediction-pick-badge">較看好 ${escapeHtml(game?.pick || '')} ${Number(game?.confidence || 0).toFixed(1)}%</span>
           </div>
@@ -378,7 +471,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             `).join('')}
           </div>
 
-          ${predictionWinChart(game)}
+          ${predictionWinChart(game, index)}
           <div class="prediction-game-page" aria-label="第 ${index + 1} 場，共 ${total} 場">${index + 1} / ${total}</div>
         </article>
       `;
@@ -973,7 +1066,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             league,
             mode,
             date,
-            force: mode === 'game' ? false : force
+            force:Boolean(force)
           });
           if (league === 'CPBL' && Array.isArray(data?.games)) {
             data.games = data.games.filter(game => {
@@ -1122,6 +1215,54 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           predictionDataCache.delete(key);
           predictionErrors.delete(key);
           void loadPredictionPageData({ force:false });
+        });
+      });
+
+      els.predictionPageContent.querySelectorAll('[data-prediction-recalculate]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = predictionKey();
+          predictionDataCache.delete(key);
+          predictionErrors.delete(key);
+          void loadPredictionPageData({ force:true });
+        });
+      });
+
+      els.predictionPageContent.querySelectorAll('[data-prediction-point-index]').forEach(node => {
+        const openDetail = () => {
+          const chart = node.closest('[data-prediction-game-index]');
+          const detailEl = chart?.querySelector('[data-prediction-point-detail]');
+          if (!chart || !detailEl) return;
+          const key = predictionKey();
+          const data = predictionDataCache.get(key) || null;
+          const gameIndex = Number(chart.dataset.predictionGameIndex);
+          const pointIndex = Number(node.dataset.predictionPointIndex);
+          const game = Array.isArray(data?.games) ? data.games[gameIndex] : null;
+          const points = predictionHistoryPoints(game);
+          const insight = predictionPointInsight(game, points, pointIndex);
+          if (!insight) return;
+
+          detailEl.innerHTML = `
+            <div class="prediction-point-detail-head">
+              <strong>${escapeHtml(predictionHistoryTriggerLabel(points[pointIndex]))}</strong>
+              ${insight.time ? `<span>${escapeHtml(insight.time)}</span>` : ''}
+            </div>
+            <div class="prediction-point-detail-prob">
+              <span>${escapeHtml(String(game?.away || '客隊'))} <b>${Number(insight.awayPct || 0).toFixed(1)}%</b></span>
+              <span>${escapeHtml(String(game?.home || '主隊'))} <b>${Number(insight.homePct || 0).toFixed(1)}%</b></span>
+            </div>
+            <p>${escapeHtml(insight.reason)}</p>
+            <p class="prediction-point-detail-delta">${escapeHtml(insight.delta)}</p>
+            ${insight.score ? `<p>${escapeHtml(insight.score)}</p>` : ''}
+            ${insight.factorDetail ? `<p class="prediction-point-factor">${escapeHtml(insight.factorDetail)}</p>` : ''}
+          `;
+          detailEl.classList.remove('hidden');
+        };
+        node.addEventListener('click', openDetail);
+        node.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDetail();
+          }
         });
       });
 
