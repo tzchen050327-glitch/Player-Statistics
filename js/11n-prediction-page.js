@@ -154,139 +154,110 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
     function predictionWinChart(game) {
       const points = predictionHistoryPoints(game);
-      if (!points.length) return '';
-
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
-      const width = Math.max(286, 70 + Math.max(0, points.length - 1) * 58);
-      const height = 142;
-      const left = 18;
-      const right = 18;
-      const top = 14;
-      const bottom = 14;
-      const plotWidth = width - left - right;
-      const plotHeight = height - top - bottom;
-      const midY = top + plotHeight / 2;
-      const xFor = index => points.length === 1
-        ? left + plotWidth / 2
-        : left + (plotWidth * index / (points.length - 1));
-      const yFor = probability => top + ((100 - probability) / 100) * plotHeight;
-      const coords = points.map((point, index) => ({
-        x:xFor(index),
-        y:yFor(point.homeProbability),
-        point,
-        index
-      }));
 
-      const smoothPath = coords.length <= 1
-        ? `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`
-        : coords.slice(1).reduce((path, current, index) => {
-            const previous = coords[index];
-            const midX = (previous.x + current.x) / 2;
-            return `${path} C ${midX.toFixed(1)} ${previous.y.toFixed(1)}, ${midX.toFixed(1)} ${current.y.toFixed(1)}, ${current.x.toFixed(1)} ${current.y.toFixed(1)}`;
-          }, `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`);
+      const pointByKey = new Map();
+      points.forEach(point => {
+        const key = String(point?.key || '');
+        const label = String(point?.label || '');
+        if (key === 'starter' || label === '先發公布') pointByKey.set('starter', point);
+        else if (key === 'bullpen' || label === '牛棚更新') pointByKey.set('bullpen', point);
+        else if (key === 'lineup' || label === '打線公布') pointByKey.set('lineup', point);
+        else {
+          const match = label.match(/(\d+)局([上下])/);
+          if (match) pointByKey.set(`inning-${match[1]}-${match[2] === '下' ? 'bottom' : 'top'}`, point);
+          else if (/^inning-/.test(key)) pointByKey.set(key, point);
+        }
+      });
 
-      const areaPath = coords.length > 1
-        ? `M ${coords[0].x.toFixed(1)} ${midY.toFixed(1)} L ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)} ${coords.slice(1).reduce((path, current, index) => {
-            const previous = coords[index];
-            const midX = (previous.x + current.x) / 2;
-            return `${path} C ${midX.toFixed(1)} ${previous.y.toFixed(1)}, ${midX.toFixed(1)} ${current.y.toFixed(1)}, ${current.x.toFixed(1)} ${current.y.toFixed(1)}`;
-          }, '')} L ${coords[coords.length - 1].x.toFixed(1)} ${midY.toFixed(1)} Z`
-        : '';
+      const maxRecordedInning = points.reduce((max, point) => {
+        const match = String(point?.label || '').match(/(\d+)局[上下]/);
+        return match ? Math.max(max, Number(match[1])) : max;
+      }, 0);
+      const currentInning = Number(String(game?.inningLabel || '').match(/(\d+)局/)?.[1] || 0);
+      const inningLimit = Math.max(9, Math.min(12, Math.max(maxRecordedInning, currentInning)));
 
-      const last = points[points.length - 1];
-      const prev = points.length > 1 ? points[points.length - 2] : null;
-      const lastHome = Number(last?.homeProbability || 0);
-      const lastAway = Number(last?.awayProbability || (100 - lastHome));
-      const delta = prev ? lastHome - Number(prev?.homeProbability || 0) : 0;
-      const latestLabel = predictionHistoryTriggerLabel(last);
-      const latestTime = predictionHistoryTime(last?.updatedAt);
-      const chartId = `predictionChart${String(game?.id || 'game').replace(/[^a-z0-9]/gi,'')}`;
-      const leader = lastHome >= 50 ? home : away;
-      const leadProbability = Math.max(lastHome,lastAway);
+      const slots = [
+        { key:'starter', label:'先發投手' },
+        { key:'bullpen', label:'牛棚狀態' },
+        { key:'lineup', label:'先發打序' }
+      ];
+      for (let inning = 1; inning <= inningLimit; inning++) {
+        slots.push({ key:`inning-${inning}-top`, label:`${inning}局上半` });
+        slots.push({ key:`inning-${inning}-bottom`, label:`${inning}局下半` });
+      }
 
-      const pointSvg = coords.map(({x,y,index}) => {
-        const current = index === coords.length - 1;
+      const width = 360;
+      const labelWidth = 86;
+      const plotLeft = labelWidth + 10;
+      const plotRight = width - 12;
+      const plotWidth = plotRight - plotLeft;
+      const rowHeight = 25;
+      const headerHeight = 34;
+      const bottomPad = 10;
+      const height = headerHeight + slots.length * rowHeight + bottomPad;
+      const xFor = homeProbability => plotLeft + Math.max(0, Math.min(100, Number(homeProbability) || 0)) / 100 * plotWidth;
+      const yFor = index => headerHeight + index * rowHeight + rowHeight / 2;
+      const completed = slots
+        .map((slot,index) => ({slot,index,point:pointByKey.get(slot.key) || null}))
+        .filter(item => item.point);
+
+      const linePoints = completed.map(item =>
+        `${xFor(item.point.homeProbability).toFixed(1)},${yFor(item.index).toFixed(1)}`
+      ).join(' ');
+
+      const latest = points[points.length - 1] || null;
+      const latestHome = Number(latest?.homeProbability ?? game?.homeProbability ?? 50);
+      const latestAway = Number(latest?.awayProbability ?? game?.awayProbability ?? (100 - latestHome));
+
+      const rowSvg = slots.map((slot,index) => {
+        const y = yFor(index);
+        const point = pointByKey.get(slot.key);
+        const x = point ? xFor(point.homeProbability) : null;
+        const pct = point ? Number(point.homeProbability).toFixed(1) : '';
+        const isLast = point && latest && String(point?.key || '') === String(latest?.key || '');
         return `
-          <g class="prediction-chart-point ${current ? 'is-current' : ''} ${lastHome >= 50 ? 'is-home-side' : 'is-away-side'}">
-            <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${current ? 5 : 2.8}"></circle>
+          <g class="prediction-lr-row ${point ? 'is-complete' : 'is-pending'}">
+            <line class="prediction-lr-row-line" x1="${plotLeft}" x2="${plotRight}" y1="${y}" y2="${y}"></line>
+            <circle class="prediction-lr-status" cx="${labelWidth - 8}" cy="${y}" r="${point ? 3.2 : 2.4}"></circle>
+            <text class="prediction-lr-label" x="2" y="${y + 3.2}">${escapeHtml(slot.label)}</text>
+            ${point ? `
+              <circle class="prediction-lr-point ${isLast ? 'is-current' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${isLast ? 5.2 : 3.5}"></circle>
+              <text class="prediction-lr-value" x="${Math.min(plotRight - 18, Math.max(plotLeft + 18, x)).toFixed(1)}" y="${(y - 6.5).toFixed(1)}" text-anchor="middle">${pct}%</text>
+            ` : ''}
           </g>
         `;
       }).join('');
 
-      const timeline = points.map((point,index) => `
-        <div class="prediction-chart-tick ${index === points.length - 1 ? 'is-current' : ''}">
-          <span></span>
-          <b>${escapeHtml(predictionHistoryAxisLabel(point.label))}</b>
-        </div>
-      `).join('');
-
       return `
-        <section class="prediction-win-chart" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
-          <div class="prediction-chart-scoreline">
-            <div class="prediction-chart-side prediction-chart-side-away">
+        <section class="prediction-win-chart prediction-win-chart-lr" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
+          <div class="prediction-lr-head">
+            <div class="prediction-lr-team prediction-lr-away">
               <strong>${escapeHtml(away)}</strong>
-              <b>${lastAway.toFixed(1)}%</b>
+              <b>${latestAway.toFixed(1)}%</b>
             </div>
-            <div class="prediction-chart-latest">
-              <span>${escapeHtml(latestLabel)}</span>
-              <strong>${prev ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}pp` : '賽前基準'}</strong>
-              ${latestTime ? `<small>${escapeHtml(latestTime)}</small>` : ''}
-            </div>
-            <div class="prediction-chart-side prediction-chart-side-home">
-              <b>${lastHome.toFixed(1)}%</b>
+            <div class="prediction-lr-center">50%</div>
+            <div class="prediction-lr-team prediction-lr-home">
+              <b>${latestHome.toFixed(1)}%</b>
               <strong>${escapeHtml(home)}</strong>
             </div>
           </div>
 
-          <div class="prediction-chart-status">
-            <span>目前較高</span>
-            <b>${escapeHtml(leader)} ${leadProbability.toFixed(1)}%</b>
+          <div class="prediction-lr-axis-caption">
+            <span>客隊 100%</span>
+            <span>50%</span>
+            <span>主隊 100%</span>
           </div>
 
-          <div class="prediction-chart-shell">
-            <div class="prediction-chart-zone prediction-chart-zone-home">主隊優勢</div>
-            <div class="prediction-chart-zone prediction-chart-zone-away">客隊優勢</div>
-            <div class="prediction-chart-50">50%</div>
-
-            <div class="prediction-chart-scroll">
-              <div class="prediction-chart-canvas" style="width:${width}px">
-                <svg class="prediction-chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img">
-                  <defs>
-                    <linearGradient id="${chartId}Stroke" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#f1c75f"></stop>
-                      <stop offset="49%" stop-color="#d8b457"></stop>
-                      <stop offset="51%" stop-color="#a9bac9"></stop>
-                      <stop offset="100%" stop-color="#88a0b6"></stop>
-                    </linearGradient>
-                    <linearGradient id="${chartId}Area" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#e0b64e" stop-opacity=".22"></stop>
-                      <stop offset="48%" stop-color="#e0b64e" stop-opacity=".035"></stop>
-                      <stop offset="52%" stop-color="#8fa7bc" stop-opacity=".035"></stop>
-                      <stop offset="100%" stop-color="#8fa7bc" stop-opacity=".20"></stop>
-                    </linearGradient>
-                  </defs>
-                  <line class="prediction-chart-guide" x1="${left}" x2="${width-right}" y1="${yFor(75)}" y2="${yFor(75)}"></line>
-                  <line class="prediction-chart-midline" x1="${left}" x2="${width-right}" y1="${midY}" y2="${midY}"></line>
-                  <line class="prediction-chart-guide" x1="${left}" x2="${width-right}" y1="${yFor(25)}" y2="${yFor(25)}"></line>
-                  ${areaPath ? `<path class="prediction-chart-area" d="${areaPath}" fill="url(#${chartId}Area)"></path>` : ''}
-                  <path class="prediction-chart-line-shadow" d="${smoothPath}"></path>
-                  <path class="prediction-chart-line" d="${smoothPath}" stroke="url(#${chartId}Stroke)"></path>
-                  ${pointSvg}
-                  <g class="prediction-chart-last-label">
-                    <rect x="${Math.min(width-58, Math.max(2, coords[coords.length-1].x-25)).toFixed(1)}"
-                          y="${Math.max(3, Math.min(height-25, coords[coords.length-1].y-28)).toFixed(1)}"
-                          width="50" height="20" rx="10"></rect>
-                    <text x="${coords[coords.length-1].x.toFixed(1)}"
-                          y="${Math.max(17, Math.min(height-11, coords[coords.length-1].y-14)).toFixed(1)}"
-                          text-anchor="middle">${lastHome.toFixed(1)}%</text>
-                  </g>
-                </svg>
-                <div class="prediction-chart-timeline" style="grid-template-columns:repeat(${Math.max(1,points.length)},minmax(44px,1fr))">
-                  ${timeline}
-                </div>
-              </div>
-            </div>
+          <div class="prediction-lr-scroll">
+            <svg class="prediction-lr-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img">
+              <rect class="prediction-lr-away-zone" x="${plotLeft}" y="${headerHeight - 7}" width="${plotWidth/2}" height="${height-headerHeight+1}" rx="8"></rect>
+              <rect class="prediction-lr-home-zone" x="${plotLeft + plotWidth/2}" y="${headerHeight - 7}" width="${plotWidth/2}" height="${height-headerHeight+1}" rx="8"></rect>
+              <line class="prediction-lr-midline" x1="${(plotLeft + plotWidth/2).toFixed(1)}" x2="${(plotLeft + plotWidth/2).toFixed(1)}" y1="${headerHeight - 7}" y2="${height - 8}"></line>
+              ${completed.length > 1 ? `<polyline class="prediction-lr-connector-shadow" points="${linePoints}"></polyline><polyline class="prediction-lr-connector" points="${linePoints}"></polyline>` : ''}
+              ${rowSvg}
+            </svg>
           </div>
         </section>
       `;
