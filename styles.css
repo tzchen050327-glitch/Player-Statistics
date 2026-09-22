@@ -8056,3 +8056,290 @@ html[data-theme="dark"] .app-date-today:hover{
   }
 }
 
+/* Prediction compact probability graph v6 */
+.prediction-win-chart{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.prediction-chart-scoreline{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  margin-bottom:7px;
+}
+.prediction-chart-side{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+}
+.prediction-chart-side>strong{
+  min-width:0;
+  overflow:hidden;
+  color:#dce5ee;
+  font-size:10px;
+  font-weight:900;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-chart-side>b{
+  flex:0 0 auto;
+  font-size:16px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-chart-side-away{
+  justify-content:flex-start;
+}
+.prediction-chart-side-away>b{
+  color:#b7c8d7;
+}
+.prediction-chart-side-home{
+  justify-content:flex-end;
+}
+.prediction-chart-side-home>b{
+  color:#f0c65f;
+}
+.prediction-chart-latest{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.prediction-chart-latest>span{
+  padding:3px 7px;
+  border:1px solid rgba(214,169,74,.28);
+  border-radius:999px;
+  background:rgba(214,169,74,.055);
+  color:#d8bb70;
+  font-size:8px;
+  font-weight:900;
+}
+.prediction-chart-latest>strong{
+  color:#dce5ee;
+  font-size:8px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-chart-latest>small{
+  color:#758493;
+  font-size:7.5px;
+  font-weight:800;
+}
+.prediction-chart-status{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-bottom:9px;
+  color:var(--muted);
+  font-size:8px;
+}
+.prediction-chart-status>b{
+  color:#d7e0e9;
+  font-size:8.5px;
+  font-weight:950;
+}
+.prediction-chart-shell{
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(151,165,181,.18);
+  border-radius:13px;
+  background:
+    linear-gradient(180deg,rgba(225,179,72,.055) 0%,rgba(225,179,72,.012) 49.4%,rgba(137,160,182,.012) 50.6%,rgba(137,160,182,.06) 100%),
+    rgba(255,255,255,.012);
+}
+.prediction-chart-zone{
+  position:absolute;
+  z-index:2;
+  right:9px;
+  color:rgba(190,201,211,.34);
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.08em;
+  pointer-events:none;
+}
+.prediction-chart-zone-home{top:8px;}
+.prediction-chart-zone-away{bottom:31px;}
+.prediction-chart-50{
+  position:absolute;
+  z-index:3;
+  left:8px;
+  top:50%;
+  transform:translateY(-50%);
+  padding:2px 5px;
+  border-radius:999px;
+  background:#151b22;
+  color:#c5a957;
+  font-size:7.5px;
+  font-weight:950;
+  pointer-events:none;
+}
+.prediction-chart-scroll{
+  width:100%;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  scrollbar-width:none;
+}
+.prediction-chart-scroll::-webkit-scrollbar{display:none;}
+.prediction-chart-canvas{
+  min-width:100%;
+}
+.prediction-chart-svg{
+  display:block;
+  width:auto;
+  min-width:100%;
+  max-width:none;
+  font-family:inherit;
+}
+.prediction-chart-guide{
+  stroke:rgba(171,186,200,.10);
+  stroke-width:1;
+}
+.prediction-chart-midline{
+  stroke:rgba(223,187,89,.48);
+  stroke-width:1;
+  stroke-dasharray:4 5;
+}
+.prediction-chart-area{
+  pointer-events:none;
+}
+.prediction-chart-line-shadow{
+  fill:none;
+  stroke:rgba(8,12,16,.70);
+  stroke-width:6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-line{
+  fill:none;
+  stroke-width:2.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-point circle{
+  fill:#141a21;
+  stroke:#c8a649;
+  stroke-width:1.5;
+}
+.prediction-chart-point.is-current.is-home-side circle{
+  fill:#efc75f;
+  stroke:#fff0bc;
+  stroke-width:2;
+  filter:drop-shadow(0 0 5px rgba(239,199,95,.32));
+}
+.prediction-chart-point.is-current.is-away-side circle{
+  fill:#9eb4c7;
+  stroke:#dbe6ef;
+  stroke-width:2;
+  filter:drop-shadow(0 0 5px rgba(158,180,199,.28));
+}
+.prediction-chart-last-label rect{
+  fill:rgba(19,25,32,.94);
+  stroke:rgba(222,188,98,.34);
+}
+.prediction-chart-last-label text{
+  fill:#ecce79;
+  font-size:8.5px;
+  font-weight:950;
+}
+.prediction-chart-timeline{
+  display:grid;
+  align-items:start;
+  min-height:30px;
+  padding:0 17px 6px;
+}
+.prediction-chart-tick{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  color:#7e8d9c;
+}
+.prediction-chart-tick>span{
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#53606d;
+}
+.prediction-chart-tick>b{
+  max-width:100%;
+  overflow:hidden;
+  font-size:7.5px;
+  font-weight:850;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-chart-tick.is-current{
+  color:#dfbd61;
+}
+.prediction-chart-tick.is-current>span{
+  width:5px;
+  height:5px;
+  background:#dfb84f;
+  box-shadow:0 0 0 3px rgba(223,184,79,.10);
+}
+.prediction-chart-summary,
+.prediction-chart-event,
+.prediction-chart-team,
+.prediction-chart-frame,
+.prediction-chart-caption,
+.prediction-chart-extreme{
+  display:none !important;
+}
+@media(max-width:600px){
+  .prediction-chart-scoreline{
+    grid-template-columns:minmax(0,1fr) minmax(82px,auto) minmax(0,1fr);
+    gap:6px;
+  }
+  .prediction-chart-side{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:1px;
+  }
+  .prediction-chart-side-home{
+    align-items:flex-end;
+  }
+  .prediction-chart-side>strong{
+    max-width:100%;
+    font-size:9px;
+  }
+  .prediction-chart-side>b{
+    font-size:15px;
+  }
+  .prediction-chart-latest{
+    justify-content:center;
+    gap:3px;
+  }
+  .prediction-chart-latest>small{
+    display:none;
+  }
+  .prediction-chart-latest>strong{
+    font-size:7.5px;
+  }
+  .prediction-chart-latest>span{
+    max-width:70px;
+    overflow:hidden;
+    font-size:7.5px;
+    text-overflow:ellipsis;
+  }
+  .prediction-chart-status{
+    margin-bottom:7px;
+  }
+  .prediction-chart-zone{
+    font-size:6.5px;
+  }
+  .prediction-chart-timeline{
+    padding-left:14px;
+    padding-right:14px;
+  }
+}
+
