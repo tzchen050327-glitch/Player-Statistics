@@ -667,3 +667,39 @@ html[data-theme="dark"] .pregame-center-error{
   color:#dd8d8d !important;
 }
 
+/* Unified matchup center */
+html[data-theme="dark"] .match-center-tabs{
+  border-bottom-color:#343a42 !important;
+  background:rgba(15,18,22,.97) !important;
+}
+html[data-theme="dark"] .match-center-tabs>button{
+  color:#939fad !important;
+}
+html[data-theme="dark"] .match-center-tabs>button+button{
+  border-left-color:#2f343b !important;
+}
+html[data-theme="dark"] .match-center-tabs>button.active{
+  background:#15191e !important;
+  color:#f1e7d4 !important;
+}
+html[data-theme="dark"] .match-center-tabs>button.active::after{
+  background:#d3a94a !important;
+}
+html[data-theme="dark"] .match-center-data-panel{
+  border-color:#343a42 !important;
+  background:linear-gradient(180deg,#111419,#0d1014) !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .match-center-data-tools{
+  border-bottom-color:#343a42 !important;
+  background:#15191e !important;
+}
+html[data-theme="dark"] .match-center-data-tools>span{
+  color:#929eac !important;
+}
+html[data-theme="dark"] .match-center-data-tools .pregame-center-refresh{
+  border-color:#454b53 !important;
+  background:#111419 !important;
+  color:#d7b45a !important;
+}
+
