@@ -105,7 +105,13 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           awayProbability:Math.max(0, Math.min(100, Number(point?.awayProbability) || 0))
         }))
         .filter(point => point.label)
-        .sort((a, b) => a.sequence - b.sequence);
+        .sort((a, b) => {
+          const seq = a.sequence - b.sequence;
+          if (seq) return seq;
+          const at = Date.parse(String(a?.updatedAt || ''));
+          const bt = Date.parse(String(b?.updatedAt || ''));
+          return (Number.isFinite(at) ? at : 0) - (Number.isFinite(bt) ? bt : 0);
+        });
 
       if (!points.length) {
         const home = Math.max(0, Math.min(100, Number(game?.pregameHomeProbability ?? game?.homeProbability) || 0));
@@ -145,8 +151,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       if (label === '打線公布' || trigger === 'lineup-published') return '打線公布';
       if (label === '比賽結束' || trigger === 'game-final') return '比賽結束';
       if (trigger === 'key-event') {
-        const half = label.match(/\d+局[上下]/)?.[0] || label;
-        return `${half} 關鍵上壘`;
+        const parts = label.split('｜');
+        const half = parts[0] || label.match(/\d+局[上下]/)?.[0] || label;
+        const event = parts.slice(2).join('｜') || '關鍵上壘';
+        return `${half} ${event}`;
       }
       if (/\d+局[上下]/.test(label)) return `${label}結束`;
       return label || '賽前預測';
@@ -176,8 +184,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       } else if (trigger === 'lineup-published' || label === '打線公布') {
         reason = '先發打序公布後重算';
       } else if (trigger === 'key-event') {
-        const half = label.match(/\d+局[上下]/)?.[0] || label;
-        reason = `${half}關鍵上壘／得分事件後重算`;
+        const parts = label.split('｜');
+        const half = parts[0] || label.match(/\d+局[上下]/)?.[0] || label;
+        const event = parts.slice(2).join('｜') || '關鍵上壘／跑者推進';
+        reason = `${half} ${event}後重算`;
       } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
         const half = label.match(/\d+局[上下]/)?.[0] || label;
         reason = `${half}結束，依比分與即時比賽內容重算`;
@@ -251,8 +261,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         reason = '先發打序公布後重新計算';
         factorKey = 'lineup';
       } else if (trigger === 'key-event') {
-        const half = label.match(/\d+局[上下]/)?.[0] || label;
-        reason = `${half}關鍵上壘／得分事件後重新計算`;
+        const parts = label.split('｜');
+        const half = parts[0] || label.match(/\d+局[上下]/)?.[0] || label;
+        const event = parts.slice(2).join('｜') || '關鍵上壘／跑者推進';
+        reason = `${half} ${event}後重新計算`;
         factorKey = 'live-score';
       } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
         const half = label.match(/\d+局[上下]/)?.[0] || label;
@@ -312,54 +324,72 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
 
-      const pointByKey = new Map();
-      points.forEach(point => {
+      const stageDefs = [
+        { key:'starter', label:'先發投手', aliases:['starter','先發公布'] },
+        { key:'bullpen', label:'牛棚狀態', aliases:['bullpen','牛棚更新'] },
+        { key:'lineup', label:'先發打序', aliases:['lineup','打線公布'] }
+      ];
+
+      const stagePoints = new Map();
+      const livePoints = [];
+      points.forEach((point, pointIndex) => {
         const key = String(point?.key || '');
         const label = String(point?.label || '');
-        if (key === 'starter' || label === '先發公布') pointByKey.set('starter', point);
-        else if (key === 'bullpen' || label === '牛棚更新') pointByKey.set('bullpen', point);
-        else if (key === 'lineup' || label === '打線公布') pointByKey.set('lineup', point);
-        else if (key === 'final' || label === '比賽結束' || String(point?.trigger || '') === 'game-final') pointByKey.set('final', point);
-        else {
-          const match = label.match(/(\d+)局([上下])/);
-          if (match) pointByKey.set(`inning-${match[1]}-${match[2] === '下' ? 'bottom' : 'top'}`, point);
-          else if (/^inning-/.test(key)) pointByKey.set(key, point);
+        const trigger = String(point?.trigger || '');
+        const stage = stageDefs.find(item => item.aliases.includes(key) || item.aliases.includes(label));
+        if (stage) {
+          stagePoints.set(stage.key, { point, pointIndex });
+          return;
+        }
+        if (
+          trigger === 'key-event' ||
+          trigger === 'half-inning' ||
+          trigger === 'game-final' ||
+          key === 'final' ||
+          /\d+局[上下]/.test(label)
+        ) {
+          livePoints.push({ point, pointIndex });
         }
       });
 
-      const maxRecordedInning = points.reduce((max, point) => {
-        const match = String(point?.label || '').match(/(\d+)局[上下]/);
-        return match ? Math.max(max, Number(match[1])) : max;
-      }, 0);
-      const currentInning = Number(String(game?.inningLabel || '').match(/(\d+)局/)?.[1] || 0);
-      const inningLimit = Math.max(9, Math.min(12, Math.max(maxRecordedInning, currentInning)));
+      const slots = stageDefs.map(stage => ({
+        key:stage.key,
+        label:stage.label,
+        point:stagePoints.get(stage.key)?.point || null,
+        pointIndex:stagePoints.get(stage.key)?.pointIndex ?? -1
+      }));
 
-      const slots = [
-        { key:'starter', label:'先發投手' },
-        { key:'bullpen', label:'牛棚狀態' },
-        { key:'lineup', label:'先發打序' }
-      ];
-      for (let inning = 1; inning <= inningLimit; inning++) {
-        slots.push({ key:`inning-${inning}-top`, label:`${inning}局上半` });
-        slots.push({ key:`inning-${inning}-bottom`, label:`${inning}局下半` });
-      }
-      if (pointByKey.has('final')) {
-        slots.push({ key:'final', label:'比賽結束' });
-      }
+      livePoints.forEach(({ point, pointIndex }) => {
+        const trigger = String(point?.trigger || '');
+        const raw = String(point?.label || '');
+        let label = predictionHistoryTriggerLabel(point);
+        if (trigger === 'half-inning') {
+          const half = raw.match(/\d+局[上下]/)?.[0] || raw;
+          label = `${half}結束`;
+        } else if (trigger === 'game-final') {
+          label = '比賽結束';
+        }
+        slots.push({
+          key:String(point?.key || `event-${pointIndex}`),
+          label,
+          point,
+          pointIndex
+        });
+      });
 
       const width = 320;
-      const labelWidth = 74;
+      const labelWidth = 104;
       const plotLeft = labelWidth + 8;
       const plotRight = width - 8;
       const plotWidth = plotRight - plotLeft;
-      const rowHeight = 24;
+      const rowHeight = 26;
       const headerHeight = 34;
       const bottomPad = 10;
       const height = headerHeight + slots.length * rowHeight + bottomPad;
       const xFor = homeProbability => plotLeft + Math.max(0, Math.min(100, Number(homeProbability) || 0)) / 100 * plotWidth;
       const yFor = index => headerHeight + index * rowHeight + rowHeight / 2;
       const completed = slots
-        .map((slot,index) => ({slot,index,point:pointByKey.get(slot.key) || null}))
+        .map((slot,index) => ({slot,index,point:slot.point || null}))
         .filter(item => item.point);
 
       const linePoints = completed.map(item =>
@@ -373,7 +403,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       const rowSvg = slots.map((slot,index) => {
         const y = yFor(index);
-        const point = pointByKey.get(slot.key);
+        const point = slot.point;
         const homePct = point ? Math.max(0, Math.min(100, Number(point.homeProbability) || 0)) : 50;
         const awayPct = point ? Math.max(0, Math.min(100, Number(point.awayProbability ?? (100 - homePct)) || 0)) : 50;
         const x = point ? xFor(homePct) : null;
@@ -385,9 +415,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           : 0;
         const labelAnchor = onAwaySide ? 'end' : onHomeSide ? 'start' : 'middle';
         const isLast = point && latest && String(point?.key || '') === String(latest?.key || '');
-        const pointIndex = point ? points.findIndex(item => item === point) : -1;
         return `
-          <g class="prediction-lr-row ${point ? 'is-complete is-clickable' : 'is-pending'}" ${point ? `data-prediction-point-index="${pointIndex}" tabindex="0" role="button" aria-label="${escapeHtml(slot.label)} 詳細資料"` : ''}>
+          <g class="prediction-lr-row ${point ? 'is-complete is-clickable' : 'is-pending'}" ${point ? `data-prediction-point-index="${slot.pointIndex}" tabindex="0" role="button" aria-label="${escapeHtml(slot.label)} 詳細資料"` : ''}>
             <line class="prediction-lr-row-line" x1="${plotLeft}" x2="${plotRight}" y1="${y}" y2="${y}"></line>
             <circle class="prediction-lr-status" cx="${labelWidth - 8}" cy="${y}" r="${point ? 3.2 : 2.4}"></circle>
             <text class="prediction-lr-label" x="2" y="${y + 3.2}">${escapeHtml(slot.label)}</text>
@@ -440,9 +469,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const away = escapeHtml(game?.away || '客隊');
       const home = escapeHtml(game?.home || '主隊');
       const latestHistory = predictionHistoryPoints(game).at(-1) || null;
-      // The prediction UI is event-based: while a half inning is still in progress,
-      // keep the headline probability on the latest committed history snapshot.
-      // It advances only after the backend writes the completed-half event.
+      // The headline follows the latest committed event-history snapshot.
+      // Key on-base / runner-advance events can advance it before the half inning ends.
       const awayPct = Math.max(0, Math.min(100, Number(latestHistory?.awayProbability ?? game?.awayProbability) || 0));
       const homePct = Math.max(0, Math.min(100, Number(latestHistory?.homeProbability ?? game?.homeProbability) || 0));
       const displayPick = awayPct >= homePct ? String(game?.away || '客隊') : String(game?.home || '主隊');
