@@ -926,3 +926,24 @@ html[data-theme="dark"] .game-detail-pa-meta{
   color:#94a0ab !important;
 }
 
+/* Dark fixed R/H/E scoreboard columns */
+html[data-theme="dark"] .gdx-scoreboard tbody th:nth-last-child(-n+3),
+html[data-theme="dark"] .gdx-scoreboard tbody td:nth-last-child(-n+3){
+  background:#151713 !important;
+  color:#dce4ea !important;
+  border-top-color:#2d302b !important;
+}
+html[data-theme="dark"] .gdx-scoreboard thead th:nth-last-child(-n+3){
+  background:#1a1b16 !important;
+  color:#bca86d !important;
+  border-top-color:#2d302b !important;
+}
+html[data-theme="dark"] .gdx-scoreboard th:nth-last-child(3),
+html[data-theme="dark"] .gdx-scoreboard td:nth-last-child(3){
+  box-shadow:-1px 0 0 #4a4027 !important;
+}
+html[data-theme="dark"] .gdx-scoreboard tbody td.gdx-total{
+  color:#f0c65f !important;
+  font-weight:950 !important;
+}
+
