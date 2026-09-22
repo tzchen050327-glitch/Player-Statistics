@@ -947,3 +947,90 @@ html[data-theme="dark"] .gdx-scoreboard tbody td.gdx-total{
   font-weight:950 !important;
 }
 
+/* Homepage daily games black-gold dark mode */
+html[data-theme="dark"] .home-daily-games-shell{
+  border-color:#4a4028 !important;
+  background:linear-gradient(180deg,#171714 0%,#11130f 100%) !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px 0 rgba(220,177,75,.05) !important;
+}
+html[data-theme="dark"] .home-daily-games-title strong{
+  color:#f0c65f !important;
+}
+html[data-theme="dark"] .home-daily-games-title span,
+html[data-theme="dark"] .home-daily-games-meta{
+  color:#a79a78 !important;
+}
+html[data-theme="dark"] .home-game-card{
+  border-color:#34372f !important;
+  background:linear-gradient(180deg,#171a1d 0%,#121519 100%) !important;
+  color:#ece4d4 !important;
+  box-shadow:0 5px 14px rgba(0,0,0,.24) !important;
+}
+html[data-theme="dark"] .home-game-card.is-detail-enabled:hover,
+html[data-theme="dark"] .home-game-card.is-detail-enabled:focus-visible{
+  border-color:#a9822d !important;
+  background:linear-gradient(180deg,#1d1b14 0%,#151619 100%) !important;
+  box-shadow:0 7px 18px rgba(0,0,0,.30),inset 0 0 0 1px rgba(211,169,74,.08) !important;
+}
+html[data-theme="dark"] .home-game-status{
+  border:1px solid #424741 !important;
+  background:#20242a !important;
+  color:#b9c2cc !important;
+}
+html[data-theme="dark"] .home-game-status.status-final{
+  border-color:#45433a !important;
+  background:#26251f !important;
+  color:#c8b98e !important;
+}
+html[data-theme="dark"] .home-game-status.status-live{
+  border-color:#80641f !important;
+  background:#30250e !important;
+  color:#ffd569 !important;
+}
+html[data-theme="dark"] .home-game-status.status-cancelled{
+  border-color:#654040 !important;
+  background:#281a1a !important;
+  color:#e8a0a0 !important;
+}
+html[data-theme="dark"] .home-game-time{
+  color:#929ca6 !important;
+}
+html[data-theme="dark"] .home-game-team-name{
+  color:#eee6d6 !important;
+}
+html[data-theme="dark"] .home-game-score{
+  color:#f2d27a !important;
+}
+html[data-theme="dark"] .home-game-card.status-scheduled .home-game-score,
+html[data-theme="dark"] .home-game-card.status-cancelled .home-game-score{
+  color:#8f9aa5 !important;
+}
+html[data-theme="dark"] .home-game-venue{
+  border-top-color:#2e332f !important;
+  color:#929ca6 !important;
+}
+html[data-theme="dark"] .home-games-state{
+  border-color:#474333 !important;
+  background:#131619 !important;
+  color:#9ea8b2 !important;
+}
+html[data-theme="dark"] .home-games-state.error{
+  border-color:#5a3838 !important;
+  color:#df9292 !important;
+}
+html[data-theme="dark"] .home-games-scroller{
+  scrollbar-color:#8a7134 transparent !important;
+}
+html[data-theme="dark"] .home-games-scroller::-webkit-scrollbar{
+  height:7px;
+}
+html[data-theme="dark"] .home-games-scroller::-webkit-scrollbar-track{
+  background:transparent !important;
+}
+html[data-theme="dark"] .home-games-scroller::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:999px;
+  background:#8a7134 !important;
+  background-clip:padding-box !important;
+}
+
