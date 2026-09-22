@@ -188,12 +188,12 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         slots.push({ key:`inning-${inning}-bottom`, label:`${inning}局下半` });
       }
 
-      const width = 360;
-      const labelWidth = 86;
-      const plotLeft = labelWidth + 10;
-      const plotRight = width - 12;
+      const width = 320;
+      const labelWidth = 74;
+      const plotLeft = labelWidth + 8;
+      const plotRight = width - 8;
       const plotWidth = plotRight - plotLeft;
-      const rowHeight = 25;
+      const rowHeight = 24;
       const headerHeight = 34;
       const bottomPad = 10;
       const height = headerHeight + slots.length * rowHeight + bottomPad;
