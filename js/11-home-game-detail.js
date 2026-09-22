@@ -170,6 +170,15 @@
       return Number.isFinite(n) && n > 0 ? `${Math.floor(n)}打點` : '';
     }
 
+    function homeGameDetailResultTone(value) {
+      const text = String(value || '').trim();
+      if (/全壘打|全塁打|home\s*run/i.test(text)) return 'is-homer';
+      if (/三壘安打|三塁打|二壘安打|二塁打|安打|ヒット|single|double|triple/i.test(text)) return 'is-hit';
+      if (/四壞|保送|四球|walk|觸身|触身|死球|hit\s*by\s*pitch/i.test(text)) return 'is-free-pass';
+      if (/犧牲飛球|犧牲觸擊|犧牲短打|犠牲フライ|犠打|sacrifice/i.test(text)) return 'is-sacrifice';
+      return '';
+    }
+
     function homeGameDetailMeta(play) {
       return [
         homeGameDetailOutLabel(play?.outs),
@@ -656,7 +665,7 @@
           <div class="game-detail-pa-list">
             ${group.plays.map(play => `
               <div class="game-detail-pa-row">
-                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span>${escapeHtml(String(play?.result || '—'))}</span></div>
+                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(play?.result || '—'))}</span></div>
                 <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
               </div>`).join('')}
           </div>
