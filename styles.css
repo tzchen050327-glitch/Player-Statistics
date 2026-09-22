@@ -7786,3 +7786,273 @@ html[data-theme="dark"] .app-date-today:hover{
   }
 }
 
+/* Prediction probability timeline v5 */
+.prediction-win-chart{
+  margin-top:18px;
+  padding-top:16px;
+}
+.prediction-chart-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:10px;
+  align-items:stretch;
+  margin-bottom:10px;
+}
+.prediction-chart-team{
+  min-width:0;
+  display:grid;
+  grid-template-columns:1fr auto;
+  grid-template-areas:
+    "role pct"
+    "name pct";
+  column-gap:8px;
+  row-gap:1px;
+  padding:10px 11px;
+  border:1px solid rgba(151,165,181,.18);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+}
+.prediction-chart-team>span{
+  grid-area:role;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+}
+.prediction-chart-team>strong{
+  grid-area:name;
+  min-width:0;
+  overflow:hidden;
+  color:var(--text);
+  font-size:10px;
+  font-weight:950;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-chart-team>b{
+  grid-area:pct;
+  align-self:center;
+  color:#dce6ef;
+  font-size:15px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-chart-team-home>b{
+  color:#f0c65f;
+}
+.prediction-chart-event{
+  min-width:86px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  padding:7px 10px;
+  border:1px solid rgba(214,169,74,.30);
+  border-radius:12px;
+  background:rgba(214,169,74,.06);
+  text-align:center;
+}
+.prediction-chart-event>span{
+  color:var(--muted);
+  font-size:7.5px;
+  font-weight:850;
+}
+.prediction-chart-event>strong{
+  color:#f0c65f;
+  font-size:10px;
+  font-weight:950;
+  white-space:nowrap;
+}
+.prediction-chart-event>em{
+  color:#dce6ef;
+  font-size:9px;
+  font-style:normal;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-chart-event>em.is-home-up{
+  color:#f0c65f;
+}
+.prediction-chart-event>em.is-away-up{
+  color:#a9bed2;
+}
+.prediction-chart-event>small{
+  color:var(--muted);
+  font-size:7.5px;
+  font-weight:800;
+}
+.prediction-chart-frame{
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(151,165,181,.20);
+  border-radius:14px;
+  background:
+    linear-gradient(180deg,rgba(214,169,74,.035) 0 49.8%,rgba(125,148,170,.035) 50.2% 100%),
+    color-mix(in srgb,var(--panel) 97%,var(--bg));
+}
+.prediction-chart-scroll{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  scrollbar-width:none;
+}
+.prediction-chart-scroll::-webkit-scrollbar{
+  display:none;
+}
+.prediction-chart-extreme{
+  position:absolute;
+  z-index:2;
+  left:10px;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:calc(100% - 20px);
+  padding:3px 6px;
+  border-radius:999px;
+  backdrop-filter:blur(4px);
+  pointer-events:none;
+}
+.prediction-chart-extreme>span{
+  max-width:150px;
+  overflow:hidden;
+  color:#c9d4de;
+  font-size:8px;
+  font-weight:900;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-chart-extreme>b{
+  flex:0 0 auto;
+  font-size:8px;
+  font-weight:950;
+}
+.prediction-chart-extreme-home{
+  top:7px;
+  background:rgba(214,169,74,.10);
+}
+.prediction-chart-extreme-home>b{
+  color:#edc45e;
+}
+.prediction-chart-extreme-away{
+  bottom:31px;
+  background:rgba(125,148,170,.10);
+}
+.prediction-chart-extreme-away>b{
+  color:#b9cad9;
+}
+.prediction-chart-svg{
+  min-width:100%;
+}
+.prediction-chart-grid{
+  stroke:rgba(170,185,201,.13);
+  stroke-width:1;
+}
+.prediction-chart-midline{
+  stroke:rgba(226,191,99,.60);
+  stroke-width:1.15;
+  stroke-dasharray:4 5;
+}
+.prediction-chart-mid-label{
+  fill:#d7b557;
+  font-size:8px;
+  font-weight:950;
+}
+.prediction-chart-line-shadow{
+  fill:none;
+  stroke:rgba(213,167,61,.18);
+  stroke-width:7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-line{
+  fill:none;
+  stroke:#e0b348;
+  stroke-width:2.7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-point circle{
+  fill:#111820;
+  stroke:#e0b348;
+  stroke-width:1.8;
+}
+.prediction-chart-point.is-current circle{
+  fill:#f0c65f;
+  stroke:#fff0bd;
+  stroke-width:2.2;
+  filter:drop-shadow(0 0 5px rgba(240,198,95,.38));
+}
+.prediction-chart-value{
+  fill:#f4d277;
+  font-size:9.5px;
+  font-weight:950;
+  paint-order:stroke;
+  stroke:rgba(12,17,23,.85);
+  stroke-width:3px;
+  stroke-linejoin:round;
+}
+.prediction-chart-x-label{
+  fill:#9fafbe;
+  font-size:8.5px;
+  font-weight:850;
+}
+.prediction-chart-caption{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 2px 0;
+}
+.prediction-chart-caption>span{
+  color:#d0ab50;
+  font-size:8px;
+  font-weight:950;
+}
+.prediction-chart-caption>b{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+  text-align:right;
+}
+@media(max-width:600px){
+  .prediction-chart-summary{
+    grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);
+    gap:6px;
+  }
+  .prediction-chart-team{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "role"
+      "name"
+      "pct";
+    gap:1px;
+    padding:8px 9px;
+  }
+  .prediction-chart-team>b{
+    margin-top:2px;
+    font-size:14px;
+  }
+  .prediction-chart-event{
+    min-width:0;
+    padding:6px 5px;
+  }
+  .prediction-chart-event>strong{
+    max-width:70px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .prediction-chart-extreme>span{
+    max-width:115px;
+  }
+  .prediction-chart-caption{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:2px;
+  }
+  .prediction-chart-caption>b{
+    text-align:left;
+  }
+}
+
