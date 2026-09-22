@@ -595,3 +595,75 @@ html[data-theme="dark"] .prediction-empty-state strong{
 html[data-theme="dark"] .prediction-empty-state>span{
   color:#9ca8b7 !important;
 }
+
+/* Pregame matchup + bullpen center */
+html[data-theme="dark"] .pregame-center-section{
+  border-color:#343a42 !important;
+  background:linear-gradient(180deg,#111419,#0d1014) !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .pregame-center-tabs{
+  border-bottom-color:#343a42 !important;
+  background:#15191e !important;
+}
+html[data-theme="dark"] .pregame-center-tabs>button{
+  border-right-color:#343a42 !important;
+  color:#98a5b4 !important;
+}
+html[data-theme="dark"] .pregame-center-tabs>button.active{
+  background:#111419 !important;
+  color:#f1e7d4 !important;
+}
+html[data-theme="dark"] .pregame-center-tabs>button.active::after{
+  background:#d3a94a !important;
+}
+html[data-theme="dark"] .pregame-center-tabs>.pregame-center-refresh{
+  color:#c9a856 !important;
+}
+html[data-theme="dark"] .pregame-center-block-title strong,
+html[data-theme="dark"] .pregame-center-summary-grid article>strong,
+html[data-theme="dark"] .bullpen-status-head strong{
+  color:#eee5d4 !important;
+}
+html[data-theme="dark"] .pregame-center-block-title span,
+html[data-theme="dark"] .pregame-center-summary-grid article>span,
+html[data-theme="dark"] .pregame-center-note,
+html[data-theme="dark"] .bullpen-status-head span,
+html[data-theme="dark"] .bullpen-work-list span,
+html[data-theme="dark"] .bullpen-work-empty{
+  color:#8f9ba8 !important;
+}
+html[data-theme="dark"] .pregame-center-summary-grid>article,
+html[data-theme="dark"] .bullpen-status-card{
+  border-color:#30363d !important;
+  background:#15191e !important;
+}
+html[data-theme="dark"] .pregame-center-summary-grid article>b,
+html[data-theme="dark"] .bullpen-status-metrics strong,
+html[data-theme="dark"] .bullpen-status-subtitle{
+  color:#bcc8d5 !important;
+}
+html[data-theme="dark"] .pregame-center-prediction>div+div{
+  border-left-color:#30363d !important;
+}
+html[data-theme="dark"] .pregame-center-prediction>div>b,
+html[data-theme="dark"] .bullpen-status-head b{
+  color:#e2ba59 !important;
+}
+html[data-theme="dark"] .bullpen-status-metrics>div,
+html[data-theme="dark"] .bullpen-work-list>div,
+html[data-theme="dark"] .bullpen-work-empty{
+  background:#101419 !important;
+}
+html[data-theme="dark"] .bullpen-status-subtitle{
+  border-top-color:#2c3238 !important;
+}
+html[data-theme="dark"] .bullpen-work-list strong{
+  color:#dce4ec !important;
+}
+html[data-theme="dark"] .pregame-center-error{
+  border-color:#5a3434 !important;
+  background:#241616 !important;
+  color:#dd8d8d !important;
+}
+
