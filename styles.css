@@ -9738,3 +9738,25 @@ body.pregame-center-open{
   background:rgba(74,151,255,.11);
 }
 
+/* Match center stacking fix v2 */
+.game-detail-sticky-head{
+  z-index:40 !important;
+}
+.match-center-tabs{
+  z-index:30 !important;
+}
+.gdx-scoreboard,
+.gdx-decisions,
+.gdx-last-play,
+.gdx-live-situation{
+  position:relative;
+  z-index:0;
+  isolation:isolate;
+}
+.gdx-scoreboard .gdx-team-col{
+  z-index:1 !important;
+}
+.gdx-scoreboard thead .gdx-team-col{
+  z-index:2 !important;
+}
+
