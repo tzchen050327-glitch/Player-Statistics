@@ -483,7 +483,7 @@
               ${tired.map(item => `
                 <div>
                   <strong>${escapeHtml(String(item?.name || '未辨識投手'))}</strong>
-                  <span>${Number(item?.days || 0) >= 2 ? '連兩日出賽' : '近期出賽'}｜昨日 ${Number(item?.yesterdayWork || 0)} BF｜兩日 ${Number(item?.twoDayWork || 0)} BF</span>
+                  <span>${Number(item?.days || 0) >= 2 ? '連兩日出賽' : '近期出賽'}｜昨日 ${Number(item?.yesterdayWork || 0)} ${escapeHtml(String(item?.workloadUnit || 'BF'))}｜兩日 ${Number(item?.twoDayWork || 0)} ${escapeHtml(String(item?.workloadUnit || 'BF'))}</span>
                 </div>
               `).join('')}
             </div>
@@ -543,22 +543,25 @@
       const { league, date, game, key } = activeHomeGameDetail;
       if (!game?.id || !game?.away || !game?.home) return;
       if (activeHomeGameDetail.pregameExtrasLoading) return;
+      const tab = activeHomeGameDetail.centerTab === 'bullpen' ? 'bullpen' : 'overview';
+      if (!force) {
+        if (tab === 'overview' && activeHomeGameDetail.pregameCenter) return;
+        if (tab === 'bullpen' && activeHomeGameDetail.bullpenStatus) return;
+      }
       activeHomeGameDetail.pregameExtrasLoading = true;
       activeHomeGameDetail.pregameExtrasError = '';
       const cachedDetail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
       renderHomeGameDetail(cachedDetail, game);
       try {
-        const [centerResult, bullpenResult] = await Promise.allSettled([
-          homePregameCenterRequest(league, date, game, force),
-          homeBullpenStatusRequest(league, date, game, force)
-        ]);
+        const data = tab === 'bullpen'
+          ? await homeBullpenStatusRequest(league, date, game, force)
+          : await homePregameCenterRequest(league, date, game, force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (centerResult.status === 'fulfilled') activeHomeGameDetail.pregameCenter = centerResult.value;
-        if (bullpenResult.status === 'fulfilled') activeHomeGameDetail.bullpenStatus = bullpenResult.value;
-        const failures = [];
-        if (centerResult.status === 'rejected') failures.push(centerResult.reason?.message || '對戰總覽讀取失敗');
-        if (bullpenResult.status === 'rejected') failures.push(bullpenResult.reason?.message || '牛棚資料讀取失敗');
-        activeHomeGameDetail.pregameExtrasError = failures.join('｜');
+        if (tab === 'bullpen') activeHomeGameDetail.bullpenStatus = data;
+        else activeHomeGameDetail.pregameCenter = data;
+      } catch (error) {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pregameExtrasError = error?.message || (tab === 'bullpen' ? '牛棚資料讀取失敗。' : '對戰總覽讀取失敗。');
       } finally {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pregameExtrasLoading = false;
