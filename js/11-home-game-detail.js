@@ -207,7 +207,7 @@
       overlay = document.createElement('div');
       overlay.id = 'homeGameDetailOverlay';
       overlay.className = 'home-game-detail-overlay hidden';
-      overlay.innerHTML = '<div class="home-game-detail-page" role="dialog" aria-modal="true" aria-label="單場逐打席"><div id="homeGameDetailBody"></div></div>';
+      overlay.innerHTML = '<div class="home-game-detail-page" role="dialog" aria-modal="true" aria-label="對戰中心"><div id="homeGameDetailBody"></div></div>';
       document.body.appendChild(overlay);
       return overlay;
     }
@@ -448,7 +448,7 @@
             ` : '<strong>尚無已存預測</strong>'}
           </article>
         </div>
-        <div class="pregame-center-note">先發打線未正式公布前，不使用預估打序，也不納入此頁。</div>
+
       `;
     }
 
@@ -495,19 +495,17 @@
       `;
     }
 
-    function homePregameCenterSection(detail, gameInfo, game, status) {
-      if (status !== 'scheduled' || !activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
-      const tab = activeHomeGameDetail?.pregameTab === 'bullpen' ? 'bullpen' : 'matchup';
+    function homeMatchCenterDataPanel(tab, gameInfo, game) {
+      if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
       const center = activeHomeGameDetail?.pregameCenter || null;
       const bullpen = activeHomeGameDetail?.bullpenStatus || null;
       const loading = Boolean(activeHomeGameDetail?.pregameExtrasLoading);
       const error = String(activeHomeGameDetail?.pregameExtrasError || '');
       return `
-        <section class="pregame-center-section">
-          <div class="pregame-center-tabs">
-            <button type="button" data-pregame-tab="matchup" class="${tab === 'matchup' ? 'active' : ''}">賽前對戰</button>
-            <button type="button" data-pregame-tab="bullpen" class="${tab === 'bullpen' ? 'active' : ''}">牛棚狀況</button>
-            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '更新'}</button>
+        <section class="match-center-data-panel">
+          <div class="match-center-data-tools">
+            <span>${tab === 'bullpen' ? '賽前牛棚使用狀況' : '兩隊賽前資料比較'}</span>
+            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '重新讀取'}</button>
           </div>
           ${error ? `<div class="pregame-center-error">${escapeHtml(error)}</div>` : ''}
           <div class="pregame-center-body">
@@ -522,7 +520,6 @@
     async function refreshHomePregameExtras(force = false) {
       if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return;
       const { league, date, game, key } = activeHomeGameDetail;
-      if (String(game?.status || 'scheduled').toLowerCase() !== 'scheduled') return;
       if (!game?.id || !game?.away || !game?.home) return;
       if (activeHomeGameDetail.pregameExtrasLoading) return;
       activeHomeGameDetail.pregameExtrasLoading = true;
@@ -576,7 +573,12 @@
           source:pregame?.source || ''
         };
       }
-      const pregameCenterSection = homePregameCenterSection(detail, gameInfo, game, status);
+      const centerTab = ['overview','bullpen'].includes(String(activeHomeGameDetail?.centerTab || ''))
+        ? String(activeHomeGameDetail.centerTab)
+        : 'play';
+      const centerDataPanel = centerTab === 'overview' || centerTab === 'bullpen'
+        ? homeMatchCenterDataPanel(centerTab, gameInfo, game)
+        : '';
       const matchup = status === 'live' ? `
         <div class="game-detail-current-grid">
           <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
@@ -597,36 +599,50 @@
       body.innerHTML = `
         <header class="game-detail-sticky-head">
           <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回賽事</button>
-          <div class="game-detail-head-copy"><strong>${escapeHtml(leagueLabel)}</strong><span>${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}</span></div>
+          <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
+        <nav class="match-center-tabs" aria-label="對戰中心分類">
+          <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席紀錄</button>
+          <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
+          <button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚狀態</button>
+        </nav>
         <main class="game-detail-content">
-          <section class="game-detail-score-card">
-            <div class="game-detail-status">${escapeHtml(homeGameDetailStatusLabel(detail || {status,game:gameInfo}))}${loading ? '｜更新中…' : ''}</div>
-            <div class="game-detail-score-row">
-              <div><span>${escapeHtml(String(gameInfo?.away || game?.away || '客隊'))}</span><strong>${homeGameDetailScore(gameInfo?.awayScore)}</strong></div>
-              <b>－</b>
-              <div><span>${escapeHtml(String(gameInfo?.home || game?.home || '主隊'))}</span><strong>${homeGameDetailScore(gameInfo?.homeScore)}</strong></div>
-            </div>
-            ${matchup}
-          </section>
-          ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
-          ${pregameCenterSection}
-          <section class="game-detail-play-section">
-            <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>
-            ${playsHtml}
-          </section>
+          <div class="match-center-panel ${centerTab === 'play' ? 'active' : ''}" data-match-center-panel="play">
+            <section class="game-detail-score-card">
+              <div class="game-detail-status">${escapeHtml(homeGameDetailStatusLabel(detail || {status,game:gameInfo}))}${loading ? '｜更新中…' : ''}</div>
+              <div class="game-detail-score-row">
+                <div><span>${escapeHtml(String(gameInfo?.away || game?.away || '客隊'))}</span><strong>${homeGameDetailScore(gameInfo?.awayScore)}</strong></div>
+                <b>－</b>
+                <div><span>${escapeHtml(String(gameInfo?.home || game?.home || '主隊'))}</span><strong>${homeGameDetailScore(gameInfo?.homeScore)}</strong></div>
+              </div>
+              ${matchup}
+            </section>
+            ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
+            <section class="game-detail-play-section">
+              <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>
+              ${playsHtml}
+            </section>
+          </div>
+          <div class="match-center-panel ${centerTab !== 'play' ? 'active' : ''}" data-match-center-panel="${centerTab}">
+            ${centerDataPanel}
+          </div>
         </main>`;
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
-      body.querySelectorAll('[data-pregame-tab]').forEach(btn => {
+      body.querySelectorAll('[data-match-center-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
           if (!activeHomeGameDetail) return;
-          activeHomeGameDetail.pregameTab = btn.dataset.pregameTab === 'bullpen' ? 'bullpen' : 'matchup';
+          const tab = String(btn.dataset.matchCenterTab || 'play');
+          if (!['play','overview','bullpen'].includes(tab)) return;
+          activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
+          if (tab !== 'play' && (!activeHomeGameDetail.pregameCenter || !activeHomeGameDetail.bullpenStatus)) {
+            void refreshHomePregameExtras(false);
+          }
         });
       });
       body.querySelector('#homePregameExtrasRefresh')?.addEventListener('click', () => void refreshHomePregameExtras(true));
@@ -769,11 +785,13 @@
       }
     }
 
-    function openHomeGameDetail(game, league, date) {
+    function openHomeGameDetail(game, league, date, options = {}) {
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
-      activeHomeGameDetail = { league, date, game, key, loading:false, pregameTab:'matchup', pregameCenter:null, bullpenStatus:null, pregameExtrasLoading:false, pregameExtrasError:'' };
+      const requestedTab = ['play','overview','bullpen'].includes(String(options?.tab || '')) ? String(options.tab) : '';
+      const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:null, bullpenStatus:null, pregameExtrasLoading:false, pregameExtrasError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
@@ -789,7 +807,7 @@
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       refreshActiveHomeGameDetail();
-      if (String(game?.status || 'scheduled').toLowerCase() === 'scheduled') {
+      if (defaultTab !== 'play') {
         void refreshHomePregameExtras(false);
       }
     }
