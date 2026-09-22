@@ -359,6 +359,195 @@
       </article>`;
     }
 
+    async function homePregameCenterRequest(league, date, game, force = false) {
+      const response = await fetch(LEAGUE_PREGAME_CENTER_API_URL, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          league,
+          date,
+          gameId:String(game?.id || ''),
+          away:String(game?.away || ''),
+          home:String(game?.home || ''),
+          force:Boolean(force)
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `賽前對戰資料讀取失敗（${response.status}）`);
+      return data;
+    }
+
+    async function homeBullpenStatusRequest(league, date, game, force = false) {
+      const response = await fetch(LEAGUE_BULLPEN_STATUS_API_URL, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          league,
+          date,
+          gameId:String(game?.id || ''),
+          away:String(game?.away || ''),
+          home:String(game?.home || ''),
+          force:Boolean(force)
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `牛棚資料讀取失敗（${response.status}）`);
+      return data;
+    }
+
+    function homePregameRecordText(record) {
+      if (!record) return '—';
+      return `${Number(record.wins || 0)}勝 ${Number(record.losses || 0)}敗${Number(record.ties || 0) ? ` ${Number(record.ties)}和` : ''}`;
+    }
+
+    function homePregameStarterPair(center, gameInfo, game) {
+      const starters = center?.starters || null;
+      return `
+        <div class="pregame-center-block">
+          <div class="pregame-center-block-title"><strong>先發投手</strong><span>官方公布資料</span></div>
+          <div class="game-detail-starter-grid">
+            ${homeStarterCard(starters?.away || null, String(gameInfo?.away || game?.away || '客隊'), '客隊')}
+            ${homeStarterCard(starters?.home || null, String(gameInfo?.home || game?.home || '主隊'), '主隊')}
+          </div>
+        </div>
+      `;
+    }
+
+    function homePregameMatchupPanel(center, gameInfo, game) {
+      if (!center) return '<div class="pregame-center-loading">正在整理賽前對戰資料…</div>';
+      const matchup = center?.matchup || {};
+      const h2h = matchup?.h2h || null;
+      const prediction = center?.prediction || null;
+      const away = String(gameInfo?.away || game?.away || '客隊');
+      const home = String(gameInfo?.home || game?.home || '主隊');
+      return `
+        ${homePregameStarterPair(center, gameInfo, game)}
+        <div class="pregame-center-summary-grid">
+          <article>
+            <span>近 6 場</span>
+            <strong>${escapeHtml(away)}</strong>
+            <b>${escapeHtml(homePregameRecordText(matchup?.awayRecent))}</b>
+          </article>
+          <article>
+            <span>近 6 場</span>
+            <strong>${escapeHtml(home)}</strong>
+            <b>${escapeHtml(homePregameRecordText(matchup?.homeRecent))}</b>
+          </article>
+          <article class="is-wide">
+            <span>本季對戰</span>
+            <strong>${escapeHtml(away)} ${h2h ? Number(h2h.awayWins || 0) : '—'}－${h2h ? Number(h2h.homeWins || 0) : '—'} ${escapeHtml(home)}</strong>
+            <b>${h2h && Number(h2h.ties || 0) ? `${Number(h2h.ties)} 和` : '例行賽對戰'}</b>
+          </article>
+          <article class="is-wide pregame-center-prediction">
+            <span>目前已存預測</span>
+            ${prediction ? `
+              <div><strong>${escapeHtml(away)}</strong><b>${Number(prediction.awayProbability || 0).toFixed(1)}%</b></div>
+              <div><strong>${escapeHtml(home)}</strong><b>${Number(prediction.homeProbability || 0).toFixed(1)}%</b></div>
+            ` : '<strong>尚無已存預測</strong>'}
+          </article>
+        </div>
+        <div class="pregame-center-note">先發打線未正式公布前，不使用預估打序，也不納入此頁。</div>
+      `;
+    }
+
+    function homeBullpenTeamCard(side, fallbackTeam) {
+      if (!side) return `<article class="bullpen-status-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的牛棚資料</span></article>`;
+      const tired = Array.isArray(side?.tired) ? side.tired : [];
+      const members = Array.isArray(side?.members) ? side.members : [];
+      const availability = Number(side?.availabilityPct);
+      const pct = Number.isFinite(availability) ? availability : 100;
+      const status = pct >= 92 ? '充足' : pct >= 82 ? '正常' : pct >= 72 ? '注意' : '吃緊';
+      return `
+        <article class="bullpen-status-card">
+          <div class="bullpen-status-head">
+            <div><span>牛棚可用度</span><strong>${escapeHtml(String(side?.team || fallbackTeam || '球隊'))}</strong></div>
+            <div><b>${pct.toFixed(0)}%</b><em>${status}</em></div>
+          </div>
+          <div class="bullpen-status-metrics">
+            <div><span>ERA</span><strong>${Number.isFinite(Number(side?.era)) ? Number(side.era).toFixed(2) : '—'}</strong></div>
+            <div><span>WHIP</span><strong>${Number.isFinite(Number(side?.whip)) ? Number(side.whip).toFixed(2) : '—'}</strong></div>
+            <div><span>牛棚人數</span><strong>${Number(side?.pitchers || members.length || 0) || '—'}</strong></div>
+          </div>
+          <div class="bullpen-status-subtitle">近兩日負荷</div>
+          ${tired.length ? `
+            <div class="bullpen-work-list">
+              ${tired.map(item => `
+                <div>
+                  <strong>${escapeHtml(String(item?.name || '未辨識投手'))}</strong>
+                  <span>${Number(item?.days || 0) >= 2 ? '連兩日出賽' : '近期出賽'}｜昨日 ${Number(item?.yesterdayWork || 0)} BF｜兩日 ${Number(item?.twoDayWork || 0)} BF</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<div class="bullpen-work-empty">近兩日沒有明顯高負荷投手</div>'}
+        </article>
+      `;
+    }
+
+    function homeBullpenPanel(bullpen, gameInfo, game) {
+      if (!bullpen) return '<div class="pregame-center-loading">正在整理牛棚狀況…</div>';
+      return `
+        <div class="bullpen-status-grid">
+          ${homeBullpenTeamCard(bullpen?.awayBullpen || null, String(gameInfo?.away || game?.away || '客隊'))}
+          ${homeBullpenTeamCard(bullpen?.homeBullpen || null, String(gameInfo?.home || game?.home || '主隊'))}
+        </div>
+      `;
+    }
+
+    function homePregameCenterSection(detail, gameInfo, game, status) {
+      if (status !== 'scheduled' || !activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
+      const tab = activeHomeGameDetail?.pregameTab === 'bullpen' ? 'bullpen' : 'matchup';
+      const center = activeHomeGameDetail?.pregameCenter || null;
+      const bullpen = activeHomeGameDetail?.bullpenStatus || null;
+      const loading = Boolean(activeHomeGameDetail?.pregameExtrasLoading);
+      const error = String(activeHomeGameDetail?.pregameExtrasError || '');
+      return `
+        <section class="pregame-center-section">
+          <div class="pregame-center-tabs">
+            <button type="button" data-pregame-tab="matchup" class="${tab === 'matchup' ? 'active' : ''}">賽前對戰</button>
+            <button type="button" data-pregame-tab="bullpen" class="${tab === 'bullpen' ? 'active' : ''}">牛棚狀況</button>
+            <button type="button" id="homePregameExtrasRefresh" class="pregame-center-refresh" ${loading ? 'disabled' : ''}>${loading ? '更新中…' : '更新'}</button>
+          </div>
+          ${error ? `<div class="pregame-center-error">${escapeHtml(error)}</div>` : ''}
+          <div class="pregame-center-body">
+            ${tab === 'bullpen'
+              ? homeBullpenPanel(bullpen, gameInfo, game)
+              : homePregameMatchupPanel(center, gameInfo, game)}
+          </div>
+        </section>
+      `;
+    }
+
+    async function refreshHomePregameExtras(force = false) {
+      if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return;
+      const { league, date, game, key } = activeHomeGameDetail;
+      if (String(game?.status || 'scheduled').toLowerCase() !== 'scheduled') return;
+      if (!game?.id || !game?.away || !game?.home) return;
+      if (activeHomeGameDetail.pregameExtrasLoading) return;
+      activeHomeGameDetail.pregameExtrasLoading = true;
+      activeHomeGameDetail.pregameExtrasError = '';
+      const cachedDetail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+      renderHomeGameDetail(cachedDetail, game);
+      try {
+        const [center, bullpen] = await Promise.all([
+          homePregameCenterRequest(league, date, game, force),
+          homeBullpenStatusRequest(league, date, game, force)
+        ]);
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pregameCenter = center;
+        activeHomeGameDetail.bullpenStatus = bullpen;
+      } catch (error) {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pregameExtrasError = error?.message || '賽前資料讀取失敗。';
+      } finally {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pregameExtrasLoading = false;
+        const detail = homeGameDetailCache.get(key)?.detail || cachedDetail;
+        renderHomeGameDetail(detail, game);
+      }
+    }
+
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
@@ -380,19 +569,14 @@
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
       const pregame = detail?.pregame || null;
-      const starterSection = status === 'scheduled' ? `
-        <section class="game-detail-pregame-section">
-          <div class="game-detail-section-title game-detail-pregame-title">
-            <div><strong>預告先發</strong><span>${escapeHtml(String(pregame?.source || (activeHomeGameDetail?.league === 'NPB' ? 'NPB 官方' : 'CPBL 官方')))}</span></div>
-            <button id="homeGameDetailPregameRefresh" class="game-detail-pregame-refresh" type="button" ${loading ? 'disabled' : ''}>重新整理</button>
-          </div>
-          ${pregame?.error ? `<div class="game-detail-pregame-note error">${escapeHtml(String(pregame.error))}</div>` : ''}
-          <div class="game-detail-starter-grid">
-            ${homeStarterCard(pregame?.awayStarter || null, String(gameInfo?.away || game?.away || '客隊'), '客隊')}
-            ${homeStarterCard(pregame?.homeStarter || null, String(gameInfo?.home || game?.home || '主隊'), '主隊')}
-          </div>
-          ${!pregame?.awayStarter && !pregame?.homeStarter ? '<div class="game-detail-pregame-note">聯盟公布預告先發後，重新整理就會自動帶入本季投球資料。</div>' : ''}
-        </section>` : '';
+      if (pregame && activeHomeGameDetail?.pregameCenter && !activeHomeGameDetail.pregameCenter.starters) {
+        activeHomeGameDetail.pregameCenter.starters = {
+          away:pregame?.awayStarter || null,
+          home:pregame?.homeStarter || null,
+          source:pregame?.source || ''
+        };
+      }
+      const pregameCenterSection = homePregameCenterSection(detail, gameInfo, game, status);
       const matchup = status === 'live' ? `
         <div class="game-detail-current-grid">
           <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
@@ -427,7 +611,7 @@
             ${matchup}
           </section>
           ${error ? `<div class="game-detail-error">${escapeHtml(error)}<button id="homeGameDetailRetry" type="button">重新讀取</button></div>` : ''}
-          ${starterSection}
+          ${pregameCenterSection}
           <section class="game-detail-play-section">
             <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>
             ${playsHtml}
@@ -437,7 +621,15 @@
       document.body.classList.add('home-game-detail-open');
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
-      body.querySelector('#homeGameDetailPregameRefresh')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
+      body.querySelectorAll('[data-pregame-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!activeHomeGameDetail) return;
+          activeHomeGameDetail.pregameTab = btn.dataset.pregameTab === 'bullpen' ? 'bullpen' : 'matchup';
+          const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
+          renderHomeGameDetail(current, game);
+        });
+      });
+      body.querySelector('#homePregameExtrasRefresh')?.addEventListener('click', () => void refreshHomePregameExtras(true));
       updateHomeGameDetailRefreshCountdown();
     }
 
@@ -561,7 +753,7 @@
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
-      activeHomeGameDetail = { league, date, game, key, loading:false };
+      activeHomeGameDetail = { league, date, game, key, loading:false, pregameTab:'matchup', pregameCenter:null, bullpenStatus:null, pregameExtrasLoading:false, pregameExtrasError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
@@ -577,6 +769,9 @@
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       refreshActiveHomeGameDetail();
+      if (String(game?.status || 'scheduled').toLowerCase() === 'scheduled') {
+        void refreshHomePregameExtras(false);
+      }
     }
 
 
