@@ -634,7 +634,23 @@
       }
       currentRecord.level = recordLevel;
 
-      if (daily.game?.opponent) currentRecord.opponent = normalizeTeamName(daily.game.opponent);
+      {
+        const ownTeam = normalizeTeamName(player?.cpblTeam || '');
+        const awayTeam = normalizeTeamName(daily?.game?.away || '');
+        const homeTeam = normalizeTeamName(daily?.game?.home || '');
+        let importedOpponent = normalizeTeamName(daily?.game?.opponent || '');
+        if (!importedOpponent || (ownTeam && importedOpponent === ownTeam)) {
+          if (String(daily?.game?.playerSide || '') === 'away') importedOpponent = homeTeam;
+          else if (String(daily?.game?.playerSide || '') === 'home') importedOpponent = awayTeam;
+          else if (ownTeam && awayTeam === ownTeam) importedOpponent = homeTeam;
+          else if (ownTeam && homeTeam === ownTeam) importedOpponent = awayTeam;
+        }
+        if (importedOpponent && (!ownTeam || importedOpponent !== ownTeam)) {
+          currentRecord.opponent = importedOpponent;
+        } else if (ownTeam && normalizeTeamName(currentRecord.opponent || '') === ownTeam) {
+          currentRecord.opponent = '';
+        }
+      }
       currentRecord.cpblKindCode = kindCode;
       currentRecord.competition = daily.competition || (kindCode === 'E' ? 'playoff_challenge' : kindCode === 'C' ? 'taiwan_series' : kindCode === 'D' ? 'minor' : 'regular');
       currentRecord.competitionLabel = daily.competitionLabel || (kindCode === 'E' ? '季後挑戰賽' : kindCode === 'C' ? '總冠軍賽' : kindCode === 'D' ? '二軍' : '一軍例行賽');
