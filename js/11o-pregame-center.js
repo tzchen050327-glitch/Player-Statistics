@@ -4,7 +4,7 @@
     let pregameCenterTab = 'overview';
 
     function pregameCenterSupported(league) {
-      return ['CPBL','NPB','KBO'].includes(String(league || '').toUpperCase());
+      return ['CPBL','NPB'].includes(String(league || '').toUpperCase());
     }
 
     function pregameCenterKey(league, date, game = {}) {
@@ -371,13 +371,10 @@
     function openPregameCenter(game, league, date) {
       league = String(league || '').toUpperCase();
       if (!pregameCenterSupported(league) || !game) return;
-      stopHomeDailyGamesAutoRefresh();
-      pregameCenterTab = 'overview';
-      const key = pregameCenterKey(league,date,game);
-      activePregameCenter = { league,date,game,key };
-      ensurePregameCenterOverlay().classList.remove('hidden');
-      renderPregameCenter({ loading:!pregameCenterCache.get(key)?.data });
-      void loadPregameCenter(false);
+      if (typeof openHomeGameDetail === 'function') {
+        openHomeGameDetail(game, league, date, { tab:'overview' });
+        return;
+      }
     }
 
     function closePregameCenter() {
