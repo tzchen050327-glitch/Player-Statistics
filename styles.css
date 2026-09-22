@@ -8343,3 +8343,191 @@ html[data-theme="dark"] .app-date-today:hover{
   }
 }
 
+/* Prediction left-right event ladder v7 */
+.prediction-win-chart-lr{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.prediction-lr-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+}
+.prediction-lr-team{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+}
+.prediction-lr-team>strong{
+  min-width:0;
+  overflow:hidden;
+  color:#dce5ee;
+  font-size:10px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prediction-lr-team>b{
+  flex:0 0 auto;
+  font-size:16px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.prediction-lr-away{
+  justify-content:flex-start;
+}
+.prediction-lr-away>b{
+  color:#b8cad9;
+}
+.prediction-lr-home{
+  justify-content:flex-end;
+}
+.prediction-lr-home>b{
+  color:#f0c65f;
+}
+.prediction-lr-center{
+  padding:3px 7px;
+  border:1px solid rgba(214,169,74,.26);
+  border-radius:999px;
+  color:#cdb265;
+  font-size:8px;
+  font-weight:950;
+}
+.prediction-lr-axis-caption{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  margin:0 0 5px 96px;
+  color:#71808e;
+  font-size:7.5px;
+  font-weight:850;
+}
+.prediction-lr-axis-caption span:nth-child(2){
+  text-align:center;
+}
+.prediction-lr-axis-caption span:last-child{
+  text-align:right;
+}
+.prediction-lr-scroll{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  border:1px solid rgba(151,165,181,.18);
+  border-radius:13px;
+  background:rgba(255,255,255,.012);
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.prediction-lr-scroll::-webkit-scrollbar{
+  display:none;
+}
+.prediction-lr-svg{
+  display:block;
+  width:100%;
+  min-width:360px;
+  max-width:none;
+  font-family:inherit;
+}
+.prediction-lr-away-zone{
+  fill:rgba(132,157,179,.050);
+}
+.prediction-lr-home-zone{
+  fill:rgba(222,178,73,.052);
+}
+.prediction-lr-midline{
+  stroke:rgba(222,187,91,.50);
+  stroke-width:1;
+  stroke-dasharray:4 5;
+}
+.prediction-lr-row-line{
+  stroke:rgba(164,178,191,.10);
+  stroke-width:1;
+}
+.prediction-lr-label{
+  fill:#aebac6;
+  font-size:8.5px;
+  font-weight:850;
+}
+.prediction-lr-row.is-complete .prediction-lr-label{
+  fill:#e0e7ee;
+}
+.prediction-lr-status{
+  fill:#141a20;
+  stroke:#687887;
+  stroke-width:1.2;
+}
+.prediction-lr-row.is-complete .prediction-lr-status{
+  fill:#d8ae48;
+  stroke:#f1d27c;
+}
+.prediction-lr-point{
+  fill:#11171d;
+  stroke:#d7ae4d;
+  stroke-width:1.7;
+}
+.prediction-lr-point.is-current{
+  fill:#f0c65f;
+  stroke:#fff0bc;
+  stroke-width:2.1;
+  filter:drop-shadow(0 0 4px rgba(240,198,95,.30));
+}
+.prediction-lr-value{
+  fill:#d8c27b;
+  font-size:7.5px;
+  font-weight:950;
+  paint-order:stroke;
+  stroke:rgba(12,17,22,.95);
+  stroke-width:2.5px;
+}
+.prediction-lr-connector-shadow{
+  fill:none;
+  stroke:rgba(7,11,15,.72);
+  stroke-width:5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-lr-connector{
+  fill:none;
+  stroke:#d6ad4a;
+  stroke-width:2.1;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.prediction-chart-scoreline,
+.prediction-chart-status,
+.prediction-chart-shell{
+  display:none !important;
+}
+@media(max-width:600px){
+  .prediction-lr-head{
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    gap:5px;
+  }
+  .prediction-lr-team{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:1px;
+  }
+  .prediction-lr-home{
+    align-items:flex-end;
+  }
+  .prediction-lr-team>strong{
+    max-width:100%;
+    font-size:9px;
+  }
+  .prediction-lr-team>b{
+    font-size:15px;
+  }
+  .prediction-lr-axis-caption{
+    margin-left:91px;
+    font-size:7px;
+  }
+  .prediction-lr-svg{
+    min-width:350px;
+  }
+}
+
