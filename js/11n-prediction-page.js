@@ -144,6 +144,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       if (label === '先發公布' || trigger === 'starter-published') return '先發公布';
       if (label === '打線公布' || trigger === 'lineup-published') return '打線公布';
       if (label === '比賽結束' || trigger === 'game-final') return '比賽結束';
+      if (trigger === 'key-event') {
+        const half = label.match(/\d+局[上下]/)?.[0] || label;
+        return `${half} 關鍵上壘`;
+      }
       if (/\d+局[上下]/.test(label)) return `${label}結束`;
       return label || '賽前預測';
     }
@@ -171,6 +175,9 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         reason = '前一日賽事結束，依牛棚負荷重算';
       } else if (trigger === 'lineup-published' || label === '打線公布') {
         reason = '先發打序公布後重算';
+      } else if (trigger === 'key-event') {
+        const half = label.match(/\d+局[上下]/)?.[0] || label;
+        reason = `${half}關鍵上壘／得分事件後重算`;
       } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
         const half = label.match(/\d+局[上下]/)?.[0] || label;
         reason = `${half}結束，依比分與即時比賽內容重算`;
@@ -243,6 +250,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       } else if (trigger === 'lineup-published' || label === '打線公布') {
         reason = '先發打序公布後重新計算';
         factorKey = 'lineup';
+      } else if (trigger === 'key-event') {
+        const half = label.match(/\d+局[上下]/)?.[0] || label;
+        reason = `${half}關鍵上壘／得分事件後重新計算`;
+        factorKey = 'live-score';
       } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
         const half = label.match(/\d+局[上下]/)?.[0] || label;
         reason = `${half}結束，依比分與即時比賽內容重新計算`;
