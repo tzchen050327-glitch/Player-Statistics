@@ -102,12 +102,12 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         .filter(point => point.label)
         .sort((a, b) => a.sequence - b.sequence);
 
-      if (!points.some(point => point.sequence === 0 || point.label === '賽前預測')) {
+      if (!points.length) {
         const home = Math.max(0, Math.min(100, Number(game?.pregameHomeProbability ?? game?.homeProbability) || 0));
         const away = Math.max(0, Math.min(100, Number(game?.pregameAwayProbability ?? game?.awayProbability) || (100 - home)));
-        points.unshift({
+        points.push({
           key:'pregame',
-          sequence:0,
+          sequence:4,
           label:'賽前預測',
           homeProbability:home,
           awayProbability:away,
@@ -119,9 +119,37 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
     function predictionHistoryAxisLabel(label) {
       const value = String(label || '');
-      if (value === '賽前預測') return value;
+      const stage = {
+        '初始預測':'初始',
+        '牛棚更新':'牛棚',
+        '先發公布':'先發',
+        '打線公布':'打線',
+        '賽前預測':'賽前'
+      };
+      if (stage[value]) return stage[value];
       const match = value.match(/(\d+)局([上下])/);
       return match ? `${match[1]}${match[2]}` : value;
+    }
+
+    function predictionHistoryTriggerLabel(point) {
+      const trigger = String(point?.trigger || '');
+      const label = String(point?.label || '');
+      if (label === '初始預測' || trigger === 'initial') return '初始預測';
+      if (label === '牛棚更新' || trigger === 'bullpen-refresh') return '牛棚更新';
+      if (label === '先發公布' || trigger === 'starter-published') return '先發公布';
+      if (label === '打線公布' || trigger === 'lineup-published') return '打線公布';
+      if (/\d+局[上下]/.test(label)) return `${label}結束`;
+      return label || '賽前預測';
+    }
+
+    function predictionHistoryTime(value) {
+      const ms = Date.parse(String(value || ''));
+      if (!Number.isFinite(ms)) return '';
+      return new Intl.DateTimeFormat('zh-TW', {
+        hour:'2-digit',
+        minute:'2-digit',
+        hour12:false
+      }).format(new Date(ms));
     }
 
     function predictionWinChart(game) {
@@ -130,61 +158,98 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       const away = String(game?.away || '客隊');
       const home = String(game?.home || '主隊');
-      const width = Math.max(340, 145 + Math.max(0, points.length - 1) * 72);
-      const height = 226;
-      const left = 108;
-      const right = 22;
-      const top = 26;
-      const bottom = 54;
+      const width = Math.max(310, 92 + Math.max(0, points.length - 1) * 66);
+      const height = 178;
+      const left = 36;
+      const right = 18;
+      const top = 18;
+      const bottom = 40;
       const plotWidth = width - left - right;
       const plotHeight = height - top - bottom;
       const xFor = index => points.length === 1
         ? left + plotWidth / 2
         : left + (plotWidth * index / (points.length - 1));
       const yFor = probability => top + ((100 - probability) / 100) * plotHeight;
-      const polyline = points.map((point, index) => `${xFor(index).toFixed(1)},${yFor(point.homeProbability).toFixed(1)}`).join(' ');
+      const linePoints = points.map((point, index) =>
+        `${xFor(index).toFixed(1)},${yFor(point.homeProbability).toFixed(1)}`
+      ).join(' ');
       const last = points[points.length - 1];
+      const prev = points.length > 1 ? points[points.length - 2] : null;
       const lastHome = Number(last?.homeProbability || 0);
       const lastAway = Number(last?.awayProbability || (100 - lastHome));
+      const delta = prev ? lastHome - Number(prev?.homeProbability || 0) : 0;
+      const deltaText = prev ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}pp` : '基準';
+      const latestLabel = predictionHistoryTriggerLabel(last);
+      const latestTime = predictionHistoryTime(last?.updatedAt);
+      const chartId = `predictionChart${String(game?.id || 'game').replace(/[^a-z0-9]/gi,'')}`;
 
       const pointSvg = points.map((point, index) => {
         const x = xFor(index);
         const y = yFor(point.homeProbability);
         const axisLabel = escapeHtml(predictionHistoryAxisLabel(point.label));
-        const valueY = y < top + 18 ? y + 20 : y - 9;
         const current = index === points.length - 1;
         return `
           <g class="prediction-chart-point ${current ? 'is-current' : ''}">
-            <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${current ? 5.2 : 4.1}"></circle>
-            <text class="prediction-chart-value" x="${x.toFixed(1)}" y="${valueY.toFixed(1)}" text-anchor="middle">${Number(point.homeProbability).toFixed(1)}%</text>
-            <text class="prediction-chart-x-label" x="${x.toFixed(1)}" y="${height - 20}" text-anchor="middle">${axisLabel}</text>
+            <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${current ? 5.6 : 3.6}"></circle>
+            ${current ? `<text class="prediction-chart-value" x="${x.toFixed(1)}" y="${Math.max(top + 10, y - 11).toFixed(1)}" text-anchor="middle">${lastHome.toFixed(1)}%</text>` : ''}
+            <text class="prediction-chart-x-label" x="${x.toFixed(1)}" y="${height - 15}" text-anchor="middle">${axisLabel}</text>
           </g>
         `;
       }).join('');
 
       return `
         <section class="prediction-win-chart" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
-          <div class="prediction-win-chart-head">
-            <div>
-              <strong>勝率走勢</strong>
-              <span>每半局結束更新</span>
+          <div class="prediction-chart-summary">
+            <div class="prediction-chart-team prediction-chart-team-away">
+              <span>客隊</span>
+              <strong>${escapeHtml(away)}</strong>
+              <b>${lastAway.toFixed(1)}%</b>
             </div>
-            <div class="prediction-chart-current">
-              <span>目前勝率</span>
-              <b>${escapeHtml(away)} ${lastAway.toFixed(1)}%｜${escapeHtml(home)} ${lastHome.toFixed(1)}%</b>
+            <div class="prediction-chart-event">
+              <span>最新節點</span>
+              <strong>${escapeHtml(latestLabel)}</strong>
+              <em class="${delta > 0 ? 'is-home-up' : delta < 0 ? 'is-away-up' : ''}">${deltaText}</em>
+              ${latestTime ? `<small>${escapeHtml(latestTime)}</small>` : ''}
+            </div>
+            <div class="prediction-chart-team prediction-chart-team-home">
+              <span>主隊</span>
+              <strong>${escapeHtml(home)}</strong>
+              <b>${lastHome.toFixed(1)}%</b>
             </div>
           </div>
-          <div class="prediction-chart-scroll">
-            <svg class="prediction-chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img">
-              <line class="prediction-chart-grid" x1="${left}" x2="${width - right}" y1="${top}" y2="${top}"></line>
-              <line class="prediction-chart-midline" x1="${left}" x2="${width - right}" y1="${yFor(50)}" y2="${yFor(50)}"></line>
-              <line class="prediction-chart-grid" x1="${left}" x2="${width - right}" y1="${top + plotHeight}" y2="${top + plotHeight}"></line>
-              <text class="prediction-chart-side-label top" x="8" y="${top + 4}">${escapeHtml(home)} 100%</text>
-              <text class="prediction-chart-mid-label" x="8" y="${yFor(50) + 4}">50%</text>
-              <text class="prediction-chart-side-label bottom" x="8" y="${top + plotHeight + 4}">${escapeHtml(away)} 100%</text>
-              <polyline class="prediction-chart-line" points="${polyline}"></polyline>
-              ${pointSvg}
-            </svg>
+
+          <div class="prediction-chart-frame">
+            <div class="prediction-chart-extreme prediction-chart-extreme-home">
+              <span>${escapeHtml(home)}</span><b>100%</b>
+            </div>
+            <div class="prediction-chart-extreme prediction-chart-extreme-away">
+              <span>${escapeHtml(away)}</span><b>100%</b>
+            </div>
+            <div class="prediction-chart-scroll">
+              <svg class="prediction-chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img">
+                <defs>
+                  <linearGradient id="${chartId}Bg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#d6a94a" stop-opacity=".12"></stop>
+                    <stop offset="50%" stop-color="#d6a94a" stop-opacity=".025"></stop>
+                    <stop offset="50%" stop-color="#7d94aa" stop-opacity=".025"></stop>
+                    <stop offset="100%" stop-color="#7d94aa" stop-opacity=".12"></stop>
+                  </linearGradient>
+                </defs>
+                <rect x="${left}" y="${top}" width="${plotWidth}" height="${plotHeight}" rx="9" fill="url(#${chartId}Bg)"></rect>
+                <line class="prediction-chart-grid" x1="${left}" x2="${width-right}" y1="${yFor(75)}" y2="${yFor(75)}"></line>
+                <line class="prediction-chart-midline" x1="${left}" x2="${width-right}" y1="${yFor(50)}" y2="${yFor(50)}"></line>
+                <line class="prediction-chart-grid" x1="${left}" x2="${width-right}" y1="${yFor(25)}" y2="${yFor(25)}"></line>
+                <text class="prediction-chart-mid-label" x="${left + 5}" y="${yFor(50) - 6}">50%</text>
+                <polyline class="prediction-chart-line-shadow" points="${linePoints}"></polyline>
+                <polyline class="prediction-chart-line" points="${linePoints}"></polyline>
+                ${pointSvg}
+              </svg>
+            </div>
+          </div>
+
+          <div class="prediction-chart-caption">
+            <span>事件制更新</span>
+            <b>初始 → 牛棚 → 先發 → 打線 → 每半局</b>
           </div>
         </section>
       `;
