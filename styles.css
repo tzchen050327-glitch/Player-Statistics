@@ -9235,3 +9235,321 @@ body.pregame-center-open{
   }
 }
 
+/* ===== PRE-GAME MATCHUP + BULLPEN CENTER v1 ===== */
+.pregame-center-section{
+  margin-top:16px;
+  border:1px solid #dce5ee;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#f8fbfe);
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(28,53,87,.045);
+}
+.pregame-center-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:0;
+  min-height:46px;
+  border-bottom:1px solid #e3eaf1;
+  background:#f5f8fb;
+}
+.pregame-center-tabs>button{
+  min-width:0;
+  border:0;
+  border-right:1px solid #e3eaf1;
+  background:transparent;
+  color:#75889a;
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+}
+.pregame-center-tabs>button.active{
+  position:relative;
+  background:#fff;
+  color:#173f67;
+}
+.pregame-center-tabs>button.active::after{
+  content:'';
+  position:absolute;
+  left:18%;
+  right:18%;
+  bottom:-1px;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  background:#2d6fa8;
+}
+.pregame-center-tabs>.pregame-center-refresh{
+  min-width:68px;
+  padding:0 12px;
+  border-right:0;
+  color:#456d92;
+  font-size:11px;
+}
+.pregame-center-tabs>.pregame-center-refresh:disabled{
+  opacity:.55;
+  cursor:default;
+}
+.pregame-center-body{
+  padding:14px;
+}
+.pregame-center-loading,
+.pregame-center-error{
+  padding:18px;
+  text-align:center;
+  color:#7d8c9b;
+  font-size:12px;
+  font-weight:800;
+}
+.pregame-center-error{
+  margin:10px 14px 0;
+  padding:9px 11px;
+  border:1px solid #efcccc;
+  border-radius:10px;
+  background:#fff7f7;
+  color:#ac4b4b;
+}
+.pregame-center-block + .pregame-center-summary-grid{
+  margin-top:14px;
+}
+.pregame-center-block-title{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.pregame-center-block-title strong{
+  color:#173f67;
+  font-size:14px;
+  font-weight:950;
+}
+.pregame-center-block-title span{
+  color:#8190a0;
+  font-size:10px;
+  font-weight:800;
+}
+.pregame-center-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.pregame-center-summary-grid>article{
+  min-width:0;
+  padding:11px 12px;
+  border:1px solid #e0e8ef;
+  border-radius:12px;
+  background:#fff;
+}
+.pregame-center-summary-grid>article.is-wide{
+  grid-column:1/-1;
+}
+.pregame-center-summary-grid article>span{
+  display:block;
+  margin-bottom:4px;
+  color:#8391a0;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.03em;
+}
+.pregame-center-summary-grid article>strong{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  color:#173f67;
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pregame-center-summary-grid article>b{
+  display:block;
+  margin-top:3px;
+  color:#536c84;
+  font-size:12px;
+  font-weight:900;
+}
+.pregame-center-prediction{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px 14px;
+}
+.pregame-center-prediction>span{
+  grid-column:1/-1;
+}
+.pregame-center-prediction>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.pregame-center-prediction>div+div{
+  padding-left:14px;
+  border-left:1px solid #e4ebf1;
+}
+.pregame-center-prediction>div>b{
+  color:#2b6595;
+  font-size:17px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.pregame-center-note{
+  margin-top:10px;
+  color:#8794a1;
+  font-size:10px;
+  font-weight:750;
+  line-height:1.5;
+}
+.bullpen-status-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.bullpen-status-card{
+  min-width:0;
+  padding:13px;
+  border:1px solid #dde6ee;
+  border-radius:13px;
+  background:#fff;
+}
+.bullpen-status-card.is-empty{
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  color:#8290a0;
+}
+.bullpen-status-card.is-empty strong{
+  color:#234f78;
+}
+.bullpen-status-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.bullpen-status-head>div:first-child{
+  min-width:0;
+}
+.bullpen-status-head span{
+  display:block;
+  color:#8391a0;
+  font-size:9px;
+  font-weight:850;
+}
+.bullpen-status-head strong{
+  display:block;
+  margin-top:2px;
+  min-width:0;
+  overflow:hidden;
+  color:#173f67;
+  font-size:14px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bullpen-status-head>div:last-child{
+  flex:0 0 auto;
+  text-align:right;
+}
+.bullpen-status-head b{
+  display:block;
+  color:#2b6595;
+  font-size:22px;
+  line-height:1;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.bullpen-status-head em{
+  display:block;
+  margin-top:3px;
+  color:#71869a;
+  font-size:9px;
+  font-style:normal;
+  font-weight:900;
+}
+.bullpen-status-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin-top:12px;
+}
+.bullpen-status-metrics>div{
+  padding:7px 5px;
+  border-radius:9px;
+  background:#f5f8fb;
+  text-align:center;
+}
+.bullpen-status-metrics span{
+  display:block;
+  color:#8492a0;
+  font-size:8px;
+  font-weight:850;
+}
+.bullpen-status-metrics strong{
+  display:block;
+  margin-top:2px;
+  color:#214d75;
+  font-size:12px;
+  font-weight:950;
+}
+.bullpen-status-subtitle{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid #e8edf2;
+  color:#526d86;
+  font-size:10px;
+  font-weight:950;
+}
+.bullpen-work-list{
+  display:grid;
+  gap:5px;
+  margin-top:7px;
+}
+.bullpen-work-list>div{
+  display:grid;
+  gap:2px;
+  padding:7px 8px;
+  border-radius:9px;
+  background:#f8fafc;
+}
+.bullpen-work-list strong{
+  min-width:0;
+  overflow:hidden;
+  color:#244f76;
+  font-size:11px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bullpen-work-list span,
+.bullpen-work-empty{
+  color:#7e8d9b;
+  font-size:9px;
+  font-weight:750;
+  line-height:1.4;
+}
+.bullpen-work-empty{
+  margin-top:7px;
+  padding:8px;
+  border-radius:9px;
+  background:#f8fafc;
+  text-align:center;
+}
+@media(max-width:640px){
+  .pregame-center-body{padding:10px;}
+  .pregame-center-tabs{min-height:42px;}
+  .pregame-center-tabs>button{font-size:12px;}
+  .pregame-center-tabs>.pregame-center-refresh{min-width:58px;padding:0 8px;font-size:10px;}
+  .pregame-center-summary-grid{gap:6px;}
+  .pregame-center-summary-grid>article{padding:9px 10px;}
+  .pregame-center-summary-grid article>strong{font-size:11px;}
+  .pregame-center-summary-grid article>b{font-size:10px;}
+  .pregame-center-prediction>div>b{font-size:14px;}
+  .bullpen-status-grid{grid-template-columns:1fr;gap:8px;}
+  .bullpen-status-card{padding:11px;}
+  .bullpen-status-head b{font-size:19px;}
+}
+/* ===== PRE-GAME MATCHUP + BULLPEN CENTER END ===== */
+
