@@ -33,6 +33,8 @@
 
     const LEAGUE_STANDINGS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
     const LEAGUE_TEAM_DETAIL_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-team-detail`;
+    const LEAGUE_PREGAME_CENTER_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-pregame-center`;
+    const LEAGUE_BULLPEN_STATUS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-bullpen-status`;
     const LEAGUE_GAME_DETAIL_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-game-detail`;
     const LEAGUE_GAME_DETAIL_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-game-detail`;
     const LEAGUE_GAME_DETAIL_API_URL = LEAGUE_GAME_DETAIL_A_API_URL;
