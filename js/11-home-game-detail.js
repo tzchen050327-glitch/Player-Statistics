@@ -458,7 +458,6 @@
       if (!center) return '<div class="pregame-center-loading">正在整理賽前對戰資料…</div>';
       const matchup = center?.matchup || {};
       const h2h = matchup?.h2h || null;
-      const prediction = center?.prediction || null;
       const away = String(gameInfo?.away || game?.away || '客隊');
       const home = String(gameInfo?.home || game?.home || '主隊');
       return `
@@ -478,13 +477,6 @@
             <span>本季對戰</span>
             <strong>${escapeHtml(away)} ${h2h ? Number(h2h.awayWins || 0) : '—'}－${h2h ? Number(h2h.homeWins || 0) : '—'} ${escapeHtml(home)}</strong>
             <b>${h2h && Number(h2h.ties || 0) ? `${Number(h2h.ties)} 和` : '例行賽對戰'}</b>
-          </article>
-          <article class="is-wide pregame-center-prediction">
-            <span>目前已存預測</span>
-            ${prediction ? `
-              <div><strong>${escapeHtml(away)}</strong><b>${Number(prediction.awayProbability || 0).toFixed(1)}%</b></div>
-              <div><strong>${escapeHtml(home)}</strong><b>${Number(prediction.homeProbability || 0).toFixed(1)}%</b></div>
-            ` : '<strong>尚無已存預測</strong>'}
           </article>
         </div>
 
@@ -590,38 +582,29 @@
       const { league, date, game, key } = activeHomeGameDetail;
       if (!game?.id || !game?.away || !game?.home) return;
       if (activeHomeGameDetail.pregameExtrasLoading) return;
-      const tab = activeHomeGameDetail.league === 'CPBL' && activeHomeGameDetail.centerTab === 'bullpen' ? 'bullpen' : 'overview';
-      if (!force) {
-        if (tab === 'overview' && activeHomeGameDetail.pregameCenter) return;
-        if (tab === 'bullpen' && activeHomeGameDetail.bullpenStatus) return;
-      }
+      const tab = 'overview';
+      if (!force && activeHomeGameDetail.pregameCenter) return;
       activeHomeGameDetail.pregameExtrasLoading = true;
       activeHomeGameDetail.pregameExtrasError = '';
       const cachedDetail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
       renderHomeGameDetail(cachedDetail, game);
       try {
-        const data = tab === 'bullpen'
-          ? await homeBullpenStatusRequest(league, date, game, force)
-          : await homePregameCenterRequest(league, date, game, force);
+        const data = await homePregameCenterRequest(league, date, game, force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pregameExtrasUpdatedAt = Date.now();
-        if (tab === 'bullpen') {
-          activeHomeGameDetail.bullpenStatus = data;
-        } else {
-          const detailPregame = homeGameDetailCache.get(key)?.detail?.pregame || null;
-          const existing = data?.starters || {};
-          activeHomeGameDetail.pregameCenter = {
-            ...data,
-            starters:{
-              away:detailPregame?.awayStarter || existing?.away || null,
-              home:detailPregame?.homeStarter || existing?.home || null,
-              source:detailPregame?.source || existing?.source || ''
-            }
-          };
-        }
+        const detailPregame = homeGameDetailCache.get(key)?.detail?.pregame || null;
+        const existing = data?.starters || {};
+        activeHomeGameDetail.pregameCenter = {
+          ...data,
+          starters:{
+            away:detailPregame?.awayStarter || existing?.away || null,
+            home:detailPregame?.homeStarter || existing?.home || null,
+            source:detailPregame?.source || existing?.source || ''
+          }
+        };
       } catch (error) {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        activeHomeGameDetail.pregameExtrasError = error?.message || (tab === 'bullpen' ? '牛棚資料讀取失敗。' : '對戰總覽讀取失敗。');
+        activeHomeGameDetail.pregameExtrasError = error?.message || '對戰總覽讀取失敗。';
       } finally {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pregameExtrasLoading = false;
@@ -661,16 +644,9 @@
           source:pregame?.source || existing?.source || ''
         };
       }
-      const supportsBullpen = activeHomeGameDetail?.league === 'CPBL';
-      let centerTab = ['overview','bullpen'].includes(String(activeHomeGameDetail?.centerTab || ''))
-        ? String(activeHomeGameDetail.centerTab)
-        : 'play';
-      if (!supportsBullpen && centerTab === 'bullpen') {
-        centerTab = 'overview';
-        if (activeHomeGameDetail) activeHomeGameDetail.centerTab = 'overview';
-      }
-      const centerDataPanel = centerTab === 'overview' || (supportsBullpen && centerTab === 'bullpen')
-        ? homeMatchCenterDataPanel(centerTab, gameInfo, game)
+      const centerTab = String(activeHomeGameDetail?.centerTab || '') === 'overview' ? 'overview' : 'play';
+      const centerDataPanel = centerTab === 'overview'
+        ? homeMatchCenterDataPanel('overview', gameInfo, game)
         : '';
       const matchup = status === 'live' ? `
         <div class="game-detail-current-grid">
@@ -695,10 +671,9 @@
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
-        <nav class="match-center-tabs ${supportsBullpen ? '' : 'is-two'}" aria-label="對戰中心分類">
+        <nav class="match-center-tabs is-two" aria-label="對戰中心分類">
           <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席紀錄</button>
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
-          ${supportsBullpen ? `<button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚狀態</button>` : ''}
         </nav>
         <main class="game-detail-content">
           <div class="match-center-panel ${centerTab === 'play' ? 'active' : ''}" data-match-center-panel="play">
@@ -729,16 +704,12 @@
         btn.addEventListener('click', () => {
           if (!activeHomeGameDetail) return;
           const tab = String(btn.dataset.matchCenterTab || 'play');
-          const allowedTabs = activeHomeGameDetail.league === 'CPBL'
-            ? ['play','overview','bullpen']
-            : ['play','overview'];
+          const allowedTabs = ['play','overview'];
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
           if (tab === 'overview' && !activeHomeGameDetail.pregameCenter) {
-            void refreshHomePregameExtras(false);
-          } else if (tab === 'bullpen' && activeHomeGameDetail.league === 'CPBL' && !activeHomeGameDetail.bullpenStatus) {
             void refreshHomePregameExtras(false);
           }
         });
@@ -891,9 +862,9 @@
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
-      const requestedTab = ['play','overview','bullpen'].includes(String(options?.tab || '')) ? String(options.tab) : '';
+      const requestedTab = ['play','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
-      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:null, bullpenStatus:null, pregameExtrasLoading:false, pregameExtrasError:'' };
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:null, pregameExtrasLoading:false, pregameExtrasError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
