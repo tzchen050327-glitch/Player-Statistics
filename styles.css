@@ -9999,3 +9999,13 @@ body.pregame-center-open{
   font-variant-numeric:tabular-nums;
 }
 
+/* Home pro-country selected state: always visibly gold */
+#homePage .home-pro-country-switch .home-hierarchy-btn.active{
+  border-color:#c89a34 !important;
+  outline:2px solid rgba(200,154,52,.20);
+  outline-offset:1px;
+  background:linear-gradient(180deg,#fffaf0,#f5e7bd) !important;
+  color:#765317 !important;
+  box-shadow:0 0 0 1px rgba(200,154,52,.10),0 5px 13px rgba(143,103,24,.12) !important;
+}
+
