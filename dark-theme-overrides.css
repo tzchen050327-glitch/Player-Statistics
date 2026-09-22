@@ -1034,3 +1034,196 @@ html[data-theme="dark"] .home-games-scroller::-webkit-scrollbar-thumb{
   background-clip:padding-box !important;
 }
 
+/* ===== Dark surface audit v1: remove remaining hard-coded light cards ===== */
+html[data-theme="dark"]{
+  --ds-bg:#0b0f14;
+  --ds-surface-1:#11161c;
+  --ds-surface-2:#151a20;
+  --ds-surface-3:#191f26;
+  --ds-line:#303842;
+  --ds-line-gold:#4b4025;
+  --ds-text:#ece4d4;
+  --ds-muted:#94a0ab;
+  --ds-gold:#e3bd61;
+}
+
+/* Generic form/dialog surfaces that legacy CSS still hard-codes white. */
+html[data-theme="dark"] dialog,
+html[data-theme="dark"] #outputDialog,
+html[data-theme="dark"] .dialog-body input[type="text"],
+html[data-theme="dark"] .dialog-body input[type="number"],
+html[data-theme="dark"] .dialog-body input[type="search"],
+html[data-theme="dark"] .dialog-body select,
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] select{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-1) !important;
+  color:var(--ds-text) !important;
+  -webkit-text-fill-color:var(--ds-text) !important;
+}
+
+/* Reusable content cards. */
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .pa-row,
+html[data-theme="dark"] .check,
+html[data-theme="dark"] .photo-card,
+html[data-theme="dark"] .template-card,
+html[data-theme="dark"] .batch-report-row,
+html[data-theme="dark"] .batch-report-result,
+html[data-theme="dark"] .home-player-card,
+html[data-theme="dark"] .cross-role-level-card,
+html[data-theme="dark"] .cross-role-empty,
+html[data-theme="dark"] #allPlayersDialog .player-group,
+html[data-theme="dark"] .player-search-result,
+html[data-theme="dark"] .error-player-card,
+html[data-theme="dark"] .error-page-empty{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-1) !important;
+  color:var(--ds-text) !important;
+  box-shadow:none !important;
+}
+
+/* Buttons and selectors that were still restoring a white surface. */
+html[data-theme="dark"] .date-wrap,
+html[data-theme="dark"] .half-btn,
+html[data-theme="dark"] .batch-template-chip,
+html[data-theme="dark"] .home-special-filter-btn,
+html[data-theme="dark"] .home-hierarchy-btn,
+html[data-theme="dark"] .level-role-btn,
+html[data-theme="dark"] .filter-choice-option .filter-choice-radio,
+html[data-theme="dark"] .app-date-nav,
+html[data-theme="dark"] .game-detail-back,
+html[data-theme="dark"] .game-detail-pregame-refresh,
+html[data-theme="dark"] .standings-team-detail-close,
+html[data-theme="dark"] .match-center-data-tools .pregame-center-refresh{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-2) !important;
+  color:var(--ds-text) !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .press-btn:not(.primary):not(.danger),
+html[data-theme="dark"] .player-btn{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-2) !important;
+  color:var(--ds-text) !important;
+  box-shadow:none !important;
+}
+
+/* International explorer/archive. */
+html[data-theme="dark"] .intl-path-panel,
+html[data-theme="dark"] .intl-flow-empty,
+html[data-theme="dark"] .intl-game-card,
+html[data-theme="dark"] .intl-game-detail-nav{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-1) !important;
+  color:var(--ds-text) !important;
+}
+html[data-theme="dark"] .intl-filter-chip{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-2) !important;
+  color:#c8d1d9 !important;
+}
+html[data-theme="dark"] .intl-game-card.is-selected,
+html[data-theme="dark"] .intl-flow-path{
+  border-color:#7b6327 !important;
+  background:#211b11 !important;
+  color:#e5c66f !important;
+}
+
+/* Home filters and picker controls. */
+html[data-theme="dark"] .home-filter-field select,
+html[data-theme="dark"] #homePage #homeLevelFilters,
+html[data-theme="dark"] #homePage #homeTeamFilters,
+html[data-theme="dark"] .app-picker-trigger{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-1) !important;
+  color:var(--ds-text) !important;
+  box-shadow:none !important;
+}
+
+/* Standings surfaces. */
+html[data-theme="dark"] .standings-table-card,
+html[data-theme="dark"] .standings-team-detail,
+html[data-theme="dark"] .standings-sync-status,
+html[data-theme="dark"] .standings-h2h-row,
+html[data-theme="dark"] .standings-flow-note{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-1) !important;
+  color:var(--ds-text) !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .standings-team-row:hover{
+  background:#181d23 !important;
+}
+html[data-theme="dark"] .standings-team-row.selected{
+  background:#211b11 !important;
+}
+html[data-theme="dark"] .standings-team-detail-tabs button.active,
+html[data-theme="dark"] .standings-team-row:first-child .standings-rank{
+  border-color:#7d6427 !important;
+  background:#2a220f !important;
+  color:#efca69 !important;
+}
+
+/* Prediction surfaces. */
+html[data-theme="dark"] .prediction-workspace{
+  border-color:var(--ds-line-gold) !important;
+  background:var(--ds-surface-1) !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .prediction-stage-badge,
+html[data-theme="dark"] .prediction-empty-icon{
+  border-color:#6d5724 !important;
+  background:#211b11 !important;
+  color:#e8c363 !important;
+}
+html[data-theme="dark"] .prediction-point-detail{
+  border-color:#514524 !important;
+  background:#171610 !important;
+}
+html[data-theme="dark"] .prediction-point-detail-prob b{
+  color:#f1e7d4 !important;
+}
+
+/* Matchup center / bullpen surfaces. */
+html[data-theme="dark"] .pregame-center-summary-grid>article,
+html[data-theme="dark"] .bullpen-status-card,
+html[data-theme="dark"] .bullpen-work-list>div,
+html[data-theme="dark"] .bullpen-work-empty,
+html[data-theme="dark"] .match-center-data-panel .bullpen-member-list{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-2) !important;
+  color:var(--ds-text) !important;
+}
+html[data-theme="dark"] .pregame-center-tabs>button.active,
+html[data-theme="dark"] .match-center-tabs>button.active{
+  background:#1d1a12 !important;
+  color:#efc85f !important;
+}
+html[data-theme="dark"] .pregame-center-error,
+html[data-theme="dark"] .game-detail-error{
+  border-color:#6b3f3b !important;
+  background:#251716 !important;
+  color:#efa39b !important;
+}
+html[data-theme="dark"] .match-center-update-time{
+  color:#8f9aa5 !important;
+}
+
+/* Output/search panels. */
+html[data-theme="dark"] .output-choice,
+html[data-theme="dark"] .player-search-result:hover{
+  border-color:var(--ds-line) !important;
+  background:var(--ds-surface-2) !important;
+  color:var(--ds-text) !important;
+}
+html[data-theme="dark"] #deletePlayerDialog .small,
+html[data-theme="dark"] .error-page-empty.error{
+  border-color:#65403d !important;
+  background:#241716 !important;
+  color:#e7a19a !important;
+}
+/* ===== Dark surface audit v1 END ===== */
+
