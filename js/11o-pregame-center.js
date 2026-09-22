@@ -261,6 +261,7 @@
       const body = pregameCenterBody();
       if (!body || !activePregameCenter) return;
       const { league, date, game, key } = activePregameCenter;
+      if (league !== 'CPBL' && pregameCenterTab === 'bullpen') pregameCenterTab = 'overview';
       const data = pregameCenterCache.get(key)?.data || null;
       const bullpenData = pregameBullpenCache.get(key)?.data || null;
       const leagueLabel = ({CPBL:'中華職棒',NPB:'日本職棒',KBO:'韓國職棒'})[league] || league;
