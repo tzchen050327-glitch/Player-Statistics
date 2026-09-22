@@ -409,8 +409,31 @@
       return `${Number(record.wins || 0)}勝 ${Number(record.losses || 0)}敗${Number(record.ties || 0) ? ` ${Number(record.ties)}和` : ''}`;
     }
 
+    function homeMatchCenterStarters(center = null) {
+      const cachedDetail = activeHomeGameDetail
+        ? (homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null)
+        : null;
+      const pregame = cachedDetail?.pregame || null;
+      const lineups = cachedDetail?.lineups || null;
+      const apiStarters = center?.starters || {};
+
+      const lineupPitcher = side => {
+        const raw = lineups?.[side]?.pitcher || null;
+        if (!raw || !(raw?.name || raw?.fullName)) return null;
+        return raw;
+      };
+
+      // The single-game detail is the same source used by landscape mode.
+      // Prefer it so portrait overview can never disagree with landscape.
+      return {
+        away: pregame?.awayStarter || apiStarters?.away || lineupPitcher('away') || null,
+        home: pregame?.homeStarter || apiStarters?.home || lineupPitcher('home') || null,
+        source: pregame?.source || apiStarters?.source || ''
+      };
+    }
+
     function homePregameStarterPair(center, gameInfo, game) {
-      const starters = center?.starters || null;
+      const starters = homeMatchCenterStarters(center);
       return `
         <div class="pregame-center-block">
           <div class="pregame-center-block-title"><strong>先發投手</strong><span>官方公布資料</span></div>
@@ -557,8 +580,20 @@
           ? await homeBullpenStatusRequest(league, date, game, force)
           : await homePregameCenterRequest(league, date, game, force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (tab === 'bullpen') activeHomeGameDetail.bullpenStatus = data;
-        else activeHomeGameDetail.pregameCenter = data;
+        if (tab === 'bullpen') {
+          activeHomeGameDetail.bullpenStatus = data;
+        } else {
+          const detailPregame = homeGameDetailCache.get(key)?.detail?.pregame || null;
+          const existing = data?.starters || {};
+          activeHomeGameDetail.pregameCenter = {
+            ...data,
+            starters:{
+              away:detailPregame?.awayStarter || existing?.away || null,
+              home:detailPregame?.homeStarter || existing?.home || null,
+              source:detailPregame?.source || existing?.source || ''
+            }
+          };
+        }
       } catch (error) {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pregameExtrasError = error?.message || (tab === 'bullpen' ? '牛棚資料讀取失敗。' : '對戰總覽讀取失敗。');
@@ -591,11 +626,12 @@
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
       const pregame = detail?.pregame || null;
-      if (pregame && activeHomeGameDetail?.pregameCenter && !activeHomeGameDetail.pregameCenter.starters) {
+      if (pregame && activeHomeGameDetail?.pregameCenter) {
+        const existing = activeHomeGameDetail.pregameCenter.starters || {};
         activeHomeGameDetail.pregameCenter.starters = {
-          away:pregame?.awayStarter || null,
-          home:pregame?.homeStarter || null,
-          source:pregame?.source || ''
+          away:pregame?.awayStarter || existing?.away || null,
+          home:pregame?.homeStarter || existing?.home || null,
+          source:pregame?.source || existing?.source || ''
         };
       }
       const supportsBullpen = activeHomeGameDetail?.league === 'CPBL';
