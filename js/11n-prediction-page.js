@@ -152,6 +152,58 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       }).format(new Date(ms));
     }
 
+    function predictionAdjustmentReason(points, away, home) {
+      const latest = points[points.length - 1] || null;
+      const previous = points.length > 1 ? points[points.length - 2] : null;
+      const trigger = String(latest?.trigger || '');
+      const label = String(latest?.label || '');
+
+      let reason = '目前賽前模型結果';
+      if (trigger === 'starter-published' || label === '先發公布') {
+        reason = '先發投手公布後重算';
+      } else if (trigger === 'bullpen-refresh' || label === '牛棚更新') {
+        reason = '前一日賽事結束，依牛棚負荷重算';
+      } else if (trigger === 'lineup-published' || label === '打線公布') {
+        reason = '先發打序公布後重算';
+      } else if (trigger === 'half-inning' || /\d+局[上下]/.test(label)) {
+        const half = label.match(/\d+局[上下]/)?.[0] || label;
+        reason = `${half}結束，依比分與即時比賽內容重算`;
+      } else if (trigger === 'game-final') {
+        reason = '比賽結束，依最終結果更新';
+      } else if (trigger === 'initial' || label === '初始預測') {
+        reason = '初始賽前模型';
+      } else if (trigger === 'pregame' || label === '賽前預測') {
+        reason = '賽前資料更新後重算';
+      }
+
+      if (!latest || !previous) return { reason, delta:'' };
+
+      const latestAway = Number(latest?.awayProbability);
+      const previousAway = Number(previous?.awayProbability);
+      const latestHome = Number(latest?.homeProbability);
+      const previousHome = Number(previous?.homeProbability);
+      if (![latestAway,previousAway,latestHome,previousHome].every(Number.isFinite)) {
+        return { reason, delta:'' };
+      }
+
+      const awayDelta = latestAway - previousAway;
+      const homeDelta = latestHome - previousHome;
+      const absAway = Math.abs(awayDelta);
+      const absHome = Math.abs(homeDelta);
+
+      if (Math.max(absAway, absHome) < 0.05) {
+        return { reason, delta:'勝率沒有明顯變化' };
+      }
+
+      const team = absAway >= absHome ? away : home;
+      const delta = absAway >= absHome ? awayDelta : homeDelta;
+      const sign = delta > 0 ? '+' : '';
+      return {
+        reason,
+        delta:`${team} ${sign}${delta.toFixed(1)} 個百分點`
+      };
+    }
+
     function predictionWinChart(game) {
       const points = predictionHistoryPoints(game);
       const away = String(game?.away || '客隊');
@@ -210,6 +262,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const latest = points[points.length - 1] || null;
       const latestHome = Number(latest?.homeProbability ?? game?.homeProbability ?? 50);
       const latestAway = Number(latest?.awayProbability ?? game?.awayProbability ?? (100 - latestHome));
+      const adjustment = predictionAdjustmentReason(points, away, home);
 
       const rowSvg = slots.map((slot,index) => {
         const y = yFor(index);
@@ -245,7 +298,10 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
               <strong>${escapeHtml(away)}</strong>
               <b>${latestAway.toFixed(1)}%</b>
             </div>
-            <div class="prediction-lr-center">50%</div>
+            <div class="prediction-lr-center prediction-lr-reason" title="${escapeHtml(adjustment.reason)}">
+              <strong>${escapeHtml(adjustment.reason)}</strong>
+              ${adjustment.delta ? `<span>${escapeHtml(adjustment.delta)}</span>` : ''}
+            </div>
             <div class="prediction-lr-team prediction-lr-home">
               <strong>${escapeHtml(home)}</strong>
               <b>${latestHome.toFixed(1)}%</b>
