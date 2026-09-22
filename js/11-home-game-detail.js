@@ -633,9 +633,22 @@
       updateHomeGameDetailRefreshCountdown();
     }
 
+    function homeGameDecisionsSettled(detail) {
+      if (String(detail?.status || '').toLowerCase() !== 'final') return true;
+      const game = detail?.game || {};
+      const awayScore = Number(game?.awayScore);
+      const homeScore = Number(game?.homeScore);
+      if (Number.isFinite(awayScore) && Number.isFinite(homeScore) && awayScore === homeScore) return true;
+      const decisions = detail?.decisions || detail?.gameDecisions || null;
+      const winner = String(decisions?.winningPitcher?.name || decisions?.winningPitcher?.fullName || '').trim();
+      const loser = String(decisions?.losingPitcher?.name || decisions?.losingPitcher?.fullName || '').trim();
+      return Boolean(winner && loser);
+    }
+
     function homeGameDetailCacheTtl(detail) {
       const status = String(detail?.status || '').toLowerCase();
-      if (status === 'final' || status === 'cancelled') return 12 * 60 * 60 * 1000;
+      if (status === 'final') return homeGameDecisionsSettled(detail) ? 12 * 60 * 60 * 1000 : 60 * 1000;
+      if (status === 'cancelled') return 12 * 60 * 60 * 1000;
       if (status === 'scheduled') return 2 * 60 * 1000;
       return 45 * 1000;
     }
@@ -704,6 +717,13 @@
             const published = await window.__npbRealtimeReadPublished(date, String(game.id));
             detail = published?.detail || null;
             if (detail) fromAnyCache = true;
+          } catch {}
+        }
+        if (detail && league === 'CPBL' && String(detail?.status || '').toLowerCase() === 'final' && !homeGameDecisionsSettled(detail)) {
+          try {
+            detail = await leagueGameDetailRequest(league, date, { ...game, ...(detail?.game || {}), status:'final' }, false);
+            fromPublishedCache = false;
+            fromAnyCache = true;
           } catch {}
         }
         if (!detail && staleDetail) detail = staleDetail;
