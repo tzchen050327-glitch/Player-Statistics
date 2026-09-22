@@ -160,6 +160,48 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return label || '賽前預測';
     }
 
+    function predictionCompactEventLabel(point) {
+      const trigger = String(point?.trigger || '');
+      const label = String(point?.label || '');
+      if (label === '初始預測' || trigger === 'initial') return '初始預測';
+      if (label === '牛棚更新' || trigger === 'bullpen-refresh') return '牛棚狀態';
+      if (label === '先發公布' || trigger === 'starter-published') return '先發投手';
+      if (label === '打線公布' || trigger === 'lineup-published') return '先發打序';
+      if (label === '比賽結束' || trigger === 'game-final') return '比賽結束';
+
+      const halfMatch = label.match(/(\d+)局([上下])/);
+      const half = halfMatch ? `${halfMatch[1]}${halfMatch[2]}` : '';
+      if (trigger === 'half-inning') return half ? `${half}結束` : '半局結束';
+
+      if (trigger === 'key-event') {
+        const text = label.normalize('NFKC');
+        const rules = [
+          [/全壘打|ホームラン/i,'全壘打'],
+          [/三壘安打|三塁打/i,'三壘安打'],
+          [/二壘安打|二塁打/i,'二壘安打'],
+          [/故意四壞|敬遠/i,'故意四壞'],
+          [/四壞|保送|四球|フォアボール/i,'四壞'],
+          [/觸身|死球|デッドボール/i,'觸身'],
+          [/安打|ヒット/i,'安打'],
+          [/失誤/i,'失誤'],
+          [/野手選擇|フィルダースチョイス/i,'野選'],
+          [/犧牲飛球|犧飛|犠牲フライ/i,'犧飛'],
+          [/犧牲觸擊|犧短|犠打/i,'犧短'],
+          [/雙殺|併殺|double play/i,'雙殺'],
+          [/三振|strikeout/i,'三振'],
+          [/盜壘|盗塁/i,'盜壘'],
+          [/得分|生還/i,'得分'],
+          [/滾地|ゴロ/i,'滾地'],
+          [/飛球|フライ/i,'飛球']
+        ];
+        const matched = rules.find(([re]) => re.test(text));
+        return `${half || '局中'}｜${matched ? matched[1] : '關鍵事件'}`;
+      }
+
+      if (half) return `${half}結束`;
+      return predictionHistoryAxisLabel(label) || '賽前';
+    }
+
     function predictionHistoryTime(value) {
       const ms = Date.parse(String(value || ''));
       if (!Number.isFinite(ms)) return '';
@@ -365,7 +407,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         let label = predictionHistoryTriggerLabel(point);
         if (trigger === 'half-inning') {
           const half = raw.match(/\d+局[上下]/)?.[0] || raw;
-          label = `${half}結束`;
+          label = predictionCompactEventLabel(point);
         } else if (trigger === 'game-final') {
           label = '比賽結束';
         }
@@ -377,14 +419,14 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         });
       });
 
-      const width = 320;
-      const labelWidth = 104;
+      const width = 360;
+      const labelWidth = 82;
       const plotLeft = labelWidth + 8;
-      const plotRight = width - 8;
+      const plotRight = width - 10;
       const plotWidth = plotRight - plotLeft;
-      const rowHeight = 26;
-      const headerHeight = 34;
-      const bottomPad = 10;
+      const rowHeight = 32;
+      const headerHeight = 24;
+      const bottomPad = 12;
       const height = headerHeight + slots.length * rowHeight + bottomPad;
       const xFor = homeProbability => plotLeft + Math.max(0, Math.min(100, Number(homeProbability) || 0)) / 100 * plotWidth;
       const yFor = index => headerHeight + index * rowHeight + rowHeight / 2;
@@ -430,8 +472,12 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
 
       return `
         <section class="prediction-win-chart prediction-win-chart-lr" data-prediction-game-index="${gameIndex}" aria-label="${escapeHtml(away)} 對 ${escapeHtml(home)} 勝率走勢">
+          <div class="prediction-lr-title">
+            <strong>勝率走勢</strong>
+            <span>點選節點查看詳細原因</span>
+          </div>
           <div class="prediction-lr-head">
-            <div class="prediction-lr-team prediction-lr-away">
+            <div class="prediction-lr-team prediction-lr-away ${latestAway >= latestHome ? 'is-leading' : ''}">
               <strong>${escapeHtml(away)}</strong>
               <b>${latestAway.toFixed(1)}%</b>
             </div>
@@ -439,7 +485,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
               <strong>${escapeHtml(adjustment.reason)}</strong>
               ${adjustment.delta ? `<span>${escapeHtml(adjustment.delta)}</span>` : ''}
             </div>
-            <div class="prediction-lr-team prediction-lr-home">
+            <div class="prediction-lr-team prediction-lr-home ${latestHome > latestAway ? 'is-leading' : ''}">
               <strong>${escapeHtml(home)}</strong>
               <b>${latestHome.toFixed(1)}%</b>
             </div>
