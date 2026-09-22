@@ -193,7 +193,7 @@
       const yesterday = Number(item?.yesterdayWork || 0);
       const total = Number(item?.totalWork || 0);
       const days = Number(item?.days || 0);
-      const unit = total > 0 && total === Number(item?.pitches || NaN) ? '球' : 'BF';
+      const unit = String(item?.unit || 'BF');
       const parts = [];
       if (yesterday) parts.push(`昨日 ${yesterday}${unit}`);
       if (total && total !== yesterday) parts.push(`近兩日 ${total}${unit}`);
