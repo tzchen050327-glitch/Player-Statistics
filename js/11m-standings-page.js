@@ -354,6 +354,38 @@
         if (!response.ok || data?.ok !== true) {
           throw new Error(data?.error || `官方戰績讀取失敗（${response.status}）`);
         }
+
+        const selectedKey = standingsUiState.league;
+        const selectedSection = selectedKey === 'cpbl'
+          ? data?.cpbl?.[standingsUiState.cpblView]
+          : selectedKey === 'npb'
+            ? data?.npb?.[standingsUiState.npbView]
+            : selectedKey === 'kbo'
+              ? data?.kbo?.regular
+              : data?.mlb?.[standingsUiState.mlbView];
+
+        if (!selectedSection) {
+          const retryResponse = await fetch(LEAGUE_STANDINGS_API_URL, {
+            method:'POST',
+            headers:{ 'content-type':'application/json' },
+            body:JSON.stringify({ appKey:CPBL_APP_KEY, league:standingsLeagueCode() })
+          });
+          const retryText = await retryResponse.text();
+          let retryData = {};
+          try { retryData = JSON.parse(retryText || '{}'); } catch {}
+          if (retryResponse.ok && retryData?.ok === true && retryData?.[selectedKey]) {
+            data = {
+              ...data,
+              [selectedKey]:retryData[selectedKey],
+              meta:{
+                ...(data?.meta || {}),
+                [selectedKey]:retryData?.meta?.[selectedKey] || null
+              },
+              fetchedAt:retryData?.fetchedAt || data?.fetchedAt
+            };
+          }
+        }
+
         standingsOfficialCache = data;
         standingsOfficialCacheAt = Date.now();
         standingsOfficialError = '';
@@ -676,6 +708,7 @@
           standingsTeamDetailError = '';
           localStorage.setItem('standingsLeague', standingsUiState.league);
           renderStandingsPage();
+          if (!standingsCurrentOfficialSection()) void loadOfficialStandings({ force:true });
         });
       });
       els.standingsPageContent.querySelectorAll('[data-standings-cpbl]').forEach(btn => {
