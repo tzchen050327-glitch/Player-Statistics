@@ -10009,3 +10009,172 @@ body.pregame-center-open{
   box-shadow:0 0 0 1px rgba(200,154,52,.10),0 5px 13px rgba(143,103,24,.12) !important;
 }
 
+
+
+/* ===== Prediction ladder clarity refresh v5.71 ===== */
+.prediction-win-chart-lr{
+  margin-top:18px;
+  padding-top:0;
+  border-top:0;
+}
+.prediction-lr-title{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 2px 9px;
+}
+.prediction-lr-title>strong{
+  color:var(--text);
+  font-size:13px;
+  font-weight:950;
+}
+.prediction-lr-title>span{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
+.prediction-lr-head{
+  grid-template-columns:minmax(76px,1fr) minmax(112px,1.38fr) minmax(76px,1fr);
+  gap:7px;
+  margin-bottom:9px;
+  padding:11px 10px;
+  border:1px solid rgba(151,165,181,.18);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.026),rgba(255,255,255,.008));
+}
+.prediction-lr-team{
+  flex-direction:column;
+  gap:2px;
+}
+.prediction-lr-home{
+  align-items:flex-end;
+}
+.prediction-lr-team>strong{
+  max-width:100%;
+  color:#dce5ee;
+  font-size:10px;
+  line-height:1.2;
+}
+.prediction-lr-team>b{
+  color:#c0ccd6;
+  font-size:21px;
+  line-height:1;
+}
+.prediction-lr-team.is-leading>b{
+  color:#f0c65f;
+}
+.prediction-lr-center{
+  min-width:0;
+  padding:7px 8px;
+  border-color:rgba(214,169,74,.32);
+  border-radius:11px;
+  background:rgba(214,169,74,.055);
+  text-align:center;
+  line-height:1.35;
+  white-space:normal;
+}
+.prediction-lr-center>strong{
+  display:block;
+  overflow:hidden;
+  color:#e6c76f;
+  font-size:9px;
+  font-weight:950;
+  text-overflow:ellipsis;
+}
+.prediction-lr-center>span{
+  display:block;
+  margin-top:2px;
+  color:#b8c1ca;
+  font-size:8px;
+  font-weight:850;
+}
+.prediction-lr-axis-caption{
+  margin:0 7px 5px 90px;
+  color:#87939f;
+  font-size:7px;
+}
+.prediction-lr-scroll{
+  padding:5px 4px 7px;
+  border-color:rgba(151,165,181,.20);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.006));
+  box-sizing:border-box;
+}
+.prediction-lr-label{
+  fill:#c8d1d9;
+  font-size:8.6px;
+  font-weight:850;
+}
+.prediction-lr-row.is-complete .prediction-lr-label{
+  fill:#eef2f5;
+}
+.prediction-lr-row-line{
+  stroke:rgba(164,178,191,.075);
+}
+.prediction-lr-status{
+  fill:#14191f;
+  stroke:#6f7b86;
+}
+.prediction-lr-row.is-complete .prediction-lr-status{
+  fill:#b58d31;
+  stroke:#e3bd61;
+}
+.prediction-lr-point{
+  fill:#11161c;
+  stroke:#c8a246;
+}
+.prediction-lr-point.is-current{
+  fill:#f0c65f;
+  stroke:#fff1c0;
+  filter:drop-shadow(0 0 6px rgba(240,198,95,.36));
+}
+.prediction-lr-value{
+  fill:#e4c96f;
+  font-size:7.7px;
+  stroke:rgba(10,14,18,.97);
+  stroke-width:2.8px;
+}
+.prediction-point-detail{
+  margin-top:10px;
+  padding:11px 12px;
+  border-radius:12px;
+}
+@media(max-width:600px){
+  .prediction-lr-title{
+    margin-bottom:8px;
+  }
+  .prediction-lr-title>strong{
+    font-size:12px;
+  }
+  .prediction-lr-head{
+    grid-template-columns:minmax(66px,1fr) minmax(104px,1.35fr) minmax(66px,1fr);
+    gap:5px;
+    padding:10px 8px;
+  }
+  .prediction-lr-team>strong{
+    font-size:9px;
+  }
+  .prediction-lr-team>b{
+    font-size:19px;
+  }
+  .prediction-lr-center{
+    padding:6px;
+  }
+  .prediction-lr-center>strong{
+    font-size:8px;
+  }
+  .prediction-lr-center>span{
+    font-size:7.5px;
+  }
+  .prediction-lr-axis-caption{
+    margin-left:90px;
+    margin-right:5px;
+  }
+  .prediction-lr-label{
+    font-size:8.2px;
+  }
+  .prediction-lr-value{
+    font-size:7.4px;
+  }
+}
