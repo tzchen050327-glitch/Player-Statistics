@@ -1,30 +1,73 @@
     async function init() {
+      let stage = '開啟瀏覽器資料庫';
+      const reportStartupError = (error, currentStage = stage) => {
+        const message = error?.message || String(error || '未知錯誤');
+        console.error(`[startup:${currentStage}]`, error);
+        try {
+          window.__siteDiagnostics?.log?.('startup-init-error', {
+            message,
+            extra:`stage=${currentStage}; name=${error?.name || ''}`
+          });
+        } catch {}
+        return message;
+      };
+
       try {
         db = await openDB();
+      } catch (error) {
+        const message = reportStartupError(error, stage);
+        const detail = error?.name ? `（${error.name}）` : '';
+        setStatus(`無法開啟瀏覽器資料庫${detail}。\n${message}`, true);
+        return;
+      }
+
+      try {
+        stage = '讀取本機球員資料';
         players = await idbGetAll(STORES.players);
         photos = await idbGetAll(STORES.photos);
+
         const deferCloudSync = typeof cloudSyncInitialMerge === 'function' && (players.length > 0 || photos.length > 0);
         if (typeof cloudSyncInitialMerge === 'function' && !deferCloudSync) {
-          // A brand-new/empty browser still waits for cloud data so the first screen is not empty.
-          await cloudSyncInitialMerge();
+          stage = '首次雲端同步';
+          try {
+            // Cloud sync failure must not masquerade as an IndexedDB failure.
+            await cloudSyncInitialMerge();
+          } catch (error) {
+            reportStartupError(error, stage);
+            console.warn('首次雲端同步失敗，先以本機空資料啟動', error);
+          }
         }
+
+        stage = '修復本機球員資料';
         for (const player of players) {
-          ensurePhotoTransforms(player);
-          const fixedName = applyStoredPreferredExternalName(player);
-          const fixedTeam = applyStoredPreferredExternalTeam(player);
-          const fixedExternalRole = repairStoredExternalPlayerType(player);
-          const fixedCpblRole = repairStoredCpblPlayerType(player);
-          if (fixedName || fixedTeam || fixedExternalRole || fixedCpblRole) await idbPut(STORES.players, player);
+          try {
+            ensurePhotoTransforms(player);
+            const fixedName = applyStoredPreferredExternalName(player);
+            const fixedTeam = applyStoredPreferredExternalTeam(player);
+            const fixedExternalRole = repairStoredExternalPlayerType(player);
+            const fixedCpblRole = repairStoredCpblPlayerType(player);
+            if (fixedName || fixedTeam || fixedExternalRole || fixedCpblRole) await idbPut(STORES.players, player);
+          } catch (error) {
+            reportStartupError(error, `修復球員資料：${player?.name || player?.id || 'unknown'}`);
+          }
         }
+
+        stage = '修復照片資料';
         for (const photo of photos) {
           if (!photo.playerId) {
             const owner = players.find(player => player.selectedPhotoId === photo.id);
             if (owner) {
-              photo.playerId = owner.id;
-              await idbPut(STORES.photos, photo);
+              try {
+                photo.playerId = owner.id;
+                await idbPut(STORES.photos, photo);
+              } catch (error) {
+                reportStartupError(error, `修復照片資料：${photo?.id || 'unknown'}`);
+              }
             }
           }
         }
+
+        stage = '初始化首頁狀態';
         els.gameDate.value = localISODate();
         syncAppPickerLabels();
         selectedTab = localStorage.getItem('baseballSelectedTab') || 'base';
@@ -33,29 +76,42 @@
         const savedPlayerId = localStorage.getItem('baseballSelectedPlayerId');
         selectedPlayerId = players.some(p => p.id === savedPlayerId) ? savedPlayerId : (players[0]?.id || null);
 
-        // 先完成本機資料載入；CPBL 目前軍別改成背景更新，不能卡住啟動。
         selectedLevel = 'A';
         if (selectedPlayerId) {
+          stage = '初始化目前球員';
           const player = selectedPlayer();
           selectedSeason = availableSeasonYears(player, 'A')[0] || CURRENT_YEAR;
           if (playerScope(player) === 'cpbl' || supportsLeagueLevelTabs(player)) {
             activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
           }
-          await savePlayer(player);
-          await loadRecord();
+
+          try {
+            await savePlayer(player);
+          } catch (error) {
+            reportStartupError(error, '儲存目前球員狀態');
+          }
+
+          stage = '讀取今日紀錄';
+          try {
+            await loadRecord();
+          } catch (error) {
+            reportStartupError(error, stage);
+            currentRecord = defaultGameRecord(player);
+          }
         }
+
+        stage = '渲染主畫面';
         renderAll();
 
-        // Existing browsers already have usable IndexedDB data. Do not keep the splash
-        // open while waiting for Supabase; merge cloud changes in the background.
         if (deferCloudSync) {
           void cloudSyncInitialMerge().catch(error => {
+            reportStartupError(error, '背景雲端同步');
             console.warn('背景雲端同步失敗，沿用本機資料', error);
           });
         }
       } catch (error) {
-        console.error(error);
-        setStatus('無法開啟瀏覽器資料庫。', true);
+        const message = reportStartupError(error, stage);
+        setStatus(`啟動失敗（${stage}）。\n${message}`, true);
       }
     }
 
