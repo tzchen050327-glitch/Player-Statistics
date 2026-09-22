@@ -1237,3 +1237,39 @@ html[data-theme="dark"] #homePage .home-pro-country-switch .home-hierarchy-btn.a
   box-shadow:0 0 0 1px rgba(211,169,65,.12),0 7px 16px rgba(0,0,0,.30) !important;
 }
 
+
+
+/* ===== Dark matchup contrast fix v5.71 ===== */
+html[data-theme="dark"] .game-detail-current-grid{
+  border-top-color:#303842 !important;
+}
+html[data-theme="dark"] .game-detail-current-card{
+  border:1px solid #303842 !important;
+  background:#151a20 !important;
+}
+html[data-theme="dark"] .game-detail-current-card span{
+  color:#a6b0bb !important;
+}
+html[data-theme="dark"] .game-detail-current-card strong{
+  color:#f2e9d7 !important;
+  -webkit-text-fill-color:#f2e9d7 !important;
+}
+html[data-theme="dark"] .gdx-current-row{
+  border-color:#302f28 !important;
+}
+html[data-theme="dark"] .gdx-current-row>span{
+  color:#b8a66f !important;
+}
+html[data-theme="dark"] .gdx-current-row strong{
+  color:#f2e9d7 !important;
+  -webkit-text-fill-color:#f2e9d7 !important;
+  text-shadow:none !important;
+}
+html[data-theme="dark"] .game-detail-pa-main strong{
+  color:#f2e9d7 !important;
+  -webkit-text-fill-color:#f2e9d7 !important;
+}
+html[data-theme="dark"] .game-detail-pa-main>span:not(.game-detail-pa-result){
+  color:#c6d0d9 !important;
+  -webkit-text-fill-color:#c6d0d9 !important;
+}
