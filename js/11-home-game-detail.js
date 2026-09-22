@@ -688,7 +688,11 @@
 
     function homeGameDetailCacheTtl(detail) {
       const status = String(detail?.status || '').toLowerCase();
-      if (status === 'final') return homeGameDecisionsSettled(detail) ? 12 * 60 * 60 * 1000 : 60 * 1000;
+      if (status === 'final') {
+        const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+        if (activeHomeGameDetail?.league === 'CPBL' && plays.length === 0) return 0;
+        return homeGameDecisionsSettled(detail) ? 12 * 60 * 60 * 1000 : 60 * 1000;
+      }
       if (status === 'cancelled') return 12 * 60 * 60 * 1000;
       if (status === 'scheduled') return 2 * 60 * 1000;
       return 45 * 1000;
