@@ -703,3 +703,133 @@ html[data-theme="dark"] .match-center-data-tools .pregame-center-refresh{
   color:#d7b45a !important;
 }
 
+/* Unified matchup center + game detail dark surface */
+html[data-theme="dark"] .home-game-detail-overlay{
+  background:#080b0f !important;
+}
+html[data-theme="dark"] .home-game-detail-page{
+  background:#0c1015 !important;
+  box-shadow:0 0 40px rgba(0,0,0,.38) !important;
+}
+html[data-theme="dark"] .game-detail-sticky-head{
+  border-bottom-color:#2e353d !important;
+  background:rgba(12,16,21,.96) !important;
+}
+html[data-theme="dark"] .game-detail-back{
+  border-color:#39424c !important;
+  background:#13181e !important;
+  color:#e6edf4 !important;
+}
+html[data-theme="dark"] .game-detail-head-copy strong{
+  color:#f1e7d4 !important;
+}
+html[data-theme="dark"] .game-detail-head-copy span{
+  color:#8f9ba8 !important;
+}
+html[data-theme="dark"] .game-detail-content{
+  background:#0c1015 !important;
+}
+html[data-theme="dark"] .game-detail-score-card,
+html[data-theme="dark"] .game-detail-inning,
+html[data-theme="dark"] .game-detail-empty,
+html[data-theme="dark"] .game-detail-starter-card{
+  border-color:#303842 !important;
+  background:#141920 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .game-detail-status{
+  color:#d0b66d !important;
+}
+html[data-theme="dark"] .game-detail-score-row span,
+html[data-theme="dark"] .game-detail-score-row strong,
+html[data-theme="dark"] .game-detail-section-title strong,
+html[data-theme="dark"] .game-detail-starter-name,
+html[data-theme="dark"] .game-detail-starter-team{
+  color:#e7edf3 !important;
+}
+html[data-theme="dark"] .game-detail-score-row>b,
+html[data-theme="dark"] .game-detail-section-title span,
+html[data-theme="dark"] .game-detail-starter-meta,
+html[data-theme="dark"] .game-detail-starter-empty,
+html[data-theme="dark"] .game-detail-starter-no-stats{
+  color:#8f9ba8 !important;
+}
+html[data-theme="dark"] .game-detail-inning summary{
+  border-color:#303842 !important;
+  background:#171d24 !important;
+  color:#dbe5ee !important;
+}
+html[data-theme="dark"] .game-detail-inning summary span,
+html[data-theme="dark"] .game-detail-pa-meta{
+  color:#8b98a5 !important;
+}
+html[data-theme="dark"] .game-detail-pa-row{
+  border-top-color:#2b323a !important;
+}
+html[data-theme="dark"] .game-detail-pa-main strong{
+  color:#e2e9f0 !important;
+}
+html[data-theme="dark"] .game-detail-pa-main span{
+  color:#b6c2cd !important;
+}
+html[data-theme="dark"] .game-detail-starter-stats>div{
+  background:#10151b !important;
+}
+html[data-theme="dark"] .game-detail-starter-stats span{
+  color:#82909d !important;
+}
+html[data-theme="dark"] .game-detail-starter-stats strong{
+  color:#dde6ee !important;
+}
+html[data-theme="dark"] .match-center-tabs{
+  border-bottom-color:#303842 !important;
+  background:rgba(12,16,21,.97) !important;
+}
+html[data-theme="dark"] .match-center-tabs>button{
+  color:#8e9ba8 !important;
+}
+html[data-theme="dark"] .match-center-tabs>button+button{
+  border-left-color:#2b3239 !important;
+}
+html[data-theme="dark"] .match-center-tabs>button.active{
+  background:#151a20 !important;
+  color:#f0c65f !important;
+}
+html[data-theme="dark"] .match-center-data-panel{
+  border-color:#303842 !important;
+  background:#11161c !important;
+}
+html[data-theme="dark"] .match-center-data-tools{
+  border-bottom-color:#303842 !important;
+  background:#151a20 !important;
+}
+html[data-theme="dark"] .match-center-data-tools>span{
+  color:#909da9 !important;
+}
+html[data-theme="dark"] .match-center-data-tools .pregame-center-refresh{
+  border-color:#3a434d !important;
+  background:#10151a !important;
+  color:#e0b957 !important;
+}
+html[data-theme="dark"] .pregame-center-loading{
+  color:#98a5b2 !important;
+}
+html[data-theme="dark"] .pregame-center-summary-grid>article,
+html[data-theme="dark"] .bullpen-status-card{
+  border-color:#303842 !important;
+  background:#151a20 !important;
+}
+html[data-theme="dark"] .bullpen-member-list{
+  border-color:#2f3740 !important;
+  background:#10151a !important;
+}
+html[data-theme="dark"] .bullpen-member-row{
+  border-top-color:#293039 !important;
+}
+html[data-theme="dark"] .bullpen-member-row>strong{
+  color:#dce5ed !important;
+}
+html[data-theme="dark"] .bullpen-member-row>span{
+  color:#8d9aa7 !important;
+}
+
