@@ -367,14 +367,11 @@
           const venue = String(game?.venue || '').trim();
           const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
           const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
-          const pregameEnabled = status === 'scheduled' && typeof pregameCenterSupported === 'function' && pregameCenterSupported(league);
-          const detailEnabled = !pregameEnabled && homeGameDetailSupported(league);
-          const interactive = pregameEnabled || detailEnabled;
-          const interactionAttrs = pregameEnabled
-            ? `data-pregame-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 賽前對戰中心"`
-            : detailEnabled
-              ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 全場逐打席"`
-              : '';
+          const detailEnabled = homeGameDetailSupported(league);
+          const interactive = detailEnabled;
+          const interactionAttrs = detailEnabled
+            ? `data-game-detail-index="${sourceIndex}" role="button" tabindex="0" aria-label="查看 ${escapeAttr(awayName)} 對 ${escapeAttr(homeName)} 對戰中心"`
+            : '';
           return `
             <article class="home-game-card status-${escapeAttr(status)} ${interactive ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${interactionAttrs}>
               <div class="home-game-card-top">
@@ -472,20 +469,6 @@
       host.querySelector('.home-games-retry')?.addEventListener('click', () => {
         homeDailyGamesCache.delete(key);
         renderHomeDailyGames({ force:true });
-      });
-      host.querySelectorAll('[data-pregame-index]').forEach(card => {
-        const open = () => {
-          const index = Number(card.dataset.pregameIndex);
-          const game = games[index];
-          if (game && typeof openPregameCenter === 'function') openPregameCenter(game, league, date);
-        };
-        card.addEventListener('click', open);
-        card.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            open();
-          }
-        });
       });
       if (homeGameDetailSupported(league)) {
         host.querySelectorAll('[data-game-detail-index]').forEach(card => {
