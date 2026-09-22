@@ -9667,5 +9667,40 @@ body.pregame-center-open{
     display:none!important;
   }
 }
+
+.match-center-data-panel .bullpen-member-list{
+  margin-top:7px;
+  overflow:hidden;
+  border:1px solid #e2e8ee;
+  border-radius:9px;
+  background:#f8fafc;
+}
+.match-center-data-panel .bullpen-member-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 9px;
+  border-top:1px solid #e7ecf1;
+}
+.match-center-data-panel .bullpen-member-row:first-child{
+  border-top:0;
+}
+.match-center-data-panel .bullpen-member-row>strong{
+  min-width:0;
+  overflow:hidden;
+  color:#244f76;
+  font-size:10px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.match-center-data-panel .bullpen-member-row>span{
+  flex:0 0 auto;
+  color:#7d8b99;
+  font-size:8.5px;
+  font-weight:800;
+}
+
 /* ===== UNIFIED MATCHUP CENTER END ===== */
 
