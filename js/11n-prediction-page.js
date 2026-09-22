@@ -420,10 +420,15 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     function predictionGameCard(game, index=0, total=1) {
       const away = escapeHtml(game?.away || '客隊');
       const home = escapeHtml(game?.home || '主隊');
-      const awayPct = Math.max(0, Math.min(100, Number(game?.awayProbability) || 0));
-      const homePct = Math.max(0, Math.min(100, Number(game?.homeProbability) || 0));
-      const factors = Array.isArray(game?.factors) ? game.factors : [];
       const latestHistory = predictionHistoryPoints(game).at(-1) || null;
+      // The prediction UI is event-based: while a half inning is still in progress,
+      // keep the headline probability on the latest committed history snapshot.
+      // It advances only after the backend writes the completed-half event.
+      const awayPct = Math.max(0, Math.min(100, Number(latestHistory?.awayProbability ?? game?.awayProbability) || 0));
+      const homePct = Math.max(0, Math.min(100, Number(latestHistory?.homeProbability ?? game?.homeProbability) || 0));
+      const displayPick = awayPct >= homePct ? String(game?.away || '客隊') : String(game?.home || '主隊');
+      const displayConfidence = Math.max(awayPct, homePct);
+      const factors = Array.isArray(game?.factors) ? game.factors : [];
       const dataTime = predictionDisplayTime(latestHistory?.updatedAt || latestHistory?.createdAt || '');
       const meta = [
         String(game?.status || '').toLowerCase() === 'live' ? game?.inningLabel : '',
@@ -438,7 +443,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
               ${meta ? `<span class="prediction-game-meta">${meta}</span>` : ''}
               ${dataTime ? `<span class="prediction-game-meta prediction-game-updated">更新 ${escapeHtml(dataTime)}</span>` : ''}
             </div>
-            <span class="prediction-pick-badge">較看好 ${escapeHtml(game?.pick || '')} ${Number(game?.confidence || 0).toFixed(1)}%</span>
+            <span class="prediction-pick-badge">較看好 ${escapeHtml(displayPick)} ${displayConfidence.toFixed(1)}%</span>
           </div>
 
           <div class="prediction-matchup prediction-matchup-split">
