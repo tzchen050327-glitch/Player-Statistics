@@ -466,8 +466,8 @@
             <div><b>${pct.toFixed(0)}%</b><em>${status}</em></div>
           </div>
           <div class="bullpen-status-metrics">
-            <div><span>ERA</span><strong>${Number.isFinite(Number(side?.era)) ? Number(side.era).toFixed(2) : '—'}</strong></div>
-            <div><span>WHIP</span><strong>${Number.isFinite(Number(side?.whip)) ? Number(side.whip).toFixed(2) : '—'}</strong></div>
+            <div><span>ERA</span><strong>${side?.era === null || side?.era === '' || side?.era === undefined ? '—' : (Number.isFinite(Number(side.era)) ? Number(side.era).toFixed(2) : '—')}</strong></div>
+            <div><span>WHIP</span><strong>${side?.whip === null || side?.whip === '' || side?.whip === undefined ? '—' : (Number.isFinite(Number(side.whip)) ? Number(side.whip).toFixed(2) : '—')}</strong></div>
             <div><span>牛棚人數</span><strong>${Number(side?.pitchers || members.length || 0) || '—'}</strong></div>
           </div>
           <div class="bullpen-status-subtitle">近兩日負荷</div>
@@ -481,6 +481,20 @@
               `).join('')}
             </div>
           ` : '<div class="bullpen-work-empty">近兩日沒有明顯高負荷投手</div>'}
+          <div class="bullpen-status-subtitle">牛棚成員</div>
+          ${members.length ? `
+            <div class="bullpen-member-list">
+              ${members.map(member => {
+                const era = member?.era === null || member?.era === '' || member?.era === undefined ? '' : Number(member.era);
+                const whip = member?.whip === null || member?.whip === '' || member?.whip === undefined ? '' : Number(member.whip);
+                const meta = [
+                  Number.isFinite(era) ? `ERA ${era.toFixed(2)}` : '',
+                  Number.isFinite(whip) ? `WHIP ${whip.toFixed(2)}` : ''
+                ].filter(Boolean).join('｜');
+                return `<div class="bullpen-member-row"><strong>${escapeHtml(String(member?.name || '未辨識投手'))}</strong><span>${escapeHtml(meta || '近兩日實際登板')}</span></div>`;
+              }).join('')}
+            </div>
+          ` : '<div class="bullpen-work-empty">目前沒有可確認的牛棚成員資料</div>'}
         </article>
       `;
     }
