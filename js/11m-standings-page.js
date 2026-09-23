@@ -524,7 +524,7 @@
             `).join('')
           : `<div class="standings-team-detail-empty compact">沒有近期已結束賽事。</div>`;
 
-        const upcomingHtml = upcoming.length
+        const scheduledUpcomingHtml = upcoming.length
           ? upcoming.map(game => `
               <div class="standings-schedule-row">
                 <div class="standings-schedule-date"><strong>${escapeHtml(String(game.date||'').slice(5).replace('-','/'))}</strong><span>${escapeHtml(game.time||'')}</span></div>
@@ -532,6 +532,46 @@
                 <div class="standings-schedule-result upcoming ${String(game.status||'')==='live'?'is-live':''}"><strong>${String(game.status||'')==='live'?'LIVE':'未開打'}</strong><span></span></div>
               </div>
             `).join('')
+          : '';
+
+        let pendingScheduleHtml = '';
+        if (standingsUiState.league === 'npb') {
+          const scheduledByOpponent = new Map();
+          for (const game of upcoming) {
+            const opponent = standingsGameOpponent(game, team);
+            if (!opponent) continue;
+            scheduledByOpponent.set(opponent, (scheduledByOpponent.get(opponent) || 0) + 1);
+          }
+          const pending = [];
+          const collectPending = (list, fallbackExpected) => {
+            for (const item of list) {
+              const opponent = String(item?.opponent || '').trim();
+              if (!opponent) continue;
+              const wins = Number(item?.wins) || 0;
+              const losses = Number(item?.losses) || 0;
+              const ties = Number(item?.ties) || 0;
+              const played = Number.isFinite(Number(item?.playedGames)) ? Number(item.playedGames) : wins + losses + ties;
+              const explicitExpected = Number(item?.expectedGames);
+              const expected = Number.isFinite(explicitExpected) && explicitExpected > 0 ? explicitExpected : fallbackExpected;
+              const remaining = Math.max(0, expected - played);
+              const scheduled = Number(scheduledByOpponent.get(opponent) || 0);
+              const unscheduled = Math.max(0, remaining - scheduled);
+              if (unscheduled > 0) pending.push({ opponent, count:unscheduled });
+            }
+          };
+          collectPending(h2h, 25);
+          collectPending(interleague, 3);
+          pendingScheduleHtml = pending.map(item => `
+            <div class="standings-schedule-row">
+              <div class="standings-schedule-date"><strong>待定</strong><span>${item.count} 場</span></div>
+              <div class="standings-schedule-match"><strong>${escapeHtml(item.opponent)}</strong><span>官方尚未排定日期</span></div>
+              <div class="standings-schedule-result upcoming"><strong>待排定</strong><span></span></div>
+            </div>
+          `).join('');
+        }
+
+        const upcomingHtml = scheduledUpcomingHtml || pendingScheduleHtml
+          ? `${scheduledUpcomingHtml}${pendingScheduleHtml}`
           : `<div class="standings-team-detail-empty compact">目前沒有抓到接下來的賽程。</div>`;
 
         body = `
