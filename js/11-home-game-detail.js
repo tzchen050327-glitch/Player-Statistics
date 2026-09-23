@@ -816,11 +816,23 @@
         }
         const detailStatus = String(detail?.status || '').toLowerCase();
         const supportsPregameStarters = league === 'CPBL' || league === 'NPB';
-        if (detailStatus === 'scheduled' && supportsPregameStarters && (force || !detail?.pregame)) {
+        const starterHasStats = (starter) => Boolean(starter?.stats && Object.keys(starter.stats).some(key => String(starter.stats[key] ?? '').trim()));
+        const existingPregame = detail?.pregame || null;
+        const npbNeedsStarterSnapshot = league === 'NPB' && (
+          !starterHasStats(existingPregame?.awayStarter) ||
+          !starterHasStats(existingPregame?.homeStarter)
+        );
+        const shouldLoadPregameStarters = supportsPregameStarters && (
+          (detailStatus === 'scheduled' && (force || !existingPregame)) ||
+          npbNeedsStarterSnapshot
+        );
+        if (shouldLoadPregameStarters) {
           try {
             detail.pregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
           } catch (pregameError) {
-            detail.pregame = { awayStarter:null, homeStarter:null, error:pregameError?.message || '先發投手資料讀取失敗。' };
+            if (!detail?.pregame) {
+              detail.pregame = { awayStarter:null, homeStarter:null, error:pregameError?.message || '先發投手資料讀取失敗。' };
+            }
           }
         }
         const detailChanged = !cached?.detail || JSON.stringify(cached.detail) !== JSON.stringify(detail);
