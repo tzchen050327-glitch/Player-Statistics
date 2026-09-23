@@ -231,7 +231,7 @@
       return Number.isFinite(number) ? String(number) : '—';
     }
 
-    async function leagueDailyGamesRequest(league, date) {
+    async function leagueDailyGamesRequest(league, date, force = false) {
       const requestUrl = league === 'KBO'
         ? KBO_GAMES_API_URL
         : league === 'MLB'
@@ -245,7 +245,8 @@
           action:'daily-games',
           league,
           date,
-          ...(league === 'CPBL' ? { kindCodes:['A','E','C'] } : {})
+          ...(league === 'CPBL' ? { kindCodes:['A','E','C'] } : {}),
+          ...(force ? { _networkFresh:true } : {})
         })
       });
       const text = await response.text();
@@ -293,7 +294,7 @@
 
       homeDailyGamesLoading.add(key);
       try {
-        let games = await leagueDailyGamesRequest(league, date);
+        let games = await leagueDailyGamesRequest(league, date, force);
         if (league === 'CPBL') {
           games = (Array.isArray(games) ? games : []).filter(game => String(game?.kindCode || 'A').toUpperCase() !== 'D');
         }
