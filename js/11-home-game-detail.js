@@ -1,3 +1,5 @@
+    const homePitcherRecordsCache = new Map();
+
     function homeGameDetailSupported(league) {
       return league === 'CPBL' || league === 'NPB';
     }
@@ -97,6 +99,79 @@
         }
       }
       return data;
+    }
+
+    function homePitcherRecordsSupported(league, game = {}) {
+      if (league === 'NPB') return true;
+      if (league !== 'CPBL') return false;
+      const kindCode = String(game?.kindCode || 'A').trim().toUpperCase();
+      return !kindCode || kindCode === 'A';
+    }
+
+    async function homePitcherRecordsRequest(league, date, game = {}) {
+      if (!homePitcherRecordsSupported(league, game)) throw new Error('此賽事目前不支援投手紀錄。');
+      const url = league === 'CPBL' ? CPBL_GAME_DETAIL_API_URL : NPB_GAME_DETAIL_API_URL;
+      const response = await fetch(url, {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          action:'pitcher-records',
+          league,
+          date,
+          gameId:String(game?.id || ''),
+          away:String(game?.away || ''),
+          home:String(game?.home || ''),
+          status:String(game?.status || '')
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `投手紀錄讀取失敗（${response.status}）`);
+      return {
+        away:Array.isArray(data?.away) ? data.away : [],
+        home:Array.isArray(data?.home) ? data.home : []
+      };
+    }
+
+    async function refreshHomePitcherRecords({ force = false } = {}) {
+      if (!activeHomeGameDetail) return;
+      const { league, date, game, key } = activeHomeGameDetail;
+      if (!homePitcherRecordsSupported(league, game) || activeHomeGameDetail.centerTab !== 'pitchers') return;
+      if (activeHomeGameDetail.pitcherRecordsLoading) return;
+
+      const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+      const status = String(detail?.status || game?.status || '').toLowerCase();
+      const cached = homePitcherRecordsCache.get(key) || null;
+      const ttl = ['live','suspended'].includes(status) ? 45_000 : status === 'final' ? Infinity : 60_000;
+      const fresh = cached && (ttl === Infinity || Date.now() - Number(cached.at || 0) < ttl);
+
+      if (!force && fresh) {
+        if (activeHomeGameDetail.pitcherRecords !== cached.records) {
+          activeHomeGameDetail.pitcherRecords = cached.records;
+          activeHomeGameDetail.pitcherRecordsError = '';
+          renderHomeGameDetail(detail, game);
+        }
+        return;
+      }
+
+      activeHomeGameDetail.pitcherRecordsLoading = true;
+      activeHomeGameDetail.pitcherRecordsError = '';
+      renderHomeGameDetail(detail, game);
+      try {
+        const records = await homePitcherRecordsRequest(league, date, { ...game, ...(detail?.game || {}) });
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        homePitcherRecordsCache.set(key, { at:Date.now(), records });
+        activeHomeGameDetail.pitcherRecords = records;
+        activeHomeGameDetail.pitcherRecordsError = '';
+      } catch (error) {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pitcherRecordsError = error?.message || '投手紀錄讀取失敗。';
+      } finally {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.pitcherRecordsLoading = false;
+        const latest = homeGameDetailCache.get(key)?.detail || detail;
+        renderHomeGameDetail(latest, activeHomeGameDetail.game || game);
+      }
     }
 
     async function pregameStarterRequest(league, date, game) {
@@ -544,6 +619,9 @@
     }
 
     function homeGamePitcherPanel(detail, gameInfo = {}) {
+      const records = activeHomeGameDetail?.pitcherRecords || null;
+      const loading = Boolean(activeHomeGameDetail?.pitcherRecordsLoading);
+      const error = String(activeHomeGameDetail?.pitcherRecordsError || '');
       const teams = [
         ['away', String(gameInfo?.away || detail?.game?.away || '客隊')],
         ['home', String(gameInfo?.home || detail?.game?.home || '主隊')]
@@ -551,30 +629,39 @@
       const currentPitcher = detail?.current?.pitcher || {};
       const currentId = String(currentPitcher?.id || currentPitcher?.acnt || '');
       const currentName = String(currentPitcher?.fullName || currentPitcher?.name || '').trim();
-      const samePitcher = (p) => {
-        const id = String(p?.id || '');
-        const name = String(p?.name || '').trim();
+      const rowValue = (row, index, fallback = '0') => {
+        const value = Array.isArray(row) ? row[index] : '';
+        return value === null || value === undefined || String(value).trim() === '' ? fallback : String(value);
+      };
+      const samePitcher = (row) => {
+        const id = rowValue(row, 0, '');
+        const name = rowValue(row, 1, '');
         return Boolean((currentId && id && currentId === id) || (currentName && name && (currentName.includes(name) || name.includes(currentName))));
       };
-      const cell = (value, fallback = '0') => {
-        if (value === null || value === undefined || String(value).trim() === '') return fallback;
-        return String(value);
-      };
       const teamSection = ([side, teamName]) => {
-        const list = Array.isArray(detail?.gamePitchers?.[side]) ? detail.gamePitchers[side] : [];
-        const rows = list.length ? list.map(p => `
-          <div class="game-pitcher-row ${samePitcher(p) ? 'is-current' : ''}">
-            <strong title="${escapeHtml(String(p?.name || ''))}">${escapeHtml(String(p?.name || '—'))}</strong>
-            <span>${escapeHtml(cell(p?.ip, '—'))}</span>
-            <span>${escapeHtml(cell(p?.pitches))}</span>
-            <span>${escapeHtml(cell(p?.hits))}</span>
-            <span>${escapeHtml(cell(p?.homeRuns))}</span>
-            <span>${escapeHtml(cell(p?.walks))}</span>
-            <span>${escapeHtml(cell(p?.hitBatters))}</span>
-            <span>${escapeHtml(cell(p?.strikeouts))}</span>
-            <span>${escapeHtml(cell(p?.runs))}</span>
-            <span>${escapeHtml(cell(p?.earnedRuns))}</span>
-          </div>`).join('') : '<div class="game-pitcher-empty">目前沒有可用的本場投手紀錄。</div>';
+        const list = Array.isArray(records?.[side]) ? records[side] : [];
+        let rows = '';
+        if (list.length) {
+          rows = list.map(row => `
+            <div class="game-pitcher-row ${samePitcher(row) ? 'is-current' : ''}">
+              <strong title="${escapeHtml(rowValue(row,1,'—'))}">${escapeHtml(rowValue(row,1,'—'))}</strong>
+              <span>${escapeHtml(rowValue(row,2,'—'))}</span>
+              <span>${escapeHtml(rowValue(row,3))}</span>
+              <span>${escapeHtml(rowValue(row,4))}</span>
+              <span>${escapeHtml(rowValue(row,5))}</span>
+              <span>${escapeHtml(rowValue(row,6))}</span>
+              <span>${escapeHtml(rowValue(row,7))}</span>
+              <span>${escapeHtml(rowValue(row,8))}</span>
+              <span>${escapeHtml(rowValue(row,9))}</span>
+              <span>${escapeHtml(rowValue(row,10))}</span>
+            </div>`).join('');
+        } else if (loading) {
+          rows = '<div class="game-pitcher-empty">正在讀取本場投手紀錄…</div>';
+        } else if (error) {
+          rows = `<div class="game-pitcher-empty">${escapeHtml(error)}</div>`;
+        } else {
+          rows = '<div class="game-pitcher-empty">點開投手紀錄後才載入資料。</div>';
+        }
         return `
           <section class="game-pitcher-team game-pitcher-team-${side}">
             <div class="game-pitcher-team-head"><span>${side === 'away' ? '客隊' : '主隊'}</span><strong>${escapeHtml(teamName)}</strong><em>${list.length} 位</em></div>
@@ -586,7 +673,6 @@
       };
       return `<div class="game-pitcher-page">${teams.map(teamSection).join('')}</div>`;
     }
-
     function homeMatchCenterDisplayTime(value) {
       const ms = typeof value === 'number' ? value : Date.parse(String(value || ''));
       if (!Number.isFinite(ms)) return '';
@@ -684,7 +770,7 @@
         };
       }
       const requestedCenterTab = String(activeHomeGameDetail?.centerTab || '');
-      const supportsPitchers = activeHomeGameDetail?.league === 'NPB';
+      const supportsPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
       const centerTab = requestedCenterTab === 'overview'
         ? 'overview'
         : requestedCenterTab === 'pitchers' && supportsPitchers
@@ -750,11 +836,12 @@
         btn.addEventListener('click', () => {
           if (!activeHomeGameDetail) return;
           const tab = String(btn.dataset.matchCenterTab || 'play');
-          const allowedTabs = activeHomeGameDetail?.league === 'NPB' ? ['play','pitchers','overview'] : ['play','overview'];
+          const allowedTabs = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game) ? ['play','pitchers','overview'] : ['play','overview'];
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
+          if (tab === 'pitchers') void refreshHomePitcherRecords({ force:false });
         });
       });
       updateHomeGameDetailRefreshCountdown();
@@ -893,6 +980,7 @@
         if (detail?.game?.id && !game.id) game.id = detail.game.id;
         if (detailChanged || force) renderHomeGameDetail(detail, game);
         scheduleHomeGameDetailRefresh(detail);
+        if (activeHomeGameDetail?.centerTab === 'pitchers') void refreshHomePitcherRecords({ force:false });
       } catch (error) {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         const detail = cached?.detail || { status:game?.status, game, plays:[] };
@@ -944,7 +1032,8 @@
       const key = homeGameDetailKey(league, date, game);
       const requestedTab = ['play','pitchers','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
-      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'' };
+      const cachedPitchers = homePitcherRecordsCache.get(key) || null;
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
