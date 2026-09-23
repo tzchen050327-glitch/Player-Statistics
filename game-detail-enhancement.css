@@ -539,3 +539,149 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
   .gdx-live-previous-row>b{font-size:7px;padding:2px 4px}
 }
 /* ===== v3.10 PREVIOUS BATTER END ===== */
+
+
+/* NPB pitcher record page */
+.game-pitcher-panel{
+  height:calc(100dvh - 112px);
+  min-height:0;
+  overflow:hidden;
+}
+.game-pitcher-page{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  padding:10px;
+}
+.game-pitcher-team{
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr);
+  overflow:hidden;
+  border:1px solid #d4dee7;
+  border-radius:14px;
+  background:#fff;
+}
+.game-pitcher-team-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:9px 11px;
+  border-bottom:1px solid #e2e8ee;
+  background:#f5f8fb;
+}
+.game-pitcher-team-head span,
+.game-pitcher-team-head em{
+  color:#77899a;
+  font-size:10px;
+  font-style:normal;
+  font-weight:900;
+}
+.game-pitcher-team-head strong{
+  min-width:0;
+  overflow:hidden;
+  color:#244f76;
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-pitcher-table-head,
+.game-pitcher-row{
+  display:grid;
+  grid-template-columns:minmax(82px,1.5fr) 34px 36px repeat(7,32px);
+  align-items:center;
+  gap:2px;
+  min-width:370px;
+  padding:0 9px;
+  text-align:center;
+}
+.game-pitcher-table-head{
+  min-height:27px;
+  color:#80909e;
+  font-size:8px;
+  font-weight:900;
+  border-bottom:1px solid #e8edf2;
+}
+.game-pitcher-table-head span:first-child{
+  text-align:left;
+}
+.game-pitcher-scroll{
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.game-pitcher-row{
+  min-height:34px;
+  border-bottom:1px solid #edf1f4;
+  color:#40576c;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.game-pitcher-row:last-child{
+  border-bottom:0;
+}
+.game-pitcher-row strong{
+  min-width:0;
+  overflow:hidden;
+  color:#203f5d;
+  font-size:11px;
+  font-weight:950;
+  text-align:left;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-pitcher-row.is-current{
+  background:rgba(197,151,48,.09);
+  box-shadow:inset 3px 0 0 #c79a36;
+}
+.game-pitcher-row.is-current strong{
+  color:#a97916;
+}
+.game-pitcher-empty{
+  padding:20px 12px;
+  color:#84919d;
+  font-size:11px;
+  text-align:center;
+}
+html[data-theme="dark"] .game-pitcher-team{
+  border-color:#2c3945;
+  background:#10171e;
+}
+html[data-theme="dark"] .game-pitcher-team-head{
+  border-color:#29343e;
+  background:#151d25;
+}
+html[data-theme="dark"] .game-pitcher-team-head strong,
+html[data-theme="dark"] .game-pitcher-row strong{
+  color:#f0f4f8;
+}
+html[data-theme="dark"] .game-pitcher-table-head,
+html[data-theme="dark"] .game-pitcher-row{
+  border-color:#28323b;
+}
+html[data-theme="dark"] .game-pitcher-row{
+  color:#b8c6d3;
+}
+@media(max-width:720px){
+  .game-pitcher-panel{
+    height:calc(100dvh - 99px);
+  }
+  .game-pitcher-page{
+    gap:8px;
+    padding:8px;
+  }
+  .game-pitcher-team-head{
+    padding:7px 9px;
+  }
+  .game-pitcher-table-head,
+  .game-pitcher-row{
+    grid-template-columns:minmax(76px,1.4fr) 31px 34px repeat(7,30px);
+    min-width:345px;
+    padding:0 7px;
+  }
+}
