@@ -638,6 +638,32 @@
         const name = rowValue(row, 1, '');
         return Boolean((currentId && id && currentId === id) || (currentName && name && (currentName.includes(name) || name.includes(currentName))));
       };
+      const inningsToOuts = (value) => {
+        const text = String(value ?? '').trim();
+        if (!text) return 0;
+        const match = text.match(/^(\d+)(?:\.([12]))?$/);
+        if (!match) return 0;
+        return Number(match[1]) * 3 + Number(match[2] || 0);
+      };
+      const outsToInnings = (outs) => {
+        const safe = Math.max(0, Number(outs) || 0);
+        return `${Math.floor(safe / 3)}.${safe % 3}`;
+      };
+      const totalsFor = (list) => {
+        const totals = { outs:0, p:0, h:0, hr:0, bb:0, hbp:0, k:0, r:0, er:0 };
+        for (const row of list) {
+          totals.outs += inningsToOuts(rowValue(row,2,'0'));
+          totals.p += Number(rowValue(row,3,'0')) || 0;
+          totals.h += Number(rowValue(row,4,'0')) || 0;
+          totals.hr += Number(rowValue(row,5,'0')) || 0;
+          totals.bb += Number(rowValue(row,6,'0')) || 0;
+          totals.hbp += Number(rowValue(row,7,'0')) || 0;
+          totals.k += Number(rowValue(row,8,'0')) || 0;
+          totals.r += Number(rowValue(row,9,'0')) || 0;
+          totals.er += Number(rowValue(row,10,'0')) || 0;
+        }
+        return [outsToInnings(totals.outs), totals.p, totals.h, totals.hr, totals.bb, totals.hbp, totals.k, totals.r, totals.er];
+      };
       const teamSection = ([side, teamName]) => {
         const list = Array.isArray(records?.[side]) ? records[side] : [];
         let rows = '';
@@ -662,6 +688,12 @@
         } else {
           rows = '<div class="game-pitcher-empty">點開投手紀錄後才載入資料。</div>';
         }
+        const totals = list.length ? totalsFor(list) : null;
+        const totalHtml = totals ? `
+          <div class="game-pitcher-total">
+            <strong>TOTAL</strong>
+            ${totals.map(value => `<span>${escapeHtml(String(value))}</span>`).join('')}
+          </div>` : '';
         return `
           <section class="game-pitcher-team game-pitcher-team-${side}">
             <div class="game-pitcher-team-head"><span>${side === 'away' ? '客隊' : '主隊'}</span><strong>${escapeHtml(teamName)}</strong><em>${list.length} 位</em></div>
@@ -669,6 +701,7 @@
               <span>投手</span><span>IP</span><span>P</span><span>H</span><span>HR</span><span>BB</span><span>HBP</span><span>K</span><span>R</span><span>ER</span>
             </div>
             <div class="game-pitcher-scroll">${rows}</div>
+            ${totalHtml}
           </section>`;
       };
       return `<div class="game-pitcher-page">${teams.map(teamSection).join('')}</div>`;
