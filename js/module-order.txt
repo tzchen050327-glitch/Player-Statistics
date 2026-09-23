@@ -1,4 +1,5 @@
 00-core-config.js
+00a-offline-cache.js
 01-catalogs.js
 02-core-helpers.js
 03-provider-us.js
