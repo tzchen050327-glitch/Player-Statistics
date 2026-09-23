@@ -1076,9 +1076,24 @@
     if(/犧牲飛球|犠牲フライ|sacrifice fly/i.test(text)) return '犧飛';
     if(/犧牲觸擊|犧牲短打|犠打|sacrifice bunt/i.test(text)) return '犧短';
     if(/界外飛|邪飛/i.test(text)) return '界飛';
-    if(/飛球|飛出|flyout|フライ/i.test(text)) return '飛球';
-    if(/平飛|lineout|ライナー/i.test(text)) return '平飛';
-    if(/滾地|滾地球|groundout|ゴロ/i.test(text)) return '滾地';
+
+    const positionLabel=(value)=>{
+      if(/投手|ピッチャー/i.test(value)) return '投';
+      if(/捕手|キャッチャー/i.test(value)) return '捕';
+      if(/一壘|一塁|ファースト/i.test(value)) return '一';
+      if(/二壘|二塁|セカンド/i.test(value)) return '二';
+      if(/三壘|三塁|サード/i.test(value)) return '三';
+      if(/游擊|遊擊|遊撃|ショート/i.test(value)) return '游';
+      if(/左外野|左翼|レフト/i.test(value)) return '左';
+      if(/中外野|中堅|センター/i.test(value)) return '中';
+      if(/右外野|右翼|ライト/i.test(value)) return '右';
+      return '';
+    };
+    const pos=positionLabel(text);
+
+    if(/飛球|飛出|flyout|フライ/i.test(text)) return pos?`${pos}飛`:'飛球';
+    if(/平飛|lineout|ライナー/i.test(text)) return pos?`${pos}直`:'平飛';
+    if(/滾地|滾地球|groundout|ゴロ/i.test(text)) return pos?`${pos}滾`:'滾地';
     return text.length>7?`${text.slice(0,7)}…`:text;
   }
 
