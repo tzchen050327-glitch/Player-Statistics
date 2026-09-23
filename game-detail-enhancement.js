@@ -322,6 +322,32 @@
     };
   }
 
+  const isNpb=String(detail?.league||'').toUpperCase()==='NPB';
+  if(isNpb && ['live','suspended'].includes(status)){
+    if(pregameAb!==null && pregameHits!==null){
+      const ab=pregameAb+(gameAb??0);
+      const hits=pregameHits+(gameHits??0);
+      const homeRuns=(pregameHr??0)+(gameHr??0);
+      const rbi=(pregameRbi??0)+(gameRbi??0);
+      return {
+        ab,
+        avg:formatAverage(hits,ab,sourceAvg),
+        hits,
+        homeRuns,
+        rbi,
+        finalStatsReconciled:false
+      };
+    }
+    return {
+      ab:directAb,
+      avg:sourceAvg,
+      hits:Math.max(directHits??0,gameHits??0),
+      homeRuns:Math.max(directHr??0,gameHr??0),
+      rbi:Math.max(directRbi??0,gameRbi??0),
+      finalStatsReconciled:false
+    };
+  }
+
   if(!isCpbl||status!=='final'){
     return {
       ab:directAb,
@@ -817,7 +843,8 @@
     }
     // When current.baseState is stale, its runner names are stale as well.
     // Prefer the completed PA's post-state identities before direct current runners.
-    const useNpbSnapshot=String(detail?.league||'').toUpperCase()==='NPB' && detail?.current?.baseStateSource==='npb-live-current-row';
+    const npbBaseSource=String(detail?.current?.baseStateSource||'');
+    const useNpbSnapshot=String(detail?.league||'').toUpperCase()==='NPB' && (npbBaseSource==='npb-live-current-row'||npbBaseSource==='npb-play-prestate');
     const merged=useCpblAfter
       ? {first:immediate.first||direct.first||inferred.first,second:immediate.second||direct.second||inferred.second,third:immediate.third||direct.third||inferred.third}
       : useNpbSnapshot
