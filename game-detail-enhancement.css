@@ -558,7 +558,7 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
 .game-pitcher-team{
   min-height:0;
   display:grid;
-  grid-template-rows:auto auto minmax(0,1fr);
+  grid-template-rows:auto auto minmax(0,1fr) auto;
   overflow:hidden;
   border:1px solid #d4dee7;
   border-radius:14px;
@@ -590,13 +590,16 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
   white-space:nowrap;
 }
 .game-pitcher-table-head,
-.game-pitcher-row{
+.game-pitcher-row,
+.game-pitcher-total{
   display:grid;
-  grid-template-columns:minmax(82px,1.5fr) 34px 36px repeat(7,32px);
+  grid-template-columns:72px 30px 32px repeat(7,minmax(24px,1fr));
   align-items:center;
-  gap:2px;
-  min-width:370px;
-  padding:0 9px;
+  gap:0;
+  width:100%;
+  min-width:0;
+  padding:0 8px;
+  box-sizing:border-box;
   text-align:center;
 }
 .game-pitcher-table-head{
@@ -611,7 +614,8 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
 }
 .game-pitcher-scroll{
   min-height:0;
-  overflow:auto;
+  overflow-y:auto;
+  overflow-x:hidden;
   overscroll-behavior:contain;
   scrollbar-width:thin;
 }
@@ -642,6 +646,24 @@ body.gdx-cpbl-landscape #homeGameDetailBody{overflow:hidden;}body.gdx-cpbl-lands
 .game-pitcher-row.is-current strong{
   color:#a97916;
 }
+.game-pitcher-total{
+  min-height:32px;
+  border-top:1px solid #d8e1e8;
+  background:#f5f8fb;
+  color:#344f67;
+  font-size:9px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.game-pitcher-total strong{
+  overflow:hidden;
+  color:#244f76;
+  font-size:9px;
+  font-weight:950;
+  text-align:left;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
 .game-pitcher-empty{
   padding:20px 12px;
   color:#84919d;
@@ -667,6 +689,14 @@ html[data-theme="dark"] .game-pitcher-row{
 html[data-theme="dark"] .game-pitcher-row{
   color:#b8c6d3;
 }
+html[data-theme="dark"] .game-pitcher-total{
+  border-color:#2c3945;
+  background:#151d25;
+  color:#c2cfda;
+}
+html[data-theme="dark"] .game-pitcher-total strong{
+  color:#f0f4f8;
+}
 @media(max-width:720px){
   .game-pitcher-panel{
     height:calc(100dvh - 99px);
@@ -679,9 +709,11 @@ html[data-theme="dark"] .game-pitcher-row{
     padding:7px 9px;
   }
   .game-pitcher-table-head,
-  .game-pitcher-row{
-    grid-template-columns:minmax(76px,1.4fr) 31px 34px repeat(7,30px);
-    min-width:345px;
-    padding:0 7px;
+  .game-pitcher-row,
+  .game-pitcher-total{
+    grid-template-columns:66px 28px 30px repeat(7,minmax(22px,1fr));
+    width:100%;
+    min-width:0;
+    padding:0 6px;
   }
 }
