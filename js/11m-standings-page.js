@@ -529,7 +529,7 @@
               <div class="standings-schedule-row">
                 <div class="standings-schedule-date"><strong>${escapeHtml(String(game.date||'').slice(5).replace('-','/'))}</strong><span>${escapeHtml(game.time||'')}</span></div>
                 <div class="standings-schedule-match"><strong>${escapeHtml(standingsGameOpponent(game,team))}</strong><span>${standingsGameSide(game,team)}場・${escapeHtml(game.venue||'')}</span></div>
-                <div class="standings-schedule-result upcoming"><strong>${String(game.status||'')==='live'?'LIVE':'未開打'}</strong><span></span></div>
+                <div class="standings-schedule-result upcoming ${String(game.status||'')==='live'?'is-live':''}"><strong>${String(game.status||'')==='live'?'LIVE':'未開打'}</strong><span></span></div>
               </div>
             `).join('')
           : `<div class="standings-team-detail-empty compact">目前沒有抓到接下來的賽程。</div>`;
