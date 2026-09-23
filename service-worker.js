@@ -2,6 +2,7 @@ const CACHE_NAME = 'baseball-player-card-pwa-v581-auto';
 const CACHE_VERSION = 'v5.81';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
+const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,6 +16,7 @@ const APP_SHELL = [
   './postseason-history.css?v=v5.81',
   './js/module-loader.js?v=v5.81',
   MODULE_ORDER_URL,
+  VERSIONED_MODULE_ORDER_URL,
   './postseason-history.js?v=v5.81',
   './cpbl-cache-router.js?v=v5.81',
   './game-detail-enhancement.css?v=v5.81',
