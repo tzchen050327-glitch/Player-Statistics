@@ -759,6 +759,9 @@
         btn.addEventListener('click', () => {
           standingsTeamTab = btn.dataset.standingsTeamTab === 'schedule' ? 'schedule' : 'h2h';
           renderStandingsPage();
+          if (standingsTeamTab === 'schedule' && standingsSelectedTeam) {
+            void loadStandingsTeamDetail(standingsSelectedTeam, { force:true });
+          }
         });
       });
       els.standingsPageContent.querySelector('[data-standings-team-close]')?.addEventListener('click', () => {
