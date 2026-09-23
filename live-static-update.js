@@ -60,26 +60,8 @@
 
   ensureV271DomCompatibility();
 
-  // v2.77 emergency mode: unregister old workers and return a harmless fake
-  // registration during startup. The web app continues to work online without
-  // a Service Worker; PWA updating can be re-enabled after boot stability is confirmed.
-  try {
-    const sw = navigator.serviceWorker;
-    if (sw) {
-      sw.getRegistrations?.().then(regs => Promise.allSettled(regs.map(reg => reg.unregister()))).catch(() => {});
-      const fakeRegistration = {
-        installing: null,
-        waiting: null,
-        active: null,
-        update: async () => undefined,
-        addEventListener: () => {},
-        removeEventListener: () => {}
-      };
-      try {
-        sw.register = async () => fakeRegistration;
-      } catch {}
-    }
-  } catch {}
+  // Service Worker registration is owned by the bootstrap/update flow.
+  // Keep the recovery path below only for genuinely stuck boots.
 
   const BOOT_RECOVERY_KEY = 'baseballBootRecoveryV271';
   const bootRecoveryTimer = window.setTimeout(async () => {
