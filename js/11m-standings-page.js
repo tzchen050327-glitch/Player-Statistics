@@ -759,7 +759,7 @@
         btn.addEventListener('click', () => {
           standingsTeamTab = btn.dataset.standingsTeamTab === 'schedule' ? 'schedule' : 'h2h';
           renderStandingsPage();
-          if (standingsTeamTab === 'schedule' && standingsSelectedTeam) {
+          if (standingsSelectedTeam) {
             void loadStandingsTeamDetail(standingsSelectedTeam, { force:true });
           }
         });
