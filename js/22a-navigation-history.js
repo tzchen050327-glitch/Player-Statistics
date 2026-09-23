@@ -77,7 +77,7 @@
         ? String(route.page)
         : 'home';
 
-      if (page !== 'standings' && typeof standingsSelectedTeam !== 'undefined') {
+      if (typeof standingsSelectedTeam !== 'undefined') {
         standingsSelectedTeam = '';
         standingsTeamDetailError = '';
       }
