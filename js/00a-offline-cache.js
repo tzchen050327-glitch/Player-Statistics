@@ -97,6 +97,17 @@
     return '';
   }
 
+  function cacheRequestMeta(text) {
+    try {
+      const data = JSON.parse(text || '{}');
+      const bypass = data && data._networkFresh === true;
+      if (data && Object.prototype.hasOwnProperty.call(data, '_networkFresh')) delete data._networkFresh;
+      return { bypass, keyText:JSON.stringify(data) };
+    } catch {
+      return { bypass:false, keyText:text };
+    }
+  }
+
   function requestedDate(text) {
     try {
       const data = JSON.parse(text || '{}');
@@ -208,11 +219,12 @@
     if (!rule) return nativeFetch(input, init);
 
     const requestText = await bodyText(input, init);
-    const key = method + ':' + url.toString() + ':' + hash(requestText);
+    const requestMeta = cacheRequestMeta(requestText);
+    const key = method + ':' + url.toString() + ':' + hash(requestMeta.keyText);
     const cached = await getEntry(key);
 
     if (!navigator.onLine && usable(cached)) { hit(cached); return fromCache(cached); }
-    if (navigator.onLine && fresh(cached)) { hit(cached); return fromCache(cached); }
+    if (navigator.onLine && !requestMeta.bypass && fresh(cached)) { hit(cached); return fromCache(cached); }
 
     try {
       const response = await nativeFetch(input, init);
