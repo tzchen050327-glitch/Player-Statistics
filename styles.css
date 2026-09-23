@@ -6604,6 +6604,24 @@ html[data-theme="dark"] .app-date-today:hover{
   color:#9a741f;
   font-size:9px;
 }
+.standings-schedule-result.is-live{
+  align-items:center;
+  justify-content:center;
+  justify-self:end;
+  width:46px;
+  min-height:30px;
+  padding:0 6px;
+  border:1px solid rgba(184,137,31,.34);
+  border-radius:8px;
+  background:rgba(184,137,31,.08);
+  text-align:center;
+  box-sizing:border-box;
+}
+.standings-schedule-result.is-live strong{
+  font-size:10px;
+  letter-spacing:.05em;
+  line-height:1;
+}
 .standings-team-detail-empty{
   padding:18px 10px;
   color:#7d8d9d;
