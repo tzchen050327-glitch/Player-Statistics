@@ -455,13 +455,16 @@
     }
 
     function homePregameMatchupPanel(center, gameInfo, game) {
-      if (!center) return '<div class="pregame-center-loading">當日對戰資料尚未建立。</div>';
+      const starterPair = homePregameStarterPair(center, gameInfo, game);
+      if (!center) {
+        return `${starterPair}<div class="pregame-center-loading">其他賽前對戰資料尚未建立。</div>`;
+      }
       const matchup = center?.matchup || {};
       const h2h = matchup?.h2h || null;
       const away = String(gameInfo?.away || game?.away || '客隊');
       const home = String(gameInfo?.home || game?.home || '主隊');
       return `
-        ${homePregameStarterPair(center, gameInfo, game)}
+        ${starterPair}
         <div class="pregame-center-summary-grid">
           <article>
             <span>近 6 場</span>
