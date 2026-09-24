@@ -10889,3 +10889,75 @@ html[data-theme="dark"] .pitcher-status-starter{
   color:#e0b75a;
 }
 /* ===== FIRST-TEAM PITCHER STATUS BADGE END ===== */
+
+
+/* ===== PITCHER STATUS SPLIT SCROLL ===== */
+.game-bullpen-panel{
+  height:calc(100dvh - 112px);
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+  box-sizing:border-box;
+}
+.game-bullpen-panel>.pregame-center-body{
+  min-height:0;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto;
+  gap:8px;
+  overflow:hidden;
+  padding:10px;
+}
+.game-bullpen-panel .bullpen-status-grid{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr;
+  grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  gap:8px;
+}
+.game-bullpen-panel .bullpen-roster-card{
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+}
+.game-bullpen-panel .bullpen-roster-table{
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+}
+.game-bullpen-panel .bullpen-roster-scroll{
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.game-bullpen-panel .bullpen-roster-header{
+  position:relative;
+  z-index:1;
+  border-bottom:1px solid #e5ebf0;
+}
+.game-bullpen-panel .bullpen-estimate-note{
+  min-height:0;
+  padding:0 2px;
+}
+@media(max-width:720px){
+  .game-bullpen-panel{
+    height:calc(100dvh - 99px);
+  }
+  .game-bullpen-panel>.pregame-center-body{
+    padding:8px;
+    gap:7px;
+  }
+  .game-bullpen-panel .bullpen-status-grid{
+    gap:7px;
+  }
+  .game-bullpen-panel .bullpen-roster-head{
+    padding:7px 9px;
+  }
+}
+/* ===== END PITCHER STATUS SPLIT SCROLL ===== */
