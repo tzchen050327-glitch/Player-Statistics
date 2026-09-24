@@ -625,6 +625,12 @@
       `;
     }
 
+    function homeBullpenDataUsable(data) {
+      const away = Array.isArray(data?.awayBullpen?.members) ? data.awayBullpen.members.length : 0;
+      const home = Array.isArray(data?.homeBullpen?.members) ? data.homeBullpen.members.length : 0;
+      return away > 0 && home > 0;
+    }
+
     async function refreshHomeBullpenStatus({ force = false } = {}) {
       if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
       if (activeHomeGameDetail.centerTab !== 'bullpen') return;
@@ -633,7 +639,7 @@
       if (!game?.id || !game?.away || !game?.home) return;
 
       const cached = homeBullpenSessionCache.get(key) || null;
-      if (!force && cached?.data) {
+      if (!force && cached?.data && homeBullpenDataUsable(cached.data)) {
         activeHomeGameDetail.bullpenData = cached.data;
         activeHomeGameDetail.bullpenError = '';
         const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
@@ -648,6 +654,7 @@
       try {
         const data = await homeBullpenStatusRequest(league, date, game, false);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        if (!homeBullpenDataUsable(data)) throw new Error('牛棚名單尚未建立完成，請稍後再試。');
         homeBullpenSessionCache.set(key, { at:Date.now(), data });
         activeHomeGameDetail.bullpenData = data;
       } catch (error) {
