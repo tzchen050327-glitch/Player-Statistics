@@ -311,34 +311,27 @@ def build_cpbl():
 
 # ---------- NPB ----------
 
-def npb_player_id(tr):
-    for a in tr.find_all("a", href=True):
-        href = str(a.get("href", ""))
-        m = re.search(r"(?:players/|/)(\d{8})\.html(?:$|[?#])", href)
-        if m:
-            return m.group(1)
-    return ""
-
-
 def npb_table_rows(url):
     s = new_session()
     r = s.get(url, timeout=25)
     r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
-    return soup
+    return BeautifulSoup(r.text, "html.parser")
 
 
 def npb_season_batting(code, team):
     soup = npb_table_rows(f"{NPB}/bis/{SEASON}/stats/idb1_{code}.html")
     out = []
     for tr in soup.find_all("tr"):
-        pid = npb_player_id(tr)
         cells = html_cells(tr)
-        if not pid or len(cells) < 11:
+        if len(cells) < 11:
+            continue
+        name = normalize_name(cells[0])
+        games = whole(cells[1])
+        if not name or name in ("選手", "合計") or games <= 0:
             continue
         out.append({
-            "id": pid,
-            "name": normalize_name(cells[0]),
+            "id": f"{code}:B:{name}",
+            "name": name,
             "team": team,
             "stats": {
                 "runs": whole(cells[4]),
@@ -354,13 +347,16 @@ def npb_season_pitching(code, team):
     soup = npb_table_rows(f"{NPB}/bis/{SEASON}/stats/idp1_{code}.html")
     out = []
     for tr in soup.find_all("tr"):
-        pid = npb_player_id(tr)
         cells = html_cells(tr)
-        if not pid or len(cells) < 19:
+        if len(cells) < 19:
+            continue
+        name = normalize_name(cells[0])
+        games = whole(cells[1])
+        if not name or name in ("選手", "合計") or games <= 0:
             continue
         out.append({
-            "id": pid,
-            "name": normalize_name(cells[0]),
+            "id": f"{code}:P:{name}",
+            "name": name,
             "team": team,
             "stats": {
                 "w": whole(cells[2]),
@@ -373,65 +369,57 @@ def npb_season_pitching(code, team):
     return out
 
 
-def npb_headers(table):
-    for tr in table.find_all("tr"):
-        cells = html_cells(tr)
-        if cells and ("年度" in cells or "Year" in cells):
-            return cells
-    return []
+NPB_CAREER_RANKINGS = {
+    "hitter": {
+        "hits": "acb_h.html",
+        "hr": "acb_hr.html",
+        "rbi": "acb_rbi.html",
+        "runs": "acb_r.html",
+    },
+    "pitcher": {
+        "k": "acp_so.html",
+        "w": "acp_w.html",
+        "sv": "acp_sv.html",
+        "hld": "acp_hld.html",
+        "outs": "acp_ip.html",
+    },
+}
 
 
-def npb_career_from_profile(meta):
-    pid = str(meta["id"])
-    s = new_session()
-    r = s.get(f"{NPB}/bis/players/{pid}.html", timeout=25)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
+def npb_active_career_rankings(role, team_by_name):
+    defaults = (
+        {"hits": 0, "hr": 0, "rbi": 0, "runs": 0}
+        if role == "hitter"
+        else {"k": 0, "w": 0, "sv": 0, "hld": 0, "outs": 0}
+    )
+    merged = {}
 
-    hitter_stats = {"hits": 0, "hr": 0, "rbi": 0, "runs": 0}
-    pitcher_stats = {"k": 0, "w": 0, "sv": 0, "hld": 0, "outs": 0}
-
-    for table in soup.find_all("table"):
-        headers = npb_headers(table)
-        if not headers:
+    for key, filename in NPB_CAREER_RANKINGS[role].items():
+        try:
+            soup = npb_table_rows(f"{NPB}/bis/history/{filename}")
+        except Exception as exc:
+            print("NPB career ranking failed", filename, exc)
             continue
-        idx = {clean(v): i for i, v in enumerate(headers)}
-        is_bat = "安打" in idx and "本塁打" in idx and "打点" in idx
-        is_pit = "投球回" in idx and "三振" in idx and ("勝利" in idx or "勝" in idx)
-        if not (is_bat or is_pit):
-            continue
 
-        for tr in table.find_all("tr"):
+        for tr in soup.find_all("tr"):
             cells = html_cells(tr)
-            if not cells or not re.fullmatch(r"\d{4}", cells[0] or ""):
+            if len(cells) < 3 or not re.fullmatch(r"\d+", cells[0] or ""):
                 continue
-            year = int(cells[0])
-            if year > SEASON or year < 1936:
+            name = normalize_name(cells[1])
+            if not name:
                 continue
-            if is_bat:
-                def bget(key):
-                    i = idx.get(key, -1)
-                    return cells[i] if 0 <= i < len(cells) else 0
-                hitter_stats["hits"] += whole(bget("安打"))
-                hitter_stats["hr"] += whole(bget("本塁打"))
-                hitter_stats["rbi"] += whole(bget("打点"))
-                hitter_stats["runs"] += whole(bget("得点"))
-            if is_pit:
-                def pget(*keys):
-                    for key in keys:
-                        i = idx.get(key, -1)
-                        if 0 <= i < len(cells):
-                            return cells[i]
-                    return 0
-                pitcher_stats["k"] += whole(pget("三振", "奪三振"))
-                pitcher_stats["w"] += whole(pget("勝利", "勝"))
-                pitcher_stats["sv"] += whole(pget("セーブ", "S"))
-                pitcher_stats["hld"] += whole(pget("ホールド", "HLD"))
-                pitcher_stats["outs"] += innings_to_outs(pget("投球回"))
+            value = innings_to_outs(cells[2]) if key == "outs" else whole(cells[2])
+            if value <= 0:
+                continue
+            row = merged.setdefault(name, {
+                "id": f"career:{role}:{name}",
+                "name": name,
+                "team": team_by_name.get(name, "NPB現役"),
+                "stats": dict(defaults),
+            })
+            row["stats"][key] = value
 
-    hitter = {**meta, "stats": hitter_stats} if any(hitter_stats.values()) else None
-    pitcher = {**meta, "stats": pitcher_stats} if any(pitcher_stats.values()) else None
-    return hitter, pitcher
+    return list(merged.values())
 
 
 def build_npb():
@@ -448,22 +436,12 @@ def build_npb():
 
     season_hitters = merge_by_id(season_hitters)
     season_pitchers = merge_by_id(season_pitchers)
-    active = {}
+    team_by_name = {}
     for row in season_hitters + season_pitchers:
-        active[row["id"]] = {"id": row["id"], "name": row["name"], "team": row["team"]}
+        team_by_name.setdefault(row["name"], row["team"])
 
-    career_hitters, career_pitchers = [], []
-    with ThreadPoolExecutor(max_workers=6) as pool:
-        futures = [pool.submit(npb_career_from_profile, meta) for meta in active.values()]
-        for future in as_completed(futures):
-            try:
-                h, p = future.result()
-                if h:
-                    career_hitters.append(h)
-                if p:
-                    career_pitchers.append(p)
-            except Exception as exc:
-                print("NPB career worker failed", exc)
+    career_hitters = npb_active_career_rankings("hitter", team_by_name)
+    career_pitchers = npb_active_career_rankings("pitcher", team_by_name)
 
     return {
         "season": {"hitters": season_hitters, "pitchers": season_pitchers},
