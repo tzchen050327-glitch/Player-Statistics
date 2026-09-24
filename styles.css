@@ -10241,3 +10241,18 @@ body.pregame-center-open{
   .milestone-note{flex-direction:column;gap:3px;}
 }
 /* ===== MILESTONE PAGE END ===== */
+
+
+/* ===== SIDEBAR ACTION SPACING FIX ===== */
+#homePage .home-sidebar{
+  gap:6px;
+}
+#homePage .home-prediction-entry{
+  margin-bottom:0;
+}
+#homePage .home-milestone-entry,
+#homePage .home-prediction-entry,
+#homePage .home-standings-entry{
+  min-height:46px;
+}
+/* ===== SIDEBAR ACTION SPACING FIX END ===== */
