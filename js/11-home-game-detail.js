@@ -478,6 +478,7 @@
     }
 
     async function homeBullpenStatusRequest(league, date, game, force = false) {
+      if (league !== 'CPBL') throw new Error('牛棚狀態目前只支援中華職棒。');
       return homeMatchCenterPost(LEAGUE_BULLPEN_STATUS_API_URL, {
         appKey:CPBL_APP_KEY,
         league,
@@ -620,7 +621,7 @@
     }
 
     async function refreshHomeBullpenStatus({ force = false } = {}) {
-      if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return;
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
       if (activeHomeGameDetail.centerTab !== 'bullpen') return;
       if (activeHomeGameDetail.bullpenLoading) return;
       const { league, date, game, key } = activeHomeGameDetail;
@@ -1050,9 +1051,10 @@
       }
       const requestedCenterTab = String(activeHomeGameDetail?.centerTab || '');
       const supportsPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
+      const supportsBullpen = activeHomeGameDetail?.league === 'CPBL';
       const allowedCenterTabs = supportsPitchers
-        ? ['play','pitchers','bullpen','snapshot','overview']
-        : ['play','bullpen','snapshot','overview'];
+        ? (supportsBullpen ? ['play','pitchers','bullpen','snapshot','overview'] : ['play','pitchers','snapshot','overview'])
+        : (supportsBullpen ? ['play','bullpen','snapshot','overview'] : ['play','snapshot','overview']);
       const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
       const centerDataPanel = centerTab === 'overview'
         ? homeMatchCenterDataPanel('overview', gameInfo, game)
@@ -1086,10 +1088,10 @@
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
-        <nav class="match-center-tabs ${supportsPitchers ? 'is-five' : 'is-four'}" aria-label="對戰中心分類">
+        <nav class="match-center-tabs ${supportsPitchers && supportsBullpen ? 'is-five' : (supportsPitchers || supportsBullpen ? 'is-four' : 'is-three')}" aria-label="對戰中心分類">
           <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席</button>
           ${supportsPitchers ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">投手紀錄</button>` : ''}
-          <button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚</button>
+          ${supportsBullpen ? `<button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚</button>` : ''}
           <button type="button" data-match-center-tab="snapshot" class="${centerTab === 'snapshot' ? 'active' : ''}">比賽快照</button>
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
         </nav>
@@ -1120,9 +1122,11 @@
         btn.addEventListener('click', () => {
           if (!activeHomeGameDetail) return;
           const tab = String(btn.dataset.matchCenterTab || 'play');
-          const allowedTabs = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game)
-            ? ['play','pitchers','bullpen','snapshot','overview']
-            : ['play','bullpen','snapshot','overview'];
+          const hasPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game);
+          const hasBullpen = activeHomeGameDetail?.league === 'CPBL';
+          const allowedTabs = hasPitchers
+            ? (hasBullpen ? ['play','pitchers','bullpen','snapshot','overview'] : ['play','pitchers','snapshot','overview'])
+            : (hasBullpen ? ['play','bullpen','snapshot','overview'] : ['play','snapshot','overview']);
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
@@ -1317,7 +1321,11 @@
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
-      const requestedTab = ['play','pitchers','bullpen','snapshot','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
+      const rawRequestedTab = String(options?.tab || '');
+      const openAllowedTabs = league === 'CPBL'
+        ? ['play','pitchers','bullpen','snapshot','overview']
+        : ['play','pitchers','snapshot','overview'];
+      const requestedTab = openAllowedTabs.includes(rawRequestedTab) ? rawRequestedTab : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
       const cachedPitchers = homePitcherRecordsCache.get(key) || null;
       const cachedBullpen = homeBullpenSessionCache.get(key) || null;
