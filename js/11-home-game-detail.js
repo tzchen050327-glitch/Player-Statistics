@@ -478,7 +478,7 @@
     }
 
     async function homeBullpenStatusRequest(league, date, game, force = false) {
-      if (league !== 'CPBL') throw new Error('牛棚狀態目前只支援中華職棒。');
+      if (league !== 'CPBL') throw new Error('投手狀態目前只支援中華職棒。');
       return homeMatchCenterPost(LEAGUE_BULLPEN_STATUS_API_URL, {
         appKey:CPBL_APP_KEY,
         league,
@@ -572,7 +572,7 @@
 
     function homeBullpenTeamCard(side, fallbackTeam) {
       if (!side) {
-        return `<article class="bullpen-roster-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的牛棚資料</span></article>`;
+        return `<article class="bullpen-roster-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的一軍投手資料</span></article>`;
       }
       const members = Array.isArray(side?.members) ? side.members : [];
       const team = String(side?.team || fallbackTeam || '球隊');
@@ -580,7 +580,7 @@
         <article class="bullpen-roster-card">
           <div class="bullpen-roster-head">
             <div>
-              <span>牛棚</span>
+              <span>一軍投手</span>
               <strong>${escapeHtml(team)}</strong>
             </div>
             <b>${members.length} 人</b>
@@ -599,7 +599,7 @@
               const reason = String(member?.statusReason || '');
               return `
                 <div class="bullpen-roster-row">
-                  <strong>${escapeHtml(String(member?.name || '未辨識投手'))}</strong>
+                  <strong>${escapeHtml(String(member?.name || '未辨識投手'))}${member?.isStarter ? '<small class="pitcher-status-starter">先發</small>' : ''}</strong>
                   <span class="${yesterday > 0 ? 'has-work' : ''}">${yesterday} 球</span>
                   <span class="${twoDaysAgo > 0 ? 'has-work' : ''}">${twoDaysAgo} 球</span>
                   <span class="bullpen-status-pill ${homeBullpenStatusClass(member?.statusLevel)}" title="${escapeAttr(reason)}">
@@ -608,7 +608,7 @@
                   </span>
                 </div>`;
             }).join('') : `
-              <div class="bullpen-roster-empty">目前沒有可確認的一軍牛棚投手。</div>
+              <div class="bullpen-roster-empty">目前沒有可確認的一軍投手。</div>
             `}
           </div>
         </article>
@@ -654,7 +654,7 @@
       try {
         const data = await homeBullpenStatusRequest(league, date, game, false);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (!homeBullpenDataUsable(data)) throw new Error('牛棚名單尚未建立完成，請稍後再試。');
+        if (!homeBullpenDataUsable(data)) throw new Error('一軍投手名單尚未建立完成，請稍後再試。');
         homeBullpenSessionCache.set(key, { at:Date.now(), data });
         activeHomeGameDetail.bullpenData = data;
       } catch (error) {
@@ -673,18 +673,18 @@
       const loading = Boolean(activeHomeGameDetail?.bullpenLoading);
       const error = String(activeHomeGameDetail?.bullpenError || '');
       if (loading && !data) {
-        return '<div class="pregame-center-loading">正在整理兩隊牛棚使用狀況…</div>';
+        return '<div class="pregame-center-loading">正在整理兩隊投手使用狀況…</div>';
       }
       if (error && !data) {
         return `<div class="game-detail-error">${escapeHtml(error)}</div>`;
       }
       if (!data) {
-        return '<div class="pregame-center-loading">正在讀取已鎖定的牛棚資料…</div>';
+        return '<div class="pregame-center-loading">正在讀取已鎖定的投手資料…</div>';
       }
       return `
         <section class="match-center-data-panel game-bullpen-panel">
           <div class="match-center-data-tools">
-            <span>牛棚狀態<small class="match-center-update-time">官方用球數 · 賽前鎖定</small></span>
+            <span>投手狀態<small class="match-center-update-time">目前一軍 · 官方用球數</small></span>
           </div>
           <div class="pregame-center-body">
             ${homeBullpenPanel(data, gameInfo, game)}
@@ -1125,7 +1125,7 @@
         <nav class="match-center-tabs ${supportsPitchers && supportsBullpen ? 'is-five' : (supportsPitchers || supportsBullpen ? 'is-four' : 'is-three')}" aria-label="對戰中心分類">
           <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席</button>
           ${supportsPitchers ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">投手紀錄</button>` : ''}
-          ${supportsBullpen ? `<button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚</button>` : ''}
+          ${supportsBullpen ? `<button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">投手狀態</button>` : ''}
           <button type="button" data-match-center-tab="snapshot" class="${centerTab === 'snapshot' ? 'active' : ''}">比賽快照</button>
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
         </nav>
