@@ -594,6 +594,7 @@
               <span>前日用球</span>
               <span>預估狀態</span>
             </div>
+            <div class="bullpen-roster-scroll">
             ${members.length ? members.map(member => {
               const yesterday = Math.max(0, Number(member?.yesterdayPitches) || 0);
               const twoDaysAgo = Math.max(0, Number(member?.twoDaysAgoPitches) || 0);
@@ -612,6 +613,7 @@
             }).join('') : `
               <div class="bullpen-roster-empty">目前沒有可確認的一軍投手。</div>
             `}
+            </div>
           </div>
         </article>
       `;
