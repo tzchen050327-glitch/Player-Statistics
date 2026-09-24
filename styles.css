@@ -11363,7 +11363,7 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 
 /* ===== CUSTOM NOTIFICATION PAGE START ===== */
 .home-notification-entry{
-  margin-bottom:10px;
+  margin-bottom:0;
 }
 .home-notification-entry .home-standings-entry-icon{
   color:#c7952d;
@@ -11451,6 +11451,60 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   text-align:center;
   font-size:11px;
   font-weight:950;
+}
+.custom-notification-push-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:12px;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 92%,var(--bg));
+}
+.custom-notification-push-card>div:first-child{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.custom-notification-push-card strong{
+  color:var(--text);
+  font-size:13px;
+  font-weight:950;
+}
+.custom-notification-push-card span{
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1.5;
+}
+.custom-notification-push-actions{
+  flex:0 0 auto;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.custom-notification-push-actions .press-btn{
+  min-height:36px;
+  padding:7px 10px;
+  font-size:11px;
+}
+.custom-notification-flash{
+  margin-top:9px;
+  padding:9px 11px;
+  border:1px solid color-mix(in srgb,#2f8f57 42%,var(--line));
+  border-radius:11px;
+  background:color-mix(in srgb,#2f8f57 8%,var(--panel));
+  color:color-mix(in srgb,#2f8f57 74%,var(--text));
+  font-size:11px;
+  font-weight:800;
+}
+.custom-notification-flash.is-error{
+  border-color:color-mix(in srgb,#c84b4b 42%,var(--line));
+  background:color-mix(in srgb,#c84b4b 8%,var(--panel));
+  color:#b84444;
 }
 .custom-notification-toolbar{
   display:flex;
@@ -11607,6 +11661,14 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   line-height:1.6;
 }
 @media(max-width:760px){
+  .custom-notification-push-card{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .custom-notification-push-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
   .custom-notification-page-panel{
     min-height:calc(100vh - 190px);
     padding:14px;
