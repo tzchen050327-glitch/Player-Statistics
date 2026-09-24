@@ -119,6 +119,8 @@
     let serviceWorkerRegistration = null;
     let appRefreshing = false;
     let appUpdateProgressVisible = false;
+    let suppressStartupSplash = false;
+    let suppressNextControllerReload = false;
 
     function setVersionBadge(text = APP_VERSION, checking = false) {
       const badge = document.getElementById('appVersionBadge');
@@ -240,6 +242,7 @@
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
               sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+              sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
               const reloadUrl = new URL('./index.html', location.href);
               reloadUrl.searchParams.set('v', remoteVersion);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
@@ -266,6 +269,7 @@
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
               appRefreshing = true;
               sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+              sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
               const reloadUrl = new URL(location.href);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
               setTimeout(() => location.replace(reloadUrl.href), 120);
@@ -336,13 +340,22 @@
       }
 
       const skipStartupSplash = sessionStorage.getItem('baseballSkipStartupSplashOnce') === '1';
-      if (skipStartupSplash) sessionStorage.removeItem('baseballSkipStartupSplashOnce');
+      const skipControllerReload = sessionStorage.getItem('baseballSkipControllerReloadOnce') === '1';
+      suppressStartupSplash = skipStartupSplash;
+      suppressNextControllerReload = skipControllerReload;
+      if (skipStartupSplash) {
+        sessionStorage.removeItem('baseballSkipStartupSplashOnce');
+        hideAppUpdateProgress();
+      }
+      if (skipControllerReload) {
+        sessionStorage.removeItem('baseballSkipControllerReloadOnce');
+      }
 
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (!skipStartupSplash) {
           await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
         } else {
-          setAppUpdateProgress(86, '正在載入球員資料…');
+          hideAppUpdateProgress();
         }
         return false;
       }
@@ -358,6 +371,10 @@
         serviceWorkerRegistration = reg;
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (suppressNextControllerReload) {
+            suppressNextControllerReload = false;
+            return;
+          }
           if (appRefreshing) return;
           appRefreshing = true;
           sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
@@ -386,7 +403,7 @@
         if (!skipStartupSplash) {
           updateResult = await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
         } else {
-          setAppUpdateProgress(86, '新版已套用，正在載入球員資料…');
+          hideAppUpdateProgress();
         }
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
@@ -409,7 +426,11 @@
         return appRefreshing;
       } catch (error) {
         console.error('Service Worker 設定失敗：', error);
-        setAppUpdateProgress(82, '更新檢查失敗，正在載入目前資料…', { error: true });
+        if (!suppressStartupSplash) {
+          setAppUpdateProgress(82, '更新檢查失敗，正在載入目前資料…', { error: true });
+        } else {
+          hideAppUpdateProgress();
+        }
         return false;
       }
     }
@@ -422,12 +443,17 @@
       const willReloadForUpdate = await updatePromise;
       if (willReloadForUpdate) return;
 
-      setAppUpdateProgress(88, '正在準備球員資料…');
-      await initPromise;
-
-      setAppUpdateProgress(100, '資料已準備完成');
-      await new Promise(resolve => setTimeout(resolve, 120));
-      hideAppUpdateProgress();
+      if (suppressStartupSplash) {
+        await initPromise;
+        hideAppUpdateProgress();
+        document.documentElement.classList.remove('skip-startup-splash-frame');
+      } else {
+        setAppUpdateProgress(88, '正在準備球員資料…');
+        await initPromise;
+        setAppUpdateProgress(100, '資料已準備完成');
+        await new Promise(resolve => setTimeout(resolve, 120));
+        hideAppUpdateProgress();
+      }
 
       // Use the most recently cached CPBL level immediately, then refresh it in background.
       void refreshCurrentRosterStatus()
