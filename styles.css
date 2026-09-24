@@ -11359,3 +11359,276 @@ html[data-theme="dark"] .pregame-lineup-order i{
 }
 html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 /* ===== MATCH OVERVIEW SWIPE + STARTING LINEUP END ===== */
+
+
+/* ===== CUSTOM NOTIFICATION PAGE START ===== */
+.home-notification-entry{
+  margin-bottom:10px;
+}
+.home-notification-entry .home-standings-entry-icon{
+  color:#c7952d;
+}
+.custom-notification-page{
+  min-height:calc(100vh - 150px);
+}
+.custom-notification-page-top{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  margin-bottom:12px;
+}
+.custom-notification-back-home{
+  min-height:40px;
+}
+.custom-notification-page-panel{
+  min-height:calc(100vh - 220px);
+  padding:18px;
+}
+.custom-notification-page-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.custom-notification-page-kicker{
+  display:block;
+  margin-bottom:4px;
+  color:#c7952d;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.custom-notification-page-head h2{
+  margin:0;
+  color:var(--text);
+  font-size:24px;
+}
+.custom-notification-page-content{
+  min-height:420px;
+  padding-top:18px;
+}
+.custom-notification-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+}
+.custom-notification-summary>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.custom-notification-summary span{
+  color:#c7952d;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+.custom-notification-summary strong{
+  color:var(--text);
+  font-size:18px;
+}
+.custom-notification-summary small{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5;
+}
+.custom-notification-summary>b{
+  flex:0 0 auto;
+  min-width:54px;
+  padding:7px 10px;
+  border:1px solid color-mix(in srgb,#c7952d 55%,var(--line));
+  border-radius:999px;
+  background:color-mix(in srgb,#c7952d 12%,var(--panel));
+  color:#c7952d;
+  text-align:center;
+  font-size:11px;
+  font-weight:950;
+}
+.custom-notification-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:12px 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+}
+.custom-notification-clear{
+  flex:0 0 auto;
+  min-height:36px;
+  padding:7px 11px;
+  font-size:11px;
+}
+.custom-notification-list{
+  display:grid;
+  gap:10px;
+}
+.custom-notification-row{
+  display:grid;
+  grid-template-columns:minmax(190px,.85fr) minmax(0,1.35fr);
+  align-items:center;
+  gap:14px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:color-mix(in srgb,var(--panel) 94%,var(--bg));
+  transition:border-color .16s ease,background .16s ease;
+}
+.custom-notification-row.is-active{
+  border-color:color-mix(in srgb,#c7952d 58%,var(--line));
+  background:color-mix(in srgb,#c7952d 6%,var(--panel));
+}
+.custom-notification-player{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+.custom-notification-master{
+  flex:0 0 auto;
+  position:relative;
+  width:24px;
+  height:24px;
+  cursor:pointer;
+}
+.custom-notification-master input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  pointer-events:none;
+}
+.custom-notification-checkmark{
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border:1.5px solid var(--line);
+  border-radius:8px;
+  background:var(--panel);
+}
+.custom-notification-master input:checked + .custom-notification-checkmark{
+  border-color:#a67817;
+  background:linear-gradient(180deg,#b8861d 0%,#8e630f 100%);
+}
+.custom-notification-master input:checked + .custom-notification-checkmark::after{
+  content:'✓';
+  color:#fff8e8;
+  font-size:15px;
+  font-weight:950;
+  line-height:1;
+}
+.custom-notification-player-text{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.custom-notification-player-text strong{
+  overflow:hidden;
+  color:var(--text);
+  font-size:15px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.custom-notification-player-text span{
+  color:var(--muted);
+  font-size:10.5px;
+}
+.custom-notification-options{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+}
+.custom-notification-option{
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--text);
+  font-size:11px;
+  font-weight:850;
+  cursor:pointer;
+  text-align:center;
+}
+.custom-notification-option input{
+  width:15px;
+  height:15px;
+  margin:0;
+  accent-color:#a67817;
+}
+.custom-notification-option.is-disabled{
+  opacity:.42;
+  cursor:default;
+}
+.custom-notification-empty{
+  min-height:220px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:28px 18px;
+  border:1px dashed var(--line);
+  border-radius:15px;
+  color:var(--muted);
+  text-align:center;
+}
+.custom-notification-empty strong{
+  color:var(--text);
+}
+.custom-notification-empty span{
+  max-width:480px;
+  font-size:12px;
+  line-height:1.6;
+}
+.custom-notification-footnote{
+  margin-top:12px;
+  padding:11px 13px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:color-mix(in srgb,var(--panel) 82%,var(--bg));
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.6;
+}
+@media(max-width:760px){
+  .custom-notification-page-panel{
+    min-height:calc(100vh - 190px);
+    padding:14px;
+  }
+  .custom-notification-page-content{
+    min-height:360px;
+    padding-top:14px;
+  }
+  .custom-notification-summary{
+    align-items:flex-start;
+    padding:13px;
+  }
+  .custom-notification-toolbar{
+    align-items:flex-start;
+  }
+  .custom-notification-row{
+    grid-template-columns:1fr;
+    gap:11px;
+    padding:12px;
+  }
+  .custom-notification-options{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+/* ===== CUSTOM NOTIFICATION PAGE END ===== */
