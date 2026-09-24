@@ -36,6 +36,7 @@
     function renderAll() {
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
+      const customNotificationPageActive = currentPage === 'notifications';
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
@@ -45,14 +46,18 @@
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive || predictionPageActive || standingsPageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || predictionPageActive || standingsPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
+      els.customNotificationPage?.classList.toggle('hidden', !customNotificationPageActive);
       els.predictionPage?.classList.toggle('hidden', !predictionPageActive);
       els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
+      if (customNotificationPageActive) renderCustomNotificationPage();
       if (predictionPageActive) renderPredictionPage();
       if (standingsPageActive) renderStandingsPage();
       if (els.pageSubtitle) {
-        els.pageSubtitle.textContent = predictionPageActive
+        els.pageSubtitle.textContent = customNotificationPageActive
+          ? '自訂通知'
+          : (predictionPageActive
           ? '預測專區'
           : (standingsPageActive
               ? '戰績排名'
@@ -62,14 +67,14 @@
                   : (playerScope(player) === 'international'
                       ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
                       : `球員設定｜${scopeLabel(playerScope(player))}`))
-              : homePageBreadcrumb()));
+              : homePageBreadcrumb())));
       }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || standingsPageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
