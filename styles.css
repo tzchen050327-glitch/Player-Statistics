@@ -10814,3 +10814,43 @@ html[data-theme="dark"] .bullpen-status-pill.is-rest>b{color:#e79c92;}
   .bullpen-status-pill>small{display:none;}
 }
 /* ===== CPBL BULLPEN WORKLOAD TABLE END ===== */
+
+
+/* ===== GAME SNAPSHOT SCORE CHANGE ===== */
+.game-snapshot-play-meta{
+  display:flex!important;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:5px 8px;
+  margin-top:5px!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  text-overflow:clip!important;
+}
+.game-snapshot-play-meta>b{
+  color:#a36c12;
+  font-size:8px;
+  font-weight:950;
+}
+.game-snapshot-play-meta>i{
+  color:#667787;
+  font-size:8px;
+  font-style:normal;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+html[data-theme="dark"] .game-snapshot-play-meta>b{
+  color:#e0b75a;
+}
+html[data-theme="dark"] .game-snapshot-play-meta>i{
+  color:#c9c2b6;
+}
+@media(max-width:520px){
+  .game-snapshot-plays>article{
+    grid-template-columns:38px minmax(0,1fr) auto;
+  }
+  .game-snapshot-play-meta{
+    gap:3px 6px;
+  }
+}
+/* ===== GAME SNAPSHOT SCORE CHANGE END ===== */
