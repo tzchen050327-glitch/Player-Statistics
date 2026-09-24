@@ -10207,3 +10207,287 @@ body.pregame-center-open{
 /* ===== SIDEBAR ACTION SPACING FIX END ===== */
 
 
+
+
+/* ===== GAME DETAIL BULLPEN + SNAPSHOT ===== */
+.match-center-tabs.is-five{grid-template-columns:repeat(5,minmax(0,1fr));}
+.match-center-tabs.is-four{grid-template-columns:repeat(4,minmax(0,1fr));}
+
+.game-bullpen-panel>.pregame-center-body{display:grid;gap:10px;}
+.game-bullpen-used-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.game-bullpen-used{
+  min-width:0;
+  padding:10px 11px;
+  border:1px solid #e0e7ee;
+  border-radius:11px;
+  background:#f7fafc;
+}
+.game-bullpen-used>span{
+  display:block;
+  color:#8190a0;
+  font-size:8px;
+  font-weight:850;
+}
+.game-bullpen-used>strong{
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  color:#214d73;
+  font-size:12px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-bullpen-used>b{
+  display:block;
+  margin-top:4px;
+  overflow:hidden;
+  color:#657687;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.45;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.game-snapshot-page{
+  display:grid;
+  gap:10px;
+}
+.game-snapshot-hero{
+  padding:16px;
+  border:1px solid #dce5ed;
+  border-radius:15px;
+  background:linear-gradient(135deg,#173f67,#265f91);
+  color:#fff;
+}
+.game-snapshot-hero>span{
+  display:block;
+  color:rgba(255,255,255,.68);
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+.game-snapshot-hero>strong{
+  display:block;
+  margin-top:5px;
+  font-size:20px;
+  font-weight:950;
+  line-height:1.15;
+}
+.game-snapshot-hero>p{
+  margin:7px 0 0;
+  color:rgba(255,255,255,.82);
+  font-size:10px;
+  font-weight:750;
+  line-height:1.55;
+}
+.game-snapshot-team-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.game-snapshot-team-row>article{
+  padding:11px 12px;
+  border:1px solid #e0e7ee;
+  border-radius:12px;
+  background:#fff;
+}
+.game-snapshot-team-row span{
+  display:block;
+  overflow:hidden;
+  color:#78899a;
+  font-size:9px;
+  font-weight:850;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-snapshot-team-row strong{
+  display:block;
+  margin-top:2px;
+  color:#173f67;
+  font-size:17px;
+  font-weight:950;
+}
+.game-snapshot-team-row b{
+  display:block;
+  margin-top:2px;
+  color:#6c7c8b;
+  font-size:9px;
+  font-weight:850;
+}
+.game-snapshot-section{
+  overflow:hidden;
+  border:1px solid #dde6ee;
+  border-radius:14px;
+  background:#fff;
+}
+.game-snapshot-title{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 13px;
+  border-bottom:1px solid #e7edf2;
+  background:#f8fafc;
+}
+.game-snapshot-title>strong{
+  color:#173f67;
+  font-size:12px;
+  font-weight:950;
+}
+.game-snapshot-title>span{
+  color:#8592a0;
+  font-size:8px;
+  font-weight:800;
+}
+.game-snapshot-leaders,
+.game-snapshot-plays{
+  display:grid;
+}
+.game-snapshot-leaders>article,
+.game-snapshot-plays>article{
+  display:grid;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  padding:10px 12px;
+  border-top:1px solid #edf1f4;
+}
+.game-snapshot-leaders>article:first-child,
+.game-snapshot-plays>article:first-child{border-top:0;}
+.game-snapshot-leaders>article{
+  grid-template-columns:auto minmax(0,1fr) auto;
+}
+.game-snapshot-leaders i{
+  color:#b78a2b;
+  font-size:9px;
+  font-style:normal;
+  font-weight:950;
+}
+.game-snapshot-leaders div,
+.game-snapshot-plays div{min-width:0;}
+.game-snapshot-leaders div>strong,
+.game-snapshot-plays div>strong{
+  display:block;
+  overflow:hidden;
+  color:#244f76;
+  font-size:11px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-snapshot-leaders div>span,
+.game-snapshot-plays div>span{
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  color:#7c8b99;
+  font-size:8px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-snapshot-leaders>article>b{
+  color:#263b50;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.game-snapshot-plays>article{
+  grid-template-columns:42px minmax(0,1fr) auto;
+}
+.game-snapshot-plays>article>b{
+  color:#173f67;
+  font-size:9px;
+  font-weight:950;
+}
+.game-snapshot-plays>article>em{
+  color:#b07814;
+  font-size:8px;
+  font-style:normal;
+  font-weight:950;
+  white-space:nowrap;
+}
+.game-snapshot-decisions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.game-snapshot-decisions>article{
+  min-width:0;
+  padding:10px 11px;
+  border-left:1px solid #edf1f4;
+}
+.game-snapshot-decisions>article:first-child{border-left:0;}
+.game-snapshot-decisions span{
+  display:block;
+  color:#8794a1;
+  font-size:8px;
+  font-weight:850;
+}
+.game-snapshot-decisions strong{
+  display:block;
+  margin-top:3px;
+  overflow:hidden;
+  color:#244f76;
+  font-size:10px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-snapshot-muted,
+.game-snapshot-empty{
+  padding:20px 14px;
+  color:#8391a0;
+  font-size:10px;
+  text-align:center;
+}
+.game-snapshot-empty{
+  min-height:180px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  border:1px dashed #dbe3ea;
+  border-radius:14px;
+}
+.game-snapshot-empty strong{
+  color:#244f76;
+  font-size:13px;
+}
+.game-snapshot-empty span{
+  max-width:420px;
+  line-height:1.55;
+}
+
+@media(max-width:720px){
+  .match-center-tabs{
+    display:flex;
+    overflow-x:auto;
+    grid-template-columns:none!important;
+    scrollbar-width:none;
+  }
+  .match-center-tabs::-webkit-scrollbar{display:none;}
+  .match-center-tabs>button{
+    flex:0 0 auto;
+    min-width:88px;
+    padding:0 10px;
+  }
+  .game-bullpen-used-grid{grid-template-columns:1fr;}
+  .game-snapshot-hero{padding:14px;}
+  .game-snapshot-hero>strong{font-size:18px;}
+  .game-snapshot-decisions{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .game-snapshot-decisions>article:nth-child(3){
+    border-left:0;
+    border-top:1px solid #edf1f4;
+  }
+  .game-snapshot-decisions>article:nth-child(4){
+    border-top:1px solid #edf1f4;
+  }
+}
+/* ===== GAME DETAIL BULLPEN + SNAPSHOT END ===== */
