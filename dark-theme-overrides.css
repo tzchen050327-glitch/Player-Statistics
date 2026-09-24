@@ -1273,3 +1273,34 @@ html[data-theme="dark"] .game-detail-pa-main>span:not(.game-detail-pa-result){
   color:#c6d0d9 !important;
   -webkit-text-fill-color:#c6d0d9 !important;
 }
+
+
+/* ===== CUSTOM NOTIFICATION DARK START ===== */
+html[data-theme="dark"] .custom-notification-page-panel{
+  border-color:#34383e !important;
+  background:linear-gradient(180deg,#111419 0%,#0d1014 100%) !important;
+}
+html[data-theme="dark"] .custom-notification-page-head{
+  border-bottom-color:#343028 !important;
+}
+html[data-theme="dark"] .custom-notification-page-kicker{
+  color:#d7ad48 !important;
+}
+html[data-theme="dark"] .custom-notification-summary,
+html[data-theme="dark"] .custom-notification-row,
+html[data-theme="dark"] .custom-notification-option{
+  border-color:#343941 !important;
+}
+html[data-theme="dark"] .custom-notification-row.is-active{
+  border-color:#665126 !important;
+  background:#17150f !important;
+}
+html[data-theme="dark"] .custom-notification-checkmark{
+  border-color:#4b515a !important;
+  background:#101318 !important;
+}
+html[data-theme="dark"] .custom-notification-footnote{
+  border-color:#343941 !important;
+  background:#0f1216 !important;
+}
+/* ===== CUSTOM NOTIFICATION DARK END ===== */
