@@ -2,6 +2,7 @@
     let milestoneScopeFilter = localStorage.getItem('milestoneScopeFilter') === 'season' ? 'season' : 'career';
     let milestoneSnapshot = null;
     let milestoneSnapshotLoading = false;
+    let milestoneSnapshotRemoteChecked = false;
     let milestoneSnapshotError = '';
 
     const MILESTONE_TARGETS = {
@@ -69,7 +70,7 @@
 
     async function loadMilestoneSnapshot({ force = false } = {}) {
       if (milestoneSnapshotLoading) return;
-      if (!force && milestoneSnapshot) return;
+      if (!force && milestoneSnapshot && milestoneSnapshotRemoteChecked) return;
 
       if (!force && !milestoneSnapshot) {
         const cached = milestoneReadCachedSnapshot();
@@ -87,8 +88,10 @@
         const data = await response.json();
         if (!data?.leagues?.CPBL || !data?.leagues?.NPB) throw new Error('里程碑資料格式不完整');
         milestoneSnapshot = data;
+        milestoneSnapshotRemoteChecked = true;
         milestoneSaveSnapshot(data);
       } catch (error) {
+        milestoneSnapshotRemoteChecked = true;
         if (!milestoneSnapshot) {
           milestoneSnapshotError = error instanceof Error ? error.message : String(error);
         }
