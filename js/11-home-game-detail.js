@@ -1,4 +1,5 @@
     const homePitcherRecordsCache = new Map();
+    const homeBullpenSessionCache = new Map();
 
     function homeGameDetailSupported(league) {
       return league === 'CPBL' || league === 'NPB';
@@ -618,6 +619,251 @@
       `;
     }
 
+    async function refreshHomeBullpenStatus({ force = false } = {}) {
+      if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return;
+      if (activeHomeGameDetail.centerTab !== 'bullpen') return;
+      if (activeHomeGameDetail.bullpenLoading) return;
+      const { league, date, game, key } = activeHomeGameDetail;
+      if (!game?.id || !game?.away || !game?.home) return;
+
+      const cached = homeBullpenSessionCache.get(key) || null;
+      if (!force && cached?.data) {
+        activeHomeGameDetail.bullpenData = cached.data;
+        activeHomeGameDetail.bullpenError = '';
+        const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+        renderHomeGameDetail(detail, game);
+        return;
+      }
+
+      activeHomeGameDetail.bullpenLoading = true;
+      activeHomeGameDetail.bullpenError = '';
+      const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+      renderHomeGameDetail(detail, game);
+      try {
+        const data = await homeBullpenStatusRequest(league, date, game, false);
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        homeBullpenSessionCache.set(key, { at:Date.now(), data });
+        activeHomeGameDetail.bullpenData = data;
+      } catch (error) {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.bullpenError = error?.message || '牛棚資料讀取失敗。';
+      } finally {
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        activeHomeGameDetail.bullpenLoading = false;
+        const latest = homeGameDetailCache.get(key)?.detail || detail;
+        renderHomeGameDetail(latest, game);
+      }
+    }
+
+    function homeBullpenDetailPanel(detail, gameInfo, game) {
+      const data = activeHomeGameDetail?.bullpenData || null;
+      const loading = Boolean(activeHomeGameDetail?.bullpenLoading);
+      const error = String(activeHomeGameDetail?.bullpenError || '');
+      if (loading && !data) {
+        return '<div class="pregame-center-loading">正在整理兩隊牛棚使用狀況…</div>';
+      }
+      if (error && !data) {
+        return `<div class="game-detail-error">${escapeHtml(error)}</div>`;
+      }
+      if (!data) {
+        return '<div class="pregame-center-loading">點進牛棚頁後才會讀取資料，以降低流量。</div>';
+      }
+      const used = detail?.gamePitchers || {};
+      const usedNames = side => (Array.isArray(used?.[side]) ? used[side] : [])
+        .slice(1)
+        .map(row => String(row?.name || '').trim())
+        .filter(Boolean);
+      const awayUsed = usedNames('away');
+      const homeUsed = usedNames('home');
+      const usageHtml = (team, names) => `
+        <div class="game-bullpen-used">
+          <span>本場已使用</span>
+          <strong>${escapeHtml(team || '球隊')}</strong>
+          <b>${names.length ? escapeHtml(names.join('、')) : '尚未動用牛棚'}</b>
+        </div>`;
+      return `
+        <section class="match-center-data-panel game-bullpen-panel">
+          <div class="match-center-data-tools"><span>今日牛棚狀態<small class="match-center-update-time">同場只讀一次</small></span></div>
+          <div class="pregame-center-body">
+            <div class="game-bullpen-used-grid">
+              ${usageHtml(String(gameInfo?.away || game?.away || '客隊'), awayUsed)}
+              ${usageHtml(String(gameInfo?.home || game?.home || '主隊'), homeUsed)}
+            </div>
+            ${homeBullpenPanel(data, gameInfo, game)}
+          </div>
+        </section>`;
+    }
+
+    function homeSnapshotTeamForBatter(detail, name) {
+      const cleanName = String(name || '').replace(/^代打[・·\s]*/,'').trim();
+      for (const side of ['away','home']) {
+        const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        const found = lineup.some(player => {
+          const candidate = String(player?.fullName || player?.name || '').trim();
+          return candidate && (candidate === cleanName || candidate.includes(cleanName) || cleanName.includes(candidate));
+        });
+        if (found) return side;
+      }
+      const play = (Array.isArray(detail?.plays) ? detail.plays : []).find(item => {
+        const batter = String(item?.batter || item?.hitter || '').replace(/^代打[・·\s]*/,'').trim();
+        return batter && (batter === cleanName || batter.includes(cleanName) || cleanName.includes(batter));
+      });
+      const away = String(detail?.game?.away || '');
+      const home = String(detail?.game?.home || '');
+      const team = String(play?.team || '');
+      if (team && away && (away.includes(team) || team.includes(away))) return 'away';
+      if (team && home && (home.includes(team) || team.includes(home))) return 'home';
+      return '';
+    }
+
+    function homeSnapshotBatters(detail) {
+      const raw = Array.isArray(detail?.gameBatters) && detail.gameBatters.length
+        ? detail.gameBatters
+        : ['away','home'].flatMap(side => Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []);
+      const map = new Map();
+      for (const batter of raw) {
+        const name = String(batter?.fullName || batter?.name || '').trim();
+        if (!name) continue;
+        const hits = Number(batter?.gameHits || 0);
+        const ab = Number(batter?.gameAb || 0);
+        const hr = Number(batter?.gameHomeRuns || 0);
+        const rbi = Number(batter?.gameRbi || 0);
+        const side = homeSnapshotTeamForBatter(detail, name);
+        const score = hits * 2 + rbi * 3 + hr * 5;
+        const prev = map.get(name);
+        if (!prev || score > prev.score) map.set(name, { name, hits, ab, hr, rbi, side, score });
+      }
+      return [...map.values()].filter(row => row.ab > 0 || row.hits > 0 || row.rbi > 0 || row.hr > 0)
+        .sort((a,b) => b.score - a.score || b.rbi - a.rbi || b.hits - a.hits);
+    }
+
+    function homeSnapshotPlayRbi(play) {
+      const direct = Number(play?.rbi);
+      if (Number.isFinite(direct) && direct > 0) return direct;
+      const text = String(play?.result || play?.raw || '');
+      const match = text.match(/(?:打點|打点)\s*([1-4])/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function homeSnapshotKeyPlays(detail) {
+      const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
+      const candidates = plays.map((play,index) => {
+        const result = String(play?.result || play?.raw || '').trim();
+        const rbi = homeSnapshotPlayRbi(play);
+        const inning = Number(play?.inning || 0);
+        const homer = /全壘打|全塁打|本塁打|home\s*run/i.test(result);
+        const clutch = /適時|タイムリー|逆轉|逆転|勝ち越し|追平|同点|失誤|エラー/i.test(result);
+        const score = rbi * 10 + (homer ? 7 : 0) + (clutch ? 4 : 0) + Math.min(9, inning) * .45;
+        return { play, index, score, rbi, inning };
+      }).filter(item => item.rbi > 0 || item.score >= 4)
+        .sort((a,b) => b.score - a.score || b.inning - a.inning || b.index - a.index)
+        .slice(0,4)
+        .sort((a,b) => a.inning - b.inning || a.index - b.index);
+      return candidates;
+    }
+
+    function homeSnapshotDecisionItems(detail) {
+      const d = detail?.decisions || detail?.gameDecisions || {};
+      const items = [];
+      const add = (label, value) => {
+        const name = String(value?.name || value?.fullName || value || '').trim();
+        if (name) items.push({ label, name });
+      };
+      add('勝投', d?.winningPitcher);
+      add('敗投', d?.losingPitcher);
+      add('救援', d?.savePitcher || d?.savingPitcher);
+      const holds = Array.isArray(d?.holdPitchers) ? d.holdPitchers : Array.isArray(d?.holds) ? d.holds : [];
+      if (holds.length) items.push({ label:'中繼', name:holds.map(x => String(x?.name || x?.fullName || x || '').trim()).filter(Boolean).join('、') });
+      return items.slice(0,4);
+    }
+
+    function homeSnapshotPanel(detail, gameInfo, game) {
+      const status = String(detail?.status || game?.status || '').toLowerCase();
+      const away = String(gameInfo?.away || game?.away || '客隊');
+      const home = String(gameInfo?.home || game?.home || '主隊');
+      const awayScore = Number(gameInfo?.awayScore);
+      const homeScore = Number(gameInfo?.homeScore);
+      const batters = homeSnapshotBatters(detail);
+      const leaders = batters.slice(0,3);
+      const keyPlays = homeSnapshotKeyPlays(detail);
+      const decisions = homeSnapshotDecisionItems(detail);
+      const totals = detail?.scoreboard || {};
+      const awayTotals = totals?.awayTotals || {};
+      const homeTotals = totals?.homeTotals || {};
+
+      if (status === 'scheduled' && !batters.length) {
+        return '<div class="game-snapshot-empty"><strong>比賽尚未開始</strong><span>開打後會自動把關鍵打者、重要打席與投手結果濃縮在這裡。</span></div>';
+      }
+
+      let headline = '比賽進行中';
+      if (Number.isFinite(awayScore) && Number.isFinite(homeScore)) {
+        if (awayScore === homeScore) headline = status === 'final' ? `終場 ${awayScore}：${homeScore} 平手` : `目前 ${awayScore}：${homeScore} 平手`;
+        else {
+          const leader = awayScore > homeScore ? away : home;
+          const a = status === 'final' ? '勝' : '領先';
+          headline = `${leader} ${a}｜${awayScore}：${homeScore}`;
+        }
+      }
+
+      const top = leaders[0] || null;
+      const summary = top
+        ? `${top.name} 目前最突出：${top.hits} 安、${top.hr} 轟、${top.rbi} 打點`
+        : '目前沒有足夠打擊資料可整理。';
+
+      const teamStat = (team, t) => `
+        <article>
+          <span>${escapeHtml(team)}</span>
+          <strong>${Number(t?.R ?? '') || 0} R</strong>
+          <b>${Number(t?.H ?? '') || 0} H｜${Number(t?.E ?? '') || 0} E</b>
+        </article>`;
+
+      return `
+        <div class="game-snapshot-page">
+          <section class="game-snapshot-hero">
+            <span>${status === 'final' ? 'FINAL SNAPSHOT' : 'LIVE SNAPSHOT'}</span>
+            <strong>${escapeHtml(headline)}</strong>
+            <p>${escapeHtml(summary)}</p>
+          </section>
+
+          <section class="game-snapshot-team-row">
+            ${teamStat(away, awayTotals)}
+            ${teamStat(home, homeTotals)}
+          </section>
+
+          <section class="game-snapshot-section">
+            <div class="game-snapshot-title"><strong>關鍵打者</strong><span>本場貢獻最高</span></div>
+            <div class="game-snapshot-leaders">
+              ${leaders.length ? leaders.map((row,index) => `
+                <article>
+                  <i>0${index+1}</i>
+                  <div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.side === 'away' ? away : row.side === 'home' ? home : '')}</span></div>
+                  <b>${row.hits}-${row.ab}｜${row.hr ? `${row.hr} HR｜` : ''}${row.rbi} RBI</b>
+                </article>`).join('') : '<div class="game-snapshot-muted">目前沒有可用的打者數據。</div>'}
+            </div>
+          </section>
+
+          <section class="game-snapshot-section">
+            <div class="game-snapshot-title"><strong>關鍵打席</strong><span>只留影響比分的重點</span></div>
+            <div class="game-snapshot-plays">
+              ${keyPlays.length ? keyPlays.map(({play}) => `
+                <article>
+                  <b>${Number(play?.inning || 0) || '—'}局${String(play?.half || '') === 'top' ? '上' : String(play?.half || '') === 'bottom' ? '下' : ''}</b>
+                  <div><strong>${escapeHtml(String(play?.batter || play?.hitter || '未辨識打者'))}</strong><span>${escapeHtml(String(play?.result || play?.raw || ''))}</span></div>
+                  <em>${homeSnapshotPlayRbi(play) ? `${homeSnapshotPlayRbi(play)} RBI` : '關鍵事件'}</em>
+                </article>`).join('') : '<div class="game-snapshot-muted">目前還沒有明確的得分關鍵打席。</div>'}
+            </div>
+          </section>
+
+          ${decisions.length ? `
+            <section class="game-snapshot-section">
+              <div class="game-snapshot-title"><strong>投手結果</strong><span>官方判定</span></div>
+              <div class="game-snapshot-decisions">
+                ${decisions.map(item => `<article><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.name)}</strong></article>`).join('')}
+              </div>
+            </section>` : ''}
+        </div>`;
+    }
+
     function homeGamePitcherPanel(detail, gameInfo = {}) {
       const records = activeHomeGameDetail?.pitcherRecords || null;
       const loading = Boolean(activeHomeGameDetail?.pitcherRecordsLoading);
@@ -804,16 +1050,19 @@
       }
       const requestedCenterTab = String(activeHomeGameDetail?.centerTab || '');
       const supportsPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
-      const centerTab = requestedCenterTab === 'overview'
-        ? 'overview'
-        : requestedCenterTab === 'pitchers' && supportsPitchers
-          ? 'pitchers'
-          : 'play';
+      const allowedCenterTabs = supportsPitchers
+        ? ['play','pitchers','bullpen','snapshot','overview']
+        : ['play','bullpen','snapshot','overview'];
+      const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
       const centerDataPanel = centerTab === 'overview'
         ? homeMatchCenterDataPanel('overview', gameInfo, game)
         : centerTab === 'pitchers'
           ? homeGamePitcherPanel(detail, gameInfo)
-          : '';
+          : centerTab === 'bullpen'
+            ? homeBullpenDetailPanel(detail, gameInfo, game)
+            : centerTab === 'snapshot'
+              ? homeSnapshotPanel(detail, gameInfo, game)
+              : '';
       const matchup = status === 'live' ? `
         <div class="game-detail-current-grid">
           <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
@@ -837,9 +1086,11 @@
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
-        <nav class="match-center-tabs ${supportsPitchers ? '' : 'is-two'}" aria-label="對戰中心分類">
-          <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席紀錄</button>
+        <nav class="match-center-tabs ${supportsPitchers ? 'is-five' : 'is-four'}" aria-label="對戰中心分類">
+          <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席</button>
           ${supportsPitchers ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">投手紀錄</button>` : ''}
+          <button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">牛棚</button>
+          <button type="button" data-match-center-tab="snapshot" class="${centerTab === 'snapshot' ? 'active' : ''}">比賽快照</button>
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
         </nav>
         <main class="game-detail-content">
@@ -869,12 +1120,15 @@
         btn.addEventListener('click', () => {
           if (!activeHomeGameDetail) return;
           const tab = String(btn.dataset.matchCenterTab || 'play');
-          const allowedTabs = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game) ? ['play','pitchers','overview'] : ['play','overview'];
+          const allowedTabs = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game)
+            ? ['play','pitchers','bullpen','snapshot','overview']
+            : ['play','bullpen','snapshot','overview'];
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
           if (tab === 'pitchers') void refreshHomePitcherRecords({ force:false });
+          if (tab === 'bullpen') void refreshHomeBullpenStatus({ force:false });
         });
       });
       updateHomeGameDetailRefreshCountdown();
@@ -1063,10 +1317,11 @@
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
       const key = homeGameDetailKey(league, date, game);
-      const requestedTab = ['play','pitchers','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
+      const requestedTab = ['play','pitchers','bullpen','snapshot','overview'].includes(String(options?.tab || '')) ? String(options.tab) : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
       const cachedPitchers = homePitcherRecordsCache.get(key) || null;
-      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'' };
+      const cachedBullpen = homeBullpenSessionCache.get(key) || null;
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'', bullpenData:cachedBullpen?.data || null, bullpenLoading:false, bullpenError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
