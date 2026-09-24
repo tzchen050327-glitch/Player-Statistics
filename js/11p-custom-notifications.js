@@ -1,6 +1,6 @@
 const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
     const CUSTOM_NOTIFICATION_DEVICE_TOKEN_KEY = 'custom-player-notification-device-v1';
-    const CUSTOM_NOTIFICATION_PUSH_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/player-push';
+    const CUSTOM_NOTIFICATION_PUSH_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/player-push-v2';
     const CUSTOM_NOTIFICATION_VAPID_PUBLIC_KEY = 'BFJ_q3JS2DSEFzm2JgBwtVPxRhsCzoYtJxGNxS9PKvZmhrNBA9kfR0Z_prWfLpoUb438dslhvA33KVf1OjcWDfw';
     let customNotificationFlash = null;
     let customNotificationLastAutoSyncAt = 0;
@@ -334,7 +334,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
           <div>
             <span>CUSTOM ALERTS</span>
             <strong>球員出賽通知</strong>
-            <small>一軍沿用既有即時資料觸發；二軍只有有人訂閱時才啟動背景掃描。</small>
+            <small>一軍沿用既有即時資料觸發；二軍只檢查有訂閱的球員，不掃整場名單。</small>
           </div>
           <b>${activeCount} 人</b>
         </section>
@@ -363,7 +363,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         </div>
 
         <div class="custom-notification-footnote">
-          一軍不增加額外輪詢；二軍每 3 分鐘只在有二軍訂閱者時檢查官方比賽資料，沒有二軍訂閱時不執行。
+          一軍不增加額外輪詢；二軍每 3 分鐘只查有勾選二軍通知的球員本人，沒有二軍訂閱時不執行。打者可另外開啟逐打席通知。
         </div>
       `;
 
