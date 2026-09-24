@@ -10861,3 +10861,31 @@ html.skip-startup-splash-frame #appUpdateOverlay{
   display:none !important;
 }
 /* ===== POST-UPDATE SPLASH SUPPRESSION END ===== */
+
+
+/* ===== FIRST-TEAM PITCHER STATUS BADGE ===== */
+.bullpen-roster-row>strong{
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.pitcher-status-starter{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  min-height:16px;
+  padding:1px 5px;
+  border:1px solid #d9be80;
+  border-radius:999px;
+  background:#fff8e8;
+  color:#9a6811;
+  font-size:7px;
+  font-weight:950;
+  line-height:1;
+}
+html[data-theme="dark"] .pitcher-status-starter{
+  border-color:#66552e;
+  background:#241f13;
+  color:#e0b75a;
+}
+/* ===== FIRST-TEAM PITCHER STATUS BADGE END ===== */
