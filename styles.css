@@ -10196,3 +10196,48 @@ body.pregame-center-open{
     font-size:7.4px;
   }
 }
+
+
+/* ===== MILESTONE PAGE ===== */
+.home-milestone-entry .home-standings-entry-icon{color:var(--accent-2);}
+.milestone-page{display:grid;gap:10px;}
+.milestone-page.hidden{display:none;}
+.milestone-page-top{display:flex;align-items:center;justify-content:flex-start;}
+.milestone-page-panel{padding:16px;}
+.milestone-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.milestone-page-head h2{margin:2px 0 0;font-size:22px;}
+.milestone-page-kicker{color:var(--accent-2);font-size:10px;font-weight:950;letter-spacing:.14em;}
+.milestone-local-badge{padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:var(--accent-2);font-size:9px;font-weight:900;}
+.milestone-note{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);}
+.milestone-note strong{flex:0 0 auto;color:var(--accent-2);font-size:10px;}
+.milestone-note span{color:var(--muted);font-size:9px;line-height:1.5;}
+.milestone-filters{display:flex;gap:7px;overflow-x:auto;margin:12px 0 8px;padding-bottom:2px;scrollbar-width:thin;}
+.milestone-filter-btn{flex:0 0 auto;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:10px;font-weight:900;}
+.milestone-filter-btn.active{border-color:var(--accent-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent-2);}
+.milestone-summary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:8px 2px 10px;}
+.milestone-summary strong{font-size:13px;}
+.milestone-summary span{color:var(--muted);font-size:9px;}
+.milestone-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.milestone-card{min-width:0;padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--panel);}
+.milestone-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.milestone-card-head>div{min-width:0;}
+.milestone-card-head span{display:block;color:var(--muted);font-size:8px;font-weight:850;}
+.milestone-card-head strong{display:block;margin-top:2px;overflow:hidden;color:var(--text);font-size:14px;font-weight:950;text-overflow:ellipsis;white-space:nowrap;}
+.milestone-card-head>b{flex:0 0 auto;padding:4px 7px;border-radius:8px;border:1px solid var(--line);color:var(--accent-2);font-size:10px;font-weight:950;}
+.milestone-track-list{display:grid;gap:10px;margin-top:12px;}
+.milestone-track{min-width:0;}
+.milestone-track-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.milestone-track-meta span{color:var(--muted);font-size:9px;font-weight:850;}
+.milestone-track-meta span strong{color:var(--text);font-size:11px;}
+.milestone-track-meta>b{color:var(--accent-2);font-size:11px;font-weight:950;}
+.milestone-progress{height:6px;margin-top:5px;overflow:hidden;border-radius:999px;background:var(--line);}
+.milestone-progress>i{display:block;height:100%;border-radius:inherit;background:var(--accent-2);}
+.milestone-track small{display:block;margin-top:4px;color:var(--muted);font-size:8px;font-weight:750;}
+.milestone-empty{grid-column:1/-1;padding:38px 18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;font-size:12px;}
+@media(max-width:720px){
+  .milestone-page-panel{padding:12px;}
+  .milestone-grid{grid-template-columns:1fr;}
+  .milestone-summary{align-items:flex-start;flex-direction:column;gap:2px;}
+  .milestone-note{flex-direction:column;gap:3px;}
+}
+/* ===== MILESTONE PAGE END ===== */
