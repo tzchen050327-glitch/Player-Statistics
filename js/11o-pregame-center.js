@@ -106,7 +106,22 @@
       return ['fresh','normal','tired','heavy'].includes(String(level || '')) ? String(level) : 'normal';
     }
 
+    function bullpenUnavailableReason(raw) {
+      const reason = String(raw?.unavailableReason || '').trim();
+      if (reason) return reason;
+      return raw?.previousDayIncomplete ? '前日比賽尚未結束' : '';
+    }
+
     function bullpenSummaryCard(raw, team, sideLabel) {
+      const unavailableReason = bullpenUnavailableReason(raw);
+      if (unavailableReason) {
+        return `
+          <article class="pregame-bullpen-summary">
+            <div class="pregame-card-kicker">${escapeHtml(sideLabel)}｜${escapeHtml(team)}</div>
+            <div class="pregame-empty-note">${escapeHtml(unavailableReason)}</div>
+          </article>
+        `;
+      }
       const availability = Number(raw?.availabilityPct);
       return `
         <article class="pregame-bullpen-summary">
@@ -194,6 +209,17 @@
     }
 
     function renderBullpenTeam(raw, team, sideLabel) {
+      const unavailableReason = bullpenUnavailableReason(raw);
+      if (unavailableReason) {
+        return `
+          <article class="bullpen-team-panel">
+            <header>
+              <div><span>${escapeHtml(sideLabel)}</span><strong>${escapeHtml(team)}</strong></div>
+            </header>
+            <div class="pregame-empty-note">${escapeHtml(unavailableReason)}</div>
+          </article>
+        `;
+      }
       const members = Array.isArray(raw?.members) ? raw.members : [];
       const tired = Array.isArray(raw?.tired) ? raw.tired : [];
       const availability = Number(raw?.availabilityPct);
