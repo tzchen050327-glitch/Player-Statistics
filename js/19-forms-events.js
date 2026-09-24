@@ -955,18 +955,6 @@
       }
     });
 
-    els.homeMilestoneBtn?.addEventListener('click', () => {
-      currentPage = 'milestone';
-      renderAll();
-      window.scrollTo({ top:0, behavior:'instant' });
-    });
-
-    els.milestoneBackHomeBtn?.addEventListener('click', () => {
-      currentPage = 'home';
-      renderAll();
-      window.scrollTo({ top:0, behavior:'instant' });
-    });
-
     els.homePredictionBtn?.addEventListener('click', () => {
       currentPage = 'prediction';
       renderAll();
