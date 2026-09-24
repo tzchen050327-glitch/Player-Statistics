@@ -487,7 +487,7 @@
         away:String(game?.away || ''),
         home:String(game?.home || ''),
         force:Boolean(force)
-      }, '牛棚資料', 14000);
+      }, '牛棚資料', 30000);
     }
 
     function homePregameRecordText(record) {
