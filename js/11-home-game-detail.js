@@ -1008,7 +1008,127 @@
       }).format(new Date(ms));
     }
 
-    function homeMatchCenterDataPanel(tab, gameInfo, game) {
+    function homePregameLineupEntries(detail, side) {
+      const raw = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+      return raw.map((player, index) => ({
+        order:Number(player?.order || index + 1),
+        number:String(player?.number || player?.uniformNumber || player?.jersey || '').trim(),
+        name:String(player?.fullName || player?.name || player?.playerName || '').trim(),
+        position:String(player?.position || player?.pos || '').trim(),
+        avg:String(player?.avg ?? player?.battingAverage ?? player?.stats?.avg ?? '').trim(),
+        hits:String(player?.hits ?? player?.h ?? player?.stats?.hits ?? '').trim(),
+        homeRuns:String(player?.homeRuns ?? player?.hr ?? player?.stats?.homeRuns ?? '').trim(),
+        rbi:String(player?.rbi ?? player?.stats?.rbi ?? '').trim()
+      }))
+        .filter(player => player.name && player.order >= 1 && player.order <= 9)
+        .sort((a,b) => a.order - b.order)
+        .slice(0,9);
+    }
+
+    function homePregameLineupCard(detail, side, teamName) {
+      const rows = homePregameLineupEntries(detail, side);
+      const sideLabel = side === 'away' ? '客隊' : '主隊';
+      return `
+        <article class="pregame-lineup-card">
+          <div class="pregame-lineup-team"><span>${sideLabel}</span><strong>${escapeHtml(teamName || sideLabel)}</strong></div>
+          <div class="pregame-lineup-row is-head">
+            <span>棒次</span><span>選手</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span>
+          </div>
+          ${rows.map(player => {
+            const meta = [
+              player.number ? `#${player.number}` : '',
+              player.position
+            ].filter(Boolean).join(' · ');
+            return `
+              <div class="pregame-lineup-row">
+                <span class="pregame-lineup-order">${player.order}</span>
+                <span class="pregame-lineup-player">
+                  <strong>${escapeHtml(player.name)}</strong>
+                  ${meta ? `<small>${escapeHtml(meta)}</small>` : ''}
+                </span>
+                <span>${escapeHtml(player.avg || '—')}</span>
+                <span>${escapeHtml(player.hits || '—')}</span>
+                <span>${escapeHtml(player.homeRuns || '—')}</span>
+                <span>${escapeHtml(player.rbi || '—')}</span>
+              </div>
+            `;
+          }).join('')}
+        </article>
+      `;
+    }
+
+    function homePregameLineupPage(detail, gameInfo, game) {
+      const away = String(gameInfo?.away || game?.away || '客隊');
+      const home = String(gameInfo?.home || game?.home || '主隊');
+      return `
+        <div class="pregame-lineup-page">
+          <div class="pregame-lineup-title"><strong>先發打序</strong><span>官方公布資料</span></div>
+          ${homePregameLineupCard(detail, 'away', away)}
+          ${homePregameLineupCard(detail, 'home', home)}
+        </div>
+      `;
+    }
+
+    function homePregameOverviewPager(center, detail, gameInfo, game) {
+      const overviewHtml = homePregameMatchupPanel(center, gameInfo, game);
+      const lineupReady = homeDetailLineupReady(detail);
+      if (!lineupReady) {
+        if (activeHomeGameDetail) activeHomeGameDetail.overviewPage = 0;
+        return overviewHtml;
+      }
+      const initialPage = Math.max(0, Math.min(1, Number(activeHomeGameDetail?.overviewPage) || 0));
+      return `
+        <div class="match-overview-pager" data-overview-pager>
+          <div class="match-overview-page" data-overview-page="0">${overviewHtml}</div>
+          <div class="match-overview-page" data-overview-page="1">${homePregameLineupPage(detail, gameInfo, game)}</div>
+        </div>
+        <div class="match-overview-pager-footer">
+          <div class="match-overview-pager-dots" aria-label="對戰總覽頁面">
+            <button type="button" class="match-overview-page-dot ${initialPage === 0 ? 'is-active' : ''}" data-overview-page-button="0" aria-label="賽前比較"></button>
+            <button type="button" class="match-overview-page-dot ${initialPage === 1 ? 'is-active' : ''}" data-overview-page-button="1" aria-label="先發打序"></button>
+          </div>
+          <span data-overview-pager-label>${initialPage === 1 ? '先發打序' : '左滑查看先發打序'}</span>
+        </div>
+      `;
+    }
+
+    function bindHomeOverviewPager(root) {
+      const scroller = root?.querySelector?.('[data-overview-pager]');
+      if (!scroller || !activeHomeGameDetail) return;
+      const pages = [...scroller.querySelectorAll('[data-overview-page]')];
+      if (pages.length < 2) return;
+      const dots = [...root.querySelectorAll('[data-overview-page-button]')];
+      const label = root.querySelector('[data-overview-pager-label]');
+      const clampPage = value => Math.max(0, Math.min(pages.length - 1, Number(value) || 0));
+      const updatePage = value => {
+        const page = clampPage(value);
+        if (activeHomeGameDetail) activeHomeGameDetail.overviewPage = page;
+        dots.forEach((dot,index) => dot.classList.toggle('is-active', index === page));
+        if (label) label.textContent = page === 1 ? '先發打序' : '左滑查看先發打序';
+      };
+      const pageWidth = () => Math.max(1, scroller.clientWidth || scroller.getBoundingClientRect().width || 1);
+      const initial = clampPage(activeHomeGameDetail.overviewPage);
+      requestAnimationFrame(() => {
+        scroller.scrollLeft = initial * pageWidth();
+        updatePage(initial);
+      });
+      let scrollRaf = 0;
+      scroller.addEventListener('scroll', () => {
+        if (scrollRaf) cancelAnimationFrame(scrollRaf);
+        scrollRaf = requestAnimationFrame(() => {
+          scrollRaf = 0;
+          updatePage(Math.round(scroller.scrollLeft / pageWidth()));
+        });
+      }, { passive:true });
+      dots.forEach((dot,index) => {
+        dot.addEventListener('click', () => {
+          updatePage(index);
+          scroller.scrollTo({ left:index * pageWidth(), behavior:'smooth' });
+        });
+      });
+    }
+
+    function homeMatchCenterDataPanel(tab, detail, gameInfo, game) {
       if (!activeHomeGameDetail || !['CPBL','NPB'].includes(activeHomeGameDetail.league)) return '';
       const center = activeHomeGameDetail?.pregameCenter || null;
       const updateTime = homeMatchCenterDisplayTime(center?.fetchedAt || center?.updatedAt || 0);
@@ -1021,7 +1141,7 @@
             </span>
           </div>
           <div class="pregame-center-body">
-            ${homePregameMatchupPanel(center, gameInfo, game)}
+            ${homePregameOverviewPager(center, detail, gameInfo, game)}
           </div>
         </section>
       `;
@@ -1102,7 +1222,7 @@
         : (supportsBullpen ? ['play','bullpen','snapshot','overview'] : ['play','snapshot','overview']);
       const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
       const centerDataPanel = centerTab === 'overview'
-        ? homeMatchCenterDataPanel('overview', gameInfo, game)
+        ? homeMatchCenterDataPanel('overview', detail, gameInfo, game)
         : centerTab === 'pitchers'
           ? homeGamePitcherPanel(detail, gameInfo)
           : centerTab === 'bullpen'
@@ -1180,6 +1300,7 @@
           if (tab === 'bullpen') void refreshHomeBullpenStatus({ force:false });
         });
       });
+      bindHomeOverviewPager(body);
       updateHomeGameDetailRefreshCountdown();
     }
 
