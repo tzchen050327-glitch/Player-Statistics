@@ -1014,57 +1014,59 @@
         order:Number(player?.order || index + 1),
         number:String(player?.number || player?.uniformNumber || player?.jersey || '').trim(),
         name:String(player?.fullName || player?.name || player?.playerName || '').trim(),
-        position:String(player?.position || player?.pos || '').trim(),
-        avg:String(player?.avg ?? player?.battingAverage ?? player?.stats?.avg ?? '').trim(),
-        hits:String(player?.hits ?? player?.h ?? player?.stats?.hits ?? '').trim(),
-        homeRuns:String(player?.homeRuns ?? player?.hr ?? player?.stats?.homeRuns ?? '').trim(),
-        rbi:String(player?.rbi ?? player?.stats?.rbi ?? '').trim()
+        position:String(player?.position || player?.pos || '').trim()
       }))
         .filter(player => player.name && player.order >= 1 && player.order <= 9)
         .sort((a,b) => a.order - b.order)
         .slice(0,9);
     }
 
-    function homePregameLineupCard(detail, side, teamName) {
-      const rows = homePregameLineupEntries(detail, side);
-      const sideLabel = side === 'away' ? '客隊' : '主隊';
-      return `
-        <article class="pregame-lineup-card">
-          <div class="pregame-lineup-team"><span>${sideLabel}</span><strong>${escapeHtml(teamName || sideLabel)}</strong></div>
-          <div class="pregame-lineup-row is-head">
-            <span>棒次</span><span>選手</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span>
-          </div>
-          ${rows.map(player => {
-            const meta = [
-              player.number ? `#${player.number}` : '',
-              player.position
-            ].filter(Boolean).join(' · ');
-            return `
-              <div class="pregame-lineup-row">
-                <span class="pregame-lineup-order">${player.order}</span>
-                <span class="pregame-lineup-player">
-                  <strong>${escapeHtml(player.name)}</strong>
-                  ${meta ? `<small>${escapeHtml(meta)}</small>` : ''}
-                </span>
-                <span>${escapeHtml(player.avg || '—')}</span>
-                <span>${escapeHtml(player.hits || '—')}</span>
-                <span>${escapeHtml(player.homeRuns || '—')}</span>
-                <span>${escapeHtml(player.rbi || '—')}</span>
-              </div>
-            `;
-          }).join('')}
-        </article>
-      `;
-    }
-
     function homePregameLineupPage(detail, gameInfo, game) {
       const away = String(gameInfo?.away || game?.away || '客隊');
       const home = String(gameInfo?.home || game?.home || '主隊');
+      const awayRows = homePregameLineupEntries(detail, 'away');
+      const homeRows = homePregameLineupEntries(detail, 'home');
+      const byOrder = (rows) => new Map(rows.map(player => [player.order, player]));
+      const awayByOrder = byOrder(awayRows);
+      const homeByOrder = byOrder(homeRows);
+      const playerHtml = (player) => {
+        if (!player) return '<span class="pregame-lineup-empty">—</span>';
+        const meta = [
+          player.number ? `#${player.number}` : '',
+          player.position || ''
+        ].filter(Boolean).join(' · ');
+        return `
+          <div class="pregame-lineup-player">
+            <strong>${escapeHtml(player.name)}</strong>
+            ${meta ? `<small>${escapeHtml(meta)}</small>` : ''}
+          </div>
+        `;
+      };
+
       return `
         <div class="pregame-lineup-page">
           <div class="pregame-lineup-title"><strong>先發打序</strong><span>官方公布資料</span></div>
-          ${homePregameLineupCard(detail, 'away', away)}
-          ${homePregameLineupCard(detail, 'home', home)}
+          <div class="pregame-lineup-compare">
+            <div class="pregame-lineup-compare-head">
+              <strong>${escapeHtml(away)}</strong>
+              <strong>${escapeHtml(home)}</strong>
+            </div>
+            ${Array.from({length:9}, (_, index) => {
+              const order = index + 1;
+              return `
+                <div class="pregame-lineup-compare-row">
+                  <div class="pregame-lineup-side is-away">
+                    <i>${order}</i>
+                    ${playerHtml(awayByOrder.get(order) || null)}
+                  </div>
+                  <div class="pregame-lineup-side is-home">
+                    <i>${order}</i>
+                    ${playerHtml(homeByOrder.get(order) || null)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       `;
     }
