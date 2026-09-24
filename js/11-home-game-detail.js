@@ -1030,14 +1030,20 @@
       const homeByOrder = new Map(homeRows.map(player => [player.order, player]));
 
       const playerHtml = (player) => {
-        if (!player) return '<span class="pregame-lineup-empty">—</span>';
+        if (!player) {
+          return `
+            <div class="pregame-lineup-player is-empty">
+              <span class="pregame-lineup-jersey">—</span>
+              <strong>—</strong>
+              <span class="pregame-lineup-position">—</span>
+            </div>
+          `;
+        }
         return `
           <div class="pregame-lineup-player">
+            <span class="pregame-lineup-jersey">${player.number ? `#${escapeHtml(player.number)}` : '—'}</span>
             <strong>${escapeHtml(player.name)}</strong>
-            <small>
-              ${player.number ? `<b>#${escapeHtml(player.number)}</b>` : ''}
-              ${player.position ? `<span>${escapeHtml(player.position)}</span>` : ''}
-            </small>
+            <span class="pregame-lineup-position">${escapeHtml(player.position || '—')}</span>
           </div>
         `;
       };
@@ -1055,13 +1061,13 @@
           <div class="pregame-lineup-compare">
             <div class="pregame-lineup-compare-head">
               <div class="pregame-lineup-team-head is-away">
-                <span>客隊</span>
-                <strong>${escapeHtml(away)}</strong>
+                <div><span>客隊</span><strong>${escapeHtml(away)}</strong></div>
+                <small><b>背號</b><b>姓名</b><b>守位</b></small>
               </div>
               <div class="pregame-lineup-head-center">棒次</div>
               <div class="pregame-lineup-team-head is-home">
-                <span>主隊</span>
-                <strong>${escapeHtml(home)}</strong>
+                <div><span>主隊</span><strong>${escapeHtml(home)}</strong></div>
+                <small><b>背號</b><b>姓名</b><b>守位</b></small>
               </div>
             </div>
 
