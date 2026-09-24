@@ -130,7 +130,9 @@
       if (!response.ok || !data?.ok) throw new Error(data?.error || `投手紀錄讀取失敗（${response.status}）`);
       return {
         away:Array.isArray(data?.away) ? data.away : [],
-        home:Array.isArray(data?.home) ? data.home : []
+        home:Array.isArray(data?.home) ? data.home : [],
+        awayTotal:Array.isArray(data?.awayTotal) ? data.awayTotal : null,
+        homeTotal:Array.isArray(data?.homeTotal) ? data.homeTotal : null
       };
     }
 
@@ -975,7 +977,8 @@
         } else {
           rows = '<div class="game-pitcher-empty">點開投手紀錄後才載入資料。</div>';
         }
-        const totals = list.length ? totalsFor(list) : null;
+        const backendTotal = Array.isArray(records?.[`${side}Total`]) ? records[`${side}Total`] : null;
+        const totals = list.length ? (backendTotal?.length === 9 ? backendTotal : totalsFor(list)) : null;
         const totalHtml = totals ? `
           <div class="game-pitcher-total">
             <strong>TOTAL</strong>
