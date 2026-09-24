@@ -563,49 +563,54 @@
       `;
     }
 
+    function homeBullpenStatusClass(level) {
+      const v = String(level || '').toLowerCase();
+      if (v === 'rest') return 'is-rest';
+      if (v === 'caution') return 'is-caution';
+      return 'is-ready';
+    }
+
     function homeBullpenTeamCard(side, fallbackTeam) {
-      if (!side) return `<article class="bullpen-status-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的牛棚資料</span></article>`;
-      const tired = Array.isArray(side?.tired) ? side.tired : [];
+      if (!side) {
+        return `<article class="bullpen-roster-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的牛棚資料</span></article>`;
+      }
       const members = Array.isArray(side?.members) ? side.members : [];
-      const availability = Number(side?.availabilityPct);
-      const pct = Number.isFinite(availability) ? availability : 100;
-      const status = pct >= 92 ? '充足' : pct >= 82 ? '正常' : pct >= 72 ? '注意' : '吃緊';
+      const team = String(side?.team || fallbackTeam || '球隊');
       return `
-        <article class="bullpen-status-card">
-          <div class="bullpen-status-head">
-            <div><span>牛棚可用度</span><strong>${escapeHtml(String(side?.team || fallbackTeam || '球隊'))}</strong></div>
-            <div><b>${pct.toFixed(0)}%</b><em>${status}</em></div>
-          </div>
-          <div class="bullpen-status-metrics">
-            <div><span>ERA</span><strong>${side?.era === null || side?.era === '' || side?.era === undefined ? '—' : (Number.isFinite(Number(side.era)) ? Number(side.era).toFixed(2) : '—')}</strong></div>
-            <div><span>WHIP</span><strong>${side?.whip === null || side?.whip === '' || side?.whip === undefined ? '—' : (Number.isFinite(Number(side.whip)) ? Number(side.whip).toFixed(2) : '—')}</strong></div>
-            <div><span>牛棚人數</span><strong>${Number(side?.pitchers || members.length || 0) || '—'}</strong></div>
-          </div>
-          <div class="bullpen-status-subtitle">近兩日負荷</div>
-          ${tired.length ? `
-            <div class="bullpen-work-list">
-              ${tired.map(item => `
-                <div>
-                  <strong>${escapeHtml(String(item?.name || '未辨識投手'))}</strong>
-                  <span>${Number(item?.days || 0) >= 2 ? '連兩日出賽' : '近期出賽'}｜昨日 ${Number(item?.yesterdayWork || 0)} ${escapeHtml(String(item?.workloadUnit || 'BF'))}｜兩日 ${Number(item?.twoDayWork || 0)} ${escapeHtml(String(item?.workloadUnit || 'BF'))}</span>
-                </div>
-              `).join('')}
+        <article class="bullpen-roster-card">
+          <div class="bullpen-roster-head">
+            <div>
+              <span>牛棚</span>
+              <strong>${escapeHtml(team)}</strong>
             </div>
-          ` : '<div class="bullpen-work-empty">近兩日沒有明顯高負荷投手</div>'}
-          <div class="bullpen-status-subtitle">牛棚成員</div>
-          ${members.length ? `
-            <div class="bullpen-member-list">
-              ${members.map(member => {
-                const era = member?.era === null || member?.era === '' || member?.era === undefined ? '' : Number(member.era);
-                const whip = member?.whip === null || member?.whip === '' || member?.whip === undefined ? '' : Number(member.whip);
-                const meta = [
-                  Number.isFinite(era) ? `ERA ${era.toFixed(2)}` : '',
-                  Number.isFinite(whip) ? `WHIP ${whip.toFixed(2)}` : ''
-                ].filter(Boolean).join('｜');
-                return `<div class="bullpen-member-row"><strong>${escapeHtml(String(member?.name || '未辨識投手'))}</strong><span>${escapeHtml(meta || '近兩日實際登板')}</span></div>`;
-              }).join('')}
+            <b>${members.length} 人</b>
+          </div>
+          <div class="bullpen-roster-table">
+            <div class="bullpen-roster-row bullpen-roster-header">
+              <span>投手</span>
+              <span>昨日用球</span>
+              <span>前日用球</span>
+              <span>預估狀態</span>
             </div>
-          ` : '<div class="bullpen-work-empty">目前沒有可確認的牛棚成員資料</div>'}
+            ${members.length ? members.map(member => {
+              const yesterday = Math.max(0, Number(member?.yesterdayPitches) || 0);
+              const twoDaysAgo = Math.max(0, Number(member?.twoDaysAgoPitches) || 0);
+              const status = String(member?.status || '可用');
+              const reason = String(member?.statusReason || '');
+              return `
+                <div class="bullpen-roster-row">
+                  <strong>${escapeHtml(String(member?.name || '未辨識投手'))}</strong>
+                  <span class="${yesterday > 0 ? 'has-work' : ''}">${yesterday} 球</span>
+                  <span class="${twoDaysAgo > 0 ? 'has-work' : ''}">${twoDaysAgo} 球</span>
+                  <span class="bullpen-status-pill ${homeBullpenStatusClass(member?.statusLevel)}" title="${escapeAttr(reason)}">
+                    <b>${escapeHtml(status)}</b>
+                    ${reason ? `<small>${escapeHtml(reason)}</small>` : ''}
+                  </span>
+                </div>`;
+            }).join('') : `
+              <div class="bullpen-roster-empty">目前沒有可確認的一軍牛棚投手。</div>
+            `}
+          </div>
         </article>
       `;
     }
@@ -667,30 +672,16 @@
         return `<div class="game-detail-error">${escapeHtml(error)}</div>`;
       }
       if (!data) {
-        return '<div class="pregame-center-loading">點進牛棚頁後才會讀取資料，以降低流量。</div>';
+        return '<div class="pregame-center-loading">正在讀取已鎖定的牛棚資料…</div>';
       }
-      const used = detail?.gamePitchers || {};
-      const usedNames = side => (Array.isArray(used?.[side]) ? used[side] : [])
-        .slice(1)
-        .map(row => String(row?.name || '').trim())
-        .filter(Boolean);
-      const awayUsed = usedNames('away');
-      const homeUsed = usedNames('home');
-      const usageHtml = (team, names) => `
-        <div class="game-bullpen-used">
-          <span>本場已使用</span>
-          <strong>${escapeHtml(team || '球隊')}</strong>
-          <b>${names.length ? escapeHtml(names.join('、')) : '尚未動用牛棚'}</b>
-        </div>`;
       return `
         <section class="match-center-data-panel game-bullpen-panel">
-          <div class="match-center-data-tools"><span>今日牛棚狀態<small class="match-center-update-time">同場只讀一次</small></span></div>
+          <div class="match-center-data-tools">
+            <span>牛棚狀態<small class="match-center-update-time">官方用球數 · 賽前鎖定</small></span>
+          </div>
           <div class="pregame-center-body">
-            <div class="game-bullpen-used-grid">
-              ${usageHtml(String(gameInfo?.away || game?.away || '客隊'), awayUsed)}
-              ${usageHtml(String(gameInfo?.home || game?.home || '主隊'), homeUsed)}
-            </div>
             ${homeBullpenPanel(data, gameInfo, game)}
+            <div class="bullpen-estimate-note">預估狀態只依最近兩日官方用球量與連續登板判定，不代表球隊實際調度決策。</div>
           </div>
         </section>`;
     }
