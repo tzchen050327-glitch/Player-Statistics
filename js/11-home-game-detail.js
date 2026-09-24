@@ -739,22 +739,51 @@
     function homeSnapshotPlayRbi(play) {
       const direct = Number(play?.rbi);
       if (Number.isFinite(direct) && direct > 0) return direct;
-      const text = String(play?.result || play?.raw || '');
-      const match = text.match(/(?:打點|打点)\s*([1-4])/);
+      const text = [play?.result, play?.raw, play?.description].filter(Boolean).join(' ');
+      const match = text.match(/(?:打點|打点|RBI)\s*[:：]?\s*([1-4])/i)
+        || text.match(/([1-4])\s*(?:分打點|打点)/);
       return match ? Number(match[1]) : 0;
     }
 
-    function homeSnapshotKeyPlays(detail) {
+    function homeSnapshotPlayRuns(play) {
+      const rbi = homeSnapshotPlayRbi(play);
+      const text = String(play?.description || '');
+      const scored = text.match(/回本壘得分|生還|得点/g);
+      const describedRuns = Array.isArray(scored) ? scored.length : 0;
+      return Math.max(rbi, describedRuns);
+    }
+
+    function homeSnapshotScoreTimeline(detail) {
       const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
-      const candidates = plays.map((play,index) => {
-        const result = String(play?.result || play?.raw || '').trim();
+      let awayScore = 0;
+      let homeScore = 0;
+      return plays.map((play,index) => {
+        const before = { away:awayScore, home:homeScore };
         const rbi = homeSnapshotPlayRbi(play);
+        const runs = homeSnapshotPlayRuns(play);
+        const half = String(play?.half || '');
+        if (runs > 0) {
+          if (half === 'top') awayScore += runs;
+          else if (half === 'bottom') homeScore += runs;
+        }
+        return {
+          play,index,rbi,runs,
+          before,
+          after:{ away:awayScore, home:homeScore }
+        };
+      });
+    }
+
+    function homeSnapshotKeyPlays(detail) {
+      const candidates = homeSnapshotScoreTimeline(detail).map(item => {
+        const { play,index,rbi,runs } = item;
+        const result = String(play?.result || play?.raw || '').trim();
         const inning = Number(play?.inning || 0);
         const homer = /全壘打|全塁打|本塁打|home\s*run/i.test(result);
-        const clutch = /適時|タイムリー|逆轉|逆転|勝ち越し|追平|同点|失誤|エラー/i.test(result);
-        const score = rbi * 10 + (homer ? 7 : 0) + (clutch ? 4 : 0) + Math.min(9, inning) * .45;
-        return { play, index, score, rbi, inning };
-      }).filter(item => item.rbi > 0 || item.score >= 4)
+        const clutch = /適時|タイムリー|逆轉|逆転|勝ち越し|追平|同点|失誤|エラー|暴投|捕逸/i.test(result + ' ' + String(play?.description || ''));
+        const score = runs * 12 + rbi * 4 + (homer ? 7 : 0) + (clutch ? 4 : 0) + Math.min(9, inning) * .45;
+        return { ...item, score, inning };
+      }).filter(item => item.runs > 0 || item.rbi > 0 || item.score >= 4)
         .sort((a,b) => b.score - a.score || b.inning - a.inning || b.index - a.index)
         .slice(0,4)
         .sort((a,b) => a.inning - b.inning || a.index - b.index);
@@ -844,11 +873,18 @@
           <section class="game-snapshot-section">
             <div class="game-snapshot-title"><strong>關鍵打席</strong><span>只留影響比分的重點</span></div>
             <div class="game-snapshot-plays">
-              ${keyPlays.length ? keyPlays.map(({play}) => `
+              ${keyPlays.length ? keyPlays.map(({play,rbi,runs,before,after}) => `
                 <article>
                   <b>${Number(play?.inning || 0) || '—'}局${String(play?.half || '') === 'top' ? '上' : String(play?.half || '') === 'bottom' ? '下' : ''}</b>
-                  <div><strong>${escapeHtml(String(play?.batter || play?.hitter || '未辨識打者'))}</strong><span>${escapeHtml(String(play?.result || play?.raw || ''))}</span></div>
-                  <em>${homeSnapshotPlayRbi(play) ? `${homeSnapshotPlayRbi(play)} RBI` : '關鍵事件'}</em>
+                  <div>
+                    <strong>${escapeHtml(String(play?.batter || play?.hitter || '未辨識打者'))}</strong>
+                    <span>${escapeHtml(String(play?.result || play?.raw || ''))}</span>
+                    <small class="game-snapshot-play-meta">
+                      <b>${rbi > 0 ? `${rbi} 打點` : (runs > 0 ? '非打點得分' : '關鍵事件')}</b>
+                      ${runs > 0 ? `<i>比分 ${before.away}–${before.home} → ${after.away}–${after.home}</i>` : ''}
+                    </small>
+                  </div>
+                  <em>${runs > 0 ? `+${runs} 分` : '關鍵事件'}</em>
                 </article>`).join('') : '<div class="game-snapshot-muted">目前還沒有明確的得分關鍵打席。</div>'}
             </div>
           </section>
