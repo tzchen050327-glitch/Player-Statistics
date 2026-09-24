@@ -39,10 +39,12 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         name:String(player?.name || ''),
         team:String(player?.cpblTeam || ''),
         teamCode:String(player?.cpblTeamCode || ''),
+        playerType:String(player?.type || ''),
         major:true,
         minor:true,
         lineup:true,
         appearance:true,
+        plateAppearance:false,
         updatedAt:Date.now()
       };
     }
@@ -90,10 +92,12 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
           name:String(player.name || rule.name || ''),
           team:String(player.cpblTeam || rule.team || ''),
           teamCode:String(player.cpblTeamCode || rule.teamCode || ''),
+          playerType:String(player.type || rule.playerType || ''),
           major:rule.major !== false,
           minor:rule.minor !== false,
           lineup:rule.lineup !== false,
-          appearance:rule.appearance !== false
+          appearance:rule.appearance !== false,
+          plateAppearance:rule.plateAppearance === true
         };
       }).filter(Boolean);
     }
@@ -206,6 +210,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
             ${customNotificationOption('二軍', 'minor', rule?.minor !== false, !active, key)}
             ${customNotificationOption('先發公布', 'lineup', rule?.lineup !== false, !active, key)}
             ${customNotificationOption('實際出賽', 'appearance', rule?.appearance !== false, !active, key)}
+            ${player?.type === 'pitcher' ? '' : customNotificationOption('逐打席', 'plateAppearance', rule?.plateAppearance === true, !active, key)}
           </div>
         </article>
       `;
@@ -241,7 +246,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         input.addEventListener('change', async () => {
           const key = String(input.dataset.customNotificationKey || '');
           const field = String(input.dataset.customNotificationField || '');
-          if (!['major','minor','lineup','appearance'].includes(field)) return;
+          if (!['major','minor','lineup','appearance','plateAppearance'].includes(field)) return;
           const state = customNotificationReadState();
           const rule = state?.[key];
           if (!rule) return;
