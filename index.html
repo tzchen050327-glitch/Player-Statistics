@@ -94,6 +94,16 @@
             <div id="homeTemplateGrid" class="template-grid home-template-grid"></div>
           </section>
 
+          <button id="homeCustomNotificationBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟自訂通知">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 5.5 2 7H4.5c0-1.5 2-2 2-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9.5 19a2.7 2.7 0 0 0 5 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <strong>自訂通知</strong>
+          </button>
+
           <button id="homePredictionBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟預測專區">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -170,6 +180,21 @@
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
+    </section>
+
+    <section id="customNotificationPage" class="hidden custom-notification-page">
+      <div class="custom-notification-page-top">
+        <button id="customNotificationBackHomeBtn" class="press-btn custom-notification-back-home" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel custom-notification-page-panel">
+        <div class="custom-notification-page-head">
+          <div>
+            <span class="custom-notification-page-kicker">NOTIFICATIONS</span>
+            <h2>自訂通知</h2>
+          </div>
+        </div>
+        <div id="customNotificationPageContent" class="custom-notification-page-content" aria-live="polite"></div>
+      </section>
     </section>
 
     <section id="predictionPage" class="hidden prediction-page">
