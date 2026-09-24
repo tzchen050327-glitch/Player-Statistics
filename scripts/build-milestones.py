@@ -312,11 +312,12 @@ def build_cpbl():
 # ---------- NPB ----------
 
 def npb_player_id(tr):
-    a = tr.find("a", href=re.compile(r"/bis/(?:eng/)?players/\d+\.html"))
-    if not a:
-        return ""
-    m = re.search(r"/players/(\d+)\.html", a.get("href", ""))
-    return m.group(1) if m else ""
+    for a in tr.find_all("a", href=True):
+        href = str(a.get("href", ""))
+        m = re.search(r"(?:players/|/)(\d{8})\.html(?:$|[?#])", href)
+        if m:
+            return m.group(1)
+    return ""
 
 
 def npb_table_rows(url):
