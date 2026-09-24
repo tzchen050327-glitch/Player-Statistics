@@ -483,9 +483,29 @@ def normalize_payload(payload):
     return payload
 
 
+def same_day_cpbl_snapshot():
+    path = Path("data/milestones.json")
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        generated = str(data.get("generatedAt") or "")[:10]
+        today = datetime.now(timezone.utc).date().isoformat()
+        cpbl = data.get("leagues", {}).get("CPBL")
+        if generated == today and int(data.get("season") or 0) == SEASON and cpbl:
+            return cpbl
+    except Exception:
+        return None
+    return None
+
+
 def main():
     print("Building milestone snapshot for", SEASON)
-    cpbl = build_cpbl()
+    cpbl = same_day_cpbl_snapshot()
+    if cpbl:
+        print("Reusing today's CPBL snapshot")
+    else:
+        cpbl = build_cpbl()
     npb = build_npb()
     payload = normalize_payload({
         "schemaVersion": 2,
