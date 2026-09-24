@@ -705,7 +705,6 @@
     }
 
 
-
     .app-version-badge {
       position: fixed;
       right: max(10px, env(safe-area-inset-right));
@@ -3584,7 +3583,6 @@ dialog::backdrop {
 /* ===== v1.86 DIALOG WRAP + INTERNATIONAL HOME HEIGHT END ===== */
 
 
-
 /* ===== v1.92 CUSTOM FILTER + AUTO CLOSE FEEDBACK START ===== */
 .custom-filter-native{display:none !important;}
 .all-filter-trigger{
@@ -3972,7 +3970,6 @@ dialog::backdrop {
   .season-picker-trigger{max-width:62vw;}
 }
 /* ===== v1.98 CUSTOM DATE + SEASON PICKERS END ===== */
-
 
 
     /* ===== v2.05 SYNC SAFETY + SOURCE META ===== */
@@ -4934,7 +4931,6 @@ body.home-game-detail-open{overflow:hidden}
     margin-top:10px;
   }
 }
-
 
 
 /* ---------- Fixed sidebar clocks / scrolling backgrounds ---------- */
@@ -10028,7 +10024,6 @@ body.pregame-center-open{
 }
 
 
-
 /* ===== Prediction ladder clarity refresh v5.71 ===== */
 .prediction-win-chart-lr{
   margin-top:18px;
@@ -10198,51 +10193,6 @@ body.pregame-center-open{
 }
 
 
-/* ===== MILESTONE PAGE ===== */
-.home-milestone-entry .home-standings-entry-icon{color:var(--accent-2);}
-.milestone-page{display:grid;gap:10px;}
-.milestone-page.hidden{display:none;}
-.milestone-page-top{display:flex;align-items:center;justify-content:flex-start;}
-.milestone-page-panel{padding:16px;}
-.milestone-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
-.milestone-page-head h2{margin:2px 0 0;font-size:22px;}
-.milestone-page-kicker{color:var(--accent-2);font-size:10px;font-weight:950;letter-spacing:.14em;}
-.milestone-local-badge{padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:var(--accent-2);font-size:9px;font-weight:900;}
-.milestone-note{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);}
-.milestone-note strong{flex:0 0 auto;color:var(--accent-2);font-size:10px;}
-.milestone-note span{color:var(--muted);font-size:9px;line-height:1.5;}
-.milestone-filters{display:flex;gap:7px;overflow-x:auto;margin:12px 0 8px;padding-bottom:2px;scrollbar-width:thin;}
-.milestone-filter-btn{flex:0 0 auto;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:10px;font-weight:900;}
-.milestone-filter-btn.active{border-color:var(--accent-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent-2);}
-.milestone-summary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:8px 2px 10px;}
-.milestone-summary strong{font-size:13px;}
-.milestone-summary span{color:var(--muted);font-size:9px;}
-.milestone-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-.milestone-card{min-width:0;padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--panel);}
-.milestone-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.milestone-card-head>div{min-width:0;}
-.milestone-card-head span{display:block;color:var(--muted);font-size:8px;font-weight:850;}
-.milestone-card-head strong{display:block;margin-top:2px;overflow:hidden;color:var(--text);font-size:14px;font-weight:950;text-overflow:ellipsis;white-space:nowrap;}
-.milestone-card-head>b{flex:0 0 auto;padding:4px 7px;border-radius:8px;border:1px solid var(--line);color:var(--accent-2);font-size:10px;font-weight:950;}
-.milestone-track-list{display:grid;gap:10px;margin-top:12px;}
-.milestone-track{min-width:0;}
-.milestone-track-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
-.milestone-track-meta span{color:var(--muted);font-size:9px;font-weight:850;}
-.milestone-track-meta span strong{color:var(--text);font-size:11px;}
-.milestone-track-meta>b{color:var(--accent-2);font-size:11px;font-weight:950;}
-.milestone-progress{height:6px;margin-top:5px;overflow:hidden;border-radius:999px;background:var(--line);}
-.milestone-progress>i{display:block;height:100%;border-radius:inherit;background:var(--accent-2);}
-.milestone-track small{display:block;margin-top:4px;color:var(--muted);font-size:8px;font-weight:750;}
-.milestone-empty{grid-column:1/-1;padding:38px 18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;font-size:12px;}
-@media(max-width:720px){
-  .milestone-page-panel{padding:12px;}
-  .milestone-grid{grid-template-columns:1fr;}
-  .milestone-summary{align-items:flex-start;flex-direction:column;gap:2px;}
-  .milestone-note{flex-direction:column;gap:3px;}
-}
-/* ===== MILESTONE PAGE END ===== */
-
-
 /* ===== SIDEBAR ACTION SPACING FIX ===== */
 #homePage .home-sidebar{
   gap:6px;
@@ -10250,7 +10200,6 @@ body.pregame-center-open{
 #homePage .home-prediction-entry{
   margin-bottom:0;
 }
-#homePage .home-milestone-entry,
 #homePage .home-prediction-entry,
 #homePage .home-standings-entry{
   min-height:46px;
@@ -10258,335 +10207,3 @@ body.pregame-center-open{
 /* ===== SIDEBAR ACTION SPACING FIX END ===== */
 
 
-/* ===== MILESTONE HUB REDESIGN ===== */
-.milestone-page-content{display:grid;gap:12px;}
-.milestone-league-tabs{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:7px;
-  padding:5px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--panel);
-}
-.milestone-league-tab{
-  min-height:38px;
-  border:1px solid transparent;
-  border-radius:10px;
-  background:transparent;
-  color:var(--muted);
-  font-size:11px;
-  font-weight:950;
-}
-.milestone-league-tab.active{
-  border-color:var(--accent-2);
-  background:rgba(214,169,74,.12);
-  color:var(--text);
-  box-shadow:inset 0 0 0 1px rgba(214,169,74,.16);
-}
-.milestone-focus{
-  overflow:hidden;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:var(--panel);
-}
-.milestone-focus-head,
-.milestone-group-head{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:12px;
-}
-.milestone-focus-head{
-  padding:13px 14px 11px;
-  border-bottom:1px solid var(--line);
-}
-.milestone-focus-head span,
-.milestone-group-head span{
-  display:block;
-  color:var(--accent-2);
-  font-size:8px;
-  font-weight:950;
-  letter-spacing:.12em;
-}
-.milestone-focus-head h3,
-.milestone-group-head h3{
-  margin:2px 0 0;
-  color:var(--text);
-  font-size:15px;
-  font-weight:950;
-}
-.milestone-focus-head>b,
-.milestone-group-head>b{
-  color:var(--muted);
-  font-size:9px;
-  font-weight:900;
-}
-.milestone-focus-list{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-}
-.milestone-focus-item{
-  min-width:0;
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr) auto;
-  align-items:center;
-  gap:9px;
-  padding:13px 12px;
-  border-left:1px solid var(--line);
-}
-.milestone-focus-item:first-child{border-left:0;}
-.milestone-focus-rank{
-  color:rgba(214,169,74,.78);
-  font-size:10px;
-  font-weight:950;
-  font-variant-numeric:tabular-nums;
-}
-.milestone-focus-main{min-width:0;}
-.milestone-focus-name{
-  overflow:hidden;
-  color:var(--text);
-  font-size:12px;
-  font-weight:950;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.milestone-focus-desc{
-  margin-top:2px;
-  overflow:hidden;
-  color:var(--muted);
-  font-size:9px;
-  font-weight:800;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.milestone-focus-gap{
-  flex:0 0 auto;
-  text-align:right;
-}
-.milestone-focus-gap span{
-  display:block;
-  color:var(--muted);
-  font-size:7px;
-  font-weight:850;
-}
-.milestone-focus-gap strong{
-  display:block;
-  margin-top:1px;
-  color:var(--accent-2);
-  font-size:17px;
-  line-height:1;
-  font-weight:950;
-}
-.milestone-focus-empty{
-  grid-column:1/-1;
-  padding:22px 14px;
-  color:var(--muted);
-  font-size:10px;
-  text-align:center;
-}
-.milestone-group{
-  overflow:hidden;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:var(--panel);
-}
-.milestone-group-head{
-  padding:12px 14px;
-  border-bottom:1px solid var(--line);
-}
-.milestone-player-list{display:grid;}
-.milestone-player-line{
-  display:grid;
-  grid-template-columns:minmax(150px,.9fr) minmax(0,2.2fr);
-  align-items:center;
-  gap:12px;
-  padding:11px 13px;
-  border-top:1px solid var(--line);
-}
-.milestone-player-line:first-child{border-top:0;}
-.milestone-player-identity{
-  min-width:0;
-  display:flex;
-  align-items:center;
-  gap:9px;
-}
-.milestone-player-identity>span{
-  flex:0 0 auto;
-  width:26px;
-  height:26px;
-  display:grid;
-  place-items:center;
-  border:1px solid rgba(214,169,74,.35);
-  border-radius:8px;
-  color:var(--accent-2);
-  font-size:9px;
-  font-weight:950;
-}
-.milestone-player-identity>div{min-width:0;}
-.milestone-player-identity strong{
-  display:block;
-  overflow:hidden;
-  color:var(--text);
-  font-size:12px;
-  font-weight:950;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.milestone-player-identity small{
-  display:block;
-  margin-top:2px;
-  color:var(--muted);
-  font-size:8px;
-  font-weight:800;
-}
-.milestone-player-metrics{
-  min-width:0;
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:6px;
-}
-.milestone-metric-pill{
-  min-width:0;
-  padding:7px 8px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:rgba(255,255,255,.015);
-}
-.milestone-metric-pill.is-close{
-  border-color:rgba(214,169,74,.52);
-  background:rgba(214,169,74,.07);
-}
-.milestone-metric-pill>span{
-  display:block;
-  color:var(--muted);
-  font-size:7px;
-  font-weight:950;
-}
-.milestone-metric-pill>strong{
-  display:block;
-  margin-top:2px;
-  overflow:hidden;
-  color:var(--text);
-  font-size:11px;
-  font-weight:950;
-  white-space:nowrap;
-}
-.milestone-metric-pill>strong em{
-  color:var(--muted);
-  font-size:8px;
-  font-style:normal;
-  font-weight:850;
-}
-.milestone-metric-pill>small{
-  display:block;
-  margin-top:2px;
-  color:var(--accent-2);
-  font-size:7px;
-  font-weight:900;
-}
-.milestone-group-empty{
-  padding:22px 14px;
-  color:var(--muted);
-  font-size:10px;
-  text-align:center;
-}
-.milestone-data-note{
-  padding:2px 4px 0;
-  color:var(--muted);
-  font-size:8px;
-  line-height:1.5;
-}
-@media(max-width:760px){
-  .milestone-focus-list{grid-template-columns:1fr;}
-  .milestone-focus-item{
-    border-left:0;
-    border-top:1px solid var(--line);
-  }
-  .milestone-focus-item:first-child{border-top:0;}
-  .milestone-player-line{
-    grid-template-columns:1fr;
-    gap:8px;
-  }
-  .milestone-player-metrics{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-}
-/* ===== MILESTONE HUB REDESIGN END ===== */
-
-
-/* ===== MILESTONE CAREER SEASON SWITCH ===== */
-.milestone-filter-stack{
-  display:grid;
-  grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr);
-  gap:8px;
-}
-.milestone-scope-tabs{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:5px;
-  padding:5px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--panel);
-}
-.milestone-scope-tab{
-  min-height:38px;
-  border:1px solid transparent;
-  border-radius:10px;
-  background:transparent;
-  color:var(--muted);
-  font-size:11px;
-  font-weight:950;
-}
-.milestone-scope-tab.active{
-  border-color:var(--accent-2);
-  background:rgba(214,169,74,.12);
-  color:var(--text);
-  box-shadow:inset 0 0 0 1px rgba(214,169,74,.16);
-}
-.milestone-loading-state{
-  min-height:220px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:26px;
-  border:1px dashed var(--line);
-  border-radius:16px;
-  color:var(--muted);
-  text-align:center;
-}
-.milestone-loading-state strong{
-  color:var(--text);
-  font-size:13px;
-}
-.milestone-loading-state span{
-  max-width:420px;
-  font-size:9px;
-  line-height:1.55;
-}
-.milestone-data-note{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-.milestone-data-note>button{
-  flex:0 0 auto;
-  border:0;
-  padding:0;
-  background:transparent;
-  color:var(--accent-2);
-  font:inherit;
-  font-size:8px;
-  font-weight:900;
-}
-@media(max-width:760px){
-  .milestone-filter-stack{grid-template-columns:1fr;}
-  .milestone-scope-tabs,.milestone-league-tabs{min-height:42px;}
-}
-/* ===== MILESTONE CAREER SEASON SWITCH END ===== */
-
-/* Milestone league snapshot source finalized. */
