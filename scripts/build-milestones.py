@@ -315,7 +315,7 @@ def npb_table_rows(url):
     s = new_session()
     r = s.get(url, timeout=25)
     r.raise_for_status()
-    return BeautifulSoup(r.text, "html.parser")
+    return BeautifulSoup(r.content, "html.parser", from_encoding="utf-8")
 
 
 def npb_season_batting(code, team):
