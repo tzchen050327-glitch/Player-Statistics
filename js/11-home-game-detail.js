@@ -628,7 +628,7 @@
     function homeBullpenDataUsable(data) {
       const away = Array.isArray(data?.awayBullpen?.members) ? data.awayBullpen.members.length : 0;
       const home = Array.isArray(data?.homeBullpen?.members) ? data.homeBullpen.members.length : 0;
-      return Number(data?.pitcherStatusVersion || 0) >= 7 && away > 0 && home > 0;
+      return Number(data?.pitcherStatusVersion || 0) >= 8 && away > 0 && home > 0;
     }
 
     async function refreshHomeBullpenStatus({ force = false } = {}) {
