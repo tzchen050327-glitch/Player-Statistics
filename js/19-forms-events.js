@@ -955,6 +955,18 @@
       }
     });
 
+    els.homeCustomNotificationBtn?.addEventListener('click', () => {
+      currentPage = 'notifications';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.customNotificationBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
     els.homePredictionBtn?.addEventListener('click', () => {
       currentPage = 'prediction';
       renderAll();
