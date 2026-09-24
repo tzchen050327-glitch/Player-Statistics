@@ -1014,7 +1014,10 @@
         order:Number(player?.order || index + 1),
         number:String(player?.number || player?.uniformNumber || player?.jersey || '').trim(),
         name:String(player?.fullName || player?.name || player?.playerName || '').trim(),
-        position:String(player?.position || player?.pos || '').trim()
+        position:(() => {
+          const pos = String(player?.position || player?.pos || '').trim();
+          return pos === '0' ? 'DH' : pos;
+        })()
       }))
         .filter(player => player.name && player.order >= 1 && player.order <= 9)
         .sort((a,b) => a.order - b.order)
