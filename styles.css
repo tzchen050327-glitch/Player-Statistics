@@ -10491,3 +10491,104 @@ body.pregame-center-open{
   }
 }
 /* ===== GAME DETAIL BULLPEN + SNAPSHOT END ===== */
+
+
+/* ===== DARK MODE GAME CENTER CONTRAST FIX ===== */
+html[data-theme="dark"] .pregame-center-tabs,
+html[data-theme="dark"] .match-center-tabs{
+  border-color:#34383f;
+  background:#11151b;
+}
+html[data-theme="dark"] .pregame-center-tabs>button,
+html[data-theme="dark"] .match-center-tabs>button{
+  color:#b7b1a4;
+  background:#11151b;
+}
+html[data-theme="dark"] .pregame-center-tabs>button+button,
+html[data-theme="dark"] .match-center-tabs>button+button{
+  border-left-color:#34383f;
+}
+html[data-theme="dark"] .pregame-center-tabs>button.active,
+html[data-theme="dark"] .match-center-tabs>button.active{
+  color:#f4ecd9;
+  background:#1b1d20;
+}
+html[data-theme="dark"] .pregame-center-tabs>button.active::after,
+html[data-theme="dark"] .match-center-tabs>button.active::after{
+  background:#d7ad4d;
+}
+
+html[data-theme="dark"] .pregame-center-block-title strong,
+html[data-theme="dark"] .pregame-center-summary-grid article>strong,
+html[data-theme="dark"] .bullpen-status-head>div>strong,
+html[data-theme="dark"] .bullpen-work-list strong,
+html[data-theme="dark"] .match-center-data-panel .bullpen-member-row>strong,
+html[data-theme="dark"] .game-bullpen-used>strong,
+html[data-theme="dark"] .game-snapshot-team-row strong,
+html[data-theme="dark"] .game-snapshot-title>strong,
+html[data-theme="dark"] .game-snapshot-leaders div>strong,
+html[data-theme="dark"] .game-snapshot-plays div>strong,
+html[data-theme="dark"] .game-snapshot-leaders>article>b,
+html[data-theme="dark"] .game-snapshot-plays>article>b,
+html[data-theme="dark"] .game-snapshot-decisions strong,
+html[data-theme="dark"] .game-snapshot-empty strong{
+  color:#f1eadc;
+}
+
+html[data-theme="dark"] .pregame-center-block-title span,
+html[data-theme="dark"] .pregame-center-summary-grid article>b,
+html[data-theme="dark"] .bullpen-work-list span,
+html[data-theme="dark"] .bullpen-work-empty,
+html[data-theme="dark"] .match-center-data-panel .bullpen-member-row>span,
+html[data-theme="dark"] .game-bullpen-used>span,
+html[data-theme="dark"] .game-bullpen-used>b,
+html[data-theme="dark"] .game-snapshot-team-row span,
+html[data-theme="dark"] .game-snapshot-team-row b,
+html[data-theme="dark"] .game-snapshot-title>span,
+html[data-theme="dark"] .game-snapshot-leaders div>span,
+html[data-theme="dark"] .game-snapshot-plays div>span,
+html[data-theme="dark"] .game-snapshot-decisions span,
+html[data-theme="dark"] .game-snapshot-muted,
+html[data-theme="dark"] .game-snapshot-empty{
+  color:#aaa598;
+}
+
+html[data-theme="dark"] .pregame-center-summary-grid article,
+html[data-theme="dark"] .bullpen-status-card,
+html[data-theme="dark"] .game-bullpen-used,
+html[data-theme="dark"] .game-snapshot-team-row>article,
+html[data-theme="dark"] .game-snapshot-section{
+  border-color:#32363c;
+  background:#15191e;
+}
+html[data-theme="dark"] .game-snapshot-title{
+  border-bottom-color:#34383f;
+  background:#191d22;
+}
+html[data-theme="dark"] .game-snapshot-leaders>article,
+html[data-theme="dark"] .game-snapshot-plays>article,
+html[data-theme="dark"] .game-snapshot-decisions>article{
+  border-color:#2d3137;
+}
+html[data-theme="dark"] .game-snapshot-hero{
+  border-color:#4a4130;
+  background:
+    radial-gradient(circle at 85% -30%,rgba(215,173,77,.16),transparent 38%),
+    linear-gradient(135deg,#151515,#211c12);
+  color:#f4ecd9;
+}
+html[data-theme="dark"] .game-snapshot-hero>span{
+  color:#c7bdab;
+}
+html[data-theme="dark"] .game-snapshot-hero>p{
+  color:#ddd4c4;
+}
+html[data-theme="dark"] .game-snapshot-plays>article>em,
+html[data-theme="dark"] .game-snapshot-leaders i{
+  color:#e2b95a;
+}
+html[data-theme="dark"] .game-snapshot-empty{
+  border-color:#383b40;
+  background:#12161a;
+}
+/* ===== DARK MODE GAME CENTER CONTRAST FIX END ===== */
