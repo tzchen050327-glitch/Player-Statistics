@@ -10592,3 +10592,225 @@ html[data-theme="dark"] .game-snapshot-empty{
   background:#12161a;
 }
 /* ===== DARK MODE GAME CENTER CONTRAST FIX END ===== */
+
+
+/* ===== CPBL BULLPEN WORKLOAD TABLE ===== */
+.game-bullpen-panel .bullpen-status-grid{
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.bullpen-roster-card{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dde5ec;
+  border-radius:13px;
+  background:#fff;
+}
+.bullpen-roster-card.is-empty{
+  min-height:110px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  color:#7f8d9b;
+}
+.bullpen-roster-card.is-empty strong{
+  color:#263b50;
+}
+.bullpen-roster-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 12px;
+  border-bottom:1px solid #e5ebf0;
+  background:#f8fafc;
+}
+.bullpen-roster-head>div{min-width:0;}
+.bullpen-roster-head span{
+  display:block;
+  color:#8492a0;
+  font-size:8px;
+  font-weight:850;
+}
+.bullpen-roster-head strong{
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  color:#263b50;
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bullpen-roster-head>b{
+  flex:0 0 auto;
+  color:#b07814;
+  font-size:10px;
+  font-weight:950;
+}
+.bullpen-roster-table{display:grid;}
+.bullpen-roster-row{
+  display:grid;
+  grid-template-columns:minmax(90px,1.35fr) 64px 64px minmax(94px,1fr);
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  min-height:43px;
+  padding:7px 10px;
+  border-top:1px solid #edf1f4;
+}
+.bullpen-roster-row:first-child{border-top:0;}
+.bullpen-roster-row>strong{
+  min-width:0;
+  overflow:hidden;
+  color:#263b50;
+  font-size:10px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bullpen-roster-row>span{
+  min-width:0;
+  color:#7b8997;
+  font-size:9px;
+  font-weight:850;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.bullpen-roster-row>span.has-work{
+  color:#a36c12;
+  font-weight:950;
+}
+.bullpen-roster-header{
+  min-height:30px;
+  background:#f5f8fb;
+}
+.bullpen-roster-header>span{
+  color:#7f8c99;
+  font-size:8px;
+  font-weight:900;
+}
+.bullpen-roster-header>span:first-child{text-align:left;}
+.bullpen-status-pill{
+  justify-self:stretch;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  padding:5px 6px;
+  border:1px solid #dfe6ec;
+  border-radius:8px;
+  background:#f7f9fb;
+}
+.bullpen-status-pill>b{
+  color:#536372;
+  font-size:9px;
+  font-weight:950;
+  line-height:1.1;
+}
+.bullpen-status-pill>small{
+  display:block;
+  max-width:100%;
+  margin-top:2px;
+  overflow:hidden;
+  color:#8a96a1;
+  font-size:7px;
+  font-weight:800;
+  line-height:1.15;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bullpen-status-pill.is-ready{
+  border-color:#b9d9c5;
+  background:#f2faf5;
+}
+.bullpen-status-pill.is-ready>b{color:#2f7a49;}
+.bullpen-status-pill.is-caution{
+  border-color:#e5cf9c;
+  background:#fff9ec;
+}
+.bullpen-status-pill.is-caution>b{color:#9a6811;}
+.bullpen-status-pill.is-rest{
+  border-color:#e6b8b2;
+  background:#fff4f2;
+}
+.bullpen-status-pill.is-rest>b{color:#aa4338;}
+.bullpen-roster-empty{
+  padding:20px 12px;
+  color:#84919e;
+  font-size:9px;
+  text-align:center;
+}
+.bullpen-estimate-note{
+  padding:1px 2px 0;
+  color:#87939f;
+  font-size:8px;
+  line-height:1.45;
+}
+
+html[data-theme="dark"] .bullpen-roster-card{
+  border-color:#32363c;
+  background:#15191e;
+}
+html[data-theme="dark"] .bullpen-roster-card.is-empty,
+html[data-theme="dark"] .bullpen-estimate-note,
+html[data-theme="dark"] .bullpen-roster-head span,
+html[data-theme="dark"] .bullpen-roster-row>span,
+html[data-theme="dark"] .bullpen-roster-header>span,
+html[data-theme="dark"] .bullpen-status-pill>small{
+  color:#aaa598;
+}
+html[data-theme="dark"] .bullpen-roster-card.is-empty strong,
+html[data-theme="dark"] .bullpen-roster-head strong,
+html[data-theme="dark"] .bullpen-roster-row>strong{
+  color:#f1eadc;
+}
+html[data-theme="dark"] .bullpen-roster-head{
+  border-bottom-color:#34383f;
+  background:#191d22;
+}
+html[data-theme="dark"] .bullpen-roster-row{
+  border-top-color:#2d3137;
+}
+html[data-theme="dark"] .bullpen-roster-header{
+  background:#171b20;
+}
+html[data-theme="dark"] .bullpen-roster-row>span.has-work,
+html[data-theme="dark"] .bullpen-roster-head>b{
+  color:#e0b75a;
+}
+html[data-theme="dark"] .bullpen-status-pill{
+  border-color:#3b4047;
+  background:#1b2025;
+}
+html[data-theme="dark"] .bullpen-status-pill.is-ready{
+  border-color:#41664d;
+  background:#17221a;
+}
+html[data-theme="dark"] .bullpen-status-pill.is-ready>b{color:#8fd2a3;}
+html[data-theme="dark"] .bullpen-status-pill.is-caution{
+  border-color:#68582f;
+  background:#242014;
+}
+html[data-theme="dark"] .bullpen-status-pill.is-caution>b{color:#e0b75a;}
+html[data-theme="dark"] .bullpen-status-pill.is-rest{
+  border-color:#69443f;
+  background:#261a19;
+}
+html[data-theme="dark"] .bullpen-status-pill.is-rest>b{color:#e79c92;}
+
+@media(max-width:520px){
+  .bullpen-roster-row{
+    grid-template-columns:minmax(72px,1.25fr) 54px 54px minmax(72px,.9fr);
+    gap:4px;
+    padding:7px 8px;
+  }
+  .bullpen-roster-row>strong{font-size:9px;}
+  .bullpen-roster-row>span{font-size:8px;}
+  .bullpen-status-pill>b{font-size:8px;}
+  .bullpen-status-pill>small{display:none;}
+}
+/* ===== CPBL BULLPEN WORKLOAD TABLE END ===== */
