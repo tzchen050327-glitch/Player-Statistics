@@ -168,3 +168,44 @@ self.addEventListener('fetch', event => {
     }
   })());
 });
+
+
+self.addEventListener('push', event => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { title:'棒球通知', body:event.data ? event.data.text() : '' };
+  }
+
+  const title = String(payload?.title || '棒球通知');
+  const options = {
+    body:String(payload?.body || ''),
+    icon:'./icon-192.png',
+    badge:'./icon-192.png',
+    tag:String(payload?.tag || 'baseball-player-notification'),
+    renotify:Boolean(payload?.renotify),
+    data:payload?.data && typeof payload.data === 'object' ? payload.data : {}
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const relativeUrl = String(event.notification?.data?.url || './');
+  const targetUrl = new URL(relativeUrl, self.registration.scope).href;
+
+  event.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
+    for (const client of list) {
+      try {
+        if (new URL(client.url).origin !== new URL(targetUrl).origin) continue;
+        if ('navigate' in client && client.url !== targetUrl) await client.navigate(targetUrl);
+        if ('focus' in client) return await client.focus();
+      } catch {}
+    }
+    if (self.clients.openWindow) return await self.clients.openWindow(targetUrl);
+    return null;
+  })());
+});
