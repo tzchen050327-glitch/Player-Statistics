@@ -1,10 +1,23 @@
     // Homepage roster refresh must not fail as one large all-or-nothing 4.5s batch.
     // Keep the startup roster decision authoritative for homepage A/D grouping.
     const refreshCurrentRosterStatusBeforeHomeBatchFix = refreshCurrentRosterStatus;
+    const CPBL_ROSTER_REFRESH_TTL_MS = 2 * 60 * 60 * 1000;
+
+    function cpblRosterStatusCacheFresh(linked) {
+      const now = Date.now();
+      return linked.every(player => {
+        const level = String(player.cpblCurrentLevel || '').toUpperCase();
+        const updatedAt = Number(player.cpblRosterUpdatedAt || 0);
+        return ['A', 'D'].includes(level)
+          && updatedAt > 0
+          && now - updatedAt < CPBL_ROSTER_REFRESH_TTL_MS;
+      });
+    }
 
     refreshCurrentRosterStatus = async function refreshCurrentRosterStatusWithLongerBatchWindow() {
       const linked = players.filter(player => player.cpblAcnt);
       if (!linked.length) return;
+      if (cpblRosterStatusCacheFresh(linked)) return;
 
       try {
         const data = await promiseTimeout(
