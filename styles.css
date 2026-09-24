@@ -11079,14 +11079,13 @@ html[data-theme="dark"] .pitcher-status-starter{
 }
 .pregame-lineup-page{
   display:grid;
-  gap:12px;
+  gap:10px;
 }
 .pregame-lineup-title{
   display:flex;
   align-items:baseline;
   justify-content:space-between;
   gap:10px;
-  margin-bottom:2px;
 }
 .pregame-lineup-title strong{
   color:#173f67;
@@ -11098,67 +11097,82 @@ html[data-theme="dark"] .pitcher-status-starter{
   font-size:10px;
   font-weight:800;
 }
-.pregame-lineup-card{
-  min-width:0;
+.pregame-lineup-compare{
   overflow:hidden;
   border:1px solid #dce5ee;
   border-radius:14px;
   background:#fff;
 }
-.pregame-lineup-team{
-  display:flex;
-  align-items:baseline;
-  gap:8px;
-  padding:10px 11px;
+.pregame-lineup-compare-head{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  min-height:38px;
   border-bottom:1px solid #e3eaf1;
   background:#f5f8fb;
 }
-.pregame-lineup-team span{
-  color:#8794a0;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.04em;
-}
-.pregame-lineup-team strong{
+.pregame-lineup-compare-head strong{
+  display:flex;
+  align-items:center;
   min-width:0;
+  padding:0 12px;
   color:#203d58;
-  font-size:13px;
+  font-size:12px;
   font-weight:950;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.pregame-lineup-row{
-  display:grid;
-  grid-template-columns:34px minmax(0,1fr) 40px 32px 32px 38px;
-  align-items:center;
-  min-height:42px;
-  padding:0 8px;
-  border-bottom:1px solid #edf1f4;
-  column-gap:4px;
-  color:#556675;
-  font-size:10px;
-  font-weight:800;
-  text-align:center;
+.pregame-lineup-compare-head strong:last-child{
+  justify-content:flex-end;
+  text-align:right;
+  border-left:1px solid #e3eaf1;
 }
-.pregame-lineup-row:last-child{
+.pregame-lineup-compare-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  min-height:50px;
+  border-bottom:1px solid #edf1f4;
+}
+.pregame-lineup-compare-row:last-child{
   border-bottom:0;
 }
-.pregame-lineup-row.is-head{
-  min-height:29px;
-  background:#fafbfd;
-  color:#8593a0;
-  font-size:8px;
-  font-weight:900;
+.pregame-lineup-side{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  align-items:center;
+  min-width:0;
+  gap:5px;
+  padding:7px 10px;
 }
-.pregame-lineup-order{
+.pregame-lineup-side.is-home{
+  grid-template-columns:minmax(0,1fr) 24px;
+  text-align:right;
+  border-left:1px solid #edf1f4;
+}
+.pregame-lineup-side.is-home i{
+  grid-column:2;
+  grid-row:1;
+}
+.pregame-lineup-side.is-home .pregame-lineup-player,
+.pregame-lineup-side.is-home .pregame-lineup-empty{
+  grid-column:1;
+  grid-row:1;
+}
+.pregame-lineup-side>i{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  background:#f6f1e7;
   color:#a77b21;
-  font-size:13px;
+  font-size:10px;
+  font-style:normal;
   font-weight:950;
 }
 .pregame-lineup-player{
   min-width:0;
-  text-align:left;
 }
 .pregame-lineup-player strong{
   display:block;
@@ -11171,23 +11185,38 @@ html[data-theme="dark"] .pitcher-status-starter{
 }
 .pregame-lineup-player small{
   display:block;
-  margin-top:1px;
+  margin-top:2px;
   overflow:hidden;
   color:#8a97a3;
-  font-size:8px;
-  font-weight:750;
+  font-size:8.5px;
+  font-weight:800;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+.pregame-lineup-empty{
+  color:#a3afba;
+  font-size:11px;
+  font-weight:800;
+}
 @media(max-width:380px){
-  .pregame-lineup-row{
-    grid-template-columns:30px minmax(0,1fr) 36px 28px 28px 34px;
-    padding:0 6px;
-    column-gap:2px;
+  .pregame-lineup-side{
+    grid-template-columns:20px minmax(0,1fr);
+    gap:3px;
+    padding:6px 7px;
+  }
+  .pregame-lineup-side.is-home{
+    grid-template-columns:minmax(0,1fr) 20px;
+  }
+  .pregame-lineup-side>i{
+    width:19px;
+    height:19px;
     font-size:9px;
   }
   .pregame-lineup-player strong{
-    font-size:10.5px;
+    font-size:10px;
+  }
+  .pregame-lineup-player small{
+    font-size:8px;
   }
 }
 html[data-theme="dark"] .match-overview-pager-footer{
@@ -11200,29 +11229,30 @@ html[data-theme="dark"] .match-overview-page-dot.is-active{
   background:#d7ad4d;
 }
 html[data-theme="dark"] .pregame-lineup-title strong,
-html[data-theme="dark"] .pregame-lineup-team strong,
+html[data-theme="dark"] .pregame-lineup-compare-head strong,
 html[data-theme="dark"] .pregame-lineup-player strong{
   color:#f1eadc;
 }
 html[data-theme="dark"] .pregame-lineup-title span,
-html[data-theme="dark"] .pregame-lineup-team span,
 html[data-theme="dark"] .pregame-lineup-player small,
-html[data-theme="dark"] .pregame-lineup-row{
+html[data-theme="dark"] .pregame-lineup-empty{
   color:#aaa598;
 }
-html[data-theme="dark"] .pregame-lineup-card{
+html[data-theme="dark"] .pregame-lineup-compare{
   border-color:#32363c;
   background:#15191e;
 }
-html[data-theme="dark"] .pregame-lineup-team,
-html[data-theme="dark"] .pregame-lineup-row.is-head{
-  border-color:#34383f;
+html[data-theme="dark"] .pregame-lineup-compare-head{
+  border-bottom-color:#34383f;
   background:#191d22;
 }
-html[data-theme="dark"] .pregame-lineup-row{
-  border-bottom-color:#2d3137;
+html[data-theme="dark"] .pregame-lineup-compare-head strong:last-child,
+html[data-theme="dark"] .pregame-lineup-side.is-home,
+html[data-theme="dark"] .pregame-lineup-compare-row{
+  border-color:#2d3137;
 }
-html[data-theme="dark"] .pregame-lineup-order{
+html[data-theme="dark"] .pregame-lineup-side>i{
+  background:#2b2418;
   color:#e2b95a;
 }
 /* ===== MATCH OVERVIEW SWIPE + STARTING LINEUP END ===== */
