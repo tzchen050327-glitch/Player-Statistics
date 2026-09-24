@@ -30,7 +30,7 @@
     }
 
     function appNavigationPageRoute(page = currentPage) {
-      const normalized = ['player', 'prediction', 'milestone', 'standings'].includes(String(page)) ? String(page) : 'home';
+      const normalized = ['player', 'prediction', 'standings'].includes(String(page)) ? String(page) : 'home';
       return {
         kind: 'page',
         page: normalized,
@@ -52,7 +52,7 @@
 
     function appNavigationSyncRenderedPage() {
       if (appNavigationApplyingHistory) return;
-      const page = ['player', 'prediction', 'milestone', 'standings'].includes(String(currentPage)) ? String(currentPage) : 'home';
+      const page = ['player', 'prediction', 'standings'].includes(String(currentPage)) ? String(currentPage) : 'home';
       if (page === 'home') return;
       const route = appNavigationRoute();
       if (appNavigationRouteRepresentsPage(route, page)) return;
@@ -73,7 +73,7 @@
 
     function appNavigationApplyPageRoute(route) {
       appNavigationCloseGameDetailNow();
-      const page = ['player', 'prediction', 'milestone', 'standings'].includes(String(route?.page))
+      const page = ['player', 'prediction', 'standings'].includes(String(route?.page))
         ? String(route.page)
         : 'home';
 
@@ -194,7 +194,7 @@
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
 
-      if (target.closest('#backHomeBtn, #predictionBackHomeBtn, #milestoneBackHomeBtn, #standingsBackHomeBtn')) {
+      if (target.closest('#backHomeBtn, #predictionBackHomeBtn, #standingsBackHomeBtn')) {
         event.preventDefault();
         event.stopImmediatePropagation();
         appNavigationGoBackOrHome();
