@@ -246,6 +246,53 @@
     });
   }
 
+  function cpblLiveTeamHits(detail, side) {
+    if (String(detail?.league || '').toUpperCase() !== 'CPBL') return null;
+    if (!['live','suspended'].includes(String(detail?.status || '').toLowerCase())) return null;
+
+    const raw = detail?.lineups?.[side];
+    const sources = [];
+    if (Array.isArray(raw?.roster)) sources.push(raw.roster);
+    if (Array.isArray(raw?.batters)) sources.push(raw.batters);
+    if (Array.isArray(raw?.order)) sources.push(raw.order);
+    if (Array.isArray(raw)) sources.push(raw);
+
+    const byPlayer = new Map();
+    let sawGameHits = false;
+    for (const list of sources) {
+      for (let index = 0; index < list.length; index++) {
+        const entry = list[index];
+        const value = Number(entry?.gameHits);
+        if (!Number.isFinite(value) || value < 0) continue;
+        sawGameHits = true;
+        const id = safeCell(entry?.acnt || entry?.playerId || entry?.id || '');
+        const name = compactName(entry?.name || entry?.fullName || entry?.playerName || '');
+        const key = id ? `id:${id}` : name ? `name:${normName(name)}` : `slot:${index}`;
+        const previous = byPlayer.get(key);
+        if (!Number.isFinite(previous) || value > previous) byPlayer.set(key, value);
+      }
+    }
+
+    const lineupTotal = sawGameHits
+      ? [...byPlayer.values()].reduce((total, value) => total + value, 0)
+      : null;
+
+    const wantedHalf = side === 'away' ? 'top' : 'bottom';
+    const plays = Array.isArray(detail?.plays) ? detail.plays : [];
+    let playTotal = 0;
+    let sawCompletedPa = false;
+    for (const play of plays) {
+      if (String(play?.half || '') !== wantedHalf || !completedPlateAppearance(play)) continue;
+      sawCompletedPa = true;
+      const text = compactName(`${play?.result || ''} ${play?.raw || ''} ${play?.description || ''}`);
+      if (/全壘打|三壘安打|二壘安打|一壘安打|(^|[^被])安打/i.test(text)) playTotal += 1;
+    }
+
+    const playCandidate = sawCompletedPa ? playTotal : null;
+    if (lineupTotal === null && playCandidate === null) return null;
+    return Math.max(lineupTotal ?? 0, playCandidate ?? 0);
+  }
+
   function normalizedBoard(detail) {
     const game = detail?.game || {}, source = detail?.scoreboard || {};
     const innings = Array.isArray(source.innings) ? source.innings.map(String) : [];
@@ -256,14 +303,22 @@
       return found ? total : null;
     };
     const pick = (primary, fallback='') => safeCell(primary) === '' ? fallback : primary;
+    const mergeLiveHits = (official, liveValue) => {
+      if (liveValue === null || liveValue === undefined) return official;
+      const cell = safeCell(official);
+      const officialNumber = cell === '' ? null : Number(cell);
+      return Number.isFinite(officialNumber) ? Math.max(officialNumber, liveValue) : liveValue;
+    };
     const awayRuns = pick(source?.awayTotals?.R, pick(game.awayScore, sum(away) ?? ''));
     const homeRuns = pick(source?.homeTotals?.R, pick(game.homeScore, sum(home) ?? ''));
+    const awayHits = mergeLiveHits(pick(source?.awayTotals?.H,''), cpblLiveTeamHits(detail,'away'));
+    const homeHits = mergeLiveHits(pick(source?.homeTotals?.H,''), cpblLiveTeamHits(detail,'home'));
     const visibleAway=visibleInningCells(detail,away,'away',innings,awayRuns);
     const visibleHome=visibleInningCells(detail,home,'home',innings,homeRuns);
     return {
       innings, away:visibleAway, home:visibleHome,
-      awayTotals:{R:awayRuns,H:pick(source?.awayTotals?.H,''),E:pick(source?.awayTotals?.E,'')},
-      homeTotals:{R:homeRuns,H:pick(source?.homeTotals?.H,''),E:pick(source?.homeTotals?.E,'')}
+      awayTotals:{R:awayRuns,H:awayHits,E:pick(source?.awayTotals?.E,'')},
+      homeTotals:{R:homeRuns,H:homeHits,E:pick(source?.homeTotals?.E,'')}
     };
   }
 
