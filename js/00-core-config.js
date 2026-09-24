@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v6.08';
+    const APP_VERSION = 'v6.09';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -43,8 +43,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
     const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
     const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v6.08';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v6.08';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v6.09';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v6.09';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
