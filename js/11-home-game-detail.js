@@ -930,10 +930,16 @@
         const safe = Math.max(0, Number(outs) || 0);
         return `${Math.floor(safe / 3)}.${safe % 3}`;
       };
+      const totalPitchingInnings = (list) => {
+        const totalOuts = (Array.isArray(list) ? list : []).reduce(
+          (sum, row) => sum + inningsToOuts(rowValue(row,2,'0')),
+          0
+        );
+        return outsToInnings(totalOuts);
+      };
       const totalsFor = (list) => {
-        const totals = { outs:0, p:0, h:0, hr:0, bb:0, hbp:0, k:0, r:0, er:0 };
+        const totals = { p:0, h:0, hr:0, bb:0, hbp:0, k:0, r:0, er:0 };
         for (const row of list) {
-          totals.outs += inningsToOuts(rowValue(row,2,'0'));
           totals.p += Number(rowValue(row,3,'0')) || 0;
           totals.h += Number(rowValue(row,4,'0')) || 0;
           totals.hr += Number(rowValue(row,5,'0')) || 0;
@@ -943,7 +949,7 @@
           totals.r += Number(rowValue(row,9,'0')) || 0;
           totals.er += Number(rowValue(row,10,'0')) || 0;
         }
-        return [outsToInnings(totals.outs), totals.p, totals.h, totals.hr, totals.bb, totals.hbp, totals.k, totals.r, totals.er];
+        return [totalPitchingInnings(list), totals.p, totals.h, totals.hr, totals.bb, totals.hbp, totals.k, totals.r, totals.er];
       };
       const teamSection = ([side, teamName]) => {
         const list = Array.isArray(records?.[side]) ? records[side] : [];
