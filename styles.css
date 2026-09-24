@@ -10854,3 +10854,10 @@ html[data-theme="dark"] .game-snapshot-play-meta>i{
   }
 }
 /* ===== GAME SNAPSHOT SCORE CHANGE END ===== */
+
+
+/* ===== POST-UPDATE SPLASH SUPPRESSION ===== */
+html.skip-startup-splash-frame #appUpdateOverlay{
+  display:none !important;
+}
+/* ===== POST-UPDATE SPLASH SUPPRESSION END ===== */
