@@ -958,45 +958,99 @@
       }
       const sideRows = side => {
         const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
-        const merged = [];
+        const orderByName = new Map();
+        const starterByOrder = new Map();
+        lineup.forEach((player,index) => {
+          const name = String(player?.fullName || player?.name || player?.playerName || '').trim();
+          const key = normalizeName(name);
+          const order = Math.max(1, Math.min(9, Number(player?.order || index + 1) || index + 1));
+          if (!key) return;
+          orderByName.set(key, order);
+          if (!starterByOrder.has(order)) starterByOrder.set(order, key);
+        });
+
+        // If a substitute has no explicit batting-order field, infer its slot from
+        // the actual plate-appearance sequence. The next unknown hitter inherits
+        // the slot that is due next in the batting order.
+        let lastKnownOrder = 0;
+        let appearanceIndex = 0;
+        const firstAppearance = new Map();
+        for (const play of plays) {
+          const half = String(play?.half || '');
+          const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
+          if (playSide !== side) continue;
+          const key = normalizeName(play?.batter || play?.hitter);
+          if (!key) continue;
+          if (!firstAppearance.has(key)) firstAppearance.set(key, appearanceIndex++);
+          let order = orderByName.get(key) || 0;
+          if (!order) {
+            const raw = rawByName.get(key);
+            const explicit = Number(raw?.order || raw?.battingOrder || raw?.batOrder || 0);
+            if (explicit >= 1 && explicit <= 9) order = explicit;
+          }
+          if (!order && lastKnownOrder) order = lastKnownOrder % 9 + 1;
+          if (order) {
+            orderByName.set(key, order);
+            lastKnownOrder = order;
+          }
+        }
+
+        const candidates = [];
         const seen = new Set();
-        const add = (row, index = 0) => {
+        const add = (row, fallbackOrder = 0, sourceIndex = 999) => {
           const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
           const key = normalizeName(name);
           if (!key || seen.has(key)) return;
           const raw = rawByName.get(key) || row;
           const inferredSide = homeSnapshotTeamForBatter(detail, name);
           if (rawBatters.length && inferredSide && inferredSide !== side && !lineup.includes(row)) return;
+          let order = Number(row?.order || row?.battingOrder || row?.batOrder || raw?.order || raw?.battingOrder || raw?.batOrder || orderByName.get(key) || fallbackOrder || 0);
+          if (!(order >= 1 && order <= 9)) order = 99;
           seen.add(key);
           const fallback = playStatsFor(name);
           const stat = keyName => {
             const official = pickNumber(raw, statAliases[keyName]);
             return official === null ? fallback[keyName] ?? null : official;
           };
-          merged.push({
-            order:Number(row?.order || raw?.order || index + 1) || 99,
-            number:String(row?.number || row?.uniformNumber || row?.jersey || raw?.number || raw?.uniformNumber || '').trim(),
+          candidates.push({
+            order,
             name,
-            position:(() => {
-              const pos = String(row?.position || row?.pos || raw?.position || raw?.pos || '').trim();
-              return pos === '0' ? 'DH' : pos;
-            })(),
+            key,
+            starter:starterByOrder.get(order) === key,
+            firstAppearance:firstAppearance.has(key) ? firstAppearance.get(key) : sourceIndex,
             ab:stat('ab'), r:stat('r'), h:stat('h'), rbi:stat('rbi'),
             bb:stat('bb'), so:stat('so'), hr:stat('hr')
           });
         };
-        lineup.forEach(add);
+
+        lineup.forEach((row,index) => add(row, index + 1, index));
         rawBatters.forEach((row,index) => {
           const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
-          if (homeSnapshotTeamForBatter(detail, name) === side) add(row, 20 + index);
+          if (homeSnapshotTeamForBatter(detail, name) === side || orderByName.has(normalizeName(name))) {
+            add(row, orderByName.get(normalizeName(name)) || 0, 20 + index);
+          }
         });
         for (const play of plays) {
           const half = String(play?.half || '');
           const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
           if (playSide !== side) continue;
-          add({ name:String(play?.batter || play?.hitter || '').replace(/^(?:代打|代跑)[・·\\s]*/,'').trim(), order:90 + merged.length });
+          const name = String(play?.batter || play?.hitter || '').replace(/^(?:代打|代跑)[・·\\s]*/,'').trim();
+          const key = normalizeName(name);
+          add({ name, order:orderByName.get(key) || 0 }, orderByName.get(key) || 0, 100 + Number(firstAppearance.get(key) || 0));
         }
-        return merged.sort((a,b) => a.order - b.order);
+
+        const groups = new Map();
+        for (const row of candidates) {
+          const order = row.order >= 1 && row.order <= 9 ? row.order : 99;
+          if (!groups.has(order)) groups.set(order, []);
+          groups.get(order).push(row);
+        }
+        for (const list of groups.values()) {
+          list.sort((a,b) => Number(b.starter) - Number(a.starter) || a.firstAppearance - b.firstAppearance);
+        }
+        return [...groups.entries()]
+          .sort((a,b) => a[0] - b[0])
+          .flatMap(([order,list]) => list.map((row,index) => ({ ...row, order, substitute:index > 0 || !row.starter })));
       };
       const teamRuns = side => {
         const fromBoard = detailRunsFromScoreboard(detail, side);
@@ -1014,18 +1068,23 @@
           return acc;
         }, {ab:0,h:0,rbi:0,bb:0,so:0,hr:0});
         const runs = teamRuns(side);
+        let previousOrder = null;
         return `
           <section class="game-batter-team">
             <div class="game-batter-team-head"><span>${side === 'away' ? '客隊' : '主隊'}</span><strong>${escapeHtml(teamName)}</strong><em>${rows.length} 人</em></div>
-            <div class="game-batter-table-head"><span>打者</span><span>守位</span><span>AB</span><span>R</span><span>H</span><span>RBI</span><span>BB</span><span>K</span><span>HR</span></div>
+            <div class="game-batter-table-head"><span>棒次</span><span>打者</span><span>AB</span><span>R</span><span>H</span><span>RBI</span><span>BB</span><span>K</span><span>HR</span></div>
             <div class="game-batter-scroll">
-              ${rows.length ? rows.map(row => `
-                <div class="game-batter-row">
-                  <strong title="${escapeHtml(row.name)}">${row.number ? `#${escapeHtml(row.number)} ` : ''}${escapeHtml(row.name)}</strong>
-                  <span>${escapeHtml(row.position || '—')}</span>
+              ${rows.length ? rows.map(row => {
+                const showOrder = row.order >= 1 && row.order <= 9 && row.order !== previousOrder;
+                previousOrder = row.order;
+                return `
+                <div class="game-batter-row ${row.substitute ? 'is-sub' : ''}">
+                  <span class="game-batter-order">${showOrder ? row.order : ''}</span>
+                  <strong class="game-batter-name" title="${escapeHtml(row.name)}">${row.substitute ? '<i class="game-batter-sub-arrow" aria-hidden="true">↳</i>' : ''}${escapeHtml(row.name)}</strong>
                   <span>${value(row.ab)}</span><span>${value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
                   <span>${value(row.bb)}</span><span>${value(row.so)}</span><span>${value(row.hr)}</span>
-                </div>`).join('') : '<div class="game-detail-empty">目前沒有可整理的打者紀錄。</div>'}
+                </div>`;
+              }).join('') : '<div class="game-detail-empty">目前沒有可整理的打者紀錄。</div>'}
             </div>
             <div class="game-batter-total"><strong>TOTAL</strong><span></span><span>${totals.ab}</span><span>${runs === null ? '—' : runs}</span><span>${totals.h}</span><span>${totals.rbi}</span><span>${totals.bb}</span><span>${totals.so}</span><span>${totals.hr}</span></div>
           </section>`;
@@ -1113,9 +1172,17 @@
         }
         const backendTotal = Array.isArray(records?.[`${side}Total`]) ? records[`${side}Total`] : null;
         const totals = list.length ? (backendTotal?.length === 9 ? backendTotal : totalsFor(list)) : null;
+        const awayScore = Number(gameInfo?.awayScore ?? detail?.game?.awayScore);
+        const homeScore = Number(gameInfo?.homeScore ?? detail?.game?.homeScore);
+        const finalStatus = String(detail?.status || gameInfo?.status || '').toLowerCase() === 'final';
+        const fractionalIp = totals && /\\.[12]$/.test(String(totals[0] || ''));
+        const walkoffNote = side === 'away' && finalStatus && fractionalIp
+          && Number.isFinite(awayScore) && Number.isFinite(homeScore) && homeScore > awayScore
+          ? '<em class="game-pitcher-total-note">再見結束</em>'
+          : '';
         const totalHtml = totals ? `
           <div class="game-pitcher-total">
-            <strong>TOTAL</strong>
+            <strong>TOTAL${walkoffNote}</strong>
             ${totals.map(value => `<span>${escapeHtml(String(value))}</span>`).join('')}
           </div>` : '';
         return `
