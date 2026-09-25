@@ -95,7 +95,7 @@
             <div id="homeTemplateDots" class="home-template-dots" aria-label="背景輪播位置"></div>
           </section>
 
-          <button id="homePlayerRankingBtn" class="panel home-standings-entry home-player-ranking-entry" type="button" disabled aria-label="數據排行，功能準備中">
+          <button id="homePlayerRankingBtn" class="panel home-standings-entry home-player-ranking-entry" type="button" aria-label="開啟數據排行">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M5 19V11M10 19V6M15 19v-4M20 19V3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
@@ -105,7 +105,7 @@
             <strong>數據排行</strong>
           </button>
 
-          <button id="homePlayerCompareBtn" class="panel home-standings-entry home-player-compare-entry" type="button" disabled aria-label="球員比較，功能準備中">
+          <button id="homePlayerCompareBtn" class="panel home-standings-entry home-player-compare-entry" type="button" aria-label="開啟球員比較">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -202,6 +202,36 @@
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
       </div>
+    </section>
+
+    <section id="playerRankingPage" class="hidden player-tools-page">
+      <div class="player-tools-page-top">
+        <button id="playerRankingBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel player-tools-page-panel">
+        <div class="player-tools-page-head">
+          <div>
+            <span class="player-tools-page-kicker">LEADERS</span>
+            <h2>數據排行</h2>
+          </div>
+        </div>
+        <div id="playerRankingPageContent" class="player-tools-page-content" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section id="playerComparePage" class="hidden player-tools-page">
+      <div class="player-tools-page-top">
+        <button id="playerCompareBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel player-tools-page-panel">
+        <div class="player-tools-page-head">
+          <div>
+            <span class="player-tools-page-kicker">COMPARE</span>
+            <h2>球員比較</h2>
+          </div>
+        </div>
+        <div id="playerComparePageContent" class="player-tools-page-content" aria-live="polite"></div>
+      </section>
     </section>
 
     <section id="customNotificationPage" class="hidden custom-notification-page">
