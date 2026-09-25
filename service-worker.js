@@ -3,6 +3,56 @@ const CACHE_VERSION = 'v6.70';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
+const APP_CACHE_PREFIX = 'baseball-player-card-pwa-v';
+
+function parseAppVersion(value) {
+  const match = String(value || '').trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/i);
+  return match ? [Number(match[1]), Number(match[2]), Number(match[3] || 0)] : null;
+}
+
+function compareAppVersions(a, b) {
+  const left = Array.isArray(a) ? a : parseAppVersion(a);
+  const right = Array.isArray(b) ? b : parseAppVersion(b);
+  if (!left || !right) return null;
+  for (let i = 0; i < 3; i += 1) {
+    if (left[i] > right[i]) return 1;
+    if (left[i] < right[i]) return -1;
+  }
+  return 0;
+}
+
+function cacheVersionFromName(name) {
+  const match = String(name || '').match(/^baseball-player-card-pwa-v(\d+)(\d{2})-auto$/i);
+  return match ? [Number(match[1]), Number(match[2]), 0] : null;
+}
+
+async function assertNoNewerInstalledCache() {
+  const current = parseAppVersion(CACHE_VERSION);
+  const keys = await caches.keys();
+  const newer = keys
+    .map(name => ({ name, version:cacheVersionFromName(name) }))
+    .find(item => item.version && compareAppVersions(item.version, current) > 0);
+  if (newer) {
+    throw new Error(`Refusing Service Worker downgrade ${CACHE_VERSION}; newer cache ${newer.name} already exists`);
+  }
+}
+
+async function responseAppVersion(response) {
+  try {
+    const html = await response.clone().text();
+    return (html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i) || [])[1] || '';
+  } catch {
+    return '';
+  }
+}
+
+async function assertInstallDocumentVersion(response, url) {
+  const remoteVersion = await responseAppVersion(response);
+  if (!remoteVersion || compareAppVersions(remoteVersion, CACHE_VERSION) !== 0) {
+    throw new Error(`App shell version mismatch for ${url}: expected ${CACHE_VERSION}, received ${remoteVersion || 'unknown'}`);
+  }
+}
+
 const APP_SHELL = [
   './',
   './index.html',
@@ -45,18 +95,27 @@ async function getModuleShell() {
 }
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil((async () => {
+    // A stale CDN/Pages response must never replace a newer worker already
+    // installed on this device.
+    await assertNoNewerInstalledCache();
+
     const cache = await caches.open(CACHE_NAME);
     const moduleShell = await getModuleShell();
     const shell = [...APP_SHELL, ...moduleShell];
-    // Do not activate a half-populated shell. If GitHub Pages is between
-    // deployments, keep the currently working worker instead of caching gaps.
+    // Do not activate a half-populated or mixed-version shell. If GitHub Pages
+    // is between deployments, keep the currently working worker instead.
     await Promise.all(shell.map(async url => {
       const response = await fetch(url, { cache: 'reload' });
       if (!response.ok) throw new Error(`App shell fetch failed: ${url} (${response.status})`);
+      if (url === './' || url === './index.html') {
+        await assertInstallDocumentVersion(response, url);
+      }
       await cache.put(url, response.clone());
     }));
+
+    // Only take over after the entire same-version shell has been verified.
+    await self.skipWaiting();
   })());
 });
 
@@ -64,8 +123,16 @@ self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     // Installation above guarantees the new shell is complete before old
     // caches are removed.
+    const current = parseAppVersion(CACHE_VERSION);
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(keys
+      .filter(key => {
+        if (key === CACHE_NAME || !key.startsWith(APP_CACHE_PREFIX)) return false;
+        const version = cacheVersionFromName(key);
+        // Never let an older worker erase a cache belonging to a newer release.
+        return version ? compareAppVersions(version, current) <= 0 : true;
+      })
+      .map(key => caches.delete(key)));
     await self.clients.claim();
     // Do not navigate/reload clients here. The modular app runtime owns the
     // update/reload flow; having both layers navigate caused startup races.
@@ -103,16 +170,35 @@ self.addEventListener('fetch', event => {
 
   if (isDocument) {
     event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const scopePath = new URL(self.registration.scope).pathname;
+      const isAppEntry = url.pathname === scopePath || url.pathname === `${scopePath}index.html`;
+
       try {
         const response = await fetch(request, { cache: 'no-store' });
         if (response?.ok) {
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, response.clone()).catch(() => {});
+          if (isAppEntry) {
+            const remoteVersion = await responseAppVersion(response);
+            const comparison = compareAppVersions(remoteVersion, CACHE_VERSION);
+            if (!remoteVersion || comparison === null || comparison < 0) {
+              throw new Error(`Refusing document downgrade: worker ${CACHE_VERSION}, network ${remoteVersion || 'unknown'}`);
+            }
+            // Keep this cache internally consistent. A newer document may be
+            // shown while its worker installs, but it must not overwrite the
+            // current worker's offline shell.
+            if (comparison === 0) {
+              cache.put(request, response.clone()).catch(() => {});
+            }
+          } else {
+            cache.put(request, response.clone()).catch(() => {});
+          }
           return response;
         }
         throw new Error(`Network ${response?.status || 0}`);
       } catch {
-        return await caches.match('./index.html', { ignoreSearch: true }) || Response.error();
+        // Fallback is deliberately restricted to this worker's own cache.
+        // Global caches.match() could resurrect an old v6.55 app shell.
+        return await cache.match('./index.html', { ignoreSearch: true }) || Response.error();
       }
     })());
     return;
