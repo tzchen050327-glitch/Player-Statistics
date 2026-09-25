@@ -905,12 +905,14 @@
 
     function homeGameBatterPanel(detail, gameInfo = {}) {
       const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
-      const rawBatters = Array.isArray(detail?.gameBatters) && detail.gameBatters.length
-        ? detail.gameBatters
-        : ['away','home'].flatMap(side => [
-            ...(Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []),
-            ...(Array.isArray(detail?.lineups?.[side]?.roster) ? detail.lineups[side].roster : [])
-          ]);
+      const rawBatters = [
+        ...(Array.isArray(detail?.gameBatters) ? detail.gameBatters : []),
+        ...['away','home'].flatMap(side => [
+          ...(Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []),
+          ...(Array.isArray(detail?.lineups?.[side]?.roster) ? detail.lineups[side].roster : []),
+          ...(Array.isArray(detail?.startingLineup?.[side]) ? detail.startingLineup[side] : [])
+        ])
+      ];
       const normalizeName = value => String(value || '')
         .replace(/^(?:代打|代跑)[・·\\s]*/,'')
         .replace(/\\s+/g,'')
@@ -964,9 +966,29 @@
       const sideRows = side => {
         const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
         const lockedStarters = Array.isArray(detail?.startingLineup?.[side]) ? detail.startingLineup[side] : [];
-        const starterLineup = lockedStarters.length
+
+        // Historical final payloads may only retain the current lineup after
+        // substitutions. Recover the original batting order from the first nine
+        // distinct hitters who actually appeared for that side.
+        const firstNine = [];
+        const firstNineSeen = new Set();
+        for (const play of plays) {
+          const half = String(play?.half || '');
+          const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
+          if (playSide !== side) continue;
+          const name = String(play?.batter || play?.hitter || '').replace(/^(?:代打|代跑)[・·\\s]*/,'').trim();
+          const key = normalizeName(name);
+          if (!key || firstNineSeen.has(key)) continue;
+          firstNineSeen.add(key);
+          firstNine.push({ name, order:firstNine.length + 1, isStarter:true });
+          if (firstNine.length === 9) break;
+        }
+
+        const starterLineup = lockedStarters.length === 9
           ? lockedStarters
-          : lineup.filter(player => player?.isSubstitute !== true);
+          : firstNine.length === 9
+            ? firstNine
+            : lineup.filter(player => player?.isSubstitute !== true);
 
         const orderByName = new Map();
         const starterByOrder = new Map();
