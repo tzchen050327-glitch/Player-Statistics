@@ -11798,3 +11798,21 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   .standings-schedule-dashboard>div{padding:8px 4px;}
   .standings-schedule-dashboard strong{font-size:15px;}
 }
+
+
+/* ===== MLB POSTSEASON PREDICTION v6.62 ===== */
+.prediction-controls{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+@media(max-width:760px){
+  .prediction-controls{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .prediction-league-btn{
+    min-width:0;
+    padding-left:3px;
+    padding-right:3px;
+    font-size:10px;
+    white-space:nowrap;
+  }
+}
