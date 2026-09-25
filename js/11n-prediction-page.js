@@ -971,7 +971,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             team,
             group:row._group,
             leagueGroup:row._league,
-            record:predictionCurrentRecord(row),
+            record:`${Number(row?.wins || 0)}-${Number(row?.losses || 0)}`,
             rank:Number(row?.rank || 99),
             postseasonProbability:predictionPercent(count.postseason, iterations),
             divisionTitleProbability:predictionPercent(count.division, iterations),
