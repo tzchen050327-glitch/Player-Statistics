@@ -37,6 +37,7 @@
 11n-prediction-page.js
 11o-pregame-center.js
 11p-custom-notifications.js
+11q-player-tools.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
