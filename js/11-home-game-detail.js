@@ -967,115 +967,133 @@
         const starterLineup = lockedStarters.length
           ? lockedStarters
           : lineup.filter(player => player?.isSubstitute !== true);
+
         const orderByName = new Map();
         const starterByOrder = new Map();
-
+        const starterNames = new Set();
         starterLineup.forEach((player,index) => {
           const name = String(player?.fullName || player?.name || player?.playerName || '').trim();
           const key = normalizeName(name);
           const order = Math.max(1, Math.min(9, Number(player?.order || index + 1) || index + 1));
           if (!key) return;
           orderByName.set(key, order);
-          if (!starterByOrder.has(order)) starterByOrder.set(order, key);
+          starterByOrder.set(order, key);
+          starterNames.add(key);
         });
 
-        // Current lineup rows contain the replacement player after substitutions.
-        // Keep their official batting slot, but never promote them to "starter"
-        // when a locked starting lineup is available.
+        const cleanSubName = value => {
+          let text = String(value || '').replace(/[()（）]/g,'').trim();
+          text = text
+            .replace(/^(?:投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)[-：:]*/,'')
+            .replace(/[-：:]*(?:投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|指定打擊|DH)$/,'')
+            .replace(/^[-：:]+|[-：:]+$/g,'')
+            .trim();
+          return text;
+        };
+
+        // Reconstruct the real batting-slot substitution chain from the official
+        // change log. The play "battingOrder" value is per-inning PA sequence,
+        // not the lineup slot, so it must never be used for this purpose.
+        const activeSlotByName = new Map(orderByName);
+        const substitutionOrder = new Map();
+        const substitutionSequence = new Map();
+        let substitutionIndex = 0;
+        for (const play of plays) {
+          const description = String(play?.description || '');
+          const re = /更換(?:代打|代跑|選手|守備)：([^。]+?)=>([^。]+)/g;
+          let match;
+          while ((match = re.exec(description))) {
+            const fromName = cleanSubName(match[1]);
+            const toName = cleanSubName(match[2]);
+            const fromKey = normalizeName(fromName);
+            const toKey = normalizeName(toName);
+            if (!fromKey || !toKey || fromKey === toKey) continue;
+            const order = activeSlotByName.get(fromKey) || orderByName.get(fromKey) || 0;
+            if (!(order >= 1 && order <= 9)) continue;
+            activeSlotByName.delete(fromKey);
+            activeSlotByName.set(toKey, order);
+            orderByName.set(toKey, order);
+            substitutionOrder.set(toKey, order);
+            if (!substitutionSequence.has(toKey)) substitutionSequence.set(toKey, substitutionIndex++);
+          }
+        }
+
+        // The final/current lineup is an authoritative fallback for replacements
+        // whose change text could not be parsed.
         lineup.forEach((player,index) => {
           const name = String(player?.fullName || player?.name || player?.playerName || '').trim();
           const key = normalizeName(name);
           const order = Math.max(1, Math.min(9, Number(player?.order || index + 1) || index + 1));
           if (!key) return;
-          orderByName.set(key, order);
-          if (!lockedStarters.length && player?.isSubstitute !== true && !starterByOrder.has(order)) {
-            starterByOrder.set(order, key);
+          if (!orderByName.has(key)) orderByName.set(key, order);
+          if (player?.isSubstitute === true || starterByOrder.get(order) !== key) {
+            substitutionOrder.set(key, order);
+            if (!substitutionSequence.has(key)) substitutionSequence.set(key, 100 + index);
           }
         });
 
-        // If a substitute has no explicit batting-order field, infer its slot from
-        // the actual plate-appearance sequence. The next unknown hitter inherits
-        // the slot that is due next in the batting order.
-        let lastKnownOrder = 0;
-        let appearanceIndex = 0;
-        const firstAppearance = new Map();
-        for (const play of plays) {
-          const half = String(play?.half || '');
-          const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
-          if (playSide !== side) continue;
-          const key = normalizeName(play?.batter || play?.hitter);
+        const rawByKey = new Map();
+        for (const row of rawBatters) {
+          const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+          const key = normalizeName(name);
           if (!key) continue;
-          if (!firstAppearance.has(key)) firstAppearance.set(key, appearanceIndex++);
-          let order = orderByName.get(key) || 0;
-          if (!order) {
-            const raw = rawByName.get(key);
-            const explicit = Number(raw?.order || raw?.battingOrder || raw?.batOrder || 0);
-            if (explicit >= 1 && explicit <= 9) order = explicit;
-          }
-          if (!order && lastKnownOrder) order = lastKnownOrder % 9 + 1;
-          if (order) {
-            orderByName.set(key, order);
-            lastKnownOrder = order;
-          }
+          const existing = rawByKey.get(key);
+          const score = ['gameAb','gameHits','gameRbi','gameWalks','gameBb','gameStrikeouts','gameSo','gameHomeRuns','gameHr']
+            .reduce((sum,k) => sum + (Number.isFinite(Number(row?.[k])) ? 1 : 0), 0);
+          if (!existing || score > existing.score) rawByKey.set(key, { row, score });
         }
 
         const candidates = [];
         const seen = new Set();
-        const add = (row, fallbackOrder = 0, sourceIndex = 999) => {
-          const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+        const addByName = (name, order, isSubstitute = false, sourceIndex = 999, sourceRow = null) => {
           const key = normalizeName(name);
-          if (!key || seen.has(key)) return;
-          const raw = rawByName.get(key) || row;
-          const inferredSide = homeSnapshotTeamForBatter(detail, name);
-          if (rawBatters.length && inferredSide && inferredSide !== side && !lineup.includes(row)) return;
-          let order = Number(row?.order || row?.battingOrder || row?.batOrder || raw?.order || raw?.battingOrder || raw?.batOrder || orderByName.get(key) || fallbackOrder || 0);
-          if (!(order >= 1 && order <= 9)) order = 99;
-          seen.add(key);
+          if (!key || seen.has(key) || !(order >= 1 && order <= 9)) return;
+          const raw = rawByKey.get(key)?.row || sourceRow || {};
           const fallback = playStatsFor(name);
           const stat = keyName => {
             const official = pickNumber(raw, statAliases[keyName]);
             return official === null ? fallback[keyName] ?? null : official;
           };
+          seen.add(key);
           candidates.push({
             order,
-            name,
+            name:String(name || '').trim(),
             key,
-            starter:starterByOrder.get(order) === key,
-            firstAppearance:firstAppearance.has(key) ? firstAppearance.get(key) : sourceIndex,
+            starter:!isSubstitute && starterByOrder.get(order) === key,
+            substitute:Boolean(isSubstitute),
+            firstAppearance:sourceIndex,
             ab:stat('ab'), r:stat('r'), h:stat('h'), rbi:stat('rbi'),
             bb:stat('bb'), so:stat('so'), hr:stat('hr')
           });
         };
 
-        starterLineup.forEach((row,index) => add(row, index + 1, index));
-        lineup.forEach((row,index) => add(row, Number(row?.order || index + 1), 10 + index));
-        rawBatters.forEach((row,index) => {
+        starterLineup.forEach((row,index) => {
           const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
-          if (homeSnapshotTeamForBatter(detail, name) === side || orderByName.has(normalizeName(name))) {
-            add(row, orderByName.get(normalizeName(name)) || 0, 20 + index);
-          }
+          const order = Number(row?.order || index + 1);
+          addByName(name, order, false, index, row);
         });
-        for (const play of plays) {
-          const half = String(play?.half || '');
-          const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
-          if (playSide !== side) continue;
-          const name = String(play?.batter || play?.hitter || '').replace(/^(?:代打|代跑)[・·\\s]*/,'').trim();
-          const key = normalizeName(name);
-          add({ name, order:orderByName.get(key) || 0 }, orderByName.get(key) || 0, 100 + Number(firstAppearance.get(key) || 0));
+
+        const substitutionNames = [...substitutionOrder.entries()]
+          .sort((a,b) => {
+            const orderDiff = a[1] - b[1];
+            if (orderDiff) return orderDiff;
+            return Number(substitutionSequence.get(a[0]) || 0) - Number(substitutionSequence.get(b[0]) || 0);
+          });
+        for (const [key,order] of substitutionNames) {
+          const row = rawByKey.get(key)?.row
+            || lineup.find(player => normalizeName(player?.fullName || player?.name || player?.playerName) === key)
+            || {};
+          const name = String(row?.fullName || row?.name || row?.playerName || '').trim()
+            || [...plays].map(play => String(play?.batter || play?.hitter || '').trim()).find(x => normalizeName(x) === key)
+            || key;
+          addByName(name, order, true, 100 + Number(substitutionSequence.get(key) || 0), row);
         }
 
-        const groups = new Map();
-        for (const row of candidates) {
-          const order = row.order >= 1 && row.order <= 9 ? row.order : 99;
-          if (!groups.has(order)) groups.set(order, []);
-          groups.get(order).push(row);
-        }
-        for (const list of groups.values()) {
-          list.sort((a,b) => Number(b.starter) - Number(a.starter) || a.firstAppearance - b.firstAppearance);
-        }
-        return [...groups.entries()]
-          .sort((a,b) => a[0] - b[0])
-          .flatMap(([order,list]) => list.map((row,index) => ({ ...row, order, substitute:index > 0 || !row.starter })));
+        return candidates.sort((a,b) =>
+          a.order - b.order
+          || Number(a.substitute) - Number(b.substitute)
+          || a.firstAppearance - b.firstAppearance
+        );
       };
       const teamRuns = side => {
         const fromBoard = detailRunsFromScoreboard(detail, side);
