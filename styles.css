@@ -11886,39 +11886,15 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 }
 
 
-/* ===== HOME BACKGROUND ACTION SLOTS ===== */
-#homePage .home-background-action-slots{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
-  margin-top:10px;
+
+
+/* ===== SIDEBAR RESERVED ACTIONS ===== */
+#homePage .home-reserved-entry{
+  opacity:.58;
 }
-#homePage .home-background-action-slot{
-  width:100%;
-  min-height:42px;
-  padding:8px 10px;
-  border:1px dashed color-mix(in srgb,var(--line) 82%,var(--accent-2));
-  border-radius:11px;
-  background:color-mix(in srgb,var(--panel) 92%,var(--bg));
-  color:var(--muted);
-  font:inherit;
-  font-size:10px;
-  font-weight:900;
-  text-align:left;
-  opacity:.78;
-}
-#homePage .home-background-action-slot:disabled{
+#homePage .home-reserved-entry:disabled{
   cursor:default;
 }
-@media(max-width:640px){
-  #homePage .home-background-action-slots{
-    gap:7px;
-    margin-top:8px;
-  }
-  #homePage .home-background-action-slot{
-    min-height:38px;
-    padding:7px 8px;
-    border-radius:10px;
-    font-size:9px;
-  }
+#homePage .home-reserved-entry .home-standings-entry-icon{
+  border-style:dashed;
 }
