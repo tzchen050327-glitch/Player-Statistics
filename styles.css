@@ -11842,3 +11842,45 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   scroll-snap-align:start;
   scroll-snap-stop:always;
 }
+
+
+/* ===== COMPACT HOME BACKGROUND PANEL ===== */
+#homePage .home-background-panel{
+  min-height:0 !important;
+  height:auto !important;
+  padding-bottom:12px !important;
+}
+#homePage .home-background-panel .home-card-title{
+  display:flex !important;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:6px;
+  margin-bottom:9px;
+}
+#homePage .home-background-panel .home-card-title h2{
+  margin:0 !important;
+}
+#homePage .home-background-panel .home-card-title>span{
+  display:inline !important;
+  flex:0 0 auto;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+}
+@media(max-width:640px){
+  #homePage .home-background-panel{
+    padding:10px 7px 10px !important;
+  }
+  #homePage .home-background-panel .home-card-title{
+    display:flex !important;
+    align-items:flex-end;
+    margin-bottom:8px;
+  }
+  #homePage .home-background-panel .home-card-title>span{
+    display:inline !important;
+    margin-bottom:6px;
+    font-size:8px;
+  }
+}
