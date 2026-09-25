@@ -11888,18 +11888,6 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 
 
 
-/* ===== SIDEBAR RESERVED ACTIONS ===== */
-#homePage .home-reserved-entry{
-  opacity:.58;
-}
-#homePage .home-reserved-entry:disabled{
-  cursor:default;
-}
-#homePage .home-reserved-entry .home-standings-entry-icon{
-  border-style:dashed;
-}
-
-
 /* ===== HOME BACKGROUND CAROUSEL DOTS ===== */
 #homePage .home-template-dots{
   display:flex;
@@ -11940,4 +11928,16 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   #homePage .home-template-dot.active{
     width:13px;
   }
+}
+
+
+/* ===== UPCOMING PLAYER TOOLS ===== */
+#homePage .home-player-ranking-entry:disabled,
+#homePage .home-player-compare-entry:disabled{
+  opacity:1;
+  cursor:default;
+}
+#homePage .home-player-ranking-entry .home-standings-entry-icon,
+#homePage .home-player-compare-entry .home-standings-entry-icon{
+  color:var(--accent-2);
 }
