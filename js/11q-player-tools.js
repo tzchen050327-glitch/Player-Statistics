@@ -101,6 +101,9 @@
 
     function playerToolsSortedRows(league, role, metric) {
       const def = playerToolsMetricDef(role, metric);
+      const data = playerToolsData(league);
+      const official = data?.leaderboards?.[role]?.[def.key];
+      if (Array.isArray(official) && official.length) return official;
       const rateMetric = role === 'hitter'
         ? ['avg','ops','obp','slg'].includes(def.key)
         : ['era','whip'].includes(def.key);
