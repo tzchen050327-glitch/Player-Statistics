@@ -11694,3 +11694,95 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   }
 }
 /* ===== CUSTOM NOTIFICATION PAGE END ===== */
+
+
+/* ===== TEAM SCHEDULE CENTER v6.57 ===== */
+.standings-schedule-dashboard{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
+.standings-schedule-dashboard>div{
+  min-width:0;
+  padding:10px 8px;
+  border:1px solid #e0e6ec;
+  border-radius:12px;
+  background:#f8fafc;
+  text-align:center;
+}
+.standings-schedule-dashboard span{
+  display:block;
+  margin-bottom:3px;
+  color:#7f8e9d;
+  font-size:9px;
+  font-weight:900;
+}
+.standings-schedule-dashboard strong{
+  display:block;
+  color:#24445f;
+  font-size:17px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.standings-schedule-coverage{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+  padding:10px 12px;
+  border:1px solid #cfe4d8;
+  border-radius:12px;
+  background:#f4fbf7;
+}
+.standings-schedule-coverage>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.standings-schedule-coverage strong{
+  color:#2f6b4a;
+  font-size:11px;
+  font-weight:950;
+}
+.standings-schedule-coverage span{
+  color:#718678;
+  font-size:9px;
+  font-weight:800;
+}
+.standings-schedule-coverage>b{
+  flex:0 0 auto;
+  color:#2f6b4a;
+  font-size:16px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.standings-schedule-coverage.is-incomplete{
+  border-color:#ead3a5;
+  background:#fff9ef;
+}
+.standings-schedule-coverage.is-incomplete strong,
+.standings-schedule-coverage.is-incomplete>b{
+  color:#9a6b12;
+}
+.standings-schedule-coverage.is-incomplete span{
+  color:#8c7a5d;
+}
+.standings-schedule-row.is-missing{
+  margin:4px 0;
+  padding-left:8px;
+  padding-right:8px;
+  border:1px dashed #e0bd72;
+  border-radius:10px;
+  background:#fffaf0;
+}
+.standings-schedule-row.is-pending{
+  background:#fbfcfd;
+}
+@media(max-width:520px){
+  .standings-schedule-dashboard{gap:6px;}
+  .standings-schedule-dashboard>div{padding:8px 4px;}
+  .standings-schedule-dashboard strong{font-size:15px;}
+}
