@@ -1,6 +1,6 @@
 const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     const predictionUiState = {
-      league: ['cpbl','npb','kbo'].includes(localStorage.getItem('predictionLeague'))
+      league: ['cpbl','npb','kbo','mlb'].includes(localStorage.getItem('predictionLeague'))
         ? localStorage.getItem('predictionLeague')
         : 'cpbl',
       mode: 'postseason'
@@ -44,7 +44,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       return {
         cpbl:'中華職棒',
         npb:'日本職棒',
-        kbo:'韓國職棒'
+        kbo:'韓國職棒',
+        mlb:'美國職棒'
       }[predictionUiState.league] || '中華職棒';
     }
 
@@ -53,7 +54,13 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         central:'央聯',
         pacific:'洋聯',
         regular:'KBO',
-        annual:'全年度'
+        annual:'全年度',
+        alEast:'美聯東區',
+        alCentral:'美聯中區',
+        alWest:'美聯西區',
+        nlEast:'國聯東區',
+        nlCentral:'國聯中區',
+        nlWest:'國聯西區'
       }[String(group || '')] || '';
     }
 
@@ -885,11 +892,109 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       };
     }
 
+    function predictionMlbStages(standing, date, iterations=5000) {
+      const divisions = [
+        { key:'alEast', league:'AL' },
+        { key:'alCentral', league:'AL' },
+        { key:'alWest', league:'AL' },
+        { key:'nlEast', league:'NL' },
+        { key:'nlCentral', league:'NL' },
+        { key:'nlWest', league:'NL' }
+      ];
+      const allRows = divisions.flatMap(section =>
+        predictionRows(standing?.[section.key]).map(row => ({ ...row, _group:section.key, _league:section.league }))
+      );
+      const counts = new Map(allRows.map(row => [
+        String(row?.team || ''),
+        { postseason:0, division:0, wildcard:0 }
+      ]));
+      const rng = predictionRng(predictionHash(\`MLB|\${date}|\${JSON.stringify(standing)}\`));
+
+      for (let sim = 0; sim < iterations; sim += 1) {
+        const sims = new Map();
+        for (const row of allRows) {
+          sims.set(String(row?.team || ''), {
+            ...predictionSimRow(row, 162, rng),
+            group:row._group,
+            league:row._league
+          });
+        }
+
+        for (const leagueCode of ['AL','NL']) {
+          const leagueDivisions = divisions.filter(section => section.league === leagueCode);
+          const divisionWinners = [];
+
+          for (const division of leagueDivisions) {
+            const originalRows = predictionRows(standing?.[division.key]);
+            const ranked = predictionRankRows(
+              originalRows.map(row => sims.get(String(row?.team || ''))).filter(Boolean)
+            );
+            const winner = ranked[0] || null;
+            if (!winner) continue;
+            divisionWinners.push(winner);
+            const count = counts.get(String(winner.team || ''));
+            if (count) {
+              count.division += 1;
+              count.postseason += 1;
+            }
+          }
+
+          const winnerNames = new Set(divisionWinners.map(row => String(row?.team || '')));
+          const wildCards = predictionRankRows(
+            [...sims.values()].filter(row => row.league === leagueCode && !winnerNames.has(String(row?.team || '')))
+          ).slice(0,3);
+
+          for (const row of wildCards) {
+            const count = counts.get(String(row?.team || ''));
+            if (!count) continue;
+            count.wildcard += 1;
+            count.postseason += 1;
+          }
+        }
+      }
+
+      return {
+        ok:true,
+        league:'MLB',
+        mode:'postseason',
+        date,
+        iterations,
+        stageMetrics:[
+          { key:'postseasonProbability', label:'進季後賽' },
+          { key:'divisionTitleProbability', label:'分區冠軍' },
+          { key:'wildCardProbability', label:'外卡' }
+        ],
+        teams:allRows.map(row => {
+          const team = String(row?.team || '');
+          const count = counts.get(team) || {};
+          return {
+            team,
+            group:row._group,
+            leagueGroup:row._league,
+            record:predictionCurrentRecord(row),
+            rank:Number(row?.rank || 99),
+            postseasonProbability:predictionPercent(count.postseason, iterations),
+            divisionTitleProbability:predictionPercent(count.division, iterations),
+            wildCardProbability:predictionPercent(count.wildcard, iterations)
+          };
+        }).sort((a,b) =>
+          b.postseasonProbability - a.postseasonProbability
+          || b.divisionTitleProbability - a.divisionTitleProbability
+          || a.rank - b.rank
+        ),
+        model:{
+          name:'DiamondScope MLB Postseason Model v1',
+          note:'美聯、國聯分開模擬；每聯盟3個分區冠軍與其餘戰績最佳的3隊取得外卡，共12隊晉級季後賽。'
+        }
+      };
+    }
+
     async function predictionBuildPostseason(league, date) {
       const standing = await predictionStandingData(league, date);
       if (league === 'CPBL') return predictionCpblStages(standing, date);
       if (league === 'NPB') return predictionNpbStages(standing, date);
-      return predictionKboStages(standing, date);
+      if (league === 'KBO') return predictionKboStages(standing, date);
+      return predictionMlbStages(standing, date);
     }
 
     function predictionPostseasonRow(row, metrics) {
@@ -930,15 +1035,24 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         `;
       }
 
-      const npbGroups = predictionUiState.league === 'npb'
+      const postseasonGroups = predictionUiState.league === 'npb'
         ? [
             { key:'pacific', label:'洋聯' },
             { key:'central', label:'央聯' }
           ]
-        : null;
+        : predictionUiState.league === 'mlb'
+          ? [
+              { key:'alEast', label:'美聯東區' },
+              { key:'alCentral', label:'美聯中區' },
+              { key:'alWest', label:'美聯西區' },
+              { key:'nlEast', label:'國聯東區' },
+              { key:'nlCentral', label:'國聯中區' },
+              { key:'nlWest', label:'國聯西區' }
+            ]
+          : null;
 
-      const listHtml = npbGroups
-        ? npbGroups.map(group => {
+      const listHtml = postseasonGroups
+        ? postseasonGroups.map(group => {
             const groupTeams = teams.filter(row => String(row?.group || '') === group.key);
             if (!groupTeams.length) return '';
             return `
@@ -1285,7 +1399,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       els.predictionPageContent.querySelectorAll('[data-prediction-league]').forEach(btn => {
         btn.addEventListener('click', () => {
           const league = String(btn.dataset.predictionLeague || '');
-          if (!['cpbl','npb','kbo'].includes(league)) return;
+          if (!['cpbl','npb','kbo','mlb'].includes(league)) return;
           predictionUiState.league = league;
           predictionGameSlideIndex = 0;
           localStorage.setItem('predictionLeague', league);
@@ -1425,6 +1539,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
           ${predictionLeagueButton('中華職棒','cpbl')}
           ${predictionLeagueButton('日本職棒','npb')}
           ${predictionLeagueButton('韓國職棒','kbo')}
+          ${predictionLeagueButton('美國職棒','mlb')}
         </div>
 
         ${predictionWorkspace(data, loading, error)}
