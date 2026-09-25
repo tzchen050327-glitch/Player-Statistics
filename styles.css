@@ -11816,3 +11816,29 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
     white-space:nowrap;
   }
 }
+
+
+/* ===== HOME BACKGROUND SINGLE-CARD CAROUSEL ===== */
+#homePage .home-template-grid{
+  display:flex !important;
+  gap:8px !important;
+  width:100%;
+  margin:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#homePage .home-template-grid::-webkit-scrollbar{
+  display:none;
+}
+#homePage .home-template-grid .template-card{
+  flex:0 0 100%;
+  width:100%;
+  min-width:100%;
+  box-sizing:border-box;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+}
