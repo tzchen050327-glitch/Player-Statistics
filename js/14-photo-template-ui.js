@@ -167,7 +167,17 @@
           card.addEventListener('click', () => {
             currentTemplate = key;
             localStorage.setItem('baseballCardTemplate', currentTemplate);
-            renderHomeTemplates();
+
+            // Keep the horizontal background carousel at the user's current
+            // position instead of rebuilding it and jumping back to slide 1.
+            [...els.homeTemplateGrid.querySelectorAll('.template-card')].forEach((item, index) => {
+              const itemKey = Object.keys(TEMPLATES)[index] || '';
+              const selected = itemKey === currentTemplate;
+              item.classList.toggle('selected', selected);
+              const status = item.querySelector('.template-card-status');
+              if (status && TEMPLATES[itemKey]?.enabled) status.textContent = selected ? '使用中' : '選用';
+            });
+
             if (selectedPlayer()) renderCanvas();
           });
         }
