@@ -905,7 +905,12 @@
 
     function homeGameBatterPanel(detail, gameInfo = {}) {
       const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
-      const rawBatters = Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
+      const rawBatters = Array.isArray(detail?.gameBatters) && detail.gameBatters.length
+        ? detail.gameBatters
+        : ['away','home'].flatMap(side => [
+            ...(Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []),
+            ...(Array.isArray(detail?.lineups?.[side]?.roster) ? detail.lineups[side].roster : [])
+          ]);
       const normalizeName = value => String(value || '')
         .replace(/^(?:代打|代跑)[・·\\s]*/,'')
         .replace(/\\s+/g,'')
@@ -958,15 +963,34 @@
       }
       const sideRows = side => {
         const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        const lockedStarters = Array.isArray(detail?.startingLineup?.[side]) ? detail.startingLineup[side] : [];
+        const starterLineup = lockedStarters.length
+          ? lockedStarters
+          : lineup.filter(player => player?.isSubstitute !== true);
         const orderByName = new Map();
         const starterByOrder = new Map();
-        lineup.forEach((player,index) => {
+
+        starterLineup.forEach((player,index) => {
           const name = String(player?.fullName || player?.name || player?.playerName || '').trim();
           const key = normalizeName(name);
           const order = Math.max(1, Math.min(9, Number(player?.order || index + 1) || index + 1));
           if (!key) return;
           orderByName.set(key, order);
           if (!starterByOrder.has(order)) starterByOrder.set(order, key);
+        });
+
+        // Current lineup rows contain the replacement player after substitutions.
+        // Keep their official batting slot, but never promote them to "starter"
+        // when a locked starting lineup is available.
+        lineup.forEach((player,index) => {
+          const name = String(player?.fullName || player?.name || player?.playerName || '').trim();
+          const key = normalizeName(name);
+          const order = Math.max(1, Math.min(9, Number(player?.order || index + 1) || index + 1));
+          if (!key) return;
+          orderByName.set(key, order);
+          if (!lockedStarters.length && player?.isSubstitute !== true && !starterByOrder.has(order)) {
+            starterByOrder.set(order, key);
+          }
         });
 
         // If a substitute has no explicit batting-order field, infer its slot from
@@ -1023,7 +1047,8 @@
           });
         };
 
-        lineup.forEach((row,index) => add(row, index + 1, index));
+        starterLineup.forEach((row,index) => add(row, index + 1, index));
+        lineup.forEach((row,index) => add(row, Number(row?.order || index + 1), 10 + index));
         rawBatters.forEach((row,index) => {
           const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
           if (homeSnapshotTeamForBatter(detail, name) === side || orderByName.has(normalizeName(name))) {
