@@ -10967,6 +10967,10 @@ html[data-theme="dark"] .pitcher-status-starter{
 .match-center-tabs{
   overflow:hidden;
 }
+.match-center-tabs.is-six{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+}
 .match-center-tabs.is-five{
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr)) !important;
@@ -10987,12 +10991,16 @@ html[data-theme="dark"] .pitcher-status-starter{
 }
 @media(max-width:720px){
   .match-center-tabs,
+  .match-center-tabs.is-six,
   .match-center-tabs.is-five,
   .match-center-tabs.is-four,
   .match-center-tabs.is-three{
     display:grid !important;
     overflow-x:hidden !important;
     scrollbar-width:none;
+  }
+  .match-center-tabs.is-six{
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
   }
   .match-center-tabs.is-five{
     grid-template-columns:repeat(5,minmax(0,1fr)) !important;
@@ -11019,6 +11027,10 @@ html[data-theme="dark"] .pitcher-status-starter{
   }
 }
 @media(max-width:380px){
+  .match-center-tabs.is-six>button{
+    font-size:8.4px;
+    letter-spacing:-.07em;
+  }
   .match-center-tabs.is-five>button{
     font-size:9.5px;
     letter-spacing:-.05em;
