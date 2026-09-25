@@ -653,7 +653,8 @@
             appKey:CPBL_APP_KEY,
             league:standingsUiState.league.toUpperCase(),
             team,
-            view:standingsCurrentView()
+            view:standingsCurrentView(),
+            force:Boolean(force)
           })
         });
         const text = await response.text();
@@ -827,7 +828,7 @@
           standingsTeamTab = 'h2h';
           standingsTeamDetailError = '';
           renderStandingsPage();
-          void loadStandingsTeamDetail(team, { force:true });
+          void loadStandingsTeamDetail(team, { force:false });
           requestAnimationFrame(() => document.getElementById('standingsTeamDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }));
         });
       });
