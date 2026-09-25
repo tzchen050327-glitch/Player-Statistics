@@ -11898,3 +11898,46 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 #homePage .home-reserved-entry .home-standings-entry-icon{
   border-style:dashed;
 }
+
+
+/* ===== HOME BACKGROUND CAROUSEL DOTS ===== */
+#homePage .home-template-dots{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:16px;
+  margin-top:6px;
+}
+#homePage .home-template-dot{
+  width:6px;
+  height:6px;
+  min-width:6px;
+  padding:0;
+  border:0;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--muted) 55%,transparent);
+  opacity:.58;
+  transition:width .16s ease,background .16s ease,opacity .16s ease;
+  cursor:pointer;
+}
+#homePage .home-template-dot.active{
+  width:15px;
+  background:var(--accent-2);
+  opacity:1;
+}
+@media(max-width:640px){
+  #homePage .home-template-dots{
+    gap:4px;
+    min-height:14px;
+    margin-top:5px;
+  }
+  #homePage .home-template-dot{
+    width:5px;
+    height:5px;
+    min-width:5px;
+  }
+  #homePage .home-template-dot.active{
+    width:13px;
+  }
+}
