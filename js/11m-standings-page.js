@@ -534,7 +534,17 @@
             `).join('')
           : '';
 
+        const expectedGames = Math.max(0, Number(summary?.expectedGames) || standingsExpectedGames());
+        const playedGames = Math.max(0, Number(summary?.playedGames) || 0);
+        const remainingGames = Math.max(0, expectedGames - playedGames);
+        const scheduledRemaining = upcoming.filter(game => !['final','cancelled','canceled'].includes(String(game?.status || '').toLowerCase())).length;
+        const missingScheduled = Math.max(0, remainingGames - scheduledRemaining);
+        const scheduleCoveragePct = remainingGames > 0
+          ? Math.min(100, Math.round((scheduledRemaining / remainingGames) * 100))
+          : 100;
+
         let pendingScheduleHtml = '';
+        let opponentPendingCount = 0;
         if (standingsUiState.league === 'npb') {
           const scheduledByOpponent = new Map();
           for (const game of upcoming) {
@@ -561,22 +571,48 @@
           };
           collectPending(h2h, 25);
           collectPending(interleague, 3);
+          opponentPendingCount = pending.reduce((sum,item) => sum + Number(item.count || 0), 0);
           pendingScheduleHtml = pending.map(item => `
-            <div class="standings-schedule-row">
+            <div class="standings-schedule-row is-pending">
               <div class="standings-schedule-date"><strong>待定</strong><span>${item.count} 場</span></div>
-              <div class="standings-schedule-match"><strong>${escapeHtml(item.opponent)}</strong><span>官方尚未排定日期</span></div>
+              <div class="standings-schedule-match"><strong>${escapeHtml(item.opponent)}</strong><span>尚未取得確切比賽日期</span></div>
               <div class="standings-schedule-result upcoming"><strong>待排定</strong><span></span></div>
             </div>
           `).join('');
+        }
+
+        const unresolvedGeneric = Math.max(0, missingScheduled - opponentPendingCount);
+        if (unresolvedGeneric > 0) {
+          pendingScheduleHtml += `
+            <div class="standings-schedule-row is-missing">
+              <div class="standings-schedule-date"><strong>缺 ${unresolvedGeneric}</strong><span>場</span></div>
+              <div class="standings-schedule-match"><strong>尚未取得賽程</strong><span>可能尚未排定，或來源目前少抓資料</span></div>
+              <div class="standings-schedule-result upcoming"><strong>待補齊</strong><span></span></div>
+            </div>
+          `;
         }
 
         const upcomingHtml = scheduledUpcomingHtml || pendingScheduleHtml
           ? `${scheduledUpcomingHtml}${pendingScheduleHtml}`
           : `<div class="standings-team-detail-empty compact">目前沒有抓到接下來的賽程。</div>`;
 
+        const coverageState = missingScheduled > 0 ? 'is-incomplete' : 'is-complete';
         body = `
-          <div class="standings-schedule-section"><span class="standings-schedule-section-title">最近賽果</span>${recentHtml}</div>
-          <div class="standings-schedule-section"><span class="standings-schedule-section-title">接下來賽程</span>${upcomingHtml}</div>
+          <div class="standings-schedule-dashboard">
+            <div><span>應賽</span><strong>${expectedGames || '—'}</strong></div>
+            <div><span>已賽</span><strong>${playedGames}</strong></div>
+            <div><span>剩餘</span><strong>${remainingGames}</strong></div>
+            <div><span>已取得</span><strong>${scheduledRemaining}</strong></div>
+          </div>
+          <div class="standings-schedule-coverage ${coverageState}">
+            <div>
+              <strong>${missingScheduled > 0 ? `賽程缺 ${missingScheduled} 場` : '剩餘賽程已完整取得'}</strong>
+              <span>${remainingGames > 0 ? `目前已取得 ${scheduledRemaining}/${remainingGames} 場（${scheduleCoveragePct}%）` : '本季已無剩餘例行賽'}</span>
+            </div>
+            <b>${scheduleCoveragePct}%</b>
+          </div>
+          <div class="standings-schedule-section"><span class="standings-schedule-section-title">已完成賽事</span>${recentHtml}</div>
+          <div class="standings-schedule-section"><span class="standings-schedule-section-title">剩餘賽程・已取得 ${scheduledRemaining}/${remainingGames}</span>${upcomingHtml}</div>
         `;
       }
 
@@ -594,7 +630,7 @@
           </div>
           <div class="standings-team-detail-tabs">
             <button type="button" class="${standingsTeamTab==='h2h'?'active':''}" data-standings-team-tab="h2h">對戰成績</button>
-            <button type="button" class="${standingsTeamTab==='schedule'?'active':''}" data-standings-team-tab="schedule">賽程</button>
+            <button type="button" class="${standingsTeamTab==='schedule'?'active':''}" data-standings-team-tab="schedule">賽程中心</button>
           </div>
           <div class="standings-team-detail-body">${body}</div>
         </section>
@@ -799,9 +835,6 @@
         btn.addEventListener('click', () => {
           standingsTeamTab = btn.dataset.standingsTeamTab === 'schedule' ? 'schedule' : 'h2h';
           renderStandingsPage();
-          if (standingsSelectedTeam) {
-            void loadStandingsTeamDetail(standingsSelectedTeam, { force:true });
-          }
         });
       });
       els.standingsPageContent.querySelector('[data-standings-team-close]')?.addEventListener('click', () => {
