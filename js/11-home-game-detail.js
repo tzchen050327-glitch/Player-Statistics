@@ -903,6 +903,138 @@
         </div>`;
     }
 
+    function homeGameBatterPanel(detail, gameInfo = {}) {
+      const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
+      const rawBatters = Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
+      const normalizeName = value => String(value || '')
+        .replace(/^(?:代打|代跑)[・·\\s]*/,'')
+        .replace(/\\s+/g,'')
+        .trim();
+      const pickNumber = (row, keys) => {
+        for (const key of keys) {
+          const n = Number(row?.[key]);
+          if (Number.isFinite(n)) return n;
+        }
+        return null;
+      };
+      const statAliases = {
+        ab:['gameAb','ab','atBats'],
+        r:['gameRuns','runs','r'],
+        h:['gameHits','hits','h'],
+        rbi:['gameRbi','rbi'],
+        bb:['gameWalks','gameBb','walks','bb'],
+        so:['gameStrikeouts','gameSo','strikeouts','so','k'],
+        hr:['gameHomeRuns','gameHr','homeRuns','hr']
+      };
+      const playStatsFor = name => {
+        const target = normalizeName(name);
+        const totals = { ab:0, h:0, rbi:0, bb:0, so:0, hr:0 };
+        for (const play of plays) {
+          const batter = normalizeName(play?.batter || play?.hitter);
+          if (!target || !batter || (target !== batter && !target.includes(batter) && !batter.includes(target))) continue;
+          const text = [play?.result, play?.raw, play?.description].filter(Boolean).join(' ');
+          const isHr = /全壘打|全塁打|本塁打|home\\s*run/i.test(text);
+          const isTriple = /三壘安打|三塁打|triple/i.test(text);
+          const isDouble = /二壘安打|二塁打|double/i.test(text);
+          const isHit = isHr || isTriple || isDouble || /(?:安打|ヒット|single)/i.test(text);
+          const isBb = /四壞|故意四壞|保送|四球|walk/i.test(text);
+          const isHbp = /觸身|触身|死球|hit\\s*by\\s*pitch/i.test(text);
+          const isSac = /犧牲飛球|犧牲觸擊|犧牲短打|犠牲フライ|犠打|sacrifice/i.test(text);
+          const isCi = /捕手妨礙|打撃妨害|catcher.{0,3}interference/i.test(text);
+          const isSo = /三振|strikeout/i.test(text);
+          if (!isBb && !isHbp && !isSac && !isCi) totals.ab += 1;
+          if (isHit) totals.h += 1;
+          if (isHr) totals.hr += 1;
+          if (isBb) totals.bb += 1;
+          if (isSo) totals.so += 1;
+          totals.rbi += homeSnapshotPlayRbi(play);
+        }
+        return totals;
+      };
+      const rawByName = new Map();
+      for (const row of rawBatters) {
+        const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+        if (name) rawByName.set(normalizeName(name), row);
+      }
+      const sideRows = side => {
+        const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+        const merged = [];
+        const seen = new Set();
+        const add = (row, index = 0) => {
+          const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+          const key = normalizeName(name);
+          if (!key || seen.has(key)) return;
+          const raw = rawByName.get(key) || row;
+          const inferredSide = homeSnapshotTeamForBatter(detail, name);
+          if (rawBatters.length && inferredSide && inferredSide !== side && !lineup.includes(row)) return;
+          seen.add(key);
+          const fallback = playStatsFor(name);
+          const stat = keyName => {
+            const official = pickNumber(raw, statAliases[keyName]);
+            return official === null ? fallback[keyName] ?? null : official;
+          };
+          merged.push({
+            order:Number(row?.order || raw?.order || index + 1) || 99,
+            number:String(row?.number || row?.uniformNumber || row?.jersey || raw?.number || raw?.uniformNumber || '').trim(),
+            name,
+            position:(() => {
+              const pos = String(row?.position || row?.pos || raw?.position || raw?.pos || '').trim();
+              return pos === '0' ? 'DH' : pos;
+            })(),
+            ab:stat('ab'), r:stat('r'), h:stat('h'), rbi:stat('rbi'),
+            bb:stat('bb'), so:stat('so'), hr:stat('hr')
+          });
+        };
+        lineup.forEach(add);
+        rawBatters.forEach((row,index) => {
+          const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+          if (homeSnapshotTeamForBatter(detail, name) === side) add(row, 20 + index);
+        });
+        for (const play of plays) {
+          const half = String(play?.half || '');
+          const playSide = half === 'top' ? 'away' : half === 'bottom' ? 'home' : '';
+          if (playSide !== side) continue;
+          add({ name:String(play?.batter || play?.hitter || '').replace(/^(?:代打|代跑)[・·\\s]*/,'').trim(), order:90 + merged.length });
+        }
+        return merged.sort((a,b) => a.order - b.order);
+      };
+      const teamRuns = side => {
+        const fromBoard = detailRunsFromScoreboard(detail, side);
+        if (fromBoard !== null) return fromBoard;
+        const n = Number(side === 'away' ? gameInfo?.awayScore : gameInfo?.homeScore);
+        return Number.isFinite(n) ? n : null;
+      };
+      const value = n => Number.isFinite(Number(n)) ? String(Number(n)) : '—';
+      const teamSection = (side, teamName) => {
+        const rows = sideRows(side);
+        const totals = rows.reduce((acc,row) => {
+          for (const key of ['ab','h','rbi','bb','so','hr']) {
+            if (Number.isFinite(Number(row[key]))) acc[key] += Number(row[key]);
+          }
+          return acc;
+        }, {ab:0,h:0,rbi:0,bb:0,so:0,hr:0});
+        const runs = teamRuns(side);
+        return `
+          <section class="game-batter-team">
+            <div class="game-batter-team-head"><span>${side === 'away' ? '客隊' : '主隊'}</span><strong>${escapeHtml(teamName)}</strong><em>${rows.length} 人</em></div>
+            <div class="game-batter-table-head"><span>打者</span><span>守位</span><span>AB</span><span>R</span><span>H</span><span>RBI</span><span>BB</span><span>K</span><span>HR</span></div>
+            <div class="game-batter-scroll">
+              ${rows.length ? rows.map(row => `
+                <div class="game-batter-row">
+                  <strong title="${escapeHtml(row.name)}">${row.number ? `#${escapeHtml(row.number)} ` : ''}${escapeHtml(row.name)}</strong>
+                  <span>${escapeHtml(row.position || '—')}</span>
+                  <span>${value(row.ab)}</span><span>${value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
+                  <span>${value(row.bb)}</span><span>${value(row.so)}</span><span>${value(row.hr)}</span>
+                </div>`).join('') : '<div class="game-detail-empty">目前沒有可整理的打者紀錄。</div>'}
+            </div>
+            <div class="game-batter-total"><strong>TOTAL</strong><span></span><span>${totals.ab}</span><span>${runs === null ? '—' : runs}</span><span>${totals.h}</span><span>${totals.rbi}</span><span>${totals.bb}</span><span>${totals.so}</span><span>${totals.hr}</span></div>
+          </section>`;
+      };
+      const away = String(gameInfo?.away || detail?.game?.away || '客隊');
+      const home = String(gameInfo?.home || detail?.game?.home || '主隊');
+      return `<div class="game-batter-page">${teamSection('away',away)}${teamSection('home',home)}</div>`;
+    }
+
     function homeGamePitcherPanel(detail, gameInfo = {}) {
       const records = activeHomeGameDetail?.pitcherRecords || null;
       const loading = Boolean(activeHomeGameDetail?.pitcherRecordsLoading);
@@ -1244,13 +1376,15 @@
       const supportsPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
       const supportsBullpen = activeHomeGameDetail?.league === 'CPBL';
       const allowedCenterTabs = supportsPitchers
-        ? (supportsBullpen ? ['play','pitchers','bullpen','snapshot','overview'] : ['play','pitchers','snapshot','overview'])
-        : (supportsBullpen ? ['play','bullpen','snapshot','overview'] : ['play','snapshot','overview']);
+        ? (supportsBullpen ? ['play','batters','pitchers','bullpen','snapshot','overview'] : ['play','batters','pitchers','snapshot','overview'])
+        : (supportsBullpen ? ['play','batters','bullpen','snapshot','overview'] : ['play','batters','snapshot','overview']);
       const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
       const centerDataPanel = centerTab === 'overview'
         ? homeMatchCenterDataPanel('overview', detail, gameInfo, game)
-        : centerTab === 'pitchers'
-          ? homeGamePitcherPanel(detail, gameInfo)
+        : centerTab === 'batters'
+          ? homeGameBatterPanel(detail, gameInfo)
+          : centerTab === 'pitchers'
+            ? homeGamePitcherPanel(detail, gameInfo)
           : centerTab === 'bullpen'
             ? homeBullpenDetailPanel(detail, gameInfo, game)
             : centerTab === 'snapshot'
@@ -1279,8 +1413,9 @@
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
-        <nav class="match-center-tabs ${supportsPitchers && supportsBullpen ? 'is-five' : (supportsPitchers || supportsBullpen ? 'is-four' : 'is-three')}" aria-label="對戰中心分類">
+        <nav class="match-center-tabs ${supportsPitchers && supportsBullpen ? 'is-six' : (supportsPitchers || supportsBullpen ? 'is-five' : 'is-four')}" aria-label="對戰中心分類">
           <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席</button>
+          <button type="button" data-match-center-tab="batters" class="${centerTab === 'batters' ? 'active' : ''}">打者紀錄</button>
           ${supportsPitchers ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">投手紀錄</button>` : ''}
           ${supportsBullpen ? `<button type="button" data-match-center-tab="bullpen" class="${centerTab === 'bullpen' ? 'active' : ''}">投手狀態</button>` : ''}
           <button type="button" data-match-center-tab="snapshot" class="${centerTab === 'snapshot' ? 'active' : ''}">比賽快照</button>
@@ -1303,7 +1438,7 @@
               ${playsHtml}
             </section>
           </div>
-          ${centerTab !== 'play' ? `<div class="match-center-panel active ${centerTab === 'pitchers' ? 'game-pitcher-panel' : ''}" data-match-center-panel="${centerTab}">${centerDataPanel}</div>` : ''}
+          ${centerTab !== 'play' ? `<div class="match-center-panel active ${centerTab === 'pitchers' ? 'game-pitcher-panel' : centerTab === 'batters' ? 'game-batter-panel' : ''}" data-match-center-panel="${centerTab}">${centerDataPanel}</div>` : ''}
         </main>`;
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
@@ -1316,8 +1451,8 @@
           const hasPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game);
           const hasBullpen = activeHomeGameDetail?.league === 'CPBL';
           const allowedTabs = hasPitchers
-            ? (hasBullpen ? ['play','pitchers','bullpen','snapshot','overview'] : ['play','pitchers','snapshot','overview'])
-            : (hasBullpen ? ['play','bullpen','snapshot','overview'] : ['play','snapshot','overview']);
+            ? (hasBullpen ? ['play','batters','pitchers','bullpen','snapshot','overview'] : ['play','batters','pitchers','snapshot','overview'])
+            : (hasBullpen ? ['play','batters','bullpen','snapshot','overview'] : ['play','batters','snapshot','overview']);
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
