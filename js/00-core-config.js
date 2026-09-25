@@ -32,6 +32,7 @@
     const NPB_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-pregame-starters`;
 
     const LEAGUE_STANDINGS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
+    const LEAGUE_PLAYER_STATS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-player-stats`;
     const LEAGUE_PREGAME_CENTER_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-pregame-center`;
     const LEAGUE_BULLPEN_STATUS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-bullpen-status`;
     const LEAGUE_TEAM_DETAIL_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-team-detail`;
@@ -68,6 +69,14 @@
       selectedPlayerText: document.getElementById('selectedPlayerText'),
       pageSubtitle: document.getElementById('pageSubtitle'),
       homePage: document.getElementById('homePage'),
+      playerRankingPage: document.getElementById('playerRankingPage'),
+      playerRankingPageContent: document.getElementById('playerRankingPageContent'),
+      homePlayerRankingBtn: document.getElementById('homePlayerRankingBtn'),
+      playerRankingBackHomeBtn: document.getElementById('playerRankingBackHomeBtn'),
+      playerComparePage: document.getElementById('playerComparePage'),
+      playerComparePageContent: document.getElementById('playerComparePageContent'),
+      homePlayerCompareBtn: document.getElementById('homePlayerCompareBtn'),
+      playerCompareBackHomeBtn: document.getElementById('playerCompareBackHomeBtn'),
       customNotificationPage: document.getElementById('customNotificationPage'),
       customNotificationPageContent: document.getElementById('customNotificationPageContent'),
       homeCustomNotificationBtn: document.getElementById('homeCustomNotificationBtn'),
