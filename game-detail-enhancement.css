@@ -717,3 +717,132 @@ html[data-theme="dark"] .game-pitcher-total strong{
     padding:0 6px;
   }
 }
+
+
+/* ===== BATTER BOX SCORE v6.56 ===== */
+.match-center-tabs.is-six{grid-template-columns:repeat(6,minmax(0,1fr));}
+.match-center-tabs.is-six>button{padding:0 4px;font-size:11px;}
+.game-batter-panel{
+  height:calc(100dvh - 112px);
+  min-height:0;
+  overflow:hidden;
+}
+.game-batter-page{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  padding:10px;
+}
+.game-batter-team{
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  overflow:hidden;
+  border:1px solid #d4dee7;
+  border-radius:14px;
+  background:#fff;
+}
+.game-batter-team-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:9px 11px;
+  border-bottom:1px solid #e2e8ee;
+  background:#f5f8fb;
+}
+.game-batter-team-head span,.game-batter-team-head em{
+  color:#77899a;
+  font-size:10px;
+  font-style:normal;
+  font-weight:900;
+}
+.game-batter-team-head strong{
+  min-width:0;
+  overflow:hidden;
+  color:#244f76;
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-batter-table-head,.game-batter-row,.game-batter-total{
+  display:grid;
+  grid-template-columns:minmax(92px,1.8fr) 34px repeat(7,minmax(30px,1fr));
+  align-items:center;
+  gap:0;
+  min-width:430px;
+  padding:0 8px;
+  box-sizing:border-box;
+  text-align:center;
+}
+.game-batter-table-head{
+  min-height:27px;
+  border-bottom:1px solid #e8edf2;
+  color:#80909e;
+  font-size:8px;
+  font-weight:900;
+}
+.game-batter-table-head span:first-child{text-align:left;}
+.game-batter-scroll{
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.game-batter-row{
+  min-height:34px;
+  border-bottom:1px solid #edf1f4;
+  color:#40576c;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.game-batter-row:last-child{border-bottom:0;}
+.game-batter-row strong{
+  min-width:0;
+  overflow:hidden;
+  color:#203f5d;
+  font-size:11px;
+  font-weight:950;
+  text-align:left;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-batter-total{
+  min-height:32px;
+  border-top:1px solid #d8e1e8;
+  background:#f5f8fb;
+  color:#344f67;
+  font-size:9px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.game-batter-total strong{text-align:left;}
+html[data-theme="dark"] .game-batter-team{
+  border-color:#343a42;
+  background:#111419;
+}
+html[data-theme="dark"] .game-batter-team-head,
+html[data-theme="dark"] .game-batter-total{
+  border-color:#343a42;
+  background:#171b20;
+}
+html[data-theme="dark"] .game-batter-team-head strong,
+html[data-theme="dark"] .game-batter-row strong{color:#eee5d4;}
+html[data-theme="dark"] .game-batter-team-head span,
+html[data-theme="dark"] .game-batter-team-head em,
+html[data-theme="dark"] .game-batter-table-head{color:#8f9baa;}
+html[data-theme="dark"] .game-batter-row{
+  border-bottom-color:#292e34;
+  color:#bac4cf;
+}
+html[data-theme="dark"] .game-batter-total{color:#cbd4dd;}
+@media(max-width:520px){
+  .match-center-tabs.is-six>button{font-size:10px;letter-spacing:-.02em;}
+  .game-batter-table-head,.game-batter-row,.game-batter-total{
+    grid-template-columns:minmax(88px,1.7fr) 32px repeat(7,minmax(28px,1fr));
+    min-width:410px;
+  }
+}
