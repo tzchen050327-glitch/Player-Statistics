@@ -150,8 +150,12 @@
 
     function renderHomeTemplates() {
       if (!els.homeTemplateGrid) return;
+      const entries = Object.entries(TEMPLATES);
+      const dots = document.getElementById('homeTemplateDots');
       els.homeTemplateGrid.innerHTML = '';
-      Object.entries(TEMPLATES).forEach(([key, template]) => {
+      if (dots) dots.innerHTML = '';
+
+      entries.forEach(([key, template], templateIndex) => {
         const card = document.createElement('button');
         card.type = 'button';
         card.className = `template-card ${currentTemplate === key ? 'selected' : ''}`;
@@ -163,6 +167,7 @@
             <span class="template-card-status">${template.enabled ? (currentTemplate === key ? '使用中' : '選用') : '預留'}</span>
           </div>`;
         drawTemplatePreview(card.querySelector('.template-preview'), template, !template.enabled);
+
         if (template.enabled) {
           card.addEventListener('click', () => {
             currentTemplate = key;
@@ -171,7 +176,7 @@
             // Keep the horizontal background carousel at the user's current
             // position instead of rebuilding it and jumping back to slide 1.
             [...els.homeTemplateGrid.querySelectorAll('.template-card')].forEach((item, index) => {
-              const itemKey = Object.keys(TEMPLATES)[index] || '';
+              const itemKey = entries[index]?.[0] || '';
               const selected = itemKey === currentTemplate;
               item.classList.toggle('selected', selected);
               const status = item.querySelector('.template-card-status');
@@ -182,6 +187,61 @@
           });
         }
         els.homeTemplateGrid.appendChild(card);
+
+        if (dots) {
+          const dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = 'home-template-dot';
+          dot.dataset.templateIndex = String(templateIndex);
+          dot.setAttribute('aria-label', `切換到${template.label}`);
+          dot.addEventListener('click', () => {
+            const target = els.homeTemplateGrid.querySelectorAll('.template-card')[templateIndex];
+            if (!target) return;
+            els.homeTemplateGrid.scrollTo({ left:target.offsetLeft, behavior:'smooth' });
+          });
+          dots.appendChild(dot);
+        }
+      });
+
+      const cards = [...els.homeTemplateGrid.querySelectorAll('.template-card')];
+      const dotNodes = dots ? [...dots.querySelectorAll('.home-template-dot')] : [];
+      const setActiveDot = index => {
+        dotNodes.forEach((dot, dotIndex) => {
+          const active = dotIndex === index;
+          dot.classList.toggle('active', active);
+          if (active) dot.setAttribute('aria-current', 'true');
+          else dot.removeAttribute('aria-current');
+        });
+      };
+      const visibleIndex = () => {
+        if (!cards.length) return 0;
+        const left = els.homeTemplateGrid.scrollLeft;
+        let best = 0;
+        let distance = Infinity;
+        cards.forEach((card,index) => {
+          const d = Math.abs(card.offsetLeft - left);
+          if (d < distance) {
+            distance = d;
+            best = index;
+          }
+        });
+        return best;
+      };
+
+      let dotFrame = 0;
+      els.homeTemplateGrid.onscroll = () => {
+        if (dotFrame) cancelAnimationFrame(dotFrame);
+        dotFrame = requestAnimationFrame(() => {
+          dotFrame = 0;
+          setActiveDot(visibleIndex());
+        });
+      };
+
+      const selectedIndex = Math.max(0, entries.findIndex(([key]) => key === currentTemplate));
+      setActiveDot(selectedIndex);
+      requestAnimationFrame(() => {
+        const target = cards[selectedIndex];
+        if (target) els.homeTemplateGrid.scrollTo({ left:target.offsetLeft, behavior:'auto' });
       });
     }
 
