@@ -908,7 +908,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         String(row?.team || ''),
         { postseason:0, division:0, wildcard:0 }
       ]));
-      const rng = predictionRng(predictionHash(\`MLB|\${date}|\${JSON.stringify(standing)}\`));
+      const rng = predictionRng(predictionHash(`MLB|${date}|${JSON.stringify(standing)}`));
 
       for (let sim = 0; sim < iterations; sim += 1) {
         const sims = new Map();
