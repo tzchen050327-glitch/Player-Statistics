@@ -101,8 +101,12 @@
 
     function playerToolsSortedRows(league, role, metric) {
       const def = playerToolsMetricDef(role, metric);
+      const rateMetric = role === 'hitter'
+        ? ['avg','ops','obp','slg'].includes(def.key)
+        : ['era','whip'].includes(def.key);
       return [...playerToolsRows(league, role)]
         .filter(row => Number.isFinite(Number(row?.[def.key])))
+        .filter(row => !rateMetric || row?.qualifiedRate === true)
         .sort((a,b) => {
           const av = Number(a?.[def.key] || 0);
           const bv = Number(b?.[def.key] || 0);
@@ -165,7 +169,7 @@
                 </div>`).join('') : '<div class="player-tools-empty">目前沒有可顯示的排行資料。</div>'}
             </div>
           </div>
-          ${playerRankingLeague === 'npb' && playerRankingRole === 'hitter' ? '<div class="player-tools-note">日職打者目前以 NPB 官方規定打席榜為主要名單。</div>' : ''}
+          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG／OPS／OBP／SLG 僅列規定打席達標球員；累積項目不限制規定打席。' : 'ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。'}</div>
         ` : ''}
       `;
 
@@ -298,7 +302,7 @@
             </div>
           </div>
           ${playerCompareSummary(selected, defs)}
-          ${playerCompareLeague === 'npb' && playerCompareRole === 'hitter' ? '<div class="player-tools-note">日職打者選單目前以 NPB 官方規定打席榜為主要名單。</div>' : ''}
+          <div class="player-tools-note">比較頁保留所有有一軍球季成績的球員，不套用排行資格門檻。</div>
         ` : ''}
       `;
 
