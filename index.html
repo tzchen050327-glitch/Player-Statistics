@@ -95,14 +95,25 @@
             <div id="homeTemplateDots" class="home-template-dots" aria-label="背景輪播位置"></div>
           </section>
 
-          <button class="panel home-standings-entry home-reserved-entry" type="button" disabled aria-label="預留功能按鈕一">
-            <span class="home-standings-entry-icon" aria-hidden="true"></span>
-            <strong>預留功能</strong>
+          <button id="homePlayerRankingBtn" class="panel home-standings-entry home-player-ranking-entry" type="button" disabled aria-label="數據排行，功能準備中">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 19V11M10 19V6M15 19v-4M20 19V3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                <path d="M3.5 19.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <strong>數據排行</strong>
           </button>
 
-          <button class="panel home-standings-entry home-reserved-entry" type="button" disabled aria-label="預留功能按鈕二">
-            <span class="home-standings-entry-icon" aria-hidden="true"></span>
-            <strong>預留功能</strong>
+          <button id="homePlayerCompareBtn" class="panel home-standings-entry home-player-compare-entry" type="button" disabled aria-label="球員比較，功能準備中">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="17" cy="9" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M3.5 19c.5-3.3 2.3-5 4.5-5s4 1.7 4.5 5M13.5 19c.4-2.7 1.8-4.1 3.6-4.1 1.7 0 3.1 1.4 3.5 4.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <strong>球員比較</strong>
           </button>
 
           <button id="homeCustomNotificationBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟自訂通知">
