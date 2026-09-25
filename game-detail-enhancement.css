@@ -720,8 +720,19 @@ html[data-theme="dark"] .game-pitcher-total strong{
 
 
 /* ===== BATTER BOX SCORE v6.56 ===== */
-.match-center-tabs.is-six{grid-template-columns:repeat(6,minmax(0,1fr));}
-.match-center-tabs.is-six>button{padding:0 4px;font-size:11px;}
+.match-center-tabs.is-six{
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  overflow:hidden !important;
+}
+.match-center-tabs.is-six>button{
+  width:100%;
+  min-width:0 !important;
+  padding:0 2px !important;
+  font-size:10px;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
 .game-batter-panel{
   height:calc(100dvh - 112px);
   min-height:0;
@@ -770,10 +781,10 @@ html[data-theme="dark"] .game-pitcher-total strong{
 }
 .game-batter-table-head,.game-batter-row,.game-batter-total{
   display:grid;
-  grid-template-columns:minmax(92px,1.8fr) 34px repeat(7,minmax(30px,1fr));
+  grid-template-columns:34px minmax(104px,1.9fr) repeat(7,minmax(30px,1fr));
   align-items:center;
   gap:0;
-  min-width:430px;
+  min-width:438px;
   padding:0 8px;
   box-sizing:border-box;
   text-align:center;
@@ -785,7 +796,7 @@ html[data-theme="dark"] .game-pitcher-total strong{
   font-size:8px;
   font-weight:900;
 }
-.game-batter-table-head span:first-child{text-align:left;}
+.game-batter-table-head span:nth-child(2){text-align:left;}
 .game-batter-scroll{
   min-height:0;
   overflow:auto;
@@ -808,6 +819,40 @@ html[data-theme="dark"] .game-pitcher-total strong{
   font-weight:950;
   text-align:left;
   text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-batter-order{
+  color:#77899a;
+  font-size:10px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.game-batter-row.is-sub{
+  min-height:30px;
+}
+.game-batter-row.is-sub .game-batter-name{
+  color:#526b81;
+}
+.game-batter-sub-arrow{
+  display:inline-block;
+  margin-right:5px;
+  color:#c99a2f;
+  font-size:14px;
+  font-style:normal;
+  font-weight:950;
+  line-height:1;
+  vertical-align:-1px;
+}
+.game-pitcher-total>strong{
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.game-pitcher-total-note{
+  color:#b78a2b;
+  font-size:7px;
+  font-style:normal;
+  font-weight:950;
   white-space:nowrap;
 }
 .game-batter-total{
@@ -840,9 +885,24 @@ html[data-theme="dark"] .game-batter-row{
 }
 html[data-theme="dark"] .game-batter-total{color:#cbd4dd;}
 @media(max-width:520px){
-  .match-center-tabs.is-six>button{font-size:10px;letter-spacing:-.02em;}
+  .match-center-tabs.is-six{
+    display:grid !important;
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  }
+  .match-center-tabs.is-six>button{
+    min-height:42px;
+    padding:0 1px !important;
+    font-size:9px;
+    letter-spacing:-.055em;
+  }
   .game-batter-table-head,.game-batter-row,.game-batter-total{
-    grid-template-columns:minmax(88px,1.7fr) 32px repeat(7,minmax(28px,1fr));
-    min-width:410px;
+    grid-template-columns:31px minmax(98px,1.8fr) repeat(7,minmax(28px,1fr));
+    min-width:420px;
+  }
+}
+@media(max-width:380px){
+  .match-center-tabs.is-six>button{
+    font-size:8.4px;
+    letter-spacing:-.07em;
   }
 }
