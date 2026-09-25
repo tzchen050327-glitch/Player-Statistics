@@ -955,6 +955,30 @@
       }
     });
 
+    els.homePlayerRankingBtn?.addEventListener('click', () => {
+      currentPage = 'player-ranking';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.playerRankingBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.homePlayerCompareBtn?.addEventListener('click', () => {
+      currentPage = 'player-compare';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.playerCompareBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
     els.homeCustomNotificationBtn?.addEventListener('click', () => {
       currentPage = 'notifications';
       renderAll();
