@@ -1304,3 +1304,45 @@ html[data-theme="dark"] .custom-notification-footnote{
   background:#0f1216 !important;
 }
 /* ===== CUSTOM NOTIFICATION DARK END ===== */
+
+
+/* TEAM SCHEDULE CENTER DARK v6.57 */
+html[data-theme="dark"] .standings-schedule-dashboard>div{
+  border-color:#343a42 !important;
+  background:#15191e !important;
+}
+html[data-theme="dark"] .standings-schedule-dashboard span{
+  color:#8996a5 !important;
+}
+html[data-theme="dark"] .standings-schedule-dashboard strong{
+  color:#ece3d3 !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage{
+  border-color:#31513f !important;
+  background:#122018 !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage strong,
+html[data-theme="dark"] .standings-schedule-coverage>b{
+  color:#77c79a !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage span{
+  color:#91a79a !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage.is-incomplete{
+  border-color:#665024 !important;
+  background:#241d0f !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage.is-incomplete strong,
+html[data-theme="dark"] .standings-schedule-coverage.is-incomplete>b{
+  color:#e1b85b !important;
+}
+html[data-theme="dark"] .standings-schedule-coverage.is-incomplete span{
+  color:#aa9b7c !important;
+}
+html[data-theme="dark"] .standings-schedule-row.is-missing{
+  border-color:#665024 !important;
+  background:#211b10 !important;
+}
+html[data-theme="dark"] .standings-schedule-row.is-pending{
+  background:#13171c !important;
+}
