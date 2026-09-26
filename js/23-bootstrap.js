@@ -121,6 +121,14 @@
     let appUpdateProgressVisible = false;
     let suppressStartupSplash = false;
     let suppressNextControllerReload = false;
+    let appUpdateProgressShown = Math.max(
+      0,
+      Math.min(100, Number.parseFloat(els.appUpdatePercent?.textContent) || 0)
+    );
+    let appUpdateProgressGoal = appUpdateProgressShown;
+    let appUpdateProgressFrame = 0;
+    let appUpdateProgressCruiseTimer = 0;
+    let appUpdateProgressHideFrame = 0;
 
     function setVersionBadge(text = APP_VERSION, checking = false) {
       const badge = document.getElementById('appVersionBadge');
@@ -129,20 +137,141 @@
       badge.classList.toggle('checking', checking);
     }
 
+    function renderAppUpdateProgressValue(value) {
+      const safe = Math.max(0, Math.min(100, Number(value) || 0));
+      if (els.appUpdatePercent) els.appUpdatePercent.textContent = `${Math.round(safe)}%`;
+      if (els.appUpdateBar) els.appUpdateBar.style.width = `${safe.toFixed(2)}%`;
+    }
+
+    function stopAppUpdateProgressCruise() {
+      if (appUpdateProgressCruiseTimer) clearInterval(appUpdateProgressCruiseTimer);
+      appUpdateProgressCruiseTimer = 0;
+    }
+
+    function animateAppUpdateProgress() {
+      if (appUpdateProgressFrame) return;
+      const step = () => {
+        const delta = appUpdateProgressGoal - appUpdateProgressShown;
+        if (delta <= 0.05) {
+          appUpdateProgressShown = appUpdateProgressGoal;
+          renderAppUpdateProgressValue(appUpdateProgressShown);
+          appUpdateProgressFrame = 0;
+          return;
+        }
+
+        // Follow every new target gradually. The final 100% leg is deliberately
+        // not special-cased into a jump, so both the number and bar glide there.
+        const increment = Math.max(
+          0.08,
+          delta * (appUpdateProgressGoal >= 100 ? 0.10 : 0.07)
+        );
+        appUpdateProgressShown = Math.min(
+          appUpdateProgressGoal,
+          appUpdateProgressShown + increment
+        );
+        renderAppUpdateProgressValue(appUpdateProgressShown);
+        appUpdateProgressFrame = requestAnimationFrame(step);
+      };
+      appUpdateProgressFrame = requestAnimationFrame(step);
+    }
+
+    function startAppUpdateProgressCruise(ceiling = 96, durationMs = 24000) {
+      stopAppUpdateProgressCruise();
+      const safeCeiling = Math.max(
+        appUpdateProgressGoal,
+        Math.min(96, Number(ceiling) || 0)
+      );
+      if (safeCeiling <= appUpdateProgressGoal) return;
+
+      const startGoal = appUpdateProgressGoal;
+      const startedAt = performance.now();
+      const duration = Math.max(3000, Number(durationMs) || 24000);
+
+      appUpdateProgressCruiseTimer = setInterval(() => {
+        const elapsed = Math.max(0, performance.now() - startedAt);
+        const ratio = Math.min(
+          0.985,
+          1 - Math.exp(-elapsed / Math.max(1000, duration / 3))
+        );
+        const next = startGoal + (safeCeiling - startGoal) * ratio;
+        if (next > appUpdateProgressGoal) {
+          appUpdateProgressGoal = next;
+          animateAppUpdateProgress();
+        }
+      }, 180);
+    }
+
     function setAppUpdateProgress(percent, status, { error = false } = {}) {
-      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+      const value = Math.max(0, Math.min(100, Number(percent) || 0));
+      const overlayWasHidden = Boolean(els.appUpdateOverlay?.classList.contains('hidden'));
+
+      if (appUpdateProgressHideFrame) {
+        cancelAnimationFrame(appUpdateProgressHideFrame);
+        appUpdateProgressHideFrame = 0;
+      }
+
+      if (overlayWasHidden) {
+        stopAppUpdateProgressCruise();
+        if (appUpdateProgressFrame) cancelAnimationFrame(appUpdateProgressFrame);
+        appUpdateProgressFrame = 0;
+        appUpdateProgressShown = 0;
+        appUpdateProgressGoal = 0;
+        renderAppUpdateProgressValue(0);
+      }
+
       appUpdateProgressVisible = true;
       els.appUpdateOverlay?.classList.remove('hidden');
       els.appUpdateCard?.classList.toggle('error', Boolean(error));
-      if (els.appUpdatePercent) els.appUpdatePercent.textContent = `${value}%`;
       if (els.appUpdateStatus) els.appUpdateStatus.textContent = status || '';
-      if (els.appUpdateBar) els.appUpdateBar.style.width = `${value}%`;
+
+      // Progress never moves backwards. Slow operations keep creeping toward
+      // 96%, leaving the final few percent for real completion.
+      appUpdateProgressGoal = value >= 100
+        ? 100
+        : Math.max(appUpdateProgressGoal, value);
+      animateAppUpdateProgress();
+
+      if (error || value >= 100) {
+        stopAppUpdateProgressCruise();
+      } else {
+        startAppUpdateProgressCruise(96, 24000);
+      }
     }
 
-    function hideAppUpdateProgress() {
-      appUpdateProgressVisible = false;
-      els.appUpdateOverlay?.classList.add('hidden');
-      els.appUpdateCard?.classList.remove('error');
+    function hideAppUpdateProgress({ force = false } = {}) {
+      const finishHide = () => {
+        if (appUpdateProgressHideFrame) cancelAnimationFrame(appUpdateProgressHideFrame);
+        appUpdateProgressHideFrame = 0;
+        stopAppUpdateProgressCruise();
+        if (appUpdateProgressFrame) cancelAnimationFrame(appUpdateProgressFrame);
+        appUpdateProgressFrame = 0;
+        appUpdateProgressShown = 0;
+        appUpdateProgressGoal = 0;
+        appUpdateProgressVisible = false;
+        els.appUpdateOverlay?.classList.add('hidden');
+        els.appUpdateCard?.classList.remove('error');
+      };
+
+      if (!force && appUpdateProgressGoal >= 100 && appUpdateProgressShown < 99.95) {
+        const startedAt = performance.now();
+        const waitUntilFull = () => {
+          appUpdateProgressHideFrame = 0;
+          if (
+            appUpdateProgressShown >= 99.95
+            || performance.now() - startedAt >= 1600
+          ) {
+            finishHide();
+            return;
+          }
+          appUpdateProgressHideFrame = requestAnimationFrame(waitUntilFull);
+        };
+        if (!appUpdateProgressHideFrame) {
+          appUpdateProgressHideFrame = requestAnimationFrame(waitUntilFull);
+        }
+        return;
+      }
+
+      finishHide();
     }
 
     async function appUpdateStep(percent, status, delay = 110) {
@@ -246,7 +375,7 @@
               const reloadUrl = new URL('./index.html', location.href);
               reloadUrl.searchParams.set('v', remoteVersion);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
-              setTimeout(() => location.replace(reloadUrl.href), 120);
+              setTimeout(() => location.replace(reloadUrl.href), showProgress ? 900 : 120);
               return { activated:true, remoteVersion };
             }
           }
@@ -272,7 +401,7 @@
               sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
               const reloadUrl = new URL(location.href);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
-              setTimeout(() => location.replace(reloadUrl.href), 120);
+              setTimeout(() => location.replace(reloadUrl.href), showProgress ? 900 : 120);
               return { activated:true, remoteVersion };
             }
           }
@@ -381,7 +510,7 @@
 
           if (appUpdateProgressVisible) {
             setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
-            setTimeout(() => location.reload(), 280);
+            setTimeout(() => location.reload(), 900);
           } else {
             location.reload();
           }

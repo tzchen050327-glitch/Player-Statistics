@@ -1062,7 +1062,7 @@
           rgba(255,255,255,.02) 10px 20px
         ),
         var(--accent);
-      transition: width .28s ease;
+      transition: width .08s linear;
       animation: syncStripe .8s linear infinite;
     }
 

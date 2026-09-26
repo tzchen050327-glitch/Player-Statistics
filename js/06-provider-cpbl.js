@@ -109,6 +109,7 @@
     let syncProgressFrame = 0;
     let syncProgressCruiseTimer = 0;
     let syncProgressCruiseCeiling = 0;
+    let syncProgressHideFrame = 0;
 
     function renderSyncProgressValue(value) {
       const safe = Math.max(0, Math.min(100, Number(value) || 0));
@@ -135,7 +136,7 @@
         }
         // Ease quickly enough to feel responsive, but keep both the number and
         // bar visibly moving instead of jumping between coarse backend stages.
-        const increment = Math.max(0.12, delta * (syncProgressGoal >= 100 ? 0.18 : 0.11));
+        const increment = Math.max(0.08, delta * (syncProgressGoal >= 100 ? 0.10 : 0.075));
         syncProgressShown = Math.min(syncProgressGoal, syncProgressShown + increment);
         renderSyncProgressValue(syncProgressShown);
         syncProgressFrame = requestAnimationFrame(step);
@@ -175,6 +176,11 @@
       const overlayWasHidden = Boolean(els.syncProgressOverlay?.classList.contains('hidden'));
       const value = Math.max(0, Math.min(100, Number(percent) || 0));
 
+      if (syncProgressHideFrame) {
+        cancelAnimationFrame(syncProgressHideFrame);
+        syncProgressHideFrame = 0;
+      }
+
       if (overlayWasHidden) {
         stopSyncProgressCruise();
         if (syncProgressFrame) cancelAnimationFrame(syncProgressFrame);
@@ -199,20 +205,51 @@
       if (error || value >= 100 || (syncProgressCruiseCeiling && value >= syncProgressCruiseCeiling)) {
         stopSyncProgressCruise();
       }
-      if (!error && value < 100 && Number(autoAdvanceTo) > syncProgressGoal) {
-        startSyncProgressCruise(autoAdvanceTo, autoAdvanceMs);
+      if (!error && value < 100) {
+        const requestedCeiling = Number(autoAdvanceTo);
+        const hasRequestedCeiling = requestedCeiling > syncProgressGoal;
+        const ceiling = hasRequestedCeiling ? requestedCeiling : 96;
+        const duration = hasRequestedCeiling ? autoAdvanceMs : 24000;
+        if (ceiling > syncProgressGoal) {
+          startSyncProgressCruise(ceiling, duration);
+        }
       }
     }
 
-    function hideSyncProgress() {
-      stopSyncProgressCruise();
-      if (syncProgressFrame) cancelAnimationFrame(syncProgressFrame);
-      syncProgressFrame = 0;
-      syncProgressShown = 0;
-      syncProgressGoal = 0;
-      els.syncProgressOverlay?.classList.add('hidden');
-      els.syncProgressCard?.classList.remove('error');
-      setSyncUiLocked(false);
+    function hideSyncProgress({ force = false } = {}) {
+      const finishHide = () => {
+        if (syncProgressHideFrame) cancelAnimationFrame(syncProgressHideFrame);
+        syncProgressHideFrame = 0;
+        stopSyncProgressCruise();
+        if (syncProgressFrame) cancelAnimationFrame(syncProgressFrame);
+        syncProgressFrame = 0;
+        syncProgressShown = 0;
+        syncProgressGoal = 0;
+        els.syncProgressOverlay?.classList.add('hidden');
+        els.syncProgressCard?.classList.remove('error');
+        setSyncUiLocked(false);
+      };
+
+      if (!force && syncProgressGoal >= 100 && syncProgressShown < 99.95) {
+        const startedAt = performance.now();
+        const waitUntilFull = () => {
+          syncProgressHideFrame = 0;
+          if (
+            syncProgressShown >= 99.95
+            || performance.now() - startedAt >= 1600
+          ) {
+            finishHide();
+            return;
+          }
+          syncProgressHideFrame = requestAnimationFrame(waitUntilFull);
+        };
+        if (!syncProgressHideFrame) {
+          syncProgressHideFrame = requestAnimationFrame(waitUntilFull);
+        }
+        return;
+      }
+
+      finishHide();
     }
 
     async function finishSyncProgress(status = '同步完成') {
