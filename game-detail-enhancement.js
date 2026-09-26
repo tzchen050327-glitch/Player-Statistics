@@ -2287,13 +2287,19 @@
         const from=compactName(m[1]),to=compactName(m[2]);
         for(const k of keys) if(runners[k]===from) runners[k]=to;
       }
+
+      // Collect runner actions first. Applying them immediately can corrupt a
+      // second action in the same PA: e.g. first-base runner advances to second,
+      // then the original second-base runner is declared out. The first action
+      // must not overwrite the identity needed by the second one.
+      const runnerActions=[];
       for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*((?:趁傳(?:進壘)?\s*)?上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
-        const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];
-        if(runners[from]===name||!runners[from]) runners[from]='';
-        if(/上(?:一壘|二壘|三壘)$/.test(action)){
-          const to=destOf(action);
-          if(to) runners[to]=name;
-        }
+        runnerActions.push({
+          from:keyOf(m[1]),
+          name:compactName(m[2]),
+          action:m[3],
+          to:/上(?:一壘|二壘|三壘)$/.test(m[3])?destOf(m[3]):''
+        });
       }
 
       const nextPlay=plays[i+1];
@@ -2309,6 +2315,16 @@
       const dest=destination(result,desc);
       const after=officialAfter || heuristicAfter(before,dest,result,play);
       assignToState(after,batter,dest,!!officialAfter,play);
+
+      // Runner text is authoritative for identities. Apply every explicit
+      // movement/out after the generic state assignment so multi-runner plays
+      // cannot leave an out runner attached to a base.
+      for(const action of runnerActions){
+        for(const key of keys){
+          if(samePlayerName(runners[key],action.name)) runners[key]='';
+        }
+        if(action.to) runners[action.to]=action.name;
+      }
 
       if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
     }
