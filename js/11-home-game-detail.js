@@ -1717,12 +1717,28 @@
       return Boolean(winner && loser);
     }
 
+    function homeGameDecisionCountsSettled(detail) {
+      if (String(detail?.status || '').toLowerCase() !== 'final') return true;
+      const decisions = detail?.decisions || detail?.gameDecisions || null;
+      if (!decisions) return false;
+      const players = [
+        decisions?.winningPitcher,
+        decisions?.losingPitcher,
+        decisions?.savePitcher || decisions?.savingPitcher,
+        ...(Array.isArray(decisions?.holds) ? decisions.holds : []),
+        ...(Array.isArray(decisions?.holdPitchers) ? decisions.holdPitchers : [])
+      ].filter(player => String(player?.name || player?.fullName || '').trim());
+      return players.every(player => Number(player?.count) > 0);
+    }
+
     function homeGameDetailCacheTtl(detail) {
       const status = String(detail?.status || '').toLowerCase();
       if (status === 'final') {
         const plays = Array.isArray(detail?.plays) ? detail.plays : [];
         if (activeHomeGameDetail?.league === 'CPBL' && plays.length === 0) return 0;
-        return homeGameDecisionsSettled(detail) ? 12 * 60 * 60 * 1000 : 60 * 1000;
+        return homeGameDecisionsSettled(detail) && homeGameDecisionCountsSettled(detail)
+          ? 12 * 60 * 60 * 1000
+          : 60 * 1000;
       }
       if (status === 'cancelled') return 12 * 60 * 60 * 1000;
       if (status === 'scheduled') return 2 * 60 * 1000;
@@ -1737,7 +1753,8 @@
 
       // CPBL can publish FINAL before official W/L/GWRBI is settled. Keep a
       // low-frequency refresh alive only while those decisions are incomplete.
-      if (activeHomeGameDetail.league === 'CPBL' && status === 'final' && !homeGameDecisionsSettled(detail)) {
+      if (activeHomeGameDetail.league === 'CPBL' && status === 'final'
+          && (!homeGameDecisionsSettled(detail) || !homeGameDecisionCountsSettled(detail))) {
         const delay = 60 * 1000;
         startHomeGameDetailRefreshCountdown(delay);
         homeGameDetailRefreshTimer = setTimeout(() => {
