@@ -684,13 +684,13 @@
     const p = compactName(value).toUpperCase();
     if (/^(P|投|投手|PITCHER)$/.test(p)) return 'p';
     if (/^(C|捕|捕手|CATCHER)$/.test(p)) return 'c';
-    if (/^(1B|一|一壘|一塁|FIRST)$/.test(p)) return '1b';
-    if (/^(2B|二|二壘|二塁|SECOND)$/.test(p)) return '2b';
-    if (/^(3B|三|三壘|三塁|THIRD)$/.test(p)) return '3b';
-    if (/^(SS|遊|游|遊撃|游擊|SHORT)$/.test(p)) return 'ss';
-    if (/^(LF|左|左翼|LEFT)$/.test(p)) return 'lf';
-    if (/^(CF|中|中堅|CENTER)$/.test(p)) return 'cf';
-    if (/^(RF|右|右翼|RIGHT)$/.test(p)) return 'rf';
+    if (/^(1B|一|一壘|一塁|一壘手|一塁手|FIRST)$/.test(p)) return '1b';
+    if (/^(2B|二|二壘|二塁|二壘手|二塁手|SECOND)$/.test(p)) return '2b';
+    if (/^(3B|三|三壘|三塁|三壘手|三塁手|THIRD)$/.test(p)) return '3b';
+    if (/^(SS|遊|游|遊撃|游擊|遊擊手|游擊手|SHORT)$/.test(p)) return 'ss';
+    if (/^(LF|左|左翼|左外野手|LEFT)$/.test(p)) return 'lf';
+    if (/^(CF|中|中堅|中外野手|CENTER)$/.test(p)) return 'cf';
+    if (/^(RF|右|右翼|右外野手|RIGHT)$/.test(p)) return 'rf';
     return '';
   }
 
