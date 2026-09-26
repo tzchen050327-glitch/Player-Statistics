@@ -416,7 +416,7 @@
     }
 
     function standingsTeamDetailKey(team) {
-      return `${standingsUiState.league}|${standingsCurrentView()}|${team}`;
+      return `${standingsUiState.league}|${standingsSeasonYear()}|${standingsCurrentView()}|${team}`;
     }
 
     function standingsGameOpponent(game, team) {
