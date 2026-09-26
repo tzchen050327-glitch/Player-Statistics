@@ -322,16 +322,22 @@
         let hits = pregameHits;
         let homeRuns = pregameHomeRuns;
 
-        // Prefer the locked pregame snapshot. If it is absent but the season line
-        // is clearly postgame/current (AB advanced beyond pregame AB), back out
-        // this game's line to recover the pregame baseline.
+        // Prefer the locked pregame snapshot. During a live/suspended CPBL game,
+        // direct season totals are already updated by the official source, so
+        // subtract the current game's line first and then rebuild each PA in order.
+        // This prevents e.g. the 98th season hit from rendering as hit 99.
+        const liveLike = ['live','playing','inprogress','in_progress','suspended'].includes(
+          String(detail?.status || detail?.game?.status || '').toLowerCase()
+        );
+        const directLooksPostgame = directAb !== null && pregameAb !== null && directAb > pregameAb;
+
         if (hits === null && directHits !== null) {
-          hits = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHits !== null
+          hits = gameHits !== null && (liveLike || directLooksPostgame)
             ? Math.max(0, directHits - gameHits)
             : directHits;
         }
         if (homeRuns === null && directHomeRuns !== null) {
-          homeRuns = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHomeRuns !== null
+          homeRuns = gameHomeRuns !== null && (liveLike || directLooksPostgame)
             ? Math.max(0, directHomeRuns - gameHomeRuns)
             : directHomeRuns;
         }
