@@ -86,11 +86,32 @@
         try {
           const provider = String(player.externalProvider || '').toUpperCase();
           const linkedYear = Math.floor(Number(player.externalYear) || 0);
+
+          if (['NPB','KBO'].includes(provider)) {
+            const knownYears = availableSeasonYears(player, 'A');
+            const lastChecked = Number(player?.externalLevelYearsCheckedAt?.A || 0);
+            const stale = !lastChecked || (Date.now() - lastChecked > 24 * 60 * 60 * 1000);
+            if (!knownYears.includes(CURRENT_YEAR) && linkedYear < CURRENT_YEAR && stale) {
+              try {
+                await syncExternalLevelYears(
+                  player,
+                  'A',
+                  (percent,status) => setSyncProgress(Math.min(32, Math.max(8, Math.round(percent * .65))), status)
+                );
+              } catch (error) {
+                console.warn(`${provider} 新球季年份確認失敗，沿用上一季`, error);
+              }
+            }
+          }
+
+          const refreshedYears = availableSeasonYears(player, 'A');
           const currentSeasonCandidate = ['NPB','KBO','US','MLB','MILB'].includes(provider)
-            && (linkedYear === CURRENT_YEAR || selectedSeason === CURRENT_YEAR);
-          const targetYear = currentSeasonCandidate
+            && (linkedYear === CURRENT_YEAR || refreshedYears.includes(CURRENT_YEAR) || selectedSeason === CURRENT_YEAR);
+          const targetYear = isUsPlayer(player)
             ? CURRENT_YEAR
-            : (selectedSeason || linkedYear || CURRENT_YEAR);
+            : currentSeasonCandidate
+              ? CURRENT_YEAR
+              : (selectedSeason || linkedYear || CURRENT_YEAR);
           selectedLevel = 'A';
           if (selectedTab === 'minor') selectedTab = 'base';
           if (!supportsUsDualRoleTabs(player) && selectedTab === 'secondary') selectedTab = 'base';

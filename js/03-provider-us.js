@@ -177,10 +177,12 @@
       )].sort((a,b)=>b-a);
 
       const oldKey = String(player.usSelectedCareerKey || '');
-      let active = player.usCareerEntries.find(entry => entry.key === oldKey) || null;
       const targetYear = Number(preferredYear) || 0;
-      if (!active && targetYear) {
-        active = player.usCareerEntries.find(entry => Number(entry.year) === targetYear) || null;
+      let active = targetYear
+        ? player.usCareerEntries.find(entry => Number(entry.year) === targetYear) || null
+        : null;
+      if (!active && oldKey) {
+        active = player.usCareerEntries.find(entry => entry.key === oldKey) || null;
       }
       if (!active) {
         active = player.usCareerEntries.find(entry => Number(entry.year) === CURRENT_YEAR)

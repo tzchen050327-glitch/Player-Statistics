@@ -152,6 +152,15 @@
       return standingsOfficialCache.meta?.[standingsUiState.league] || null;
     }
 
+    function standingsSeasonYear() {
+      const league = standingsUiState.league;
+      const perLeague = Number(standingsOfficialCache?.years?.[league]);
+      const shared = Number(standingsOfficialCache?.year);
+      return Number.isInteger(perLeague) && perLeague >= 1900
+        ? perLeague
+        : (Number.isInteger(shared) && shared >= 1900 ? shared : CURRENT_YEAR);
+    }
+
     function standingsDisplayRows() {
       const section = standingsCurrentOfficialSection();
       if (Array.isArray(section?.rows) && section.rows.length) {
@@ -620,7 +629,7 @@
         <section class="standings-team-detail" id="standingsTeamDetail">
           <div class="standings-team-detail-head">
             <div class="standings-team-detail-heading">
-              <span>${standingsLeagueCode()} 2026・${standingsSubTitle()}</span>
+              <span>${standingsLeagueCode()} ${Number(data?.seasonYear) || standingsSeasonYear()}・${standingsSubTitle()}</span>
               <div class="standings-team-title-line">
                 <strong>${escapeHtml(team)}</strong>
                 ${summary ? `<span class="standings-team-game-count"><b>應賽 ${Number(summary.expectedGames)||0}</b><i></i><b>已賽 ${Number(summary.playedGames)||0}</b></span>` : ''}
@@ -732,7 +741,7 @@
 
         <div class="standings-overview">
           <div class="standings-overview-copy">
-            <span class="standings-overview-label">${standingsLeagueCode()} 2026</span>
+            <span class="standings-overview-label">${standingsLeagueCode()} ${standingsSeasonYear()}</span>
             <strong>${standingsSubTitle()}戰績</strong>
           </div>
           <span class="standings-preview-badge">${hasOfficial ? (['live','pending_reconcile'].includes(String(standingsCurrentMeta()?.status || '')) ? '即時結算' : '官方資料') : (standingsOfficialLoading ? '讀取中' : '待載入')}</span>
