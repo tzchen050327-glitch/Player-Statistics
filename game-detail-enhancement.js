@@ -1146,17 +1146,20 @@
 
   function renderLineupPanel(detail,side) {
     const effective=effectiveCurrentBatter(detail);
-    // lineups.*.batters is the canonical CURRENT nine-player batting order.
-    // A substitution replaces that lineup slot instead of being appended.
-    const entries=lineupEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
+    // CPBL needs the full batting-slot substitution chain, not only the current
+    // nine-player lineup. lineupDisplayEntries reconstructs starter -> pinch
+    // hitter/runner -> defensive replacement while keeping the same batting slot.
+    const entries=lineupDisplayEntries(detail,side), current=compactName(effective?.fullName||effective?.name||effective?.playerName||'');
     const halfResults=currentHalfLineupResults(detail,side);
-    const byOrder=new Map(entries.map((entry,index)=>[Number(entry?.order)||index+1,entry]));
-    const rows=Array.from({length:9},(_,i)=>byOrder.get(i+1)||{order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:'',acnt:''});
+    const rows=entries.length
+      ? entries
+      : Array.from({length:9},(_,i)=>({order:i+1,number:'',name:'',avg:'',hits:'',homeRuns:'',rbi:'',acnt:''}));
     return `<div class="gdx-landscape-lineup">${`<div class="gdx-lineup-head"><span>#</span><span>姓名</span><span>AVG</span><span>H</span><span>HR</span><span>RBI</span><span>本局</span></div>`}${rows.map(e=>{
       const results=lineupHalfResults(e,halfResults);
       const title=results.length?`本半局：${results.join('、')}`:'';
       const resultHtml=results.map(result=>`<i class="${lineupPaTone(result)}">${esc(result)}</i>`).join('');
-      return `<div class="gdx-lineup-row ${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(e.number||'—')}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span><span class="gdx-lineup-half-result ${results.length?'has-result':''}" title="${esc(title)}">${resultHtml}</span></div>`;
+      const orderLabel=e.isSubstitute?'↳':(Number(e.order)||'—');
+      return `<div class="gdx-lineup-row ${e.isSubstitute?'is-substitute ':''}${e.name&&samePlayerName(e.name,current)?'is-current':''}"><span>${esc(orderLabel)}</span><strong>${esc(e.name||'—')}</strong><span>${esc(e.avg||'—')}</span><span>${esc(e.hits??'—')}</span><span>${esc(e.homeRuns??'—')}</span><span>${esc(e.rbi??'—')}</span><span class="gdx-lineup-half-result ${results.length?'has-result':''}" title="${esc(title)}">${resultHtml}</span></div>`;
     }).join('')}</div>`;
   }
 
