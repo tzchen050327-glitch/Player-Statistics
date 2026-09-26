@@ -386,6 +386,10 @@
             data = {
               ...data,
               [selectedKey]:retryData[selectedKey],
+              years:{
+                ...(data?.years || {}),
+                [selectedKey]:Number(retryData?.years?.[selectedKey] || retryData?.year) || CURRENT_YEAR
+              },
               meta:{
                 ...(data?.meta || {}),
                 [selectedKey]:retryData?.meta?.[selectedKey] || null
