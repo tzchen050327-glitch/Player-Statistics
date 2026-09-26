@@ -257,6 +257,113 @@
       return '';
     }
 
+    function homeGameDetailSeasonResultLabels(detail, plays = []) {
+      const labels = new Map();
+      const league = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase();
+      if (league !== 'CPBL') return labels;
+
+      const normalizeName = value => String(value || '')
+        .replace(/^(?:代打|代跑)[・·\\s]*/,'')
+        .replace(/[・·.\\s]/g,'')
+        .trim()
+        .toLowerCase();
+      const pickNumber = (row, keys) => {
+        for (const key of keys) {
+          const value = row?.[key];
+          if (value === null || value === undefined || value === '') continue;
+          const n = Number(value);
+          if (Number.isFinite(n)) return n;
+        }
+        return null;
+      };
+
+      const rawBatters = [
+        ...(Array.isArray(detail?.gameBatters) ? detail.gameBatters : []),
+        ...['away','home'].flatMap(side => [
+          ...(Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []),
+          ...(Array.isArray(detail?.lineups?.[side]?.roster) ? detail.lineups[side].roster : []),
+          ...(Array.isArray(detail?.startingLineup?.[side]) ? detail.startingLineup[side] : [])
+        ])
+      ];
+      const byName = new Map();
+      for (const row of rawBatters) {
+        const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
+        const key = normalizeName(name);
+        if (!key) continue;
+        const score = [
+          'pregameHits','pregameHomeRuns','hits','h','homeRuns','hr',
+          'gameHits','gameHomeRuns','pregameAb','ab','atBats','gameAb'
+        ].reduce((sum, field) => sum + (row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== '' ? 1 : 0), 0);
+        const existing = byName.get(key);
+        if (!existing || score > existing.score) byName.set(key, { row, score });
+      }
+
+      const counters = new Map();
+      const counterFor = name => {
+        const key = normalizeName(name);
+        if (!key) return null;
+        if (counters.has(key)) return counters.get(key);
+        const row = byName.get(key)?.row || null;
+        if (!row) {
+          const empty = { hits:null, homeRuns:null };
+          counters.set(key, empty);
+          return empty;
+        }
+
+        const pregameHits = pickNumber(row, ['pregameHits']);
+        const pregameHomeRuns = pickNumber(row, ['pregameHomeRuns','pregameHr']);
+        const directHits = pickNumber(row, ['hits','h']);
+        const directHomeRuns = pickNumber(row, ['homeRuns','hr']);
+        const gameHits = pickNumber(row, ['gameHits']);
+        const gameHomeRuns = pickNumber(row, ['gameHomeRuns','gameHr']);
+        const pregameAb = pickNumber(row, ['pregameAb']);
+        const directAb = pickNumber(row, ['ab','atBats']);
+
+        let hits = pregameHits;
+        let homeRuns = pregameHomeRuns;
+
+        // Prefer the locked pregame snapshot. If it is absent but the season line
+        // is clearly postgame/current (AB advanced beyond pregame AB), back out
+        // this game's line to recover the pregame baseline.
+        if (hits === null && directHits !== null) {
+          hits = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHits !== null
+            ? Math.max(0, directHits - gameHits)
+            : directHits;
+        }
+        if (homeRuns === null && directHomeRuns !== null) {
+          homeRuns = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHomeRuns !== null
+            ? Math.max(0, directHomeRuns - gameHomeRuns)
+            : directHomeRuns;
+        }
+
+        const counter = { hits, homeRuns };
+        counters.set(key, counter);
+        return counter;
+      };
+
+      for (const play of Array.isArray(plays) ? plays : []) {
+        const batter = String(play?.batter || play?.hitter || '').trim();
+        if (!batter) continue;
+        const result = String(play?.result || play?.raw || '').trim();
+        if (!result) continue;
+        const isHomeRun = /全壘打|全塁打|本塁打|home\\s*run/i.test(result);
+        const isHit = isHomeRun || /三壘安打|三塁打|二壘安打|二塁打|一壘安打|一塁打|安打|ヒット|single|double|triple/i.test(result);
+        if (!isHit) continue;
+
+        const counter = counterFor(batter);
+        if (!counter) continue;
+        if (counter.hits !== null) counter.hits += 1;
+        if (isHomeRun && counter.homeRuns !== null) counter.homeRuns += 1;
+
+        if (isHomeRun && counter.homeRuns !== null) {
+          labels.set(play, `${result}${Math.floor(counter.homeRuns)}`);
+        } else if (counter.hits !== null) {
+          labels.set(play, `${result}${Math.floor(counter.hits)}`);
+        }
+      }
+      return labels;
+    }
+
     function homeGameDetailMeta(play) {
       return [
         homeGameDetailOutLabel(play?.outs),
@@ -1489,6 +1596,7 @@
       const currentBatter = String(detail?.current?.batter?.name || '').trim();
       const currentPitcher = String(detail?.current?.pitcher?.name || '').trim();
       const displayPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
+      const seasonResultLabels = homeGameDetailSeasonResultLabels(detail, displayPlays);
       const groups = homeGameDetailGroups(displayPlays);
       const gameInfo = detail?.game || game || {};
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
@@ -1533,7 +1641,7 @@
           <div class="game-detail-pa-list">
             ${group.plays.map(play => `
               <div class="game-detail-pa-row">
-                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(play?.result || '—'))}</span></div>
+                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(seasonResultLabels.get(play) || play?.result || '—'))}</span></div>
                 <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
               </div>`).join('')}
           </div>
