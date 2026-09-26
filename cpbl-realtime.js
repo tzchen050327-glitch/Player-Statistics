@@ -76,8 +76,15 @@
   }
 
   function publishedDetail(row) {
-    if (Number(row?.published_revision || 0) <= 0) return null;
-    const detail = row?.published_payload;
+    const status = String(row?.status || row?.payload?.status || row?.published_payload?.status || '').toLowerCase();
+    const terminal = isTerminalStatus(status);
+    // LIVE uses the revisioned published snapshot. Once a game is terminal,
+    // prefer the newest payload because official decisions (W/L/HLD/SV/GWRBI)
+    // can settle several minutes after the first FINAL publication.
+    const detail = terminal && row?.payload && typeof row.payload === 'object' && !Array.isArray(row.payload)
+      ? row.payload
+      : row?.published_payload;
+    if (!terminal && Number(row?.published_revision || 0) <= 0) return null;
     return detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
   }
 
@@ -90,7 +97,7 @@
       game_date:`eq.${d}`,
       game_id:`eq.${id}`,
       kind_code:`eq.${kind}`,
-      select:'game_date,game_id,kind_code,status,published_payload,published_revision,published_at',
+      select:'game_date,game_id,kind_code,status,payload,fetched_at,published_payload,published_revision,published_at',
       limit:'1'
     });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/cpbl_live_game_cache?${query}`, {
