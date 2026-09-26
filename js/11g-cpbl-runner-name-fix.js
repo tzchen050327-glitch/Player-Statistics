@@ -96,7 +96,10 @@
       const base = root.querySelector(`.gdx-runner-base.gdx-runner-${key}`);
       const name = root.querySelector(`.gdx-runner-name-${key}`);
       if (base) base.classList.toggle('is-on', !!state[key]);
-      if (name) name.textContent = state[key] ? (names[key] || '—') : '';
+      if (name) {
+        if (!state[key]) name.textContent = '';
+        else if (names[key]) name.textContent = names[key];
+      }
     }
   }
 
