@@ -1829,8 +1829,13 @@
             if (detail) fromAnyCache = true;
           } catch {}
         }
-        if (detail && league === 'CPBL' && String(detail?.status || '').toLowerCase() === 'final' && !homeGameDecisionsSettled(detail)) {
+        if (detail && league === 'CPBL' && String(detail?.status || '').toLowerCase() === 'final'
+            && (!homeGameDecisionsSettled(detail) || !homeGameDecisionCountsSettled(detail))) {
           try {
+            // Realtime FINAL payload can already have the correct decision names
+            // while W/L/HLD/SV counts are still zero. Route incomplete FINAL
+            // records through cpbl-game-detail so season pitching totals can fill
+            // the counts instead of re-reading the same raw payload forever.
             detail = await leagueGameDetailRequest(league, date, { ...game, ...(detail?.game || {}), status:'final' }, false);
             fromPublishedCache = false;
             fromAnyCache = true;
