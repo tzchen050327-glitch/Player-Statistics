@@ -104,18 +104,112 @@
       return '正在同步國外聯盟資料';
     }
 
-    function setSyncProgress(percent, status, { error = false } = {}) {
+    let syncProgressShown = 0;
+    let syncProgressGoal = 0;
+    let syncProgressFrame = 0;
+    let syncProgressCruiseTimer = 0;
+    let syncProgressCruiseCeiling = 0;
+
+    function renderSyncProgressValue(value) {
+      const safe = Math.max(0, Math.min(100, Number(value) || 0));
+      const rounded = Math.round(safe);
+      if (els.syncProgressPercent) els.syncProgressPercent.textContent = `${rounded}%`;
+      if (els.syncProgressBar) els.syncProgressBar.style.width = `${safe.toFixed(2)}%`;
+    }
+
+    function stopSyncProgressCruise() {
+      if (syncProgressCruiseTimer) clearInterval(syncProgressCruiseTimer);
+      syncProgressCruiseTimer = 0;
+      syncProgressCruiseCeiling = 0;
+    }
+
+    function animateSyncProgress() {
+      if (syncProgressFrame) return;
+      const step = () => {
+        const delta = syncProgressGoal - syncProgressShown;
+        if (delta <= 0.08) {
+          syncProgressShown = syncProgressGoal;
+          renderSyncProgressValue(syncProgressShown);
+          syncProgressFrame = 0;
+          return;
+        }
+        // Ease quickly enough to feel responsive, but keep both the number and
+        // bar visibly moving instead of jumping between coarse backend stages.
+        const increment = Math.max(0.12, delta * (syncProgressGoal >= 100 ? 0.18 : 0.11));
+        syncProgressShown = Math.min(syncProgressGoal, syncProgressShown + increment);
+        renderSyncProgressValue(syncProgressShown);
+        syncProgressFrame = requestAnimationFrame(step);
+      };
+      syncProgressFrame = requestAnimationFrame(step);
+    }
+
+    function startSyncProgressCruise(ceiling, durationMs) {
+      stopSyncProgressCruise();
+      const safeCeiling = Math.max(syncProgressGoal, Math.min(96, Number(ceiling) || 0));
+      if (safeCeiling <= syncProgressGoal) return;
+
+      const startGoal = syncProgressGoal;
+      const startedAt = performance.now();
+      const duration = Math.max(1200, Number(durationMs) || 6000);
+      syncProgressCruiseCeiling = safeCeiling;
+
+      syncProgressCruiseTimer = setInterval(() => {
+        const elapsed = Math.max(0, performance.now() - startedAt);
+        // Estimated progress approaches the ceiling asymptotically and never
+        // reaches it by itself. Real completion stages still own the final jump.
+        const ratio = Math.min(0.96, 1 - Math.exp(-elapsed / Math.max(500, duration / 3)));
+        const next = startGoal + (safeCeiling - startGoal) * ratio;
+        if (next > syncProgressGoal) {
+          syncProgressGoal = next;
+          animateSyncProgress();
+        }
+      }, 220);
+    }
+
+    function setSyncProgress(percent, status, {
+      error = false,
+      autoAdvanceTo = 0,
+      autoAdvanceMs = 6000
+    } = {}) {
       setSyncUiLocked(true);
-      const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+      const overlayWasHidden = Boolean(els.syncProgressOverlay?.classList.contains('hidden'));
+      const value = Math.max(0, Math.min(100, Number(percent) || 0));
+
+      if (overlayWasHidden) {
+        stopSyncProgressCruise();
+        if (syncProgressFrame) cancelAnimationFrame(syncProgressFrame);
+        syncProgressFrame = 0;
+        syncProgressShown = 0;
+        syncProgressGoal = 0;
+        renderSyncProgressValue(0);
+      }
+
       if (els.syncProgressOverlay) els.syncProgressOverlay.classList.remove('hidden');
       if (els.syncProgressCard) els.syncProgressCard.classList.toggle('error', Boolean(error));
       if (els.syncProgressTitle) els.syncProgressTitle.textContent = syncProgressTitleForPlayer();
-      if (els.syncProgressPercent) els.syncProgressPercent.textContent = `${value}%`;
       if (els.syncProgressStatus) els.syncProgressStatus.textContent = status || '';
-      if (els.syncProgressBar) els.syncProgressBar.style.width = `${value}%`;
+
+      // Never visually move backwards when a later stage reports a lower
+      // coarse percentage than an earlier estimated/parallel stage.
+      syncProgressGoal = value >= 100
+        ? 100
+        : Math.max(syncProgressGoal, value);
+      animateSyncProgress();
+
+      if (error || value >= 100 || (syncProgressCruiseCeiling && value >= syncProgressCruiseCeiling)) {
+        stopSyncProgressCruise();
+      }
+      if (!error && value < 100 && Number(autoAdvanceTo) > syncProgressGoal) {
+        startSyncProgressCruise(autoAdvanceTo, autoAdvanceMs);
+      }
     }
 
     function hideSyncProgress() {
+      stopSyncProgressCruise();
+      if (syncProgressFrame) cancelAnimationFrame(syncProgressFrame);
+      syncProgressFrame = 0;
+      syncProgressShown = 0;
+      syncProgressGoal = 0;
       els.syncProgressOverlay?.classList.add('hidden');
       els.syncProgressCard?.classList.remove('error');
       setSyncUiLocked(false);
