@@ -1732,7 +1732,24 @@
     function scheduleHomeGameDetailRefresh(detail) {
       stopHomeGameDetailRefresh();
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
-      if (String(detail?.status || '').toLowerCase() !== 'live') return;
+
+      const status = String(detail?.status || '').toLowerCase();
+
+      // CPBL can publish FINAL before official W/L/GWRBI is settled. Keep a
+      // low-frequency refresh alive only while those decisions are incomplete.
+      if (activeHomeGameDetail.league === 'CPBL' && status === 'final' && !homeGameDecisionsSettled(detail)) {
+        const delay = 60 * 1000;
+        startHomeGameDetailRefreshCountdown(delay);
+        homeGameDetailRefreshTimer = setTimeout(() => {
+          homeGameDetailRefreshTimer = 0;
+          stopHomeGameDetailRefreshCountdown();
+          if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
+          refreshActiveHomeGameDetail({ force:false, automatic:true });
+        }, delay);
+        return;
+      }
+
+      if (status !== 'live') return;
       if (!homeGameDetailAutoAvailable()) return;
       let delay = 30 * 1000;
       if (activeHomeGameDetail.league === 'CPBL') {
