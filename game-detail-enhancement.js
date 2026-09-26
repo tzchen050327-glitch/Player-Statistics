@@ -706,6 +706,48 @@
       const key = positionKey(entry?.position || entry?.pos || ''), name = compactName(entry?.name || entry?.fullName || '');
       if (key && name) map[key] = name;
     }
+
+    if (String(detail?.league || '').toUpperCase() === 'CPBL') {
+      const roleAndName = value => {
+        const text = compactName(value).replace(/[()（）]/g,'').replace(/^[-：:]+|[-：:]+$/g,'');
+        const role = '(投手|捕手|一壘手|二壘手|三壘手|游擊手|遊擊手|左外野手|中外野手|右外野手|P|C|1B|2B|3B|SS|LF|CF|RF)';
+        let match = text.match(new RegExp(`^${role}[-：:]?(.*)$`, 'i'));
+        if (match) return { position:positionKey(match[1]), name:compactName(match[2]) };
+        match = text.match(new RegExp(`^(.*?)[-：:]?${role}$`, 'i'));
+        if (match) return { position:positionKey(match[2]), name:compactName(match[1]) };
+        return { position:'', name:text };
+      };
+      const removeName = name => {
+        const target = normName(name);
+        if (!target) return;
+        for (const [pos,current] of Object.entries(map)) {
+          if (normName(current) === target) delete map[pos];
+        }
+      };
+      const assign = (name,pos) => {
+        if (!name || !pos) return;
+        removeName(name);
+        map[pos] = name;
+      };
+
+      for (const play of Array.isArray(detail?.plays) ? detail.plays : []) {
+        const half = String(play?.half || '').toLowerCase();
+        const fieldingSide = half === 'top' ? 'home' : half === 'bottom' ? 'away' : '';
+        if (fieldingSide !== side) continue;
+        const description = String(play?.description || '');
+        let match;
+        const defenseRe = /更換守備：([^。]+?)=>([^。]+?)(?=。|$)/g;
+        while ((match = defenseRe.exec(description))) {
+          const from = roleAndName(match[1]);
+          const to = roleAndName(match[2]);
+          const name = to.name || from.name;
+          if (!name || !to.position) continue;
+          if (from.name && to.name && normName(from.name) !== normName(to.name)) removeName(from.name);
+          assign(name,to.position);
+        }
+      }
+    }
+
     const starter = pregameStarterForSide(detail, side);
     const status = String(detail?.status || '').toLowerCase();
     const livePitcher = ['live','suspended','final'].includes(status)
@@ -839,13 +881,14 @@
         const from=compactName(m[1]),to=compactName(m[2]);
         for(const k of keys) if(runners[k]===from) runners[k]=to;
       }
+      const runnerActions=[];
       for(const m of desc.matchAll(/(一壘|二壘|三壘)跑者\s*([^\s，。-]+?)\s*((?:趁傳(?:進壘)?\s*)?上(?:一壘|二壘|三壘)|回本壘(?:得分)?|出局)/g)){
-        const from=keyOf(m[1]),name=compactName(m[2]),action=m[3];
-        if(runners[from]===name||!runners[from]) runners[from]='';
-        if(/上(?:一壘|二壘|三壘)$/.test(action)){
-          const to=destOf(action);
-          if(to) runners[to]=name;
-        }
+        runnerActions.push({
+          from:keyOf(m[1]),
+          name:compactName(m[2]),
+          action:m[3],
+          to:/上(?:一壘|二壘|三壘)$/.test(m[3])?destOf(m[3]):''
+        });
       }
 
       const nextPlay=plays[i+1];
@@ -861,6 +904,13 @@
       const dest=destination(result,desc);
       const after=officialAfter || heuristicAfter(before,dest,result,play);
       assignToState(after,batter,dest,!!officialAfter,play);
+
+      for(const action of runnerActions){
+        for(const key of keys){
+          if(samePlayerName(runners[key],action.name)) runners[key]='';
+        }
+        if(action.to) runners[action.to]=action.name;
+      }
 
       if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
     }
