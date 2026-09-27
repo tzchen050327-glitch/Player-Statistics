@@ -70,6 +70,7 @@
         ? [
             { key:'era', label:'ERA', lower:true, fmt:'two' },
             { key:'whip', label:'WHIP', lower:true, fmt:'two' },
+            { key:'rs9', label:'援護率', fmt:'two' },
             { key:'w', label:'W', fmt:'int' },
             { key:'k', label:'K', fmt:'int' },
             { key:'sv', label:'SV', fmt:'int' },
@@ -109,8 +110,9 @@
       const def = playerToolsMetricDef(role, metric);
       const data = playerToolsData(league);
       const customOpsRate = role === 'hitter' && ['ops','opsplus','obp','slg'].includes(def.key);
+      const customSupportRate = role === 'pitcher' && def.key === 'rs9';
       const official = data?.leaderboards?.[role]?.[def.key];
-      if (!customOpsRate && Array.isArray(official) && official.length) return official;
+      if (!customOpsRate && !customSupportRate && Array.isArray(official) && official.length) return official;
       const standardRateMetric = role === 'hitter'
         ? def.key === 'avg'
         : ['era','whip'].includes(def.key);
@@ -118,6 +120,7 @@
         .filter(row => Number.isFinite(Number(row?.[def.key])))
         .filter(row => !standardRateMetric || row?.qualifiedRate === true)
         .filter(row => !customOpsRate || row?.qualifiedOpsRate === true)
+        .filter(row => !customSupportRate || row?.qualifiedSupportRate === true)
         .sort((a,b) => {
           const av = Number(a?.[def.key] || 0);
           const bv = Number(b?.[def.key] || 0);
@@ -150,6 +153,13 @@
       if (!defs.some(x => x.key === playerRankingMetric)) playerRankingMetric = defs[0].key;
       const def = playerToolsMetricDef(playerRankingRole, playerRankingMetric);
       const rows = data ? playerToolsSortedRows(playerRankingLeague, playerRankingRole, playerRankingMetric) : [];
+      const supportMeta = data?.supportRate || null;
+      const supportRange = supportMeta?.fromDate
+        ? `${supportMeta.fromDate}${supportMeta?.throughDate && supportMeta.throughDate !== supportMeta.fromDate ? `～${supportMeta.throughDate}` : ''}`
+        : '';
+      const pitcherRankingNote = supportMeta?.complete
+        ? `ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。援護率（RS/9）為本站逐場自行計算：先發在場期間球隊得分 × 27 ÷ 先發投球出局數；至少 2 場先發才列入排行。完整統計期間 ${supportRange}。`
+        : 'ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。援護率需整季逐場資料完整後才顯示，未完成時不使用部分資料。';
       els.playerRankingPageContent.innerHTML = `
         <div class="player-tools-switch-group">
           <div class="player-tools-switch-row">${playerToolsLeagueButtons(playerRankingLeague,'data-player-ranking-league')}</div>
@@ -163,7 +173,7 @@
         ${data ? `
           <div class="player-tools-source">
             <span>${playerRankingLeague === 'cpbl' ? 'CPBL' : 'NPB'} ${CURRENT_YEAR}</span>
-            <span>${data?.cache?.hit ? '共用快取' : '官方更新'}</span>
+            <span>${def.key === 'rs9' ? (supportMeta?.complete ? '本站整季計算' : '資料未完整') : (data?.cache?.hit ? '共用快取' : '官方更新')}</span>
           </div>
           <div class="player-ranking-table">
             <div class="player-ranking-head">
@@ -179,7 +189,7 @@
                 </div>`).join('') : '<div class="player-tools-empty">目前沒有可顯示的排行資料。</div>'}
             </div>
           </div>
-          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG 維持官方規定打席；OPS／OPS+／OBP／SLG 採自訂門檻：打席數至少等於球隊出賽數。OPS+ 以 100 為聯盟平均，不含球場因子。' : 'ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。'}</div>
+          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG 維持官方規定打席；OPS／OPS+／OBP／SLG 採自訂門檻：打席數至少等於球隊出賽數。OPS+ 以 100 為聯盟平均，不含球場因子。' : pitcherRankingNote}</div>
         ` : ''}
       `;
 
