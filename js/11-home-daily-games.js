@@ -66,29 +66,30 @@
       const key=homeDailyStarterPresenceKey(normalizedLeague,date,game);
       if (homeDailyStarterPresence(normalizedLeague,date,game)!==null || homeDailyStarterPresenceLoading.has(key)) return;
       homeDailyStarterPresenceLoading.add(key);
-      void fetch(LEAGUE_PREGAME_CENTER_API_URL,{
+
+      const endpoint=normalizedLeague==='CPBL'
+        ? CPBL_PREGAME_STARTERS_API_URL
+        : NPB_PREGAME_STARTERS_API_URL;
+      void fetch(endpoint,{
         method:'POST',
         headers:{'content-type':'application/json'},
         body:JSON.stringify({
           appKey:CPBL_APP_KEY,
+          action:'pregame-starters',
           league:normalizedLeague,
           date:String(date||''),
           gameId:String(game?.id||''),
           away:String(game?.away||''),
-          home:String(game?.home||''),
-          time:String(game?.time||''),
-          venue:String(game?.venue||''),
-          status:'scheduled',
-          force:false
+          home:String(game?.home||'')
         })
       }).then(async response=>{
         const data=await response.json().catch(()=>({}));
         if (!response.ok || !data?.ok) throw new Error(data?.error||`HTTP ${response.status}`);
         const hasStarter=Boolean(
-          data?.starters?.away?.name
-          || data?.starters?.away?.fullName
-          || data?.starters?.home?.name
-          || data?.starters?.home?.fullName
+          data?.awayStarter?.name
+          || data?.awayStarter?.fullName
+          || data?.homeStarter?.name
+          || data?.homeStarter?.fullName
         );
         homeDailyStarterPresenceCache.set(key,{value:hasStarter,at:Date.now()});
       }).catch(()=>{
