@@ -967,13 +967,13 @@
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.homePlayerCompareBtn?.addEventListener('click', () => {
-      currentPage = 'player-compare';
+    els.homeScheduleBtn?.addEventListener('click', () => {
+      currentPage = 'schedule';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.playerCompareBackHomeBtn?.addEventListener('click', () => {
+    els.scheduleBackHomeBtn?.addEventListener('click', () => {
       currentPage = 'home';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
