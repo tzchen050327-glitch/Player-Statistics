@@ -73,6 +73,7 @@
         : [
             { key:'avg', label:'AVG', fmt:'three' },
             { key:'ops', label:'OPS', fmt:'three' },
+            { key:'opsplus', label:'OPS+', fmt:'int' },
             { key:'hr', label:'HR', fmt:'int' },
             { key:'rbi', label:'RBI', fmt:'int' },
             { key:'h', label:'H', fmt:'int' },
@@ -102,14 +103,16 @@
     function playerToolsSortedRows(league, role, metric) {
       const def = playerToolsMetricDef(role, metric);
       const data = playerToolsData(league);
+      const customOpsRate = role === 'hitter' && ['ops','opsplus','obp','slg'].includes(def.key);
       const official = data?.leaderboards?.[role]?.[def.key];
-      if (Array.isArray(official) && official.length) return official;
-      const rateMetric = role === 'hitter'
-        ? ['avg','ops','obp','slg'].includes(def.key)
+      if (!customOpsRate && Array.isArray(official) && official.length) return official;
+      const standardRateMetric = role === 'hitter'
+        ? def.key === 'avg'
         : ['era','whip'].includes(def.key);
       return [...playerToolsRows(league, role)]
         .filter(row => Number.isFinite(Number(row?.[def.key])))
-        .filter(row => !rateMetric || row?.qualifiedRate === true)
+        .filter(row => !standardRateMetric || row?.qualifiedRate === true)
+        .filter(row => !customOpsRate || row?.qualifiedOpsRate === true)
         .sort((a,b) => {
           const av = Number(a?.[def.key] || 0);
           const bv = Number(b?.[def.key] || 0);
@@ -172,7 +175,7 @@
                 </div>`).join('') : '<div class="player-tools-empty">目前沒有可顯示的排行資料。</div>'}
             </div>
           </div>
-          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG／OPS／OBP／SLG 僅列規定打席達標球員；累積項目不限制規定打席。' : 'ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。'}</div>
+          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG 維持官方規定打席；OPS／OPS+／OBP／SLG 採自訂門檻：打席數至少等於球隊出賽數。OPS+ 以 100 為聯盟平均，不含球場因子。' : 'ERA／WHIP 僅列規定投球局達標投手；W／K／SV／HLD 不限制規定投球局。'}</div>
         ` : ''}
       `;
 
@@ -221,6 +224,7 @@
             { key:'obp', label:'OBP', fmt:'three' },
             { key:'slg', label:'SLG', fmt:'three' },
             { key:'ops', label:'OPS', fmt:'three' },
+            { key:'opsplus', label:'OPS+', fmt:'int' },
             { key:'h', label:'H', fmt:'int' },
             { key:'hr', label:'HR', fmt:'int' },
             { key:'rbi', label:'RBI', fmt:'int' },
