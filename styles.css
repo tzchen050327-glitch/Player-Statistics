@@ -1158,29 +1158,14 @@
         inset 0 1px 0 rgba(255,255,255,.11);
     }
 
-    .app-splash-ball {
-      position: relative;
-      width: 66px;
-      height: 66px;
-      border-radius: 50%;
-      background: #f4f1e8;
-      box-shadow: 0 8px 20px rgba(0,0,0,.22);
-      overflow: hidden;
+    .app-splash-logo {
+      display:block;
+      width:100%;
+      height:100%;
+      border-radius:inherit;
+      object-fit:cover;
+      box-shadow:0 8px 24px rgba(0,0,0,.28);
     }
-
-    .app-splash-ball::before,
-    .app-splash-ball::after {
-      content: '';
-      position: absolute;
-      width: 54px;
-      height: 80px;
-      top: -7px;
-      border: 2px solid #c64742;
-      border-radius: 50%;
-    }
-
-    .app-splash-ball::before { left: -34px; }
-    .app-splash-ball::after { right: -34px; }
 
     .app-splash-kicker {
       margin-bottom: 8px;
@@ -5740,16 +5725,10 @@ html[data-theme="dark"] .app-splash-mark::after{
   pointer-events:none;
 }
 
-html[data-theme="dark"] .app-splash-ball{
-  background:linear-gradient(145deg,#f3ead7,#cdbf9f) !important;
+html[data-theme="dark"] .app-splash-logo{
   box-shadow:
     0 8px 24px rgba(0,0,0,.42),
-    0 0 20px rgba(215,174,77,.10) !important;
-}
-
-html[data-theme="dark"] .app-splash-ball::before,
-html[data-theme="dark"] .app-splash-ball::after{
-  border-color:#a77a25 !important;
+    0 0 20px rgba(215,174,77,.12) !important;
 }
 
 html[data-theme="dark"] .app-splash-kicker{
