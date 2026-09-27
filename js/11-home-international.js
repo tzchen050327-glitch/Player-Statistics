@@ -160,6 +160,15 @@
       const cacheKey=internationalTeamGamesKey(competition,year,normalizedTeam);
       if (!competition || !year || !normalizedTeam) return [];
       if (!force && internationalTeamGamesCache.has(cacheKey)) return internationalTeamGamesCache.get(cacheKey);
+      if (!force) {
+        try {
+          const saved=JSON.parse(sessionStorage.getItem('intl-game-center:'+cacheKey)||'null');
+          if (saved?.at && Date.now()-Number(saved.at)<6*60*60*1000 && saved?.data) {
+            internationalTeamGamesCache.set(cacheKey,saved.data);
+            return saved.data;
+          }
+        } catch {}
+      }
       if (internationalTeamGamesLoading.has(cacheKey)) return null;
 
       internationalTeamGamesLoading.add(cacheKey);
@@ -265,6 +274,7 @@
 
         const result={games,error:'',updatedAt:Date.now()};
         internationalTeamGamesCache.set(cacheKey,result);
+        try { sessionStorage.setItem('intl-game-center:'+cacheKey,JSON.stringify({at:Date.now(),data:result})); } catch {}
         return result;
       } finally {
         internationalTeamGamesLoading.delete(cacheKey);
