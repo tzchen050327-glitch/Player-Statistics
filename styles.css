@@ -11962,12 +11962,12 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 
 /* ===== UPCOMING PLAYER TOOLS ===== */
 #homePage .home-player-ranking-entry:disabled,
-#homePage .home-player-compare-entry:disabled{
+#homePage .home-schedule-entry:disabled{
   opacity:1;
   cursor:default;
 }
 #homePage .home-player-ranking-entry .home-standings-entry-icon,
-#homePage .home-player-compare-entry .home-standings-entry-icon{
+#homePage .home-schedule-entry .home-standings-entry-icon{
   color:var(--accent-2);
 }
 
@@ -12125,6 +12125,253 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   font-size:9px;
   line-height:1.5;
 }
+
+/* ===== SCHEDULE PAGE ===== */
+.schedule-toolbar{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.schedule-league-tabs{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:5px;
+  padding:4px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:color-mix(in srgb,var(--panel) 86%,var(--bg));
+}
+.schedule-league-tabs button,
+.schedule-date-arrow,
+.schedule-today-btn,
+.schedule-date-strip button{
+  border:0;
+  font:inherit;
+  cursor:pointer;
+}
+.schedule-league-tabs button{
+  min-height:38px;
+  border-radius:9px;
+  background:transparent;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:950;
+}
+.schedule-league-tabs button.active{
+  background:var(--accent);
+  color:#fff;
+}
+.schedule-date-controls{
+  display:grid;
+  grid-template-columns:36px minmax(130px,1fr) 36px 54px;
+  gap:5px;
+}
+.schedule-date-arrow,
+.schedule-today-btn,
+.schedule-date-picker{
+  min-height:38px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--text);
+}
+.schedule-date-arrow,
+.schedule-today-btn{
+  font-size:12px;
+  font-weight:950;
+}
+.schedule-date-arrow{
+  font-size:22px;
+  line-height:1;
+}
+.schedule-today-btn.active{
+  border-color:var(--accent);
+  color:var(--accent-2);
+}
+.schedule-date-picker{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  font-size:11px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.schedule-date-picker input{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+}
+.schedule-date-strip{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:5px;
+  margin-bottom:12px;
+}
+.schedule-date-strip button{
+  min-width:0;
+  padding:8px 4px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--text);
+}
+.schedule-date-strip button span,
+.schedule-date-strip button small{
+  display:block;
+}
+.schedule-date-strip button span{
+  font-size:10px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.schedule-date-strip button small{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+}
+.schedule-date-strip button.is-today{
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
+}
+.schedule-date-strip button.active{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 16%,var(--panel));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.schedule-date-strip button.active span{
+  color:var(--accent-2);
+}
+.schedule-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:4px 2px 9px;
+}
+.schedule-summary strong{
+  font-size:12px;
+}
+.schedule-summary span{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+}
+.schedule-game-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.schedule-game-card{
+  min-width:0;
+  padding:11px 12px 10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 94%,var(--bg));
+}
+.schedule-game-card.is-detail-enabled{
+  cursor:pointer;
+}
+.schedule-game-card.is-detail-enabled:hover{
+  border-color:color-mix(in srgb,var(--accent) 58%,var(--line));
+}
+.schedule-game-meta,
+.schedule-game-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.schedule-game-meta{
+  margin-bottom:8px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+}
+.schedule-game-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:0 7px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--panel));
+  color:var(--accent-2);
+  font-size:9px;
+  font-weight:950;
+}
+.schedule-game-card.status-live .schedule-game-status{
+  background:#fff1d5;
+  color:#945f00;
+}
+.schedule-game-card.status-final .schedule-game-status{
+  background:color-mix(in srgb,var(--muted) 12%,var(--panel));
+  color:var(--muted);
+}
+.schedule-game-team{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 34px;
+  align-items:center;
+  gap:8px;
+  min-height:32px;
+  border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);
+}
+.schedule-game-team strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+}
+.schedule-game-team b{
+  text-align:right;
+  color:var(--text);
+  font-size:17px;
+  font-variant-numeric:tabular-nums;
+}
+.schedule-game-footer{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
+.schedule-game-footer em{
+  color:var(--accent-2);
+  font-style:normal;
+  font-weight:950;
+}
+@media(max-width:820px){
+  .schedule-toolbar{
+    grid-template-columns:1fr;
+  }
+  .schedule-game-list{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:560px){
+  .schedule-league-tabs button{
+    min-height:34px;
+    font-size:10px;
+  }
+  .schedule-date-controls{
+    grid-template-columns:34px minmax(0,1fr) 34px 50px;
+  }
+  .schedule-date-strip{
+    gap:3px;
+  }
+  .schedule-date-strip button{
+    padding:7px 2px;
+  }
+  .schedule-date-strip button span{
+    font-size:9px;
+  }
+}
+/* ===== SCHEDULE PAGE END ===== */
 .player-compare-selectors{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
