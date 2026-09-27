@@ -366,8 +366,8 @@
             && status === 'scheduled'
             && !lineupReady
             && Boolean(
-              game?.overview?.starterLocked?.away
-              || game?.overview?.starterLocked?.home
+              game?.overview?.starters?.away
+              || game?.overview?.starters?.home
             );
           const starterConfirmedLabel = league === 'NPB' ? '先発投手確定' : '先發投手確定';
           const showScore = status === 'live' || status === 'final';
