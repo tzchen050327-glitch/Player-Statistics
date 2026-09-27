@@ -127,6 +127,239 @@
       }
       await selectPlayer(player.id);
     }
+
+    function internationalTeamGamesKey(competition, year, team) {
+      return [competition,String(year||''),normalizeInternationalTeamName(team)].join('|');
+    }
+
+    function internationalRemoteGameKey(game, team) {
+      const id=String(game?.gameId||'').trim();
+      const date=String(game?.date||'').slice(0,10);
+      const opponent=normalizeInternationalTeamName(game?.opponent||'');
+      return id ? `id:${id}` : `fallback:${date}|${normalizeInternationalTeamName(team)}|${opponent}`;
+    }
+
+    function internationalGameNumber(value) {
+      const n=Number(value);
+      return Number.isFinite(n) ? Math.max(0,n) : 0;
+    }
+
+    async function internationalRosterForGames(competition, year, team) {
+      const key=internationalRosterKey(competition,year,team);
+      if (!internationalRosterCache.has(key) && !internationalRosterLoading.has(key)) {
+        await loadInternationalRoster(competition,year,team);
+      }
+      for (let i=0;i<60 && internationalRosterLoading.has(key);i++) {
+        await new Promise(resolve => setTimeout(resolve,100));
+      }
+      return internationalRosterCache.get(key)||null;
+    }
+
+    async function loadInternationalTeamGameBoxes(competition, year, team, {force=false} = {}) {
+      const normalizedTeam=normalizeInternationalTeamName(team);
+      const cacheKey=internationalTeamGamesKey(competition,year,normalizedTeam);
+      if (!competition || !year || !normalizedTeam) return [];
+      if (!force && internationalTeamGamesCache.has(cacheKey)) return internationalTeamGamesCache.get(cacheKey);
+      if (internationalTeamGamesLoading.has(cacheKey)) return null;
+
+      internationalTeamGamesLoading.add(cacheKey);
+      try {
+        const roster=await internationalRosterForGames(competition,year,normalizedTeam);
+        const entries=Array.isArray(roster?.players)?roster.players:[];
+        if (!entries.length) {
+          const empty={games:[],error:roster?.error||'這支球隊目前沒有可用球員名單。',updatedAt:Date.now()};
+          internationalTeamGamesCache.set(cacheKey,empty);
+          return empty;
+        }
+
+        const gameMap=new Map();
+        let cursor=0;
+        const workers=Math.min(4,entries.length);
+        const work=async()=>{
+          while (cursor<entries.length) {
+            const entry=entries[cursor++];
+            try {
+              const data=await baseballRequest('international-player-games',{
+                competition,
+                year:Number(year),
+                team:normalizedTeam,
+                playerId:String(entry?.id||''),
+                playerName:String(entry?.name||'').trim()
+              });
+              const games=Array.isArray(data?.games)?data.games:[];
+              for (const game of games) {
+                const date=String(game?.date||'').slice(0,10);
+                if (!date) continue;
+                const opponent=normalizeInternationalTeamName(game?.opponent||'');
+                const key=internationalRemoteGameKey(game,normalizedTeam);
+                if (!gameMap.has(key)) {
+                  gameMap.set(key,{
+                    key,
+                    gameId:String(game?.gameId||''),
+                    date,
+                    team:normalizedTeam,
+                    opponent,
+                    partial:Boolean(game?.partial),
+                    hitters:new Map(),
+                    pitchers:new Map(),
+                    sources:new Set()
+                  });
+                }
+                const box=gameMap.get(key);
+                box.partial=box.partial||Boolean(game?.partial);
+                for (const source of Array.isArray(game?.sources)?game.sources:[]) {
+                  if (source) box.sources.add(String(source));
+                }
+                const playerId=String(entry?.id||entry?.name||'');
+                const playerName=String(entry?.zhName||entry?.name||'未命名球員');
+                if (game?.hitter) {
+                  const h=game.hitter;
+                  box.hitters.set(playerId,{
+                    id:playerId,
+                    number:String(entry?.number||''),
+                    name:playerName,
+                    position:String(entry?.position||''),
+                    pa:internationalGameNumber(h?.pa),
+                    ab:internationalGameNumber(h?.ab),
+                    r:internationalGameNumber(h?.runs),
+                    h:internationalGameNumber(h?.hits)||(
+                      internationalGameNumber(h?.single)+internationalGameNumber(h?.double)+internationalGameNumber(h?.triple)+internationalGameNumber(h?.hr)
+                    ),
+                    rbi:internationalGameNumber(h?.rbi),
+                    bb:internationalGameNumber(h?.bb)+internationalGameNumber(h?.ibb),
+                    k:internationalGameNumber(h?.k),
+                    hr:internationalGameNumber(h?.hr),
+                    errors:internationalGameNumber(h?.errors)
+                  });
+                }
+                if (game?.pitcher) {
+                  const p=game.pitcher;
+                  box.pitchers.set(playerId,{
+                    id:playerId,
+                    number:String(entry?.number||''),
+                    name:playerName,
+                    innings:String(p?.innings||outsToIP(Number(p?.outs)||0)||'0.0'),
+                    h:internationalGameNumber(p?.h),
+                    r:internationalGameNumber(p?.r),
+                    er:internationalGameNumber(p?.er),
+                    bb:internationalGameNumber(p?.bb),
+                    k:internationalGameNumber(p?.k),
+                    pitches:internationalGameNumber(p?.pitchCount),
+                    decision:internationalGameNumber(p?.w)>0?'W':internationalGameNumber(p?.l)>0?'L':internationalGameNumber(p?.sv)>0?'SV':internationalGameNumber(p?.hld)>0?'HLD':''
+                  });
+                }
+              }
+            } catch (error) {
+              console.warn('國際賽球員逐場整合失敗',entry?.name,error);
+            }
+          }
+        };
+        await Promise.all(Array.from({length:workers},()=>work()));
+
+        const games=[...gameMap.values()].map(box=>({
+          ...box,
+          hitters:[...box.hitters.values()],
+          pitchers:[...box.pitchers.values()],
+          sources:[...box.sources]
+        })).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.gameId||'').localeCompare(String(a.gameId||'')));
+
+        const result={games,error:'',updatedAt:Date.now()};
+        internationalTeamGamesCache.set(cacheKey,result);
+        return result;
+      } finally {
+        internationalTeamGamesLoading.delete(cacheKey);
+      }
+    }
+
+    function internationalTeamBoxTotals(box) {
+      const hitters=Array.isArray(box?.hitters)?box.hitters:[];
+      return hitters.reduce((sum,row)=>({
+        r:sum.r+internationalGameNumber(row?.r),
+        h:sum.h+internationalGameNumber(row?.h),
+        e:sum.e+internationalGameNumber(row?.errors)
+      }),{r:0,h:0,e:0});
+    }
+
+    function internationalFindOpponentBox(competition, year, team, game) {
+      const opponent=normalizeInternationalTeamName(game?.opponent||'');
+      if (!opponent) return null;
+      const data=internationalTeamGamesCache.get(internationalTeamGamesKey(competition,year,opponent));
+      const games=Array.isArray(data?.games)?data.games:[];
+      return games.find(item =>
+        (game?.gameId && item?.gameId && String(item.gameId)===String(game.gameId))
+        || (
+          String(item?.date||'')===String(game?.date||'')
+          && normalizeInternationalTeamName(item?.opponent||'')===normalizeInternationalTeamName(team)
+        )
+      )||null;
+    }
+
+    function internationalBoxTable(team, box, type) {
+      const rows=Array.isArray(type==='pitcher'?box?.pitchers:box?.hitters)?(type==='pitcher'?box.pitchers:box.hitters):[];
+      if (!rows.length) return '<div class="intl-team-box-empty">沒有可用紀錄</div>';
+      if (type==='pitcher') {
+        return '<div class="intl-team-box-scroll"><table class="intl-team-box-table"><thead><tr><th>投手</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>NP</th></tr></thead><tbody>'+
+          rows.map(row=>'<tr><td><strong>'+escapeHtml(row.name||'—')+'</strong>'+ (row.decision?'<small>'+escapeHtml(row.decision)+'</small>':'') +'</td><td>'+escapeHtml(row.innings||'0.0')+'</td><td>'+row.h+'</td><td>'+row.r+'</td><td>'+row.er+'</td><td>'+row.bb+'</td><td>'+row.k+'</td><td>'+(row.pitches||'—')+'</td></tr>').join('')+
+          '</tbody></table></div>';
+      }
+      const totals=internationalTeamBoxTotals(box);
+      return '<div class="intl-team-box-scroll"><table class="intl-team-box-table"><thead><tr><th>打者</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>HR</th></tr></thead><tbody>'+
+        rows.map(row=>'<tr><td><strong>'+escapeHtml(row.name||'—')+'</strong></td><td>'+row.ab+'</td><td>'+row.r+'</td><td>'+row.h+'</td><td>'+row.rbi+'</td><td>'+row.bb+'</td><td>'+row.k+'</td><td>'+row.hr+'</td></tr>').join('')+
+        '<tr class="intl-team-box-total"><td>TOTAL</td><td>—</td><td>'+totals.r+'</td><td>'+totals.h+'</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>'+
+        '</tbody></table></div>';
+    }
+
+    function internationalGameCenterDetailHtml(competition, year, team, game) {
+      if (!game) return '';
+      const opponentBox=internationalFindOpponentBox(competition,year,team,game);
+      const ownTotals=internationalTeamBoxTotals(game);
+      const oppTotals=internationalTeamBoxTotals(opponentBox);
+      const opponent=normalizeInternationalTeamName(game?.opponent||'')||'對手';
+      const opponentLoading=internationalTeamGamesLoading.has(internationalTeamGamesKey(competition,year,opponent));
+      return '<div class="intl-team-game-detail">'+
+        '<div class="intl-team-game-detail-head">'+
+          '<button type="button" class="press-btn" data-intl-game-center-back>← 返回比賽</button>'+
+          '<div><strong>'+escapeHtml(team)+' <b>'+ownTotals.r+'</b>：<b>'+(opponentBox?oppTotals.r:'—')+'</b> '+escapeHtml(opponent)+'</strong><span>'+escapeHtml(String(game.date||'').replaceAll('-','/'))+(game.partial?'｜部分資料':'')+'</span></div>'+
+        '</div>'+
+        '<div class="intl-team-game-score">'+
+          '<span>'+escapeHtml(team)+'</span><b>'+ownTotals.r+'</b><em>R</em><b>'+ownTotals.h+'</b><em>H</em><b>'+ownTotals.e+'</b><em>E</em>'+
+          '<span>'+escapeHtml(opponent)+'</span><b>'+(opponentBox?oppTotals.r:'—')+'</b><em>R</em><b>'+(opponentBox?oppTotals.h:'—')+'</b><em>H</em><b>'+(opponentBox?oppTotals.e:'—')+'</b><em>E</em>'+
+        '</div>'+
+        '<div class="intl-team-box-grid">'+
+          '<section><h4>'+escapeHtml(team)+'｜打者</h4>'+internationalBoxTable(team,game,'hitter')+'</section>'+
+          '<section><h4>'+escapeHtml(opponent)+'｜打者</h4>'+(opponentBox?internationalBoxTable(opponent,opponentBox,'hitter'):'<div class="intl-team-box-empty">'+(opponentLoading?'正在整理對手 Box…':'對手資料尚未載入')+'</div>')+'</section>'+
+          '<section><h4>'+escapeHtml(team)+'｜投手</h4>'+internationalBoxTable(team,game,'pitcher')+'</section>'+
+          '<section><h4>'+escapeHtml(opponent)+'｜投手</h4>'+(opponentBox?internationalBoxTable(opponent,opponentBox,'pitcher'):'<div class="intl-team-box-empty">'+(opponentLoading?'正在整理對手 Box…':'對手資料尚未載入')+'</div>')+'</section>'+
+        '</div>'+
+      '</div>';
+    }
+
+    function internationalGameCenterListHtml(competition, year, team) {
+      const cacheKey=internationalTeamGamesKey(competition,year,team);
+      const data=internationalTeamGamesCache.get(cacheKey);
+      const loading=internationalTeamGamesLoading.has(cacheKey);
+      if (loading && !data) return '<div class="intl-flow-empty">正在整合代表隊逐場 Box Score…第一次載入會稍久一點。</div>';
+      if (data?.error) return '<div class="intl-flow-empty">'+escapeHtml(data.error)+'</div>';
+      const games=Array.isArray(data?.games)?data.games:[];
+      if (!games.length) return '<div class="intl-flow-empty">目前沒有可組成整場比賽的逐場資料。</div>';
+      if (internationalSelectedTeamGameKey) {
+        const selected=games.find(game=>game.key===internationalSelectedTeamGameKey);
+        if (selected) return internationalGameCenterDetailHtml(competition,year,team,selected);
+        internationalSelectedTeamGameKey='';
+      }
+      return '<div class="intl-team-games">'+
+        '<div class="intl-game-archive-head"><h3 style="margin:0">整場比賽</h3><span class="small">共 '+games.length+' 場</span></div>'+
+        '<div class="intl-game-archive-list">'+games.map(game=>{
+          const totals=internationalTeamBoxTotals(game);
+          return '<div class="intl-game-card">'+
+            '<div class="intl-game-date">'+escapeHtml(String(game.date||'').replaceAll('-','/'))+'</div>'+
+            '<div class="intl-game-main"><strong>'+escapeHtml(team)+' VS '+escapeHtml(game.opponent||'對手')+'</strong><span>'+totals.r+' 分｜'+totals.h+' 安'+(game.partial?'｜部分資料':'')+'</span></div>'+
+            '<button type="button" class="press-btn" data-intl-team-game="'+escapeHtml(game.key)+'">查看整場</button>'+
+          '</div>';
+        }).join('')+'</div>'+
+      '</div>';
+    }
+
     function renderInternationalExplorer() {
       if (!els.homeInternationalExplorer) return;
       if (homeZone !== 'international') {
@@ -209,16 +442,31 @@
         emptyText='官方來源目前沒有回傳這支代表隊的球員名單。';
       }
 
+      let gameCenterHtml='';
+      if (homeInternationalViewMode==='games' && competition && year && team) {
+        const gameCacheKey=internationalTeamGamesKey(competition,year,team);
+        if (!internationalTeamGamesCache.has(gameCacheKey) && !internationalTeamGamesLoading.has(gameCacheKey)) {
+          void loadInternationalTeamGameBoxes(competition,year,team).then(()=>renderInternationalExplorer());
+        }
+        gameCenterHtml=internationalGameCenterListHtml(competition,year,team);
+      }
+
       els.homeInternationalExplorer.innerHTML =
-        '<div class="intl-explorer-head"><strong>國際賽資料庫</strong><span>賽事 → 年份 → 球隊 → 球員</span></div>' +
-        '<div class="intl-select-flow">' +
+        '<div class="intl-explorer-head"><strong>國際賽資料庫</strong><span>賽事 → 年份 → 球隊 → '+(homeInternationalViewMode==='games'?'比賽':'球員')+'</span></div>' +
+        '<div class="intl-select-flow '+(homeInternationalViewMode==='games'?'is-game-mode':'')+'">' +
           '<label class="intl-select-step"><span>1．賽事</span><select id="intlCompetitionSelect">'+competitionOptions+'</select></label>' +
           '<label class="intl-select-step"><span>2．年份</span><select id="intlYearSelect" '+(!competition?'disabled':'')+'>'+yearOptions+'</select></label>' +
           '<label class="intl-select-step"><span>3．球隊</span><select id="intlTeamSelect" '+(!(competition&&year)?'disabled':'')+'>'+teamOptions+'</select></label>' +
-          '<label class="intl-select-step"><span>4．球員</span><select id="intlPlayerSelect" '+(!(competition&&year&&team)?'disabled':'')+'>'+playerOptions+'</select></label>' +
+          (homeInternationalViewMode==='players'
+            ? '<label class="intl-select-step"><span>4．球員</span><select id="intlPlayerSelect" '+(!(competition&&year&&team)?'disabled':'')+'>'+playerOptions+'</select></label>'
+            : '') +
         '</div>' +
+        (competition&&year&&team
+          ? '<div class="intl-view-toggle"><button type="button" class="'+(homeInternationalViewMode==='players'?'active':'')+'" data-intl-view="players">球員</button><button type="button" class="'+(homeInternationalViewMode==='games'?'active':'')+'" data-intl-view="games">比賽</button></div>'
+          : '') +
         (path ? '<div class="intl-flow-path">'+escapeHtml(path)+'</div>' : '') +
-        (emptyText ? '<div class="intl-flow-empty">'+escapeHtml(emptyText)+'</div>' : '');
+        (emptyText && homeInternationalViewMode==='players' ? '<div class="intl-flow-empty">'+escapeHtml(emptyText)+'</div>' : '') +
+        gameCenterHtml;
       els.homeInternationalExplorer.classList.remove('hidden');
 
       const competitionSelect=document.getElementById('intlCompetitionSelect');
@@ -230,16 +478,39 @@
         homeSpecialFilter=competitionSelect.value||'';
         homeInternationalEditionFilter='';
         homeInternationalTeamFilter='';
+        internationalSelectedTeamGameKey='';
         renderRecentPlayers();
       });
       yearSelect?.addEventListener('change', () => {
         homeInternationalEditionFilter=yearSelect.value||'';
         homeInternationalTeamFilter='';
+        internationalSelectedTeamGameKey='';
         renderRecentPlayers();
       });
       teamSelect?.addEventListener('change', () => {
         homeInternationalTeamFilter=teamSelect.value||'';
+        internationalSelectedTeamGameKey='';
         renderRecentPlayers();
+      });
+      els.homeInternationalExplorer.querySelectorAll('[data-intl-view]').forEach(button => button.addEventListener('click', () => {
+        homeInternationalViewMode=String(button.dataset.intlView||'players')==='games'?'games':'players';
+        internationalSelectedTeamGameKey='';
+        renderInternationalExplorer();
+      }));
+      els.homeInternationalExplorer.querySelectorAll('[data-intl-team-game]').forEach(button => button.addEventListener('click', async () => {
+        internationalSelectedTeamGameKey=String(button.dataset.intlTeamGame||'');
+        const data=internationalTeamGamesCache.get(internationalTeamGamesKey(competition,year,team));
+        const selected=(Array.isArray(data?.games)?data.games:[]).find(game=>game.key===internationalSelectedTeamGameKey);
+        renderInternationalExplorer();
+        const opponent=normalizeInternationalTeamName(selected?.opponent||'');
+        if (selected && opponent && !internationalFindOpponentBox(competition,year,team,selected)) {
+          await loadInternationalTeamGameBoxes(competition,year,opponent);
+          renderInternationalExplorer();
+        }
+      }));
+      els.homeInternationalExplorer.querySelector('[data-intl-game-center-back]')?.addEventListener('click', () => {
+        internationalSelectedTeamGameKey='';
+        renderInternationalExplorer();
       });
       playerSelect?.addEventListener('change', async () => {
         const value=playerSelect.value||'';
