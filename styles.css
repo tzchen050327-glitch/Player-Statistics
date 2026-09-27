@@ -6705,6 +6705,35 @@ html[data-theme="dark"] .app-date-today:hover{
   box-shadow:0 2px 8px rgba(91,79,156,.12),inset 0 1px 0 rgba(255,255,255,.78);
 }
 
+.home-game-starter-confirmed{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:20px;
+  padding:0 7px;
+  border:1px solid rgba(215,171,66,.48);
+  border-radius:999px;
+  background:rgba(213,165,45,.11);
+  color:#b78316;
+  font-size:9px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+html[data-theme="dark"] .home-game-starter-confirmed{
+  border-color:#72591e;
+  background:#211b0e;
+  color:#e2b94f;
+}
+@media(max-width:600px){
+  .home-game-starter-confirmed{
+    min-height:18px;
+    padding:0 5px;
+    font-size:8px;
+  }
+}
+
 
 @media(max-width:760px){
   .standings-primary-tabs{grid-template-columns:repeat(4,minmax(0,1fr));}
