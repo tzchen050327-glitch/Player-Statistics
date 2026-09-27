@@ -2839,50 +2839,6 @@ dialog::backdrop {
 @media(max-width:620px){.intl-games-tab-head,.intl-game-detail-nav{align-items:stretch;flex-direction:column}}
 /* ===== v1.52 INTERNATIONAL SELECT FLOW END ===== */
 
-/* ===== INTERNATIONAL GAME CENTER START ===== */
-.intl-select-flow.is-game-mode{grid-template-columns:repeat(3,minmax(0,1fr))}
-.intl-view-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;padding:5px;border:1px solid #dce4ec;border-radius:13px;background:#f6f8fa}
-.intl-view-toggle button{min-height:38px;border:0;border-radius:9px;background:transparent;color:#66768a;font-size:12px;font-weight:950;cursor:pointer}
-.intl-view-toggle button.active{background:#b98a27;color:#fff;box-shadow:0 4px 12px rgba(158,119,31,.18)}
-.intl-team-games{margin-top:14px}
-.intl-team-game-detail{margin-top:14px;display:grid;gap:12px}
-.intl-team-game-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #dce4ec;border-radius:13px;background:#f8fafc}
-.intl-team-game-detail-head>div{text-align:right}
-.intl-team-game-detail-head strong{display:block;color:#20334a;font-size:17px;font-weight:1000}
-.intl-team-game-detail-head strong b{color:#a87918;font-size:22px}
-.intl-team-game-detail-head span{display:block;margin-top:3px;color:#7b8796;font-size:11px;font-weight:800}
-.intl-team-game-score{display:grid;grid-template-columns:minmax(110px,1fr) auto auto auto auto auto auto;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ead9ab;border-radius:13px;background:#fff8e8;color:#20334a}
-.intl-team-game-score span{font-weight:950}
-.intl-team-game-score b{font-size:18px;color:#a87918;text-align:right}
-.intl-team-game-score em{font-style:normal;color:#8f7a49;font-size:10px;font-weight:900}
-.intl-team-box-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.intl-team-box-grid section{min-width:0;border:1px solid #dce4ec;border-radius:13px;background:#fff;overflow:hidden}
-.intl-team-box-grid h4{margin:0;padding:10px 12px;border-bottom:1px solid #e4e9ef;color:#20334a;font-size:12px;font-weight:950;background:#f8fafc}
-.intl-team-box-scroll{overflow:auto}
-.intl-team-box-table{width:100%;min-width:520px;border-collapse:collapse;font-size:11px}
-.intl-team-box-table th,.intl-team-box-table td{padding:8px 9px;border-bottom:1px solid #edf1f4;text-align:right;white-space:nowrap}
-.intl-team-box-table th:first-child,.intl-team-box-table td:first-child{text-align:left}
-.intl-team-box-table th{color:#7b8796;font-weight:900;background:#fbfcfd}
-.intl-team-box-table td{color:#405168;font-weight:800}
-.intl-team-box-table td strong{color:#20334a}
-.intl-team-box-table td small{margin-left:6px;color:#a87918;font-size:9px;font-weight:950}
-.intl-team-box-total td{font-weight:950;color:#8a6821;background:#fffaf0}
-.intl-team-box-empty{padding:20px 12px;color:#7b8796;font-size:12px;font-weight:800;text-align:center}
-@media(max-width:900px){.intl-team-box-grid{grid-template-columns:1fr}.intl-select-flow.is-game-mode{grid-template-columns:1fr 1fr}}
-@media(max-width:620px){.intl-team-game-detail-head{align-items:stretch;flex-direction:column}.intl-team-game-detail-head>div{text-align:left}.intl-team-game-score{grid-template-columns:1fr auto auto auto auto auto auto}.intl-select-flow.is-game-mode{grid-template-columns:1fr}}
-html[data-theme="dark"] .intl-view-toggle{border-color:#303843;background:#11161c}
-html[data-theme="dark"] .intl-view-toggle button{color:#9caabd}
-html[data-theme="dark"] .intl-view-toggle button.active{background:#b98a27;color:#fff}
-html[data-theme="dark"] .intl-team-game-detail-head,html[data-theme="dark"] .intl-team-box-grid section{border-color:#303843;background:#11161c}
-html[data-theme="dark"] .intl-team-game-detail-head strong,html[data-theme="dark"] .intl-team-box-grid h4,html[data-theme="dark"] .intl-team-box-table td strong{color:#f0eadf}
-html[data-theme="dark"] .intl-team-game-detail-head span,html[data-theme="dark"] .intl-team-box-table th,html[data-theme="dark"] .intl-team-box-empty{color:#93a0b1}
-html[data-theme="dark"] .intl-team-game-score{border-color:#4e4429;background:#19170f;color:#f0eadf}
-html[data-theme="dark"] .intl-team-box-grid h4,html[data-theme="dark"] .intl-team-box-table th{border-color:#303843;background:#151b22}
-html[data-theme="dark"] .intl-team-box-table td{border-color:#252d36;color:#bcc6d2}
-html[data-theme="dark"] .intl-team-box-total td{background:#19170f;color:#d5b25d}
-/* ===== INTERNATIONAL GAME CENTER END ===== */
-
-
 /* ===== v1.64 HEADER DATE MOVE START ===== */
 .title-row{
   display:grid;
