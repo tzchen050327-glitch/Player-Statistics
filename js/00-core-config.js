@@ -30,6 +30,7 @@
     const NPB_GAMES_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-live-games`;
     const KBO_GAMES_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/kbo-live-games`;
     const NPB_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-pregame-starters`;
+    const CPBL_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/pregame-starters`;
 
     const LEAGUE_STANDINGS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
     const LEAGUE_PLAYER_STATS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-player-stats`;
