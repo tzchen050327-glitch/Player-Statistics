@@ -1,6 +1,8 @@
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
     const homeDailyGamesScrollState = new Map();
+    const homeDailyStarterPresenceCache = new Map();
+    const homeDailyStarterPresenceLoading = new Set();
     const homeGameDetailCache = new Map();
     const HOME_GAME_DETAIL_AUTO_LIMIT = 2400;
     const HOME_GAME_DETAIL_AUTO_STORAGE_KEY = 'home-game-detail-auto-budget-v1';
@@ -39,6 +41,62 @@
 
     function homeDailyGamesHasLive(games = []) {
       return Array.isArray(games) && games.some(game => String(game?.status || '').toLowerCase() === 'live');
+    }
+
+    function homeDailyStarterPresenceKey(league, date, game = {}) {
+      return [String(league||'').toUpperCase(), String(date||''), homeDailyGameStableKey(game)].join('|');
+    }
+
+    function homeDailyStarterPresence(league, date, game = {}) {
+      const key=homeDailyStarterPresenceKey(league,date,game);
+      const cached=homeDailyStarterPresenceCache.get(key);
+      if (!cached) return null;
+      const ttl=cached.value ? 6*60*60*1000 : 5*60*1000;
+      if (Date.now()-Number(cached.at||0)>ttl) {
+        homeDailyStarterPresenceCache.delete(key);
+        return null;
+      }
+      return cached.value===true;
+    }
+
+    function ensureHomeDailyStarterPresence(league, date, game = {}) {
+      const normalizedLeague=String(league||'').toUpperCase();
+      const status=String(game?.status||'scheduled').toLowerCase();
+      if (!['CPBL','NPB'].includes(normalizedLeague) || status!=='scheduled' || game?.lineupReady) return;
+      const key=homeDailyStarterPresenceKey(normalizedLeague,date,game);
+      if (homeDailyStarterPresence(normalizedLeague,date,game)!==null || homeDailyStarterPresenceLoading.has(key)) return;
+      homeDailyStarterPresenceLoading.add(key);
+      void fetch(LEAGUE_PREGAME_CENTER_API_URL,{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          appKey:CPBL_APP_KEY,
+          league:normalizedLeague,
+          date:String(date||''),
+          gameId:String(game?.id||''),
+          away:String(game?.away||''),
+          home:String(game?.home||''),
+          time:String(game?.time||''),
+          venue:String(game?.venue||''),
+          status:'scheduled',
+          force:false
+        })
+      }).then(async response=>{
+        const data=await response.json().catch(()=>({}));
+        if (!response.ok || !data?.ok) throw new Error(data?.error||`HTTP ${response.status}`);
+        const hasStarter=Boolean(
+          data?.starters?.away?.name
+          || data?.starters?.away?.fullName
+          || data?.starters?.home?.name
+          || data?.starters?.home?.fullName
+        );
+        homeDailyStarterPresenceCache.set(key,{value:hasStarter,at:Date.now()});
+      }).catch(()=>{
+        homeDailyStarterPresenceCache.set(key,{value:false,at:Date.now()-4*60*1000});
+      }).finally(()=>{
+        homeDailyStarterPresenceLoading.delete(key);
+        if (currentPage==='home') renderHomeDailyGames({skipLoad:true});
+      });
     }
 
     function homeDailyGameStableKey(game = {}) {
@@ -362,13 +420,15 @@
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
+          ensureHomeDailyStarterPresence(league,date,game);
+          const directStarterPresent=Boolean(
+            game?.overview?.starters?.away
+            || game?.overview?.starters?.home
+          );
           const starterConfirmed = (league === 'CPBL' || league === 'NPB')
             && status === 'scheduled'
             && !lineupReady
-            && Boolean(
-              game?.overview?.starters?.away
-              || game?.overview?.starters?.home
-            );
+            && (directStarterPresent || homeDailyStarterPresence(league,date,game)===true);
           const starterConfirmedLabel = league === 'NPB' ? '先発投手確定' : '先發投手確定';
           const showScore = status === 'live' || status === 'final';
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
