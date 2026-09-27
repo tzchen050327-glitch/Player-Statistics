@@ -4,9 +4,15 @@
     let playerRankingLeague = ['cpbl','npb'].includes(localStorage.getItem('playerRankingLeague')) ? localStorage.getItem('playerRankingLeague') : 'cpbl';
     let playerRankingRole = ['hitter','pitcher'].includes(localStorage.getItem('playerRankingRole')) ? localStorage.getItem('playerRankingRole') : 'hitter';
     let playerRankingMetric = localStorage.getItem('playerRankingMetric') || 'avg';
-    let playerCompareLeague = ['cpbl','npb'].includes(localStorage.getItem('playerCompareLeague')) ? localStorage.getItem('playerCompareLeague') : 'cpbl';
-    let playerCompareRole = ['hitter','pitcher'].includes(localStorage.getItem('playerCompareRole')) ? localStorage.getItem('playerCompareRole') : 'hitter';
-    let playerCompareIds = [];
+    const schedulePageCache = new Map();
+    const schedulePageLoading = new Set();
+    const schedulePageErrors = new Map();
+    let schedulePageLeague = ['CPBL','NPB','KBO','MLB'].includes(localStorage.getItem('schedulePageLeague'))
+      ? localStorage.getItem('schedulePageLeague')
+      : 'CPBL';
+    let schedulePageDate = /^\d{4}-\d{2}-\d{2}$/.test(localStorage.getItem('schedulePageDate') || '')
+      ? localStorage.getItem('schedulePageDate')
+      : localISODate();
 
     function playerToolsLeagueCode(value) {
       return String(value || '').toLowerCase() === 'npb' ? 'NPB' : 'CPBL';
@@ -45,7 +51,6 @@
       } finally {
         playerToolsLoading.delete(key);
         if (currentPage === 'player-ranking') renderPlayerRankingPage();
-        if (currentPage === 'player-compare') renderPlayerComparePage();
       }
     }
 
@@ -205,144 +210,191 @@
       if (!data && !loading && !error) void loadPlayerToolsData(playerRankingLeague);
     }
 
-    function playerCompareMetricDefs(role) {
-      return role === 'pitcher'
-        ? [
-            { key:'era', label:'ERA', fmt:'two', lower:true },
-            { key:'whip', label:'WHIP', fmt:'two', lower:true },
-            { key:'outs', label:'IP', fmt:'ip' },
-            { key:'w', label:'W', fmt:'int' },
-            { key:'l', label:'L', fmt:'int' },
-            { key:'k', label:'K', fmt:'int' },
-            { key:'bb', label:'BB', fmt:'int', lower:true },
-            { key:'h', label:'H', fmt:'int', lower:true },
-            { key:'sv', label:'SV', fmt:'int' },
-            { key:'hld', label:'HLD', fmt:'int' }
-          ]
-        : [
-            { key:'avg', label:'AVG', fmt:'three' },
-            { key:'obp', label:'OBP', fmt:'three' },
-            { key:'slg', label:'SLG', fmt:'three' },
-            { key:'ops', label:'OPS', fmt:'three' },
-            { key:'opsplus', label:'OPS+', fmt:'int' },
-            { key:'h', label:'H', fmt:'int' },
-            { key:'hr', label:'HR', fmt:'int' },
-            { key:'rbi', label:'RBI', fmt:'int' },
-            { key:'bb', label:'BB', fmt:'int' },
-            { key:'k', label:'K', fmt:'int', lower:true },
-            { key:'sb', label:'SB', fmt:'int' }
-          ];
+    function schedulePageKey() {
+      return `${schedulePageLeague}|${schedulePageDate}`;
     }
 
-    function playerCompareOptions(rows, selectedId) {
-      const teams = [...new Set(rows.map(row => String(row?.team || '')).filter(Boolean))].sort();
-      const groups = teams.map(team => {
-        const opts = rows.filter(row => String(row?.team || '') === team)
-          .sort((a,b) => String(a?.name || '').localeCompare(String(b?.name || '')))
-          .map(row => `<option value="${escapeHtml(String(row.id))}" ${String(row.id) === String(selectedId || '') ? 'selected' : ''}>${escapeHtml(String(row.name || ''))}</option>`)
-          .join('');
-        return `<optgroup label="${escapeHtml(team)}">${opts}</optgroup>`;
-      }).join('');
-      return `<option value="">＋ 選擇球員</option>${groups}`;
+    function schedulePageShiftDate(date, offset) {
+      const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(!m) return localISODate();
+      const d=new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
+      d.setUTCDate(d.getUTCDate()+Number(offset||0));
+      return d.toISOString().slice(0,10);
     }
 
-    function playerCompareSelectedRows() {
-      const rows = playerToolsRows(playerCompareLeague, playerCompareRole);
-      const byId = new Map(rows.map(row => [String(row?.id || ''), row]));
-      return playerCompareIds.map(id => byId.get(String(id))).filter(Boolean);
+    function schedulePageDateLabel(date) {
+      const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(!m) return String(date||'');
+      const d=new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
+      const weekday=['日','一','二','三','四','五','六'][d.getUTCDay()];
+      return `${Number(m[2])}/${Number(m[3])} 週${weekday}`;
     }
 
-    function playerCompareSummary(selected, defs) {
-      if (selected.length < 2) return '';
-      const a = selected[0], b = selected[1];
-      const picks = playerCompareRole === 'pitcher' ? ['era','whip','k'] : ['ops','hr','k'];
-      const lines = [];
-      for (const key of picks) {
-        const def = defs.find(x => x.key === key);
-        if (!def) continue;
-        const av = Number(a?.[key]), bv = Number(b?.[key]);
-        if (!Number.isFinite(av) || !Number.isFinite(bv) || av === bv) continue;
-        const betterA = def.lower ? av < bv : av > bv;
-        const leader = betterA ? a : b;
-        const diff = Math.abs(av - bv);
-        const diffText = def.fmt === 'three' ? diff.toFixed(3).replace(/^0/,'') : def.fmt === 'two' ? diff.toFixed(2) : String(Math.round(diff));
-        lines.push(`<span><strong>${escapeHtml(def.label)}</strong>：${escapeHtml(String(leader?.name || ''))} ${def.lower ? '低' : '多'} ${diffText}</span>`);
+    function schedulePageLeagueLabel(league) {
+      return ({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
+    }
+
+    function schedulePageStatusLabel(game, league) {
+      const status=String(game?.status||'scheduled').toLowerCase();
+      if(status==='final') return '已結束';
+      if(status==='live') return String(game?.inningLabel||'').trim()||'比賽中';
+      if(status==='suspended') return '暫停';
+      if(status==='cancelled'||status==='postponed') {
+        return String(game?.postponementReason||game?.cancellationReason||'').trim()
+          || (status==='postponed'?'延賽':'取消／延期');
       }
-      return lines.length ? `<div class="player-compare-summary"><b>差異摘要</b>${lines.join('')}</div>` : '';
+      if((league==='CPBL'||league==='NPB')&&game?.lineupReady) return '先發打序';
+      return String(game?.time||'').trim()||'未開打';
     }
 
-    function renderPlayerComparePage() {
-      if (!els.playerComparePageContent) return;
-      const key = playerToolsKey(playerCompareLeague);
-      const data = playerToolsData(playerCompareLeague);
-      const loading = playerToolsLoading.has(key);
-      const error = playerToolsErrors.get(key) || '';
-      const rows = data ? playerToolsRows(playerCompareLeague, playerCompareRole) : [];
-      const validIds = new Set(rows.map(row => String(row?.id || '')));
-      playerCompareIds = playerCompareIds.filter(id => validIds.has(String(id))).slice(0,4);
-      const selected = playerCompareSelectedRows();
-      const defs = playerCompareMetricDefs(playerCompareRole);
-      const slots = Array.from({length:4}, (_,index) => playerCompareIds[index] || '');
+    function schedulePageScore(value) {
+      if(value===null||value===undefined||value==='') return '—';
+      const n=Number(value);
+      return Number.isFinite(n)?String(n):'—';
+    }
 
-      els.playerComparePageContent.innerHTML = `
-        <div class="player-tools-switch-group">
-          <div class="player-tools-switch-row">${playerToolsLeagueButtons(playerCompareLeague,'data-player-compare-league')}</div>
-          <div class="player-tools-switch-row">${playerToolsRoleButtons(playerCompareRole,'data-player-compare-role')}</div>
+    async function loadSchedulePageGames({force=false}={}) {
+      const key=schedulePageKey();
+      if(schedulePageLoading.has(key)) return;
+      const cached=schedulePageCache.get(key);
+      if(!force&&cached&&Date.now()-Number(cached.at||0)<60*1000) return cached;
+      schedulePageLoading.add(key);
+      schedulePageErrors.delete(key);
+      try{
+        const games=await leagueDailyGamesRequest(schedulePageLeague,schedulePageDate,force);
+        const data={games:Array.isArray(games)?games:[],at:Date.now()};
+        schedulePageCache.set(key,data);
+        return data;
+      }catch(error){
+        schedulePageErrors.set(key,error instanceof Error?error.message:String(error));
+        return null;
+      }finally{
+        schedulePageLoading.delete(key);
+        if(currentPage==='schedule') renderSchedulePage();
+      }
+    }
+
+    function renderSchedulePage() {
+      if(!els.schedulePageContent) return;
+      const key=schedulePageKey();
+      const cached=schedulePageCache.get(key)||null;
+      const games=Array.isArray(cached?.games)?cached.games:[];
+      const loading=schedulePageLoading.has(key);
+      const error=schedulePageErrors.get(key)||'';
+      const today=localISODate();
+      const dateStrip=Array.from({length:7},(_,i)=>schedulePageShiftDate(schedulePageDate,i-3));
+
+      els.schedulePageContent.innerHTML=`
+        <div class="schedule-toolbar">
+          <div class="schedule-league-tabs">
+            ${['CPBL','NPB','KBO','MLB'].map(league=>`
+              <button type="button" class="${league===schedulePageLeague?'active':''}" data-schedule-league="${league}">
+                ${schedulePageLeagueLabel(league)}
+              </button>`).join('')}
+          </div>
+          <div class="schedule-date-controls">
+            <button type="button" class="schedule-date-arrow" data-schedule-shift="-1" aria-label="前一天">‹</button>
+            <label class="schedule-date-picker">
+              <span>${schedulePageDate.replaceAll('-','/')}</span>
+              <input type="date" value="${escapeHtml(schedulePageDate)}" data-schedule-date />
+            </label>
+            <button type="button" class="schedule-date-arrow" data-schedule-shift="1" aria-label="後一天">›</button>
+            <button type="button" class="schedule-today-btn ${schedulePageDate===today?'active':''}" data-schedule-today>今天</button>
+          </div>
         </div>
-        ${loading && !data ? '<div class="player-tools-empty">正在讀取官方球季數據…</div>' : ''}
-        ${error ? `<div class="player-tools-error">${escapeHtml(error)}<button type="button" data-player-tools-retry="compare">重試</button></div>` : ''}
-        ${data ? `
-          <div class="player-compare-selectors">
-            ${slots.map((id,index) => `<label><span>球員 ${index+1}</span><select data-player-compare-slot="${index}">${playerCompareOptions(rows,id)}</select></label>`).join('')}
-          </div>
-          <div class="player-compare-grid">
-            <div class="player-compare-labels">
-              <strong>指標</strong>
-              ${defs.map(def => `<span>${def.label}</span>`).join('')}
-            </div>
-            <div class="player-compare-players">
-              ${selected.length ? selected.map(row => `
-                <div class="player-compare-column">
-                  <strong title="${escapeHtml(String(row?.name || ''))}">${escapeHtml(String(row?.name || '—'))}<small>${escapeHtml(String(row?.team || ''))}</small></strong>
-                  ${defs.map(def => `<span>${playerToolsFormat(row?.[def.key],def.fmt)}</span>`).join('')}
-                </div>`).join('') : '<div class="player-tools-empty player-compare-empty">請先選擇至少兩名球員。</div>'}
-            </div>
-          </div>
-          ${playerCompareSummary(selected, defs)}
-          <div class="player-tools-note">比較頁保留所有有一軍球季成績的球員，不套用排行資格門檻。</div>
-        ` : ''}
+        <div class="schedule-date-strip">
+          ${dateStrip.map(date=>`
+            <button type="button" class="${date===schedulePageDate?'active':''} ${date===today?'is-today':''}" data-schedule-date-chip="${date}">
+              <span>${schedulePageDateLabel(date).split(' ')[0]}</span>
+              <small>${schedulePageDateLabel(date).split(' ')[1]}</small>
+            </button>`).join('')}
+        </div>
+        <div class="schedule-summary">
+          <strong>${schedulePageLeagueLabel(schedulePageLeague)}｜${schedulePageDate.replaceAll('-','/')}</strong>
+          <span>${cached?games.length+' 場':'讀取中'}</span>
+        </div>
+        ${loading&&!cached?'<div class="player-tools-empty">正在讀取官方賽程…</div>':''}
+        ${error?`<div class="player-tools-error">${escapeHtml(error)}<button type="button" data-schedule-retry>重試</button></div>`:''}
+        ${cached?(
+          games.length
+            ? `<div class="schedule-game-list">${games.map((game,index)=>{
+                const status=String(game?.status||'scheduled').toLowerCase();
+                const showScore=status==='live'||status==='final'||status==='suspended';
+                const away=schedulePageLeague==='MLB'?mlbTeamZh(game?.away||''):String(game?.away||'');
+                const home=schedulePageLeague==='MLB'?mlbTeamZh(game?.home||''):String(game?.home||'');
+                const detail=homeGameDetailSupported(schedulePageLeague);
+                return `
+                  <article class="schedule-game-card status-${escapeHtml(status)} ${detail?'is-detail-enabled':''}" ${detail?`data-schedule-game-index="${index}" role="button" tabindex="0"`:''}>
+                    <div class="schedule-game-meta">
+                      <span class="schedule-game-status">${escapeHtml(schedulePageStatusLabel(game,schedulePageLeague))}</span>
+                      <span>${escapeHtml(String(game?.competitionLabel||game?.venue||''))}</span>
+                    </div>
+                    <div class="schedule-game-team">
+                      <strong>${escapeHtml(away||'客隊')}</strong>
+                      <b>${showScore?schedulePageScore(game?.awayScore):'—'}</b>
+                    </div>
+                    <div class="schedule-game-team">
+                      <strong>${escapeHtml(home||'主隊')}</strong>
+                      <b>${showScore?schedulePageScore(game?.homeScore):'—'}</b>
+                    </div>
+                    <div class="schedule-game-footer">
+                      <span>${escapeHtml(String(game?.venue||'場地未提供'))}</span>
+                      ${detail?'<em>查看對戰 ›</em>':''}
+                    </div>
+                  </article>`;
+              }).join('')}</div>`
+            : '<div class="player-tools-empty">這一天沒有賽事。</div>'
+        ):''}
       `;
 
-      els.playerComparePageContent.querySelectorAll('[data-player-compare-league]').forEach(btn => btn.addEventListener('click', () => {
-        playerCompareLeague = String(btn.dataset.playerCompareLeague || 'cpbl');
-        playerCompareIds = [];
-        localStorage.setItem('playerCompareLeague', playerCompareLeague);
-        renderPlayerComparePage();
-        void loadPlayerToolsData(playerCompareLeague);
+      els.schedulePageContent.querySelectorAll('[data-schedule-league]').forEach(btn=>btn.addEventListener('click',()=>{
+        schedulePageLeague=String(btn.dataset.scheduleLeague||'CPBL');
+        localStorage.setItem('schedulePageLeague',schedulePageLeague);
+        renderSchedulePage();
+        void loadSchedulePageGames();
       }));
-      els.playerComparePageContent.querySelectorAll('[data-player-compare-role]').forEach(btn => btn.addEventListener('click', () => {
-        playerCompareRole = String(btn.dataset.playerCompareRole || 'hitter');
-        playerCompareIds = [];
-        localStorage.setItem('playerCompareRole', playerCompareRole);
-        renderPlayerComparePage();
+      els.schedulePageContent.querySelectorAll('[data-schedule-shift]').forEach(btn=>btn.addEventListener('click',()=>{
+        schedulePageDate=schedulePageShiftDate(schedulePageDate,Number(btn.dataset.scheduleShift)||0);
+        localStorage.setItem('schedulePageDate',schedulePageDate);
+        renderSchedulePage();
+        void loadSchedulePageGames();
       }));
-      els.playerComparePageContent.querySelectorAll('[data-player-compare-slot]').forEach(select => select.addEventListener('change', () => {
-        const index = Number(select.dataset.playerCompareSlot);
-        const value = String(select.value || '');
-        const next = [...playerCompareIds];
-        if (value) {
-          next[index] = value;
-          playerCompareIds = next.filter((id,i) => id && next.indexOf(id) === i).slice(0,4);
-        } else {
-          next[index] = '';
-          playerCompareIds = next.filter(Boolean).slice(0,4);
-        }
-        renderPlayerComparePage();
+      els.schedulePageContent.querySelectorAll('[data-schedule-date-chip]').forEach(btn=>btn.addEventListener('click',()=>{
+        schedulePageDate=String(btn.dataset.scheduleDateChip||schedulePageDate);
+        localStorage.setItem('schedulePageDate',schedulePageDate);
+        renderSchedulePage();
+        void loadSchedulePageGames();
       }));
-      els.playerComparePageContent.querySelector('[data-player-tools-retry="compare"]')?.addEventListener('click', () => {
-        playerToolsErrors.delete(key);
-        void loadPlayerToolsData(playerCompareLeague, { force:true });
+      els.schedulePageContent.querySelector('[data-schedule-date]')?.addEventListener('change',event=>{
+        const next=String(event.target?.value||'');
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(next)) return;
+        schedulePageDate=next;
+        localStorage.setItem('schedulePageDate',schedulePageDate);
+        renderSchedulePage();
+        void loadSchedulePageGames();
+      });
+      els.schedulePageContent.querySelector('[data-schedule-today]')?.addEventListener('click',()=>{
+        schedulePageDate=localISODate();
+        localStorage.setItem('schedulePageDate',schedulePageDate);
+        renderSchedulePage();
+        void loadSchedulePageGames();
+      });
+      els.schedulePageContent.querySelector('[data-schedule-retry]')?.addEventListener('click',()=>{
+        schedulePageErrors.delete(key);
+        void loadSchedulePageGames({force:true});
+      });
+      els.schedulePageContent.querySelectorAll('[data-schedule-game-index]').forEach(card=>{
+        const open=()=>{
+          const index=Number(card.dataset.scheduleGameIndex);
+          const game=games[index];
+          if(game&&homeGameDetailSupported(schedulePageLeague)) openHomeGameDetail(game,schedulePageLeague,schedulePageDate);
+        };
+        card.addEventListener('click',open);
+        card.addEventListener('keydown',event=>{
+          if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}
+        });
       });
 
-      if (!data && !loading && !error) void loadPlayerToolsData(playerCompareLeague);
+      if(!cached&&!loading&&!error) void loadSchedulePageGames();
     }
+
