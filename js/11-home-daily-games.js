@@ -362,6 +362,10 @@
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
+          const starterConfirmed = league === 'NPB'
+            && status === 'scheduled'
+            && Boolean(game?.starterConfirmed)
+            && !lineupReady;
           const showScore = status === 'live' || status === 'final';
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
@@ -377,9 +381,11 @@
             <article class="home-game-card status-${escapeAttr(status)} ${interactive ? 'is-detail-enabled' : ''}" data-home-game-key="${escapeAttr(gameKey)}" ${interactionAttrs}>
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)} ${lineupReady ? 'is-lineup-ready' : ''}">${escapeHtml(statusLabel)}</span>
-                ${game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
-                  ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
-                  : ''}
+                ${starterConfirmed
+                  ? '<span class="home-game-starter-confirmed">先発投手確定</span>'
+                  : (game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
+                    ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
+                    : '')}
               </div>
               <div class="home-game-team">
                 <span class="home-game-team-name">${escapeHtml(awayName || '客隊')}</span>
