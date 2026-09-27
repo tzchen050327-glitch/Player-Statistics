@@ -421,11 +421,11 @@
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
-          ensureHomeDailyStarterPresence(league,date,game);
           const directStarterPresent=Boolean(
             game?.overview?.starters?.away
             || game?.overview?.starters?.home
           );
+          if (!directStarterPresent) ensureHomeDailyStarterPresence(league,date,game);
           const starterConfirmed = (league === 'CPBL' || league === 'NPB')
             && status === 'scheduled'
             && !lineupReady
