@@ -202,11 +202,15 @@
       }
 
       if (target.closest('#homeGameDetailBack')) {
-        const route = appNavigationRoute();
-        if (route?.kind !== 'game-detail') return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        history.back();
+        appNavigationApplyingHistory = true;
+        try {
+          appNavigationApplyPageRoute({ kind:'page', page:'home' });
+          appNavigationReplace({ kind:'page', page:'home', playerId:'' });
+        } finally {
+          appNavigationApplyingHistory = false;
+        }
         return;
       }
 
