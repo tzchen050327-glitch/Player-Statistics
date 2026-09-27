@@ -12136,7 +12136,7 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 }
 .schedule-league-tabs{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:5px;
   padding:4px;
   border:1px solid var(--line);
