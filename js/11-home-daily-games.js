@@ -362,10 +362,14 @@
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
-          const starterConfirmed = league === 'NPB'
+          const starterConfirmed = (league === 'CPBL' || league === 'NPB')
             && status === 'scheduled'
-            && Boolean(game?.starterConfirmed)
-            && !lineupReady;
+            && !lineupReady
+            && Boolean(
+              game?.overview?.starterLocked?.away
+              || game?.overview?.starterLocked?.home
+            );
+          const starterConfirmedLabel = league === 'NPB' ? '先発投手確定' : '先發投手確定';
           const showScore = status === 'live' || status === 'final';
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
@@ -382,7 +386,7 @@
               <div class="home-game-card-top">
                 <span class="home-game-status status-${escapeAttr(status)} ${lineupReady ? 'is-lineup-ready' : ''}">${escapeHtml(statusLabel)}</span>
                 ${starterConfirmed
-                  ? '<span class="home-game-starter-confirmed">先発投手確定</span>'
+                  ? `<span class="home-game-starter-confirmed">${escapeHtml(starterConfirmedLabel)}</span>`
                   : (game?.time && ['final','live'].includes(status) && league !== 'CPBL' && league !== 'NPB'
                     ? `<span class="home-game-time">${escapeHtml(String(game.time))}</span>`
                     : '')}
