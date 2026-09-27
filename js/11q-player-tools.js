@@ -7,7 +7,7 @@
     const schedulePageCache = new Map();
     const schedulePageLoading = new Set();
     const schedulePageErrors = new Map();
-    let schedulePageLeague = ['CPBL','NPB','KBO','MLB'].includes(localStorage.getItem('schedulePageLeague'))
+    let schedulePageLeague = ['CPBL','NPB'].includes(localStorage.getItem('schedulePageLeague'))
       ? localStorage.getItem('schedulePageLeague')
       : 'CPBL';
     let schedulePageDate = /^\d{4}-\d{2}-\d{2}$/.test(localStorage.getItem('schedulePageDate') || '')
@@ -231,7 +231,7 @@
     }
 
     function schedulePageLeagueLabel(league) {
-      return ({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
+      return ({CPBL:'中職',NPB:'日職'})[league]||league;
     }
 
     function schedulePageStatusLabel(game, league) {
@@ -287,7 +287,7 @@
       els.schedulePageContent.innerHTML=`
         <div class="schedule-toolbar">
           <div class="schedule-league-tabs">
-            ${['CPBL','NPB','KBO','MLB'].map(league=>`
+            ${['CPBL','NPB'].map(league=>`
               <button type="button" class="${league===schedulePageLeague?'active':''}" data-schedule-league="${league}">
                 ${schedulePageLeagueLabel(league)}
               </button>`).join('')}
@@ -320,8 +320,8 @@
             ? `<div class="schedule-game-list">${games.map((game,index)=>{
                 const status=String(game?.status||'scheduled').toLowerCase();
                 const showScore=status==='live'||status==='final'||status==='suspended';
-                const away=schedulePageLeague==='MLB'?mlbTeamZh(game?.away||''):String(game?.away||'');
-                const home=schedulePageLeague==='MLB'?mlbTeamZh(game?.home||''):String(game?.home||'');
+                const away=String(game?.away||'');
+                const home=String(game?.home||'');
                 const detail=homeGameDetailSupported(schedulePageLeague);
                 return `
                   <article class="schedule-game-card status-${escapeHtml(status)} ${detail?'is-detail-enabled':''}" ${detail?`data-schedule-game-index="${index}" role="button" tabindex="0"`:''}>
