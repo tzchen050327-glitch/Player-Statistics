@@ -64,7 +64,7 @@
         els.pageSubtitle.textContent = playerRankingPageActive
           ? '數據排行'
           : (schedulePageActive
-          ? '賽程表'
+          ? '聯盟賽程'
           : (customNotificationPageActive
           ? '自訂通知'
           : (predictionPageActive
