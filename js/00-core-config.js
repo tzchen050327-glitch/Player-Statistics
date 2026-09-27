@@ -200,10 +200,6 @@
     let homeSpecialFilter = '';
     let homeInternationalEditionFilter = '';
     let homeInternationalTeamFilter = '';
-    let homeInternationalViewMode = 'players';
-    const internationalTeamGamesCache = new Map();
-    const internationalTeamGamesLoading = new Set();
-    let internationalSelectedTeamGameKey = '';
     let currentRecord = null;
     let internationalSelectedGameKey = '';
 
