@@ -1649,7 +1649,7 @@
 
       body.innerHTML = `
         <header class="game-detail-sticky-head">
-          <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回賽事</button>
+          <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回首頁</button>
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
