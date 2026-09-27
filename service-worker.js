@@ -78,7 +78,8 @@ const APP_SHELL = [
   './icon-192.png?v=v7.26',
   './icon-512.png?v=v7.26',
   './favicon-32.png?v=v7.26',
-  './favicon-16.png?v=v7.26'
+  './favicon-16.png?v=v7.26',
+  './notification-badge.png?v=v7.26'
 ];
 
 async function getModuleShell() {
@@ -267,8 +268,8 @@ self.addEventListener('push', event => {
   const title = String(payload?.title || '棒球通知');
   const options = {
     body:String(payload?.body || ''),
-    icon:'./icon-192.png',
-    badge:'./icon-192.png',
+    icon:`./icon-192.png?v=${CACHE_VERSION}`,
+    badge:`./notification-badge.png?v=${CACHE_VERSION}`,
     tag:String(payload?.tag || 'baseball-player-notification'),
     renotify:Boolean(payload?.renotify),
     data:payload?.data && typeof payload.data === 'object' ? payload.data : {}
