@@ -105,15 +105,15 @@
             <strong>數據排行</strong>
           </button>
 
-          <button id="homePlayerCompareBtn" class="panel home-standings-entry home-player-compare-entry" type="button" aria-label="開啟球員比較">
+          <button id="homeScheduleBtn" class="panel home-standings-entry home-schedule-entry" type="button" aria-label="開啟賽程表">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/>
-                <circle cx="17" cy="9" r="2.5" stroke="currentColor" stroke-width="1.8"/>
-                <path d="M3.5 19c.5-3.3 2.3-5 4.5-5s4 1.7 4.5 5M13.5 19c.4-2.7 1.8-4.1 3.6-4.1 1.7 0 3.1 1.4 3.5 4.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M7.5 3.5v4M16.5 3.5v4M3.5 9.5h17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M7.5 13h2M12 13h2M16.5 13h.1M7.5 16.5h2M12 16.5h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </span>
-            <strong>球員比較</strong>
+            <strong>賽程表</strong>
           </button>
 
           <button id="homeCustomNotificationBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟自訂通知">
@@ -219,18 +219,18 @@
       </section>
     </section>
 
-    <section id="playerComparePage" class="hidden player-tools-page">
+    <section id="schedulePage" class="hidden player-tools-page">
       <div class="player-tools-page-top">
-        <button id="playerCompareBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+        <button id="scheduleBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
       </div>
       <section class="panel player-tools-page-panel">
         <div class="player-tools-page-head">
           <div>
-            <span class="player-tools-page-kicker">COMPARE</span>
-            <h2>球員比較</h2>
+            <span class="player-tools-page-kicker">SCHEDULE</span>
+            <h2>賽程表</h2>
           </div>
         </div>
-        <div id="playerComparePageContent" class="player-tools-page-content" aria-live="polite"></div>
+        <div id="schedulePageContent" class="player-tools-page-content" aria-live="polite"></div>
       </section>
     </section>
 
