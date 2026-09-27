@@ -40,7 +40,7 @@
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
       const playerRankingPageActive = currentPage === 'player-ranking';
-      const playerComparePageActive = currentPage === 'player-compare';
+      const schedulePageActive = currentPage === 'schedule';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
       const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
       if (forceOfficialRefreshBtn) {
@@ -48,23 +48,23 @@
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || predictionPageActive || standingsPageActive || playerRankingPageActive || playerComparePageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || predictionPageActive || standingsPageActive || playerRankingPageActive || schedulePageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       els.customNotificationPage?.classList.toggle('hidden', !customNotificationPageActive);
       els.predictionPage?.classList.toggle('hidden', !predictionPageActive);
       els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
       els.playerRankingPage?.classList.toggle('hidden', !playerRankingPageActive);
-      els.playerComparePage?.classList.toggle('hidden', !playerComparePageActive);
+      els.schedulePage?.classList.toggle('hidden', !schedulePageActive);
       if (customNotificationPageActive) renderCustomNotificationPage();
       if (predictionPageActive) renderPredictionPage();
       if (standingsPageActive) renderStandingsPage();
       if (playerRankingPageActive) renderPlayerRankingPage();
-      if (playerComparePageActive) renderPlayerComparePage();
+      if (schedulePageActive) renderSchedulePage();
       if (els.pageSubtitle) {
         els.pageSubtitle.textContent = playerRankingPageActive
           ? '數據排行'
-          : (playerComparePageActive
-          ? '球員比較'
+          : (schedulePageActive
+          ? '賽程表'
           : (customNotificationPageActive
           ? '自訂通知'
           : (predictionPageActive
@@ -84,7 +84,7 @@
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive || playerRankingPageActive || playerComparePageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive || playerRankingPageActive || schedulePageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
