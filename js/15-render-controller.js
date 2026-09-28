@@ -68,6 +68,7 @@
       if (standingsPageActive) renderStandingsPage();
       if (playerRankingPageActive) renderPlayerRankingPage();
       if (schedulePageActive) renderSchedulePage();
+      if (advancedStatsPageActive) renderAdvancedStatsPage();
 
       if (leagueHubPageActive) {
         els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
