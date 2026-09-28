@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-version" content="v7.35" />
+  <meta name="app-version" content="v7.36" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v7.35" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v7.35" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v7.35" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v7.35" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v7.36" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v7.36" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v7.36" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v7.36" />
   <script>
     (() => {
       try {
@@ -26,19 +26,19 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v7.35"></script>
-  <link rel="stylesheet" href="./styles.css?v=v7.35" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v7.35" />
-  <link rel="stylesheet" href="./report-layout.css?v=v7.35" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v7.35" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v7.35" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v7.35" />
+    <script src="./diagnostic-runtime.js?v=v7.36"></script>
+  <link rel="stylesheet" href="./styles.css?v=v7.36" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v7.36" />
+  <link rel="stylesheet" href="./report-layout.css?v=v7.36" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v7.36" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v7.36" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v7.36" />
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v7.35" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v7.36" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -126,7 +126,7 @@
             <strong>自訂通知</strong>
           </button>
 
-          <button id="homePredictionBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟預測專區">
+          <button id="homeLeagueHubBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟聯盟分析">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M4 18.5 9 13l3.5 3.2L20 7.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -134,17 +134,18 @@
                 <circle cx="6" cy="7" r="2" stroke="currentColor" stroke-width="1.6"/>
               </svg>
             </span>
-            <strong>預測專區</strong>
+            <strong>聯盟分析</strong>
           </button>
 
-          <button id="homeStandingsBtn" class="panel home-standings-entry" type="button" aria-label="開啟戰績排名">
+          <button id="homeAdvancedStatsBtn" class="panel home-standings-entry" type="button" aria-label="開啟進階數據">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M8 4h8v3.2c0 3.4-1.7 5.8-4 5.8s-4-2.4-4-5.8V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                <path d="M8 6H5.5v1.2c0 2 1.2 3.4 3.1 3.6M16 6h2.5v1.2c0 2-1.2 3.4-3.1 3.6M12 13v3M9 20h6M10 16h4v4h-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5 19V12M10 19V8M15 19v-5M20 19V4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                <path d="M3.5 19.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="m5 9 4-3 4 2 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <strong>戰績排名</strong>
+            <strong>進階數據</strong>
           </button>
 
           <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各聯盟時間">
@@ -249,33 +250,48 @@
       </section>
     </section>
 
-    <section id="predictionPage" class="hidden prediction-page">
-      <div class="prediction-page-top">
-        <button id="predictionBackHomeBtn" class="press-btn prediction-back-home" type="button">← 返回首頁</button>
-      </div>
-      <section class="panel prediction-page-panel">
-        <div class="prediction-page-head">
-          <div>
-            <span class="prediction-page-kicker">PREDICTION</span>
-            <h2>預測專區</h2>
-          </div>
-        </div>
-        <div id="predictionPageContent" class="prediction-page-content" aria-live="polite"></div>
-      </section>
-    </section>
-
-    <section id="standingsPage" class="hidden standings-page">
+    <section id="leagueHubPage" class="hidden standings-page">
       <div class="standings-page-top">
-        <button id="standingsBackHomeBtn" class="press-btn standings-back-home" type="button">← 返回首頁</button>
+        <button id="leagueHubBackHomeBtn" class="press-btn standings-back-home" type="button">← 返回首頁</button>
       </div>
       <section class="panel standings-page-panel">
         <div class="standings-page-head">
           <div>
-            <span class="standings-page-kicker">STANDINGS</span>
-            <h2>戰績排名</h2>
+            <span class="standings-page-kicker">LEAGUE CENTER</span>
+            <h2>聯盟分析</h2>
           </div>
         </div>
-        <div id="standingsPageContent" class="standings-page-content" aria-live="polite"></div>
+        <div class="standings-page-content">
+          <div class="standings-controls" aria-label="聯盟分析切換">
+            <div id="leagueHubCountrySwitch" class="standings-primary-tabs" aria-label="各國選擇">
+              <button class="standings-switch-btn active" type="button" data-league-hub-league="cpbl">台灣</button>
+              <button class="standings-switch-btn" type="button" data-league-hub-league="npb">日本</button>
+              <button class="standings-switch-btn" type="button" data-league-hub-league="kbo">韓國</button>
+              <button class="standings-switch-btn" type="button" data-league-hub-league="mlb">美國</button>
+            </div>
+            <div id="leagueHubViewSwitch" class="standings-secondary-tabs is-two" aria-label="功能選擇">
+              <button class="standings-switch-btn active" type="button" data-league-hub-view="prediction">預測專區</button>
+              <button class="standings-switch-btn" type="button" data-league-hub-view="standings">戰績排名</button>
+            </div>
+          </div>
+          <div id="predictionPageContent" class="prediction-page-content" aria-live="polite"></div>
+          <div id="standingsPageContent" class="hidden" aria-live="polite"></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="advancedStatsPage" class="hidden player-tools-page">
+      <div class="player-tools-page-top">
+        <button id="advancedStatsBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel player-tools-page-panel">
+        <div class="player-tools-page-head">
+          <div>
+            <span class="player-tools-page-kicker">ADVANCED</span>
+            <h2>進階數據</h2>
+          </div>
+        </div>
+        <div id="advancedStatsPageContent" class="player-tools-page-content" aria-live="polite"></div>
       </section>
     </section>
 
@@ -341,7 +357,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v7.35</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v7.36</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -581,6 +597,6 @@
       </div>
     </div>
   </dialog>
-  <script src="./js/module-loader.js?v=v7.35"></script>
+  <script src="./js/module-loader.js?v=v7.36"></script>
 </body>
 </html>
