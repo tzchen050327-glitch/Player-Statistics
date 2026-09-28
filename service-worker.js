@@ -268,7 +268,6 @@ self.addEventListener('push', event => {
   const title = String(payload?.title || '棒球通知');
   const options = {
     body:String(payload?.body || ''),
-    icon:`./icon-192.png?v=${CACHE_VERSION}`,
     badge:`./notification-badge.png?v=${CACHE_VERSION}`,
     tag:String(payload?.tag || 'baseball-player-notification'),
     renotify:Boolean(payload?.renotify),
