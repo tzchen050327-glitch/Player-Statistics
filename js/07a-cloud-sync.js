@@ -627,6 +627,19 @@
                   <button id="settingsThemeDarkBtn" type="button">深色</button>
                 </span>
               </div>
+              <button id="settingsNotificationCenterBtn" class="app-settings-option" type="button">
+                <span class="app-settings-option-icon notifications" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 5.5 2 7H4.5c0-1.5 2-2 2-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M9.5 19a2.7 2.7 0 0 0 5 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="app-settings-option-copy">
+                  <strong>通知中心</strong>
+                  <small>管理球員出賽、先發與逐打席通知</small>
+                </span>
+                <span class="app-settings-option-arrow" aria-hidden="true">›</span>
+              </button>
               <button id="settingsCloudSyncBtn" class="app-settings-option" type="button">
                 <span class="app-settings-option-icon cloud" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -668,6 +681,12 @@
         settingsDialog.querySelector('#settingsThemeDarkBtn')?.addEventListener('click', event => {
           event.stopPropagation();
           applyAppTheme('dark');
+        });
+        settingsDialog.querySelector('#settingsNotificationCenterBtn')?.addEventListener('click', () => {
+          settingsDialog.close();
+          currentPage = 'notifications';
+          renderAll();
+          window.scrollTo({ top:0, behavior:'instant' });
         });
         settingsDialog.querySelector('#settingsCloudSyncBtn')?.addEventListener('click', () => {
           settingsDialog.close();
