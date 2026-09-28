@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-version" content="v7.36" />
+  <meta name="app-version" content="v7.37" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v7.36" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v7.36" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v7.36" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v7.36" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v7.37" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v7.37" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v7.37" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v7.37" />
   <script>
     (() => {
       try {
@@ -26,19 +26,19 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v7.36"></script>
-  <link rel="stylesheet" href="./styles.css?v=v7.36" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v7.36" />
-  <link rel="stylesheet" href="./report-layout.css?v=v7.36" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v7.36" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v7.36" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v7.36" />
+    <script src="./diagnostic-runtime.js?v=v7.37"></script>
+  <link rel="stylesheet" href="./styles.css?v=v7.37" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v7.37" />
+  <link rel="stylesheet" href="./report-layout.css?v=v7.37" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v7.37" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v7.37" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v7.37" />
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v7.36" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v7.37" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -105,6 +105,17 @@
             <strong>數據排行</strong>
           </button>
 
+          <button id="homeAdvancedStatsBtn" class="panel home-standings-entry" type="button" aria-label="開啟中職進階數據">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 19V12M10 19V8M15 19v-5M20 19V4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                <path d="M3.5 19.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="m5 9 4-3 4 2 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <strong>進階數據</strong>
+          </button>
+
           <button id="homeScheduleBtn" class="panel home-standings-entry home-schedule-entry" type="button" aria-label="開啟聯盟賽程">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -114,16 +125,6 @@
               </svg>
             </span>
             <strong>聯盟賽程</strong>
-          </button>
-
-          <button id="homeCustomNotificationBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟自訂通知">
-            <span class="home-standings-entry-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 5.5 2 7H4.5c0-1.5 2-2 2-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                <path d="M9.5 19a2.7 2.7 0 0 0 5 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-            </span>
-            <strong>自訂通知</strong>
           </button>
 
           <button id="homeLeagueHubBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟聯盟分析">
@@ -137,16 +138,17 @@
             <strong>聯盟分析</strong>
           </button>
 
-          <button id="homeAdvancedStatsBtn" class="panel home-standings-entry" type="button" aria-label="開啟進階數據">
+          <button id="homeCustomNotificationBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟通知中心">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M5 19V12M10 19V8M15 19v-5M20 19V4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-                <path d="M3.5 19.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="m5 9 4-3 4 2 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 5.5 2 7H4.5c0-1.5 2-2 2-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9.5 19a2.7 2.7 0 0 0 5 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </span>
-            <strong>進階數據</strong>
+            <strong>通知中心</strong>
           </button>
+
+
 
           <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各聯盟時間">
             <div class="home-time-zone-head">
@@ -242,8 +244,8 @@
       <section class="panel custom-notification-page-panel">
         <div class="custom-notification-page-head">
           <div>
-            <span class="custom-notification-page-kicker">NOTIFICATIONS</span>
-            <h2>自訂通知</h2>
+            <span class="custom-notification-page-kicker">NOTIFICATION CENTER</span>
+            <h2>通知中心</h2>
           </div>
         </div>
         <div id="customNotificationPageContent" class="custom-notification-page-content" aria-live="polite"></div>
@@ -287,7 +289,7 @@
       <section class="panel player-tools-page-panel">
         <div class="player-tools-page-head">
           <div>
-            <span class="player-tools-page-kicker">ADVANCED</span>
+            <span class="player-tools-page-kicker">CPBL ADVANCED</span>
             <h2>進階數據</h2>
           </div>
         </div>
@@ -357,7 +359,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v7.36</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v7.37</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -597,6 +599,6 @@
       </div>
     </div>
   </dialog>
-  <script src="./js/module-loader.js?v=v7.36"></script>
+  <script src="./js/module-loader.js?v=v7.37"></script>
 </body>
 </html>
