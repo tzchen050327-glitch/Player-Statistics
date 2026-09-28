@@ -268,6 +268,9 @@ self.addEventListener('push', event => {
   const title = String(payload?.title || '棒球通知');
   const options = {
     body:String(payload?.body || ''),
+    // Samsung/Android inserts a letter fallback when Web Push has no large icon.
+    // Supply a valid fully-transparent PNG so the right-side fallback stays blank.
+    icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==',
     badge:`./notification-badge.png?v=${CACHE_VERSION}`,
     tag:String(payload?.tag || 'baseball-player-notification'),
     renotify:Boolean(payload?.renotify),
