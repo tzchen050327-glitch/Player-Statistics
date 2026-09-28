@@ -85,7 +85,7 @@
         let subtitle = homePageBreadcrumb();
         if (playerRankingPageActive) subtitle = '數據排行';
         else if (schedulePageActive) subtitle = '聯盟賽程';
-        else if (customNotificationPageActive) subtitle = '自訂通知';
+        else if (customNotificationPageActive) subtitle = '通知中心';
         else if (leagueHubPageActive) subtitle = '聯盟分析';
         else if (advancedStatsPageActive) subtitle = '進階數據';
         else if (playerPageActive) {
