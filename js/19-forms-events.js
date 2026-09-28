@@ -991,26 +991,61 @@
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.homePredictionBtn?.addEventListener('click', () => {
-      currentPage = 'prediction';
+    function syncLeagueHubLeague(league) {
+      const value = ['cpbl','npb','kbo','mlb'].includes(String(league)) ? String(league) : 'cpbl';
+      leagueHubLeague = value;
+      predictionUiState.league = value;
+      standingsUiState.league = value;
+      predictionGameSlideIndex = 0;
+      standingsSelectedTeam = '';
+      standingsTeamDetailError = '';
+      localStorage.setItem('leagueHubLeague', value);
+      localStorage.setItem('predictionLeague', value);
+      localStorage.setItem('standingsLeague', value);
+    }
+
+    function openLeagueHub(view = leagueHubView) {
+      const nextView = view === 'standings' ? 'standings' : 'prediction';
+      leagueHubView = nextView;
+      localStorage.setItem('leagueHubView', nextView);
+      syncLeagueHubLeague(leagueHubLeague);
+      currentPage = nextView;
       renderAll();
+      if (nextView === 'standings') void loadOfficialStandings({ force:true });
       window.scrollTo({ top:0, behavior:'instant' });
+    }
+
+    els.homeLeagueHubBtn?.addEventListener('click', () => {
+      openLeagueHub(leagueHubView);
     });
 
-    els.predictionBackHomeBtn?.addEventListener('click', () => {
+    els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        syncLeagueHubLeague(btn.dataset.leagueHubLeague);
+        renderAll();
+        if (currentPage === 'standings') void loadOfficialStandings({ force:true });
+      });
+    });
+
+    els.leagueHubViewSwitch?.querySelectorAll('[data-league-hub-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openLeagueHub(btn.dataset.leagueHubView);
+      });
+    });
+
+    els.leagueHubBackHomeBtn?.addEventListener('click', () => {
       currentPage = 'home';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.homeStandingsBtn?.addEventListener('click', () => {
-      currentPage = 'standings';
+    els.homeAdvancedStatsBtn?.addEventListener('click', () => {
+      currentPage = 'advanced-stats';
       renderAll();
-      void loadOfficialStandings({ force:true });
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.standingsBackHomeBtn?.addEventListener('click', () => {
+    els.advancedStatsBackHomeBtn?.addEventListener('click', () => {
       currentPage = 'home';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
