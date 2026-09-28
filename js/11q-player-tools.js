@@ -29,7 +29,8 @@
       playerToolsLoading.add(key);
       playerToolsErrors.delete(key);
       try {
-        const response = await fetch(LEAGUE_PLAYER_STATS_API_URL, {
+        const weightedStatsUrl = LEAGUE_PLAYER_STATS_API_URL.replace(/\/league-player-stats$/, '/league-player-stats-v2');
+        const response = await fetch(weightedStatsUrl, {
           method:'POST',
           headers:{ 'content-type':'application/json' },
           body:JSON.stringify({
@@ -80,6 +81,9 @@
             { key:'avg', label:'AVG', fmt:'three' },
             { key:'ops', label:'OPS', fmt:'three' },
             { key:'opsplus', label:'OPS+', fmt:'int' },
+            { key:'wrcpa', label:'wRC/PA', fmt:'three' },
+            { key:'wrc', label:'wRC', fmt:'one' },
+            { key:'wrcplus', label:'wRC+', fmt:'int' },
             { key:'hr', label:'HR', fmt:'int' },
             { key:'rbi', label:'RBI', fmt:'int' },
             { key:'h', label:'H', fmt:'int' },
@@ -99,6 +103,7 @@
       if (!Number.isFinite(n)) return '—';
       if (fmt === 'three') return n.toFixed(3).replace(/^0/,'');
       if (fmt === 'two') return n.toFixed(2);
+      if (fmt === 'one') return n.toFixed(1);
       if (fmt === 'ip') {
         const outs = Math.max(0, Math.round(n));
         return `${Math.floor(outs/3)}.${outs%3}`;
@@ -109,17 +114,17 @@
     function playerToolsSortedRows(league, role, metric) {
       const def = playerToolsMetricDef(role, metric);
       const data = playerToolsData(league);
-      const customOpsRate = role === 'hitter' && ['ops','opsplus','obp','slg'].includes(def.key);
+      const customHitterRate = role === 'hitter' && ['ops','opsplus','obp','slg','wrcpa','wrcplus'].includes(def.key);
       const customSupportRate = role === 'pitcher' && def.key === 'rs9';
       const official = data?.leaderboards?.[role]?.[def.key];
-      if (!customOpsRate && !customSupportRate && Array.isArray(official) && official.length) return official;
+      if (!customHitterRate && !customSupportRate && Array.isArray(official) && official.length) return official;
       const standardRateMetric = role === 'hitter'
         ? def.key === 'avg'
         : ['era','whip'].includes(def.key);
       return [...playerToolsRows(league, role)]
         .filter(row => Number.isFinite(Number(row?.[def.key])))
         .filter(row => !standardRateMetric || row?.qualifiedRate === true)
-        .filter(row => !customOpsRate || row?.qualifiedOpsRate === true)
+        .filter(row => !customHitterRate || row?.qualifiedOpsRate === true)
         .filter(row => !customSupportRate || row?.qualifiedSupportRate === true)
         .sort((a,b) => {
           const av = Number(a?.[def.key] || 0);
@@ -173,7 +178,13 @@
         ${data ? `
           <div class="player-tools-source">
             <span>${playerRankingLeague === 'cpbl' ? 'CPBL' : 'NPB'} ${CURRENT_YEAR}</span>
-            <span>${def.key === 'rs9' ? (supportMeta?.complete ? '本站整季計算' : '資料未完整') : (data?.cache?.hit ? '共用快取' : '官方更新')}</span>
+            <span>${
+              def.key === 'rs9'
+                ? (supportMeta?.complete ? '本站整季計算' : '資料未完整')
+                : ['wrc','wrcpa','wrcplus'].includes(def.key)
+                  ? (data?.weightedRuns?.available ? (data?.cache?.weightedHit ? '本站加權快取' : '本站加權計算') : '加權資料未完整')
+                  : (data?.cache?.hit ? '共用快取' : '官方更新')
+            }</span>
           </div>
           <div class="player-ranking-table">
             <div class="player-ranking-head">
@@ -189,7 +200,9 @@
                 </div>`).join('') : '<div class="player-tools-empty">目前沒有可顯示的排行資料。</div>'}
             </div>
           </div>
-          <div class="player-tools-note">${playerRankingRole === 'hitter' ? 'AVG 維持官方規定打席；OPS／OPS+／OBP／SLG 採自訂門檻：打席數至少等於球隊出賽數。OPS+ 以 100 為聯盟平均，不含球場因子。' : pitcherRankingNote}</div>
+          <div class="player-tools-note">${playerRankingRole === 'hitter'
+            ? 'AVG 維持官方規定打席；OPS／OPS+／OBP／SLG／wRC/PA／wRC+ 採自訂門檻：打席數至少等於球隊出賽數。wRC/PA 表示每打席預期創造分數，wRC 為累積得分創造；wRC+ 以 100 為聯盟平均。目前本站 wRC 系列為同聯盟、同球季的無球場因子估算值。'
+            : pitcherRankingNote}</div>
         ` : ''}
       `;
 
