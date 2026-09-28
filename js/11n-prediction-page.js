@@ -1535,13 +1535,6 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const error = predictionErrors.get(key) || '';
 
       els.predictionPageContent.innerHTML = `
-        <div class="prediction-controls" aria-label="預測聯盟">
-          ${predictionLeagueButton('中華職棒','cpbl')}
-          ${predictionLeagueButton('日本職棒','npb')}
-          ${predictionLeagueButton('韓國職棒','kbo')}
-          ${predictionLeagueButton('美國職棒','mlb')}
-        </div>
-
         ${predictionWorkspace(data, loading, error)}
       `;
 
