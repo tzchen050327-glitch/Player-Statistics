@@ -30,7 +30,7 @@
     }
 
     function appNavigationPageRoute(page = currentPage) {
-      const normalized = ['player', 'notifications', 'prediction', 'standings', 'player-ranking', 'schedule'].includes(String(page)) ? String(page) : 'home';
+      const normalized = ['player', 'notifications', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(page)) ? String(page) : 'home';
       return {
         kind: 'page',
         page: normalized,
@@ -52,10 +52,17 @@
 
     function appNavigationSyncRenderedPage() {
       if (appNavigationApplyingHistory) return;
-      const page = ['player', 'notifications', 'prediction', 'standings', 'player-ranking', 'schedule'].includes(String(currentPage)) ? String(currentPage) : 'home';
+      const page = ['player', 'notifications', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(currentPage)) ? String(currentPage) : 'home';
       if (page === 'home') return;
       const route = appNavigationRoute();
       if (appNavigationRouteRepresentsPage(route, page)) return;
+      const switchingLeagueHubView = route?.kind === 'page'
+        && ['prediction','standings'].includes(String(route.page))
+        && ['prediction','standings'].includes(page);
+      if (switchingLeagueHubView) {
+        appNavigationReplace(appNavigationPageRoute(page));
+        return;
+      }
       appNavigationPush(appNavigationPageRoute(page));
     }
 
@@ -73,7 +80,7 @@
 
     function appNavigationApplyPageRoute(route) {
       appNavigationCloseGameDetailNow();
-      const page = ['player', 'notifications', 'prediction', 'standings', 'player-ranking', 'schedule'].includes(String(route?.page))
+      const page = ['player', 'notifications', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(route?.page))
         ? String(route.page)
         : 'home';
 
@@ -88,6 +95,10 @@
       }
 
       currentPage = page;
+      if (page === 'prediction' || page === 'standings') {
+        leagueHubView = page;
+        localStorage.setItem('leagueHubView', page);
+      }
       renderAll();
       window.scrollTo({ top: 0, behavior: 'instant' });
 
@@ -176,11 +187,6 @@
     }
 
     function appNavigationGoBackOrHome() {
-      const route = appNavigationRoute();
-      if (route && !(route.kind === 'page' && route.page === 'home') && history.length > 1) {
-        history.back();
-        return;
-      }
       appNavigationApplyingHistory = true;
       try {
         appNavigationApplyPageRoute({ kind: 'page', page: 'home' });
@@ -194,7 +200,7 @@
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
 
-      if (target.closest('#backHomeBtn, #customNotificationBackHomeBtn, #predictionBackHomeBtn, #standingsBackHomeBtn')) {
+      if (target.closest('#backHomeBtn, #playerRankingBackHomeBtn, #scheduleBackHomeBtn, #customNotificationBackHomeBtn, #leagueHubBackHomeBtn, #advancedStatsBackHomeBtn')) {
         event.preventDefault();
         event.stopImmediatePropagation();
         appNavigationGoBackOrHome();
