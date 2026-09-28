@@ -39,52 +39,70 @@
       const customNotificationPageActive = currentPage === 'notifications';
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
+      const leagueHubPageActive = predictionPageActive || standingsPageActive;
+      const advancedStatsPageActive = currentPage === 'advanced-stats';
       const playerRankingPageActive = currentPage === 'player-ranking';
       const schedulePageActive = currentPage === 'schedule';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
+      if (leagueHubPageActive) {
+        predictionUiState.league = leagueHubLeague;
+        standingsUiState.league = leagueHubLeague;
+      }
       const forceOfficialRefreshBtn = document.getElementById('forceOfficialRefreshBtn');
       if (forceOfficialRefreshBtn) {
         const showOfficialRefresh = playerPageActive && playerScope(player) === 'cpbl' && Boolean(player?.cpblAcnt);
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || predictionPageActive || standingsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || leagueHubPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       els.customNotificationPage?.classList.toggle('hidden', !customNotificationPageActive);
-      els.predictionPage?.classList.toggle('hidden', !predictionPageActive);
-      els.standingsPage?.classList.toggle('hidden', !standingsPageActive);
+      els.leagueHubPage?.classList.toggle('hidden', !leagueHubPageActive);
+      els.advancedStatsPage?.classList.toggle('hidden', !advancedStatsPageActive);
       els.playerRankingPage?.classList.toggle('hidden', !playerRankingPageActive);
       els.schedulePage?.classList.toggle('hidden', !schedulePageActive);
+      els.predictionPageContent?.classList.toggle('hidden', !predictionPageActive);
+      els.standingsPageContent?.classList.toggle('hidden', !standingsPageActive);
       if (customNotificationPageActive) renderCustomNotificationPage();
       if (predictionPageActive) renderPredictionPage();
       if (standingsPageActive) renderStandingsPage();
       if (playerRankingPageActive) renderPlayerRankingPage();
       if (schedulePageActive) renderSchedulePage();
+
+      if (leagueHubPageActive) {
+        els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
+          const active = btn.dataset.leagueHubLeague === leagueHubLeague;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        els.leagueHubViewSwitch?.querySelectorAll('[data-league-hub-view]').forEach(btn => {
+          const active = btn.dataset.leagueHubView === currentPage;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
       if (els.pageSubtitle) {
-        els.pageSubtitle.textContent = playerRankingPageActive
-          ? '數據排行'
-          : (schedulePageActive
-          ? '聯盟賽程'
-          : (customNotificationPageActive
-          ? '自訂通知'
-          : (predictionPageActive
-          ? '預測專區'
-          : (standingsPageActive
-              ? '戰績排名'
-              : (playerPageActive
-              ? (errorPageActive
-                  ? '失誤紀錄｜CPBL 官方'
-                  : (playerScope(player) === 'international'
-                      ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
-                      : `球員設定｜${scopeLabel(playerScope(player))}`))
-              : homePageBreadcrumb())))));
+        let subtitle = homePageBreadcrumb();
+        if (playerRankingPageActive) subtitle = '數據排行';
+        else if (schedulePageActive) subtitle = '聯盟賽程';
+        else if (customNotificationPageActive) subtitle = '自訂通知';
+        else if (leagueHubPageActive) subtitle = '聯盟分析';
+        else if (advancedStatsPageActive) subtitle = '進階數據';
+        else if (playerPageActive) {
+          subtitle = errorPageActive
+            ? '失誤紀錄｜CPBL 官方'
+            : (playerScope(player) === 'international'
+                ? `${playerSpecialCompetition(player)}｜${internationalEdition(player)}｜${internationalTeam(player)}`
+                : `球員設定｜${scopeLabel(playerScope(player))}`);
+        }
+        els.pageSubtitle.textContent = subtitle;
       }
       if (els.selectedPlayerText) {
         els.selectedPlayerText.textContent = playerPageActive
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
