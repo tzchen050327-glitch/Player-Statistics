@@ -1,4 +1,4 @@
-    const APP_VERSION = 'v7.35';
+    const APP_VERSION = 'v7.36';
     const appSplashVersionEl = document.getElementById('appSplashVersion');
     if (appSplashVersionEl) appSplashVersionEl.textContent = `VERSION ${APP_VERSION}`;
     const SERVICE_WORKER_URL = `./service-worker.js?v=${encodeURIComponent(APP_VERSION)}`;
@@ -45,8 +45,8 @@
     const CPBL_MINOR_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-minor-game-detail-cache`;
     const CPBL_POSTSEASON_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/cpbl-postseason-detail`;
     const NPB_GAME_DETAIL_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-game-detail`;
-    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v7.35';
-    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v7.35';
+    const DEFAULT_HITTER_PHOTO_URL = './assets/default-hitter.jpg?v=v7.36';
+    const DEFAULT_PITCHER_PHOTO_URL = './assets/default-pitcher.jpg?v=v7.36';
     const CPBL_APP_KEY = 'TyPAf0puXo-lBcrIf4Ky1wQryHaG2f4j';
     const CPBL_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqbmRuc3p0YmNwbWtoaWN0amtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgxMDcsImV4cCI6MjEwMzU4NDEwN30.oB0Qq2eF3Tnrhg209rzPMNUhQPPEREmJwWxMFxCZLYU';
 
@@ -82,14 +82,17 @@
       customNotificationPageContent: document.getElementById('customNotificationPageContent'),
       homeCustomNotificationBtn: document.getElementById('homeCustomNotificationBtn'),
       customNotificationBackHomeBtn: document.getElementById('customNotificationBackHomeBtn'),
-      predictionPage: document.getElementById('predictionPage'),
+      leagueHubPage: document.getElementById('leagueHubPage'),
+      leagueHubCountrySwitch: document.getElementById('leagueHubCountrySwitch'),
+      leagueHubViewSwitch: document.getElementById('leagueHubViewSwitch'),
+      homeLeagueHubBtn: document.getElementById('homeLeagueHubBtn'),
+      leagueHubBackHomeBtn: document.getElementById('leagueHubBackHomeBtn'),
       predictionPageContent: document.getElementById('predictionPageContent'),
-      homePredictionBtn: document.getElementById('homePredictionBtn'),
-      predictionBackHomeBtn: document.getElementById('predictionBackHomeBtn'),
-      standingsPage: document.getElementById('standingsPage'),
       standingsPageContent: document.getElementById('standingsPageContent'),
-      homeStandingsBtn: document.getElementById('homeStandingsBtn'),
-      standingsBackHomeBtn: document.getElementById('standingsBackHomeBtn'),
+      advancedStatsPage: document.getElementById('advancedStatsPage'),
+      advancedStatsPageContent: document.getElementById('advancedStatsPageContent'),
+      homeAdvancedStatsBtn: document.getElementById('homeAdvancedStatsBtn'),
+      advancedStatsBackHomeBtn: document.getElementById('advancedStatsBackHomeBtn'),
       playerPage: document.getElementById('playerPage'),
       homeTemplateGrid: document.getElementById('homeTemplateGrid'),
       homePlayerCount: document.getElementById('homePlayerCount'),
@@ -187,6 +190,15 @@
     let selectedPlayerId = null;
     let selectedTab = 'base';
     let currentPage = 'home';
+    const savedLeagueHubLeague = localStorage.getItem('leagueHubLeague')
+      || localStorage.getItem('predictionLeague')
+      || localStorage.getItem('standingsLeague');
+    let leagueHubLeague = ['cpbl','npb','kbo','mlb'].includes(savedLeagueHubLeague)
+      ? savedLeagueHubLeague
+      : 'cpbl';
+    let leagueHubView = ['prediction','standings'].includes(localStorage.getItem('leagueHubView'))
+      ? localStorage.getItem('leagueHubView')
+      : 'prediction';
     const CURRENT_YEAR = new Date().getFullYear();
     let selectedSeason = CURRENT_YEAR;
     let selectedLevel = 'A';
