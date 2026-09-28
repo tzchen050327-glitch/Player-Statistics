@@ -732,12 +732,6 @@
 
       els.standingsPageContent.innerHTML = `
         <div class="standings-controls">
-          <div class="standings-primary-tabs" aria-label="聯盟">
-            ${standingsButton('中華職棒','cpbl',isCpbl,'data-standings-league')}
-            ${standingsButton('日本職棒','npb',isNpb,'data-standings-league')}
-            ${standingsButton('韓國職棒','kbo',isKbo,'data-standings-league')}
-            ${standingsButton('美國職棒','mlb',isMlb,'data-standings-league')}
-          </div>
           <div class="standings-secondary-tabs ${secondaryClass}" aria-label="${secondaryLabel}">
             ${secondary}
           </div>
