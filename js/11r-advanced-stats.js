@@ -235,29 +235,36 @@
     }
 
     function advancedStatsPitcherTable(rows) {
+      const suppressedGroups = new Set(['3','5','6','7','8']);
+      const officialOrDash = (row, value, formatter = advancedStatsNumber) => (
+        suppressedGroups.has(String(row?.ItemGroupCode ?? '')) ? '—' : formatter(value)
+      );
       return `
         <div class="advanced-stats-table-wrap">
           <table class="advanced-stats-table advanced-stats-pitcher-table">
             <thead><tr>
-              <th>分項</th><th>IP</th><th>PA</th><th>P</th><th>H</th><th>HR</th><th>BB</th><th>K</th><th>R</th><th>ER</th><th>WHIP</th><th>ERA</th><th>W</th><th>L</th>
+              <th>分項</th><th>W</th><th>L</th><th>ERA</th><th>SP</th><th>SV</th><th>IP</th><th>PA</th><th>H</th><th>HR</th><th>HBP</th><th>BB</th><th>K</th><th>R</th><th>ER</th><th>AVG</th><th>WHIP</th>
             </tr></thead>
             <tbody>
               ${rows.map(row => `
                 <tr>
                   <th>${escapeHtml(String(row?.ItemName || '—').trim())}</th>
+                  <td>${officialOrDash(row, row?.GameResultWCnt)}</td>
+                  <td>${officialOrDash(row, row?.GameResultLCnt)}</td>
+                  <td class="is-rate">${officialOrDash(row, row?.Era, advancedStatsPitchRate)}</td>
+                  <td>${officialOrDash(row, row?.SPCnt)}</td>
+                  <td>${officialOrDash(row, row?.SaveOKCnt)}</td>
                   <td>${advancedStatsInnings(row)}</td>
                   <td>${advancedStatsNumber(row?.PlateAppearances)}</td>
-                  <td>${advancedStatsNumber(row?.PitchCnt)}</td>
                   <td>${advancedStatsNumber(row?.HittingCnt)}</td>
                   <td>${advancedStatsNumber(row?.HomeRunCnt)}</td>
+                  <td>${advancedStatsNumber(row?.HitBYPitchCnt)}</td>
                   <td>${advancedStatsNumber(row?.BasesONBallsCnt)}</td>
                   <td>${advancedStatsNumber(row?.StrikeOutCnt)}</td>
-                  <td>${advancedStatsNumber(row?.RunCnt)}</td>
-                  <td>${advancedStatsNumber(row?.EarnedRunCnt)}</td>
-                  <td class="is-rate">${advancedStatsPitchRate(row?.Whip)}</td>
-                  <td class="is-rate">${advancedStatsPitchRate(row?.Era)}</td>
-                  <td>${advancedStatsNumber(row?.GameResultWCnt)}</td>
-                  <td>${advancedStatsNumber(row?.GameResultLCnt)}</td>
+                  <td>${officialOrDash(row, row?.RunCnt)}</td>
+                  <td>${officialOrDash(row, row?.EarnedRunCnt)}</td>
+                  <td class="is-rate">${advancedStatsRate(row?.Avg)}</td>
+                  <td class="is-rate">${officialOrDash(row, row?.Whip, advancedStatsPitchRate)}</td>
                 </tr>
               `).join('')}
             </tbody>
