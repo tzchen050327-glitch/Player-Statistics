@@ -12687,6 +12687,7 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   background:var(--panel);
 }
 .advanced-stats-table{
+  --advanced-stats-label-width:clamp(130px,calc(50vw - 32px),320px);
   width:100%;
   min-width:920px;
   border-collapse:separate;
@@ -12717,8 +12718,19 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   position:sticky;
   left:0;
   z-index:3;
-  min-width:105px;
+  width:var(--advanced-stats-label-width);
+  min-width:var(--advanced-stats-label-width);
+  max-width:var(--advanced-stats-label-width);
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.35;
   text-align:left;
+}
+.advanced-stats-table th:not(:first-child),
+.advanced-stats-table td{
+  width:68px;
+  min-width:68px;
+  max-width:68px;
 }
 .advanced-stats-table thead th:first-child{
   z-index:4;
@@ -12772,7 +12784,16 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
     flex-direction:column;
     gap:2px;
   }
+  .advanced-stats-table{
+    --advanced-stats-label-width:calc(50vw - 34px);
+  }
   .advanced-stats-table th,
   .advanced-stats-table td{padding:9px 8px}
+  .advanced-stats-table th:not(:first-child),
+  .advanced-stats-table td{
+    width:64px;
+    min-width:64px;
+    max-width:64px;
+  }
 }
 /* ===== CPBL ADVANCED STATS END ===== */
