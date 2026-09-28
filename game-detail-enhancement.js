@@ -210,7 +210,56 @@
   function visibleInningCells(detail, values, side, innings, totalRuns) {
     const raw=innings.map((_,i)=>values?.[i] ?? '');
     const status=String(detail?.status||'').toLowerCase();
-    if(status==='final') return raw;
+
+    // Some NPB final feeds publish the correct R total before the last
+    // inning-by-inning cell is committed (most commonly a walk-off bottom 9).
+    // Reconcile that stale/missing terminal cell from the authoritative total
+    // instead of freezing the incomplete array when status flips to final.
+    if(status==='final'){
+      const numericTotal=Number(totalRuns);
+      if(!Number.isFinite(numericTotal)) return raw;
+
+      const recordedRuns=raw.reduce((sum,value)=>{
+        const cell=safeCell(value);
+        return /^-?\d+$/.test(cell) ? sum+Number(cell) : sum;
+      },0);
+      const residual=numericTotal-recordedRuns;
+      if(residual<=0) return raw;
+
+      const plays=Array.isArray(detail?.plays)?detail.plays:[];
+      const lastPlay=plays.at(-1);
+      const terminalInning=Number(lastPlay?.inning);
+      let targetIndex=-1;
+
+      if(Number.isFinite(terminalInning)){
+        targetIndex=innings.findIndex((label,index)=>{
+          const inningNo=Number(String(label??index+1).match(/\d+/)?.[0]||index+1);
+          return inningNo===terminalInning;
+        });
+      }
+
+      // Fallback for feeds without play-by-play: use the last inning where
+      // either side has an observed cell, so fixed-width future columns are
+      // never mistaken for the terminal inning.
+      if(targetIndex<0){
+        const awayCells=Array.isArray(detail?.scoreboard?.away)?detail.scoreboard.away:[];
+        const homeCells=Array.isArray(detail?.scoreboard?.home)?detail.scoreboard.home:[];
+        for(let i=innings.length-1;i>=0;i--){
+          if(safeCell(awayCells[i])!=='' || safeCell(homeCells[i])!==''){
+            targetIndex=i;
+            break;
+          }
+        }
+      }
+
+      if(targetIndex>=0){
+        const current=safeCell(raw[targetIndex]);
+        const currentRuns=/^-?\d+$/.test(current)?Number(current):0;
+        raw[targetIndex]=currentRuns+residual;
+      }
+      return raw;
+    }
+
     const info=currentHalfInfo(detail);
     if(!info) return raw;
 
