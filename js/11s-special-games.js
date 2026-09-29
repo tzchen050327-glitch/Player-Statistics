@@ -6,7 +6,7 @@
         const response = await fetch(SPECIAL_GAMES_API_URL, { cache:'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
-        homeSpecialGames = Array.isArray(payload?.games) ? payload.games : [];
+        homeSpecialGames = (Array.isArray(payload?.games) ? payload.games : []).filter(game => !['CPBL','中職','中華職棒'].includes(String(game?.league || '').trim().toUpperCase()));
       } catch (error) {
         console.warn('特殊比賽讀取失敗', error);
         homeSpecialGames = [];
