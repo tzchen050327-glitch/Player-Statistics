@@ -64,6 +64,8 @@
     function advancedStatsRenderSuggestions(stateText = '') {
       const box = document.getElementById('advancedStatsSearchResults');
       if (!box) return;
+      const input = document.getElementById('advancedStatsSearchInput');
+      input?.setAttribute('aria-expanded', advancedStatsSearchQuery ? 'true' : 'false');
       if (!advancedStatsSearchQuery) {
         box.classList.add('hidden');
         box.innerHTML = '';
@@ -343,7 +345,7 @@
             <span>輸入姓名，直接讀取 CPBL 官方分項成績。</span>
           </div>
           <div class="advanced-stats-search-wrap">
-            <input id="advancedStatsSearchInput" type="search" autocomplete="off" placeholder="輸入球員姓名" value="${escapeHtml(advancedStatsSearchQuery)}" />
+            <input id="advancedStatsSearchInput" name="cpbl-player-query" type="search" role="combobox" aria-autocomplete="list" aria-controls="advancedStatsSearchResults" aria-expanded="false" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="輸入球員姓名" value="${escapeHtml(advancedStatsSearchQuery)}" />
             <div id="advancedStatsSearchResults" class="advanced-stats-search-results hidden" role="listbox"></div>
           </div>
         </section>
