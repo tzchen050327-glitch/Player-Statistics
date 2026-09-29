@@ -12847,3 +12847,22 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 #homePage.special-home-mode #homeDailyGames{
   display:none !important;
 }
+
+
+/* v7.50: root tabs are always one horizontal three-way split */
+#homePage #homeZoneSwitch.home-root-switch{
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  width:100%;
+}
+#homePage #homeZoneSwitch.home-root-switch > .home-zone-btn{
+  display:flex !important;
+  flex:1 1 0 !important;
+  width:0 !important;
+  min-width:0 !important;
+  align-items:center;
+  justify-content:center;
+  padding-left:2px !important;
+  padding-right:2px !important;
+}
