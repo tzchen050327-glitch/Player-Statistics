@@ -37,6 +37,7 @@
       const player = selectedPlayer();
       const playerPageActive = currentPage === 'player' && Boolean(player);
       const customNotificationPageActive = currentPage === 'notifications';
+      const pitcherBatterPageActive = currentPage === 'pitcher-batter';
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
       const leagueHubPageActive = predictionPageActive || standingsPageActive;
@@ -54,9 +55,10 @@
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || leagueHubPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || leagueHubPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       els.customNotificationPage?.classList.toggle('hidden', !customNotificationPageActive);
+      els.pitcherBatterPage?.classList.toggle('hidden', !pitcherBatterPageActive);
       els.leagueHubPage?.classList.toggle('hidden', !leagueHubPageActive);
       els.advancedStatsPage?.classList.toggle('hidden', !advancedStatsPageActive);
       els.playerRankingPage?.classList.toggle('hidden', !playerRankingPageActive);
@@ -87,6 +89,7 @@
         if (playerRankingPageActive) subtitle = '數據排行';
         else if (schedulePageActive) subtitle = '聯盟賽程';
         else if (customNotificationPageActive) subtitle = '通知中心';
+        else if (pitcherBatterPageActive) subtitle = '投打對決';
         else if (leagueHubPageActive) subtitle = '聯盟分析';
         else if (advancedStatsPageActive) subtitle = '進階數據';
         else if (playerPageActive) {
@@ -103,7 +106,7 @@
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || standingsPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || standingsPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
