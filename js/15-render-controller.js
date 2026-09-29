@@ -71,6 +71,7 @@
       if (playerRankingPageActive) renderPlayerRankingPage();
       if (schedulePageActive) renderSchedulePage();
       if (advancedStatsPageActive) renderAdvancedStatsPage();
+      if (pitcherBatterPageActive) renderPitcherBatterPage();
 
       if (leagueHubPageActive) {
         els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
