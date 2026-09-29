@@ -107,6 +107,7 @@
       homeCpblFilters: document.getElementById('homeCpblFilters'),
       homeSpecialFilters: document.getElementById('homeSpecialFilters'),
       homeInternationalExplorer: document.getElementById('homeInternationalExplorer'),
+      homeSpecialGamesExplorer: document.getElementById('homeSpecialGamesExplorer'),
       newPlayerCompetitionLabel: document.getElementById('newPlayerCompetitionLabel'),
       newPlayerTeamLabel: document.getElementById('newPlayerTeamLabel'),
       newPlayerYearLabel: document.getElementById('newPlayerYearLabel'),
@@ -208,6 +209,7 @@
     let homeTeamFilter = '';
     let homeZone = 'cpbl';
     let homeRootSection = 'pro';
+    let homeSpecialGames = [];
     let homeProCountry = 'TW';
     let homeUsLeague = 'MLB';
     let homeSpecialFilter = '';
