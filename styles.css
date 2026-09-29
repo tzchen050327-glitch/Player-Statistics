@@ -12826,3 +12826,24 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   padding-right:4px;
   white-space:nowrap;
 }
+
+
+/* v7.49 special-games mobile layout */
+#homePage.special-home-mode #homeZoneSwitch.home-root-switch{
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  width:100%;
+}
+#homePage.special-home-mode #homeZoneSwitch.home-root-switch > .home-zone-btn{
+  display:flex;
+  flex:1 1 0 !important;
+  width:0 !important;
+  min-width:0 !important;
+  align-items:center;
+  justify-content:center;
+  padding:0 2px !important;
+}
+#homePage.special-home-mode #homeDailyGames{
+  display:none !important;
+}
