@@ -3,6 +3,16 @@
     let advancedStatsSuggestions = [];
     let advancedStatsSearchQuery = '';
     let advancedStatsSelectedPlayer = null;
+    let advancedStatsRecentPlayers = (() => {
+      try {
+        const raw = JSON.parse(localStorage.getItem('advancedStatsRecentPlayers') || '[]');
+        return Array.isArray(raw)
+          ? raw.filter(item => item && item.acnt && item.name).slice(0, 8)
+          : [];
+      } catch {
+        return [];
+      }
+    })();
     let advancedStatsRows = [];
     let advancedStatsLoading = false;
     let advancedStatsError = '';
@@ -21,6 +31,27 @@
       ['9', '球場']
     ];
     const ADVANCED_STATS_GROUP_LABELS = Object.fromEntries(ADVANCED_STATS_GROUPS);
+
+    function advancedStatsRememberPlayer(player) {
+      const acnt = String(player?.acnt || '').trim();
+      const name = String(player?.name || '').trim();
+      if (!acnt || !name) return;
+      const next = {
+        acnt,
+        name,
+        number:String(player?.number || '').trim(),
+        team:String(player?.team || '').trim(),
+        position:String(player?.position || '').trim(),
+        isPitcher:Boolean(player?.isPitcher)
+      };
+      advancedStatsRecentPlayers = [
+        next,
+        ...advancedStatsRecentPlayers.filter(item => String(item?.acnt || '') !== acnt)
+      ].slice(0, 8);
+      try {
+        localStorage.setItem('advancedStatsRecentPlayers', JSON.stringify(advancedStatsRecentPlayers));
+      } catch {}
+    }
 
     function advancedStatsNumber(value) {
       const n = Number(value);
@@ -196,6 +227,7 @@
           isPitcher:/投手/.test(position)
         };
         advancedStatsSearchQuery = advancedStatsSelectedPlayer.name;
+        advancedStatsRememberPlayer(advancedStatsSelectedPlayer);
         advancedStatsLoading = false;
         await advancedStatsLoadSplits();
       } catch (error) {
@@ -308,6 +340,12 @@
     }
 
     function advancedStatsBindContent() {
+      document.querySelectorAll('[data-advanced-stats-recent]').forEach(button => {
+        button.addEventListener('click', () => {
+          const player = advancedStatsRecentPlayers.find(item => String(item?.acnt || '') === String(button.dataset.advancedStatsRecent || ''));
+          if (player && !advancedStatsLoading) void advancedStatsSelectPlayer(player);
+        });
+      });
       document.querySelectorAll('[data-advanced-stats-group]').forEach(button => {
         button.addEventListener('click', () => {
           advancedStatsGroup = String(button.dataset.advancedStatsGroup || '');
@@ -349,6 +387,23 @@
             <div id="advancedStatsSearchResults" class="advanced-stats-search-results hidden" role="listbox"></div>
           </div>
         </section>
+
+        ${advancedStatsRecentPlayers.length ? `
+          <section class="advanced-stats-recent">
+            <div class="advanced-stats-recent-head">
+              <strong>最近查過</strong>
+              <span>直接點球員即可開啟</span>
+            </div>
+            <div class="advanced-stats-recent-list">
+              ${advancedStatsRecentPlayers.map(item => `
+                <button type="button" class="${String(player?.acnt || '') === String(item.acnt) ? 'active' : ''}" data-advanced-stats-recent="${escapeHtml(item.acnt)}">
+                  <strong>${escapeHtml(item.name)}</strong>
+                  <small>${escapeHtml([item.number ? '#' + item.number : '', item.team, item.position].filter(Boolean).join('｜') || 'CPBL')}</small>
+                </button>
+              `).join('')}
+            </div>
+          </section>
+        ` : ''}
 
         ${player ? `
           <section class="advanced-stats-player-card">
