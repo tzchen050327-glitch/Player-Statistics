@@ -12811,3 +12811,18 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 .special-game-card-top span,.special-game-meta{font-size:12px;opacity:.65}
 .special-game-matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;text-align:center;font-weight:700;font-size:18px;margin:18px 0 12px}
 .special-game-matchup b{font-size:11px;opacity:.45}
+
+
+/* v7.48: root navigation is always one row of three */
+#homePage #homeZoneSwitch.home-root-switch{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:4px;
+}
+#homePage #homeZoneSwitch.home-root-switch .home-zone-btn{
+  min-width:0;
+  width:100%;
+  padding-left:4px;
+  padding-right:4px;
+  white-space:nowrap;
+}
