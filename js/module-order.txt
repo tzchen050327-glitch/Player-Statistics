@@ -39,6 +39,7 @@
 11p-custom-notifications.js
 11q-player-tools.js
 11r-advanced-stats.js
+11s-special-games.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
