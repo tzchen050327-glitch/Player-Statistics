@@ -265,6 +265,59 @@
       return ({ CPBL:'中華職棒', NPB:'日本職棒', KBO:'韓國職棒', MLB:'MLB' })[league] || league;
     }
 
+    function homeDailyGameCompetitionLabel(game, league) {
+      const direct = String(
+        game?.competitionLabel
+        || game?.seriesDescription
+        || game?.stageLabel
+        || game?.competitionName
+        || ''
+      ).trim();
+      const raw = [
+        direct,
+        game?.competition,
+        game?.gameType,
+        game?.seriesType,
+        game?.stage
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      if (league === 'MLB') {
+        if (/wild card/.test(raw) || String(game?.gameType || '').toUpperCase() === 'F') return '外卡';
+        if (/division series/.test(raw) || String(game?.gameType || '').toUpperCase() === 'D') return '分區系列賽';
+        if (/league championship/.test(raw) || String(game?.gameType || '').toUpperCase() === 'L') return '聯盟冠軍賽';
+        if (/world series/.test(raw) || String(game?.gameType || '').toUpperCase() === 'W') return '世界大賽';
+        if (/spring training/.test(raw) || String(game?.gameType || '').toUpperCase() === 'S') return '春訓';
+        if (/all-star/.test(raw) || String(game?.gameType || '').toUpperCase() === 'A') return '明星賽';
+        if (/regular/.test(raw) || String(game?.gameType || '').toUpperCase() === 'R') return '例行賽';
+      }
+
+      if (league === 'NPB') {
+        if (/日本シリーズ|japan series/i.test(raw)) return '日本大賽';
+        if (/クライマックス|climax|cs\b/i.test(raw)) return '高潮系列賽';
+        if (/regular|公式戦|例行賽/i.test(raw)) return '例行賽';
+      }
+
+      if (league === 'KBO') {
+        if (/한국시리즈|korean series/i.test(raw)) return '韓國大賽';
+        if (/준플레이오프|semi[- ]?playoff/i.test(raw)) return '準季後賽';
+        if (/와일드카드|wild card/i.test(raw)) return '外卡';
+        if (/플레이오프|playoff/i.test(raw)) return '季後賽';
+        if (/regular|정규|例行賽/i.test(raw)) return '例行賽';
+      }
+
+      if (league === 'CPBL') {
+        if (direct) return direct;
+        const kind = String(game?.kindCode || '').toUpperCase();
+        if (kind === 'E') return '季後挑戰賽';
+        if (kind === 'C') return '總冠軍賽';
+        if (kind === 'A') return '例行賽';
+      }
+
+      if (direct) return direct;
+      if (['NPB','KBO','MLB'].includes(league)) return '例行賽';
+      return '';
+    }
+
     function homeDailyGameStatusLabel(game) {
       const status = String(game?.status || '').toLowerCase();
       const league = homeDailyGamesLeague();
@@ -293,9 +346,7 @@
     async function leagueDailyGamesRequest(league, date, force = false) {
       const requestUrl = league === 'KBO'
         ? KBO_GAMES_API_URL
-        : league === 'MLB'
-          ? LEAGUE_GAMES_B_API_URL
-          : LEAGUE_GAMES_A_API_URL;
+        : LEAGUE_GAMES_A_API_URL;
       const response = await fetch(requestUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
@@ -435,6 +486,7 @@
           const awayScore = showScore ? homeDailyGameScore(game?.awayScore) : '—';
           const homeScore = showScore ? homeDailyGameScore(game?.homeScore) : '—';
           const venue = String(game?.venue || '').trim();
+          const competitionLabel = homeDailyGameCompetitionLabel(game, league);
           const awayName = league === 'MLB' ? mlbTeamZh(game?.away || '') : String(game?.away || '');
           const homeName = league === 'MLB' ? mlbTeamZh(game?.home || '') : String(game?.home || '');
           const detailEnabled = homeGameDetailSupported(league);
@@ -460,7 +512,10 @@
                 <span class="home-game-team-name">${escapeHtml(homeName || '主隊')}</span>
                 <strong class="home-game-score">${escapeHtml(homeScore)}</strong>
               </div>
-              <div class="home-game-venue">${escapeHtml(venue || '場地未提供')}</div>
+              <div class="home-game-venue">
+                <span class="home-game-venue-name">${escapeHtml(venue || '場地未提供')}</span>
+                ${competitionLabel ? `<em class="home-game-competition">${escapeHtml(competitionLabel)}</em>` : ''}
+              </div>
             </article>`;
         }).join('')}</div>`;
       }
