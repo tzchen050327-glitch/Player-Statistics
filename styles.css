@@ -12583,6 +12583,76 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   font-weight:800;
   text-align:center;
 }
+.advanced-stats-recent{
+  margin:-2px 0 14px;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.advanced-stats-recent-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:9px;
+}
+.advanced-stats-recent-head strong{
+  color:var(--text);
+  font-size:11px;
+  font-weight:950;
+}
+.advanced-stats-recent-head span{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:750;
+}
+.advanced-stats-recent-list{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:2px;
+  scrollbar-width:none;
+}
+.advanced-stats-recent-list::-webkit-scrollbar{display:none}
+.advanced-stats-recent-list button{
+  flex:0 0 auto;
+  min-width:126px;
+  max-width:180px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:color-mix(in srgb,var(--panel) 86%,var(--bg));
+  color:var(--text);
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
+}
+.advanced-stats-recent-list button.active{
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.advanced-stats-recent-list button strong{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:950;
+}
+.advanced-stats-recent-list button small{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
 .advanced-stats-player-card{
   display:flex;
   align-items:center;
