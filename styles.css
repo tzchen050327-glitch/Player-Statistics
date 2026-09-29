@@ -12958,3 +12958,286 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 #homePage #homeZoneSwitch > button[data-home-root="pro"]{grid-column:1 !important}
 #homePage #homeZoneSwitch > button[data-home-root="international"]{grid-column:2 !important}
 #homePage #homeZoneSwitch > button[data-home-root="special"]{grid-column:3 !important}
+
+
+/* ===== PITCHER BATTER MATCHUP ===== */
+.pitcher-batter-flow{
+  display:grid;
+  gap:13px;
+  margin-bottom:14px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+}
+.pitcher-batter-flow-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-end;
+}
+.pitcher-batter-flow-head strong{
+  color:var(--text);
+  font-size:15px;
+  font-weight:950;
+}
+.pitcher-batter-flow-head span{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:750;
+}
+.pitcher-batter-select-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+.pitcher-batter-select-grid label{
+  display:grid;
+  gap:6px;
+}
+.pitcher-batter-select-grid label>span{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+}
+.pitcher-batter-select-grid label>span b{
+  display:inline-grid;
+  place-items:center;
+  width:19px;
+  height:19px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 14%,transparent);
+  color:var(--accent);
+  font-size:9px;
+}
+.pitcher-batter-select-grid select{
+  width:100%;
+  min-height:44px;
+  padding:0 34px 0 11px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  outline:none;
+  background:var(--panel);
+  color:var(--text);
+  font:inherit;
+  font-size:11px;
+  font-weight:850;
+}
+.pitcher-batter-select-grid select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent);
+}
+.pitcher-batter-select-grid select:disabled{
+  opacity:.52;
+  cursor:not-allowed;
+}
+.pitcher-batter-query{
+  min-height:42px!important;
+  justify-self:end;
+  padding:0 16px!important;
+  font-size:11px!important;
+  font-weight:950!important;
+}
+.pitcher-batter-inline-error{
+  color:#b35d5d;
+  font-size:10px;
+  font-weight:800;
+}
+.pitcher-batter-selection-summary{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-bottom:12px;
+}
+.pitcher-batter-selection-summary>div{
+  min-width:0;
+  display:grid;
+  gap:2px;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--panel) 90%,var(--bg));
+}
+.pitcher-batter-selection-summary span{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+.pitcher-batter-selection-summary strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text);
+  font-size:16px;
+  font-weight:950;
+}
+.pitcher-batter-selection-summary small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+}
+.pitcher-batter-result-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  margin:2px 2px 8px;
+}
+.pitcher-batter-result-head>div{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+.pitcher-batter-result-head strong{
+  color:var(--text);
+  font-size:14px;
+  font-weight:950;
+}
+.pitcher-batter-result-head span,
+.pitcher-batter-result-head small{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+}
+.pitcher-batter-table-wrap{
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+}
+.pitcher-batter-table{
+  width:100%;
+  min-width:1500px;
+  border-collapse:separate;
+  border-spacing:0;
+  color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.pitcher-batter-pitcher-table{min-width:1240px}
+.pitcher-batter-table th,
+.pitcher-batter-table td{
+  padding:10px 9px;
+  border-bottom:1px solid var(--line);
+  text-align:right;
+  white-space:nowrap;
+  font-size:10px;
+}
+.pitcher-batter-table thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:color-mix(in srgb,var(--panel) 78%,var(--bg));
+  color:var(--muted);
+  font-size:8px;
+  font-weight:950;
+}
+.pitcher-batter-table th:first-child{
+  position:sticky;
+  left:0;
+  z-index:3;
+  width:150px;
+  min-width:150px;
+  max-width:150px;
+  text-align:left;
+}
+.pitcher-batter-table thead th:first-child{
+  z-index:4;
+  background:color-mix(in srgb,var(--panel) 78%,var(--bg));
+}
+.pitcher-batter-table tbody th:first-child{
+  background:var(--panel);
+}
+.pitcher-batter-table tbody th strong,
+.pitcher-batter-table tbody th small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pitcher-batter-table tbody th strong{
+  color:var(--text);
+  font-size:10px;
+  font-weight:950;
+}
+.pitcher-batter-table tbody th small{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
+.pitcher-batter-table tbody tr:last-child th,
+.pitcher-batter-table tbody tr:last-child td{border-bottom:0}
+.pitcher-batter-table .is-rate{
+  color:var(--accent-2);
+  font-weight:950;
+}
+.pitcher-batter-empty{
+  display:grid;
+  place-items:center;
+  gap:6px;
+  min-height:210px;
+  padding:22px 14px;
+  text-align:center;
+}
+.pitcher-batter-empty strong{
+  color:var(--text);
+  font-size:14px;
+  font-weight:950;
+}
+.pitcher-batter-empty span{
+  max-width:520px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:750;
+  line-height:1.6;
+}
+@media(max-width:900px){
+  .pitcher-batter-select-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:600px){
+  .pitcher-batter-flow{
+    gap:11px;
+    padding:11px;
+  }
+  .pitcher-batter-flow-head{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:3px;
+  }
+  .pitcher-batter-select-grid{
+    grid-template-columns:1fr;
+  }
+  .pitcher-batter-query{
+    width:100%;
+    justify-self:stretch;
+  }
+  .pitcher-batter-selection-summary{
+    grid-template-columns:1fr;
+  }
+  .pitcher-batter-result-head{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:3px;
+  }
+  .pitcher-batter-result-head>div{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:2px;
+  }
+  .pitcher-batter-table th:first-child{
+    width:122px;
+    min-width:122px;
+    max-width:122px;
+  }
+}
+/* ===== PITCHER BATTER MATCHUP END ===== */
