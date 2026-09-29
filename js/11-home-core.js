@@ -203,6 +203,7 @@
 
     function homePageBreadcrumb() {
       if (homeRootSection === 'international') return '首頁｜國際賽';
+      if (homeRootSection === 'special') return '首頁｜特殊比賽';
       if (homeProCountry === 'TW') return '首頁｜各國職棒｜台灣';
       if (homeProCountry === 'US') return '首頁｜各國職棒｜美國';
       if (homeProCountry === 'JP') return '首頁｜各國職棒｜日本｜NPB';
