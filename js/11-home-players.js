@@ -1,32 +1,36 @@
     function renderHomePlayerFilters() {
       const international = homeRootSection === 'international';
+      const special = homeRootSection === 'special';
       if (international) homeZone = 'international';
+      else if (special) homeZone = 'special';
       else applyHomeProSelection();
 
       els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
         button.classList.toggle('active', button.dataset.homeRoot === homeRootSection);
       });
 
-      els.homeProCountrySwitch?.classList.toggle('hidden', international);
+      els.homeProCountrySwitch?.classList.toggle('hidden', international || special);
       els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
         button.classList.toggle('active', button.dataset.proCountry === homeProCountry);
       });
 
       els.homeUsLeagueSwitch?.classList.add('hidden');
 
-      const cpbl = !international && homeProCountry === 'TW';
-      els.homeDailyGames?.classList.toggle('hidden', international);
+      const cpbl = !international && !special && homeProCountry === 'TW';
+      els.homeDailyGames?.classList.toggle('hidden', international || special);
       els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
-      document.querySelector('.home-player-head')?.classList.toggle('hidden', international);
+      els.homeSpecialGamesExplorer?.classList.toggle('hidden', !special);
+      document.querySelector('.home-player-head')?.classList.toggle('hidden', international || special);
       const homeActions = document.querySelector('.home-player-actions');
-      homeActions?.classList.toggle('hidden', international);
+      homeActions?.classList.toggle('hidden', international || special);
       homeActions?.classList.remove('international-actions');
       document.getElementById('addPlayerBtn')?.classList.remove('hidden');
-      els.recent?.classList.toggle('hidden', international);
+      els.recent?.classList.toggle('hidden', international || special);
 
       if (els.homePlayerTitle) {
         if (international) els.homePlayerTitle.textContent = '國際賽';
+        else if (special) els.homePlayerTitle.textContent = '特殊比賽';
         else if (homeProCountry === 'TW') els.homePlayerTitle.textContent = '台灣｜中華職棒';
         else if (homeProCountry === 'US') els.homePlayerTitle.textContent = '美國｜MLB / MiLB';
         else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
@@ -38,6 +42,9 @@
         if (international) {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = '請依序選擇「賽事 → 年份 → 球隊 → 球員」。';
+        } else if (special) {
+          els.homeZoneNote.classList.remove('hidden');
+          els.homeZoneNote.textContent = '由你指定收錄的特殊比賽。';
         } else {
           els.homeZoneNote.classList.add('hidden');
           els.homeZoneNote.textContent = '';
@@ -45,6 +52,7 @@
       }
 
       renderInternationalExplorer();
+      renderSpecialGamesExplorer();
     }
 
     function renderRecentPlayers() {
@@ -53,9 +61,10 @@
         els.pageSubtitle.textContent = homePageBreadcrumb();
       }
       els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
+      els.homePage?.classList.toggle('special-home-mode', homeRootSection === 'special');
       renderHomeDailyGames();
 
-      if (homeRootSection === 'international') {
+      if (homeRootSection === 'international' || homeRootSection === 'special') {
         if (els.homePlayerCount) els.homePlayerCount.textContent = '';
         if (els.recent) els.recent.innerHTML = '';
         return;
