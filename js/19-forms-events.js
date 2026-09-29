@@ -97,12 +97,15 @@
 
     els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
       button.addEventListener('click', () => {
-        homeRootSection = button.dataset.homeRoot === 'international' ? 'international' : 'pro';
+        homeRootSection = ['international','special'].includes(button.dataset.homeRoot) ? button.dataset.homeRoot : 'pro';
         if (homeRootSection === 'international') {
           homeZone = 'international';
           homeSpecialFilter = '';
           homeInternationalEditionFilter = '';
           homeInternationalTeamFilter = '';
+        } else if (homeRootSection === 'special') {
+          homeZone = 'special';
+          homeSpecialFilter = '';
         } else {
           applyHomeProSelection();
         }
