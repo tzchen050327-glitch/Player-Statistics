@@ -52,7 +52,7 @@
       }
 
       renderInternationalExplorer();
-      renderSpecialGamesExplorer();
+      if (typeof renderSpecialGamesExplorer === 'function') renderSpecialGamesExplorer();
     }
 
     function renderRecentPlayers() {
