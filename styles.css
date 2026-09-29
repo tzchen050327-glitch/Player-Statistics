@@ -12866,3 +12866,25 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   padding-left:2px !important;
   padding-right:2px !important;
 }
+
+
+/* v7.51: explicit root-tab geometry; applies in every mode */
+#homePage #homeZoneSwitch{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) !important;
+  grid-template-rows:1fr !important;
+  grid-auto-flow:column !important;
+}
+#homePage #homeZoneSwitch > button[data-home-root]{
+  display:flex !important;
+  grid-row:1 !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+  align-items:center;
+  justify-content:center;
+}
+#homePage #homeZoneSwitch > button[data-home-root="pro"]{grid-column:1 !important}
+#homePage #homeZoneSwitch > button[data-home-root="international"]{grid-column:2 !important}
+#homePage #homeZoneSwitch > button[data-home-root="special"]{grid-column:3 !important}
