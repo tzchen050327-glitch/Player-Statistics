@@ -982,8 +982,14 @@
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.homeCustomNotificationBtn?.addEventListener('click', () => {
-      currentPage = 'notifications';
+    els.homePitcherBatterBtn?.addEventListener('click', () => {
+      currentPage = 'pitcher-batter';
+      renderAll();
+      window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.pitcherBatterBackHomeBtn?.addEventListener('click', () => {
+      currentPage = 'home';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
     });
