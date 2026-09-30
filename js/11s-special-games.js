@@ -160,6 +160,134 @@
           .special-replay-progress-top{font-size:9px}.special-replay-control{height:32px;min-width:38px;font-size:10px}.special-replay-control.primary{min-width:62px}
         }
 
+
+        /* v7.78 dense Gamecast stage */
+        .special-replay-focus{
+          grid-template-rows:auto auto minmax(0,1fr) auto;
+          gap:13px
+        }
+        .special-replay-focus-body{
+          min-height:0;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(220px,.72fr);
+          gap:12px
+        }
+        .special-replay-result-panel{
+          min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+          gap:10px;padding:16px 18px;border:1px solid rgba(132,194,235,.08);border-radius:14px;
+          background:linear-gradient(155deg,rgba(5,25,39,.52),rgba(7,31,47,.78))
+        }
+        .special-replay-result{
+          align-self:center
+        }
+        .special-replay-result-title{
+          font-size:clamp(30px,3.25vw,54px)
+        }
+        .special-replay-result-detail{
+          display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px
+        }
+        .special-replay-result-detail-card{
+          min-width:0;padding:9px 10px;border-radius:10px;background:rgba(3,17,27,.52)
+        }
+        .special-replay-result-detail-card span{
+          display:block;color:#577f99;font-size:7px;font-weight:950;letter-spacing:.08em
+        }
+        .special-replay-result-detail-card strong{
+          display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#e9f7ff;font-size:10px;font-weight:1000
+        }
+
+        .special-replay-state-panel{
+          min-width:0;min-height:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr);
+          gap:8px;padding:14px;border:1px solid rgba(132,194,235,.08);border-radius:14px;
+          background:linear-gradient(180deg,rgba(10,42,62,.62),rgba(4,20,32,.72))
+        }
+        .special-replay-state-panel-head{
+          display:flex;align-items:center;justify-content:space-between;gap:8px
+        }
+        .special-replay-state-panel-head span{
+          color:#6b9cbb;font-size:7px;font-weight:1000;letter-spacing:.10em
+        }
+        .special-replay-state-panel-head strong{
+          color:#f0f9ff;font-size:12px;font-weight:1000
+        }
+        .special-replay-state-big{
+          display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:center;
+          padding:9px;border-radius:11px;background:rgba(3,17,27,.50)
+        }
+        .special-replay-state-big .special-replay-diamond{width:62px}
+        .special-replay-state-copy span{
+          display:block;color:#5f88a2;font-size:7px;font-weight:900
+        }
+        .special-replay-state-copy strong{
+          display:block;margin-top:4px;color:#eff8fd;font-size:13px;font-weight:1000
+        }
+        .special-replay-state-scoreline{
+          display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px;
+          padding:10px;border-radius:11px;background:rgba(3,17,27,.50)
+        }
+        .special-replay-state-scoreline span{
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7fa6bf;font-size:8px;font-weight:900
+        }
+        .special-replay-state-scoreline span:last-child{text-align:right}
+        .special-replay-state-scoreline strong{
+          color:#fff;font-size:20px;font-weight:1000;font-variant-numeric:tabular-nums
+        }
+        .special-replay-state-summary{
+          align-self:end;display:grid;grid-template-columns:1fr 1fr;gap:7px
+        }
+        .special-replay-state-summary-card{
+          min-width:0;padding:9px;border-radius:10px;background:rgba(3,17,27,.40)
+        }
+        .special-replay-state-summary-card span{
+          display:block;color:#557e98;font-size:6px;font-weight:950;letter-spacing:.08em
+        }
+        .special-replay-state-summary-card strong{
+          display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#dceef8;font-size:9px;font-weight:950
+        }
+
+        .special-replay-focus-bottom{
+          display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px
+        }
+        .special-replay-context-card{
+          min-width:0;padding:10px 11px;border:1px solid rgba(132,194,235,.07);border-radius:11px;
+          background:rgba(5,23,36,.48)
+        }
+        .special-replay-context-card span{
+          display:block;color:#567f99;font-size:7px;font-weight:950;letter-spacing:.08em
+        }
+        .special-replay-context-card strong{
+          display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#eaf7ff;font-size:10px;font-weight:1000
+        }
+
+        @media (min-width:1200px) and (min-height:650px){
+          .special-replay-focus-body{grid-template-columns:minmax(0,1.5fr) minmax(270px,.78fr);gap:15px}
+          .special-replay-result-panel{gap:13px;padding:20px 22px}
+          .special-replay-result-title{font-size:clamp(38px,3.4vw,62px)}
+          .special-replay-result-detail{gap:9px}
+          .special-replay-result-detail-card{padding:11px 12px}
+          .special-replay-result-detail-card span{font-size:9px}
+          .special-replay-result-detail-card strong{font-size:13px}
+          .special-replay-state-panel{gap:10px;padding:17px}
+          .special-replay-state-panel-head span{font-size:9px}
+          .special-replay-state-panel-head strong{font-size:16px}
+          .special-replay-state-big{grid-template-columns:112px minmax(0,1fr);gap:15px;padding:12px}
+          .special-replay-state-big .special-replay-diamond{width:78px}
+          .special-replay-state-copy span{font-size:9px}
+          .special-replay-state-copy strong{font-size:16px}
+          .special-replay-state-scoreline{padding:12px}
+          .special-replay-state-scoreline span{font-size:10px}
+          .special-replay-state-scoreline strong{font-size:27px}
+          .special-replay-state-summary{gap:9px}
+          .special-replay-state-summary-card{padding:11px}
+          .special-replay-state-summary-card span{font-size:8px}
+          .special-replay-state-summary-card strong{font-size:12px}
+          .special-replay-focus-bottom{gap:10px}
+          .special-replay-context-card{padding:12px 13px}
+          .special-replay-context-card span{font-size:9px}
+          .special-replay-context-card strong{font-size:13px}
+        }
+
         @media (max-height:560px) and (orientation:landscape){
           .special-replay-shell{grid-template-rows:auto minmax(0,1fr) auto auto;gap:5px;padding:5px}
           .special-replay-scoreboard{min-height:58px;grid-template-columns:115px minmax(0,1fr) 115px;gap:6px;padding:5px 40px 5px 8px;border-radius:10px}
@@ -170,7 +298,7 @@
           .special-replay-focus{gap:6px;padding:8px 10px;border-radius:9px}.special-replay-focus-label,.special-replay-focus-event{font-size:5px}.special-replay-focus-label i{width:5px;height:5px}
           .special-replay-matchup{gap:7px;padding:2px 0 5px}.special-replay-person span{margin-bottom:1px;font-size:4px}.special-replay-person strong{font-size:8px}.special-replay-vs{width:22px;height:22px;font-size:5px}
           .special-replay-result-kicker{margin-bottom:2px;font-size:5px}.special-replay-result-title{font-size:15px}.special-replay-result-caption{margin-top:3px;font-size:5px}
-          .special-replay-state-row{gap:3px}.special-replay-state-chip{padding:3px 5px;font-size:5px}
+          .special-replay-state-row{gap:3px}.special-replay-state-chip{padding:3px 5px;font-size:5px}.special-replay-focus-body{grid-template-columns:minmax(0,1.35fr) 32%;gap:5px}.special-replay-result-panel{gap:4px;padding:6px 7px;border-radius:7px}.special-replay-result-detail{gap:3px}.special-replay-result-detail-card{padding:4px}.special-replay-result-detail-card span{font-size:4px}.special-replay-result-detail-card strong{font-size:5px}.special-replay-state-panel{gap:3px;padding:5px;border-radius:7px}.special-replay-state-panel-head span{font-size:4px}.special-replay-state-panel-head strong{font-size:6px}.special-replay-state-big{grid-template-columns:42px minmax(0,1fr);gap:4px;padding:4px}.special-replay-state-big .special-replay-diamond{width:31px}.special-replay-state-copy span{font-size:4px}.special-replay-state-copy strong{font-size:5px}.special-replay-state-scoreline{gap:3px;padding:4px}.special-replay-state-scoreline span{font-size:4px}.special-replay-state-scoreline strong{font-size:9px}.special-replay-state-summary{gap:3px}.special-replay-state-summary-card{padding:4px}.special-replay-state-summary-card span{font-size:4px}.special-replay-state-summary-card strong{font-size:5px}.special-replay-focus-bottom{gap:3px}.special-replay-context-card{padding:4px}.special-replay-context-card span{font-size:4px}.special-replay-context-card strong{font-size:5px}
           .special-replay-feed{gap:4px;padding:6px;border-radius:9px}.special-replay-feed-head span{font-size:5px}.special-replay-feed-head strong{font-size:9px}.special-replay-feed-count{font-size:5px}
           .special-replay-feed-list{gap:3px}.special-replay-feed-item{grid-template-columns:25px minmax(0,1fr);gap:4px;padding:4px 5px;border-radius:6px}.special-replay-feed-inning{font-size:5px}.special-replay-feed-copy strong{font-size:6px}.special-replay-feed-copy span{margin-top:1px;font-size:5px}.special-replay-feed-current-result{font-size:6px!important}
           .special-replay-feed-footer{grid-template-columns:45px minmax(0,1fr);gap:4px;padding-top:3px}.special-replay-diamond{width:34px}.special-replay-feed-state span{font-size:4px}.special-replay-feed-state strong{font-size:6px}.special-replay-outs{gap:2px;margin-top:2px}.special-replay-outs i{width:5px;height:5px}
@@ -183,7 +311,7 @@
           .special-replay-scoreboard{grid-template-columns:1fr;padding:10px 44px 10px 10px;gap:7px}.special-replay-brand{display:none}.special-replay-score-meta{display:none}
           .special-replay-score-team{font-size:10px}.special-replay-score-number{min-width:34px;font-size:34px}.special-replay-inning-pill{min-width:62px;padding:5px 7px;font-size:7px}
           .special-replay-main{grid-template-columns:1fr}.special-replay-feed{display:none}
-          .special-replay-focus{padding:16px}.special-replay-result-title{font-size:clamp(28px,9vw,44px)}
+          .special-replay-focus{padding:16px}.special-replay-result-title{font-size:clamp(28px,9vw,44px)}.special-replay-focus-body{grid-template-columns:1fr}.special-replay-state-panel{display:none}.special-replay-focus-bottom{grid-template-columns:1fr 1fr}.special-replay-context-card:last-child{display:none}
           .special-replay-lineups{grid-template-columns:1fr}.special-replay-lineup-rail:nth-child(2){display:none}
           .special-replay-lineup-rail{grid-template-columns:65px repeat(9,minmax(0,1fr));gap:2px;padding:4px}.special-replay-lineup-cell{padding:4px 2px}.special-replay-lineup-cell b{font-size:6px}.special-replay-lineup-cell small{display:none}
           .special-replay-rotate-hint{display:block;position:absolute;left:50%;top:7px;z-index:9;transform:translateX(-50%);padding:5px 9px;border:1px solid rgba(126,193,240,.12);border-radius:999px;background:rgba(3,18,30,.86);color:#8fc4e7;font-size:7px;font-weight:900}
@@ -405,10 +533,36 @@
       }).join('');
     }
 
+    function specialReplayNextBatter(state,event) {
+      const payload = state.detail && state.detail.payload || {};
+      const lineups = payload.lineups || specialReplayFallbackLineups();
+      const side = String(event && event.h || 'T') === 'T' ? 'away' : 'home';
+      const lineup = Array.isArray(lineups && lineups[side]) ? lineups[side] : [];
+      if (!lineup.length) return '—';
+
+      const currentName = String(event && event.n || '');
+      const currentIndex = lineup.findIndex(player => String(player && player.name || '') === currentName);
+      if (currentIndex >= 0) {
+        const next = lineup[(currentIndex + 1) % lineup.length];
+        return String(next && next.name || '—');
+      }
+
+      for (let i = state.index + 1; i < state.events.length; i += 1) {
+        const nextEvent = state.events[i];
+        if (nextEvent && nextEvent.h === event.h && nextEvent.k === 'pa' && nextEvent.n) return String(nextEvent.n);
+        if (nextEvent && nextEvent.h !== event.h) break;
+      }
+      return '—';
+    }
+
     function specialReplayCenterHtml(state,event) {
       const detail = state.detail;
+      const payload = detail.payload || {};
+      const lineScore = payload.line_score || {};
       const scores = Array.isArray(event.s) ? event.s : [0,0];
       const pitcher = specialReplayCurrentPitcher(state,event);
+      const prev = specialReplayPreviousPa(state);
+      const nextBatter = specialReplayNextBatter(state,event);
       const subject = event.n || specialReplayInningLabel(event);
       const isPlateAppearance = String(event.k || '') === 'pa';
       const subjectLabel = isPlateAppearance ? 'BATTER' : 'EVENT';
@@ -419,6 +573,10 @@
       const outs = Math.max(0, Math.min(3, Number(event.o) || 0));
       const tone = specialReplayTone(event);
       const eventKind = specialReplayKindLabel(event.k);
+      const inningIndex = Math.max(0, (Number(event.i) || 1) - 1);
+      const awayInningRuns = Array.isArray(lineScore.away) && lineScore.away[inningIndex] != null ? lineScore.away[inningIndex] : 0;
+      const homeInningRuns = Array.isArray(lineScore.home) && lineScore.home[inningIndex] != null ? lineScore.home[inningIndex] : 0;
+      const battingTeam = String(event.h || 'T') === 'T' ? detail.away_team : detail.home_team;
 
       return '<div class="special-replay-main">'
         + '<section class="special-replay-focus ' + tone + '">'
@@ -428,8 +586,31 @@
         +     '<div class="special-replay-vs">VS</div>'
         +     '<div class="special-replay-person right"><span>' + subjectLabel + '</span><strong>' + escapeHtml(subject) + '</strong></div>'
         +   '</div>'
-        +   '<div class="special-replay-result"><span class="special-replay-result-kicker">' + escapeHtml(eventKind) + '</span><strong class="special-replay-result-title">' + escapeHtml(result) + '</strong><span class="special-replay-result-caption">' + escapeHtml(specialReplayInningLabel(event)) + ' · ' + escapeHtml(detail.away_team || '') + ' ' + (Number(scores[0]) || 0) + '：' + (Number(scores[1]) || 0) + ' ' + escapeHtml(detail.home_team || '') + '</span></div>'
-        +   '<div class="special-replay-state-row"><span class="special-replay-state-chip primary">' + escapeHtml(baseText) + '</span><span class="special-replay-state-chip">' + outs + ' 出局</span><span class="special-replay-state-chip">' + escapeHtml(eventKind) + '</span></div>'
+        +   '<div class="special-replay-focus-body">'
+        +     '<div class="special-replay-result-panel">'
+        +       '<div class="special-replay-result"><span class="special-replay-result-kicker">' + escapeHtml(eventKind) + '</span><strong class="special-replay-result-title">' + escapeHtml(result) + '</strong><span class="special-replay-result-caption">' + escapeHtml(specialReplayInningLabel(event)) + ' · ' + escapeHtml(battingTeam || '') + ' 進攻</span></div>'
+        +       '<div></div>'
+        +       '<div class="special-replay-result-detail">'
+        +         '<div class="special-replay-result-detail-card"><span>當下比分</span><strong>' + (Number(scores[0]) || 0) + '：' + (Number(scores[1]) || 0) + '</strong></div>'
+        +         '<div class="special-replay-result-detail-card"><span>本局得分</span><strong>' + escapeHtml(String(awayInningRuns) + '：' + String(homeInningRuns)) + '</strong></div>'
+        +         '<div class="special-replay-result-detail-card"><span>事件類型</span><strong>' + escapeHtml(eventKind) + '</strong></div>'
+        +       '</div>'
+        +     '</div>'
+        +     '<aside class="special-replay-state-panel">'
+        +       '<div class="special-replay-state-panel-head"><span>GAME STATE</span><strong>' + escapeHtml(specialReplayInningLabel(event)) + '</strong></div>'
+        +       '<div class="special-replay-state-big"><div>' + specialReplayBaseHtml(event.b) + '</div><div class="special-replay-state-copy"><span>壘況</span><strong>' + escapeHtml(baseText) + '</strong>' + specialReplayOutsHtml(outs) + '</div></div>'
+        +       '<div class="special-replay-state-scoreline"><span>' + escapeHtml(detail.away_team || '') + '</span><strong>' + (Number(scores[0]) || 0) + '–' + (Number(scores[1]) || 0) + '</strong><span>' + escapeHtml(detail.home_team || '') + '</span></div>'
+        +       '<div class="special-replay-state-summary">'
+        +         '<div class="special-replay-state-summary-card"><span>投手</span><strong>' + escapeHtml(pitcher || '-') + '</strong></div>'
+        +         '<div class="special-replay-state-summary-card"><span>下一棒</span><strong>' + escapeHtml(nextBatter) + '</strong></div>'
+        +       '</div>'
+        +     '</aside>'
+        +   '</div>'
+        +   '<div class="special-replay-focus-bottom">'
+        +     '<div class="special-replay-context-card"><span>上一打席</span><strong>' + escapeHtml(prev ? prev.n + '｜' + prev.r : '—') + '</strong></div>'
+        +     '<div class="special-replay-context-card"><span>目前打者</span><strong>' + escapeHtml(subject) + '</strong></div>'
+        +     '<div class="special-replay-context-card"><span>下一棒</span><strong>' + escapeHtml(nextBatter) + '</strong></div>'
+        +   '</div>'
         + '</section>'
         + '<aside class="special-replay-feed">'
         +   '<div class="special-replay-feed-head"><div><span>PLAY-BY-PLAY</span><strong>' + escapeHtml(specialReplayInningLabel(event)) + '</strong></div><span class="special-replay-feed-count">最近 ' + Math.min(6,state.index+1) + ' 個事件</span></div>'
