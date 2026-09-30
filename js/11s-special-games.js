@@ -410,6 +410,126 @@
           .special-replay-lineup-rail{grid-template-columns:65px repeat(9,minmax(0,1fr));gap:2px;padding:4px}.special-replay-lineup-cell{padding:4px 2px}.special-replay-lineup-cell b{font-size:6px}.special-replay-lineup-cell small{display:none}
           .special-replay-rotate-hint{display:block;position:absolute;left:50%;top:7px;z-index:9;transform:translateX(-50%);padding:5px 9px;border:1px solid rgba(126,193,240,.12);border-radius:999px;background:rgba(3,18,30,.86);color:#8fc4e7;font-size:7px;font-weight:900}
         }
+
+
+        /* v7.80 readability pass */
+        @media (min-width:1200px) and (min-height:650px){
+          .special-replay-brand-kicker{font-size:12px}
+          .special-replay-brand-title{font-size:17px}
+          .special-replay-score-team{font-size:24px}
+          .special-replay-score-number{font-size:72px}
+          .special-replay-inning-pill{font-size:14px}
+          .special-replay-score-meta-item span{font-size:11px}
+          .special-replay-score-meta-item strong{font-size:19px}
+          .special-replay-focus-label{font-size:13px}
+          .special-replay-focus-event{font-size:12px}
+          .special-replay-person span{font-size:12px}
+          .special-replay-person strong{font-size:30px}
+          .special-replay-result-kicker{font-size:14px}
+          .special-replay-result-title{font-size:clamp(48px,4.4vw,78px)}
+          .special-replay-result-caption{font-size:17px}
+          .special-replay-result-detail-card span{font-size:11px}
+          .special-replay-result-detail-card strong{font-size:17px}
+          .special-replay-state-panel-head span{font-size:11px}
+          .special-replay-state-panel-head strong{font-size:20px}
+          .special-replay-state-copy span{font-size:11px}
+          .special-replay-state-copy strong{font-size:20px}
+          .special-replay-state-summary-card span{font-size:10px}
+          .special-replay-state-summary-card strong{font-size:16px}
+          .special-replay-context-card span{font-size:11px}
+          .special-replay-context-card strong{font-size:17px}
+          .special-replay-feed-head span{font-size:13px}
+          .special-replay-feed-head strong{font-size:28px}
+          .special-replay-feed-count{font-size:12px}
+          .special-replay-feed-inning{font-size:13px}
+          .special-replay-feed-copy strong{font-size:17px}
+          .special-replay-feed-copy span{font-size:13px}
+          .special-replay-feed-current-result{font-size:16px!important}
+          .special-replay-feed-state span{font-size:12px}
+          .special-replay-feed-state strong{font-size:17px}
+          .special-replay-lineup-team span{font-size:11px}
+          .special-replay-lineup-team strong{font-size:17px}
+          .special-replay-lineup-cell b{font-size:14px}
+          .special-replay-lineup-cell small{font-size:10px}
+          .special-replay-progress-top{font-size:11px}
+          .special-replay-control{font-size:12px;height:36px}
+        }
+
+        @media (max-height:560px) and (orientation:landscape){
+          .special-replay-shell{gap:6px;padding:6px;grid-template-rows:64px minmax(0,1fr) 48px 30px}
+          .special-replay-scoreboard{min-height:64px;grid-template-columns:104px minmax(0,1fr) 104px;gap:8px;padding:6px 40px 6px 8px}
+          .special-replay-brand-kicker{font-size:8px}.special-replay-brand-title{font-size:9px}
+          .special-replay-score-main{gap:7px}.special-replay-score-team{font-size:12px}
+          .special-replay-score-number{min-width:34px;font-size:36px}.special-replay-inning-pill{min-width:60px;padding:5px 7px;font-size:8px}
+          .special-replay-score-meta-item span{font-size:6px}.special-replay-score-meta-item strong{font-size:9px}
+
+          .special-replay-main{grid-template-columns:minmax(0,55%) minmax(0,45%);gap:6px}
+          .special-replay-focus{gap:7px;padding:9px 10px}
+          .special-replay-focus-label{font-size:8px}.special-replay-focus-event{font-size:7px}.special-replay-focus-label i{width:7px;height:7px}
+          .special-replay-matchup{gap:8px;padding:4px 0 6px}
+          .special-replay-person span{font-size:7px}.special-replay-person strong{font-size:12px}.special-replay-vs{width:28px;height:28px;font-size:7px}
+          .special-replay-focus-body{grid-template-columns:minmax(0,1.15fr) minmax(118px,.85fr);gap:6px}
+          .special-replay-result-panel{gap:5px;padding:7px 8px}
+          .special-replay-result-kicker{font-size:7px}
+          .special-replay-result-title{font-size:clamp(18px,3.2vw,28px);line-height:1.08}
+          .special-replay-result-caption{font-size:7px}
+          .special-replay-result-detail{grid-template-columns:1fr 1fr;gap:4px}
+          .special-replay-result-detail-card{padding:5px 6px}
+          .special-replay-result-detail-card:nth-child(3){display:none}
+          .special-replay-result-detail-card span{font-size:6px}.special-replay-result-detail-card strong{font-size:8px}
+          .special-replay-state-panel{gap:5px;padding:7px}
+          .special-replay-state-panel-head span{font-size:6px}.special-replay-state-panel-head strong{font-size:9px}
+          .special-replay-state-big{grid-template-columns:52px minmax(0,1fr);gap:6px;padding:5px}
+          .special-replay-state-big .special-replay-diamond{width:38px}
+          .special-replay-state-copy span{font-size:6px}.special-replay-state-copy strong{font-size:8px}
+          .special-replay-state-scoreline{gap:4px;padding:5px}.special-replay-state-scoreline span{font-size:6px}.special-replay-state-scoreline strong{font-size:11px}
+          .special-replay-state-summary{grid-template-columns:1fr;gap:4px}.special-replay-state-summary-card{padding:5px}
+          .special-replay-state-summary-card:last-child{display:none}
+          .special-replay-state-summary-card span{font-size:6px}.special-replay-state-summary-card strong{font-size:8px}
+          .special-replay-focus-bottom{grid-template-columns:1fr 1fr;gap:4px}
+          .special-replay-context-card{padding:5px 6px}.special-replay-context-card:first-child{display:none}
+          .special-replay-context-card span{font-size:6px}.special-replay-context-card strong{font-size:8px}
+
+          .special-replay-feed{gap:5px;padding:7px}.special-replay-feed-head span{font-size:7px}.special-replay-feed-head strong{font-size:11px}.special-replay-feed-count{font-size:6px}
+          .special-replay-feed-list{gap:4px}.special-replay-feed-item{grid-template-columns:30px minmax(0,1fr);gap:5px;padding:5px 6px}
+          .special-replay-feed-inning{font-size:7px}.special-replay-feed-copy strong{font-size:8px}.special-replay-feed-copy span{font-size:7px}
+          .special-replay-feed-current-result{font-size:8px!important}
+          .special-replay-feed-footer{grid-template-columns:50px minmax(0,1fr);gap:6px;padding-top:4px}
+          .special-replay-diamond{width:38px}.special-replay-feed-state span{font-size:6px}.special-replay-feed-state strong{font-size:8px}
+          .special-replay-outs i{width:6px;height:6px}
+
+          .special-replay-lineups{gap:5px}
+          .special-replay-lineup-rail{grid-template-columns:60px repeat(9,minmax(0,1fr));gap:2px;padding:4px 5px}
+          .special-replay-lineup-team span{font-size:6px}.special-replay-lineup-team strong{font-size:8px}
+          .special-replay-lineup-cell{padding:4px 2px}.special-replay-lineup-cell b{font-size:7px}.special-replay-lineup-cell small{display:none}
+          .special-replay-progress-top{font-size:6px}
+          .special-replay-control{height:24px;min-width:28px;padding:0 6px;font-size:7px}
+          .special-replay-download{min-width:68px!important;padding:0 7px!important}
+        }
+
+        @media (orientation:portrait){
+          .special-replay-score-team{font-size:13px}.special-replay-score-number{font-size:38px}.special-replay-inning-pill{font-size:9px}
+          .special-replay-focus-label{font-size:9px}.special-replay-focus-event{font-size:8px}
+          .special-replay-person span{font-size:8px}.special-replay-person strong{font-size:15px}
+          .special-replay-result-kicker{font-size:9px}.special-replay-result-title{font-size:clamp(30px,10vw,48px)}.special-replay-result-caption{font-size:10px}
+          .special-replay-result-detail-card span{font-size:8px}.special-replay-result-detail-card strong{font-size:11px}
+          .special-replay-context-card span{font-size:8px}.special-replay-context-card strong{font-size:11px}
+          .special-replay-lineup-team span{font-size:7px}.special-replay-lineup-team strong{font-size:10px}.special-replay-lineup-cell b{font-size:8px}
+          .special-replay-progress-top{font-size:7px}.special-replay-control{font-size:8px;height:28px}
+        }
+
+        .special-replay-exporting{
+          position:absolute;inset:0;z-index:30;display:grid;place-items:center;
+          background:rgba(2,9,15,.78);backdrop-filter:blur(8px)
+        }
+        .special-replay-export-card{
+          width:min(420px,82vw);padding:22px;border:1px solid rgba(132,200,244,.16);border-radius:16px;
+          background:#081c2b;box-shadow:0 24px 70px rgba(0,0,0,.36);text-align:center
+        }
+        .special-replay-export-card strong{display:block;font-size:20px}
+        .special-replay-export-card span{display:block;margin-top:7px;color:#83aac3;font-size:11px;font-weight:850}
+        .special-replay-export-track{height:6px;margin-top:15px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+        .special-replay-export-bar{height:100%;width:0;background:linear-gradient(90deg,#4aa6df,#8bd5ff);transition:width .12s linear}
       `;
       document.head.appendChild(style);
     }
@@ -757,56 +877,221 @@
         + '</div>';
     }
 
-    function specialReplayDownloadFile() {
-      const state = specialReplayActive;
-      if (!state || !state.detail || !state.events.length) return;
+    function specialReplayCanvasRoundRect(ctx,x,y,w,h,r,fill,stroke) {
+      const radius = Math.max(0,Math.min(r,Math.min(w,h)/2));
+      ctx.beginPath();
+      ctx.roundRect(x,y,w,h,radius);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+    }
 
-      const detail = state.detail;
-      const exportedPayload = JSON.parse(JSON.stringify(detail.payload || {}));
-      exportedPayload.playback = {
-        default_ms: 1000,
-        on_base_ms: 2200,
-        scoring_ms: 3000,
-        home_run_ms: 4000,
-        half_inning_ms: 5000
+    function specialReplayCanvasText(ctx,text,x,y,maxWidth,size,weight,color,align='left') {
+      ctx.save();
+      ctx.font = weight + ' ' + size + 'px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+      ctx.fillStyle = color;
+      ctx.textAlign = align;
+      ctx.textBaseline = 'middle';
+      let value = String(text == null ? '' : text);
+      if (maxWidth > 0 && ctx.measureText(value).width > maxWidth) {
+        while (value.length > 1 && ctx.measureText(value + '…').width > maxWidth) value = value.slice(0,-1);
+        value += '…';
+      }
+      ctx.fillText(value,x,y,maxWidth > 0 ? maxWidth : undefined);
+      ctx.restore();
+    }
+
+    function specialReplayCanvasBaseState(ctx,mask,x,y,size) {
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(Math.PI/4);
+      const s=size;
+      const b=Math.max(0,Number(mask)||0);
+      const draw=(dx,dy,on)=>{
+        ctx.fillStyle=on?'#ffd15e':'#0a2539';
+        ctx.strokeStyle=on?'#ffd15e':'#6e91a8';
+        ctx.lineWidth=2;
+        ctx.fillRect(dx,dy,s*.23,s*.23);
+        ctx.strokeRect(dx,dy,s*.23,s*.23);
       };
-      if (Array.isArray(exportedPayload.events)) {
-        exportedPayload.events = exportedPayload.events.map((event,index) => ({
-          ...event,
-          d: specialReplayDurationMs(state,index)
-        }));
+      draw(-s*.5,-s*.5,Boolean(b&2));
+      draw(s*.27,-s*.5,Boolean(b&1));
+      draw(-s*.5,s*.27,Boolean(b&4));
+      ctx.fillStyle='#edf8ff';
+      ctx.fillRect(s*.27,s*.27,s*.20,s*.20);
+      ctx.restore();
+    }
+
+    function specialReplayCanvasEventColors(state,event,index) {
+      const previous=index>0?state.events[index-1]:null;
+      const semantic=specialReplayEventSemantic(event,previous);
+      let color='#f3f8fb';
+      if (semantic.type==='hit') color='#ff7070';
+      if (semantic.type==='walk') color='#62db91';
+      if (semantic.type==='sac') color='#6ea7ff';
+      if (semantic.type==='hr') color='#bd83ff';
+      return { color, scored:semantic.scored };
+    }
+
+    function specialReplayRenderMp4Frame(ctx,state,index,width,height) {
+      const event=state.events[index]||{};
+      const detail=state.detail;
+      const scores=Array.isArray(event.s)?event.s:[0,0];
+      const pitcher=specialReplayCurrentPitcher({...state,index},event);
+      const subject=event.n||specialReplayInningLabel(event);
+      const result=event.r||'—';
+      const outs=Math.max(0,Math.min(3,Number(event.o)||0));
+      const baseMask=Number(event.b)||0;
+      const baseText=baseMask===0?'壘上無人':[baseMask&1?'一壘':'',baseMask&2?'二壘':'',baseMask&4?'三壘':''].filter(Boolean).join('、')+'有人';
+      const colors=specialReplayCanvasEventColors(state,event,index);
+      const scale=width/1280;
+
+      ctx.clearRect(0,0,width,height);
+      const g=ctx.createLinearGradient(0,0,0,height);
+      g.addColorStop(0,'#081c2c'); g.addColorStop(1,'#030a11');
+      ctx.fillStyle=g; ctx.fillRect(0,0,width,height);
+
+      // score header
+      specialReplayCanvasRoundRect(ctx,24*scale,22*scale,1232*scale,112*scale,18*scale,'#0a2639','rgba(135,200,240,.18)');
+      specialReplayCanvasText(ctx,detail.away_team||'中華台北',315*scale,78*scale,220*scale,27*scale,'800','#eaf7ff','right');
+      specialReplayCanvasText(ctx,String(Number(scores[0])||0),390*scale,78*scale,70*scale,60*scale,'900','#ffffff','center');
+      specialReplayCanvasRoundRect(ctx,520*scale,51*scale,240*scale,54*scale,27*scale,'#0d3149',null);
+      specialReplayCanvasText(ctx,specialReplayInningLabel(event),640*scale,78*scale,210*scale,20*scale,'900','#9bd0ef','center');
+      specialReplayCanvasText(ctx,String(Number(scores[1])||0),890*scale,78*scale,70*scale,60*scale,'900','#ffffff','center');
+      specialReplayCanvasText(ctx,detail.home_team||'韓國',965*scale,78*scale,220*scale,27*scale,'800','#eaf7ff','left');
+
+      // main card
+      const mainX=24*scale, mainY=154*scale, mainW=790*scale, mainH=514*scale;
+      ctx.lineWidth=colors.scored?4*scale:1.5*scale;
+      specialReplayCanvasRoundRect(ctx,mainX,mainY,mainW,mainH,20*scale,'#081b29',colors.scored?'#e8bd58':'rgba(135,200,240,.15)');
+      specialReplayCanvasText(ctx,'PLAY BY PLAY',52*scale,184*scale,220*scale,14*scale,'900','#75afd3');
+      specialReplayCanvasText(ctx,'PITCHER',55*scale,233*scale,150*scale,13*scale,'800','#5f8aa5');
+      specialReplayCanvasText(ctx,pitcher||'-',55*scale,270*scale,280*scale,31*scale,'900','#eef9ff');
+      specialReplayCanvasText(ctx,'VS',407*scale,263*scale,70*scale,18*scale,'900','#6c9ab8','center');
+      specialReplayCanvasText(ctx,String(event.k)==='pa'?'BATTER':'EVENT',760*scale,233*scale,150*scale,13*scale,'800','#5f8aa5','right');
+      specialReplayCanvasText(ctx,subject,760*scale,270*scale,280*scale,31*scale,'900','#eef9ff','right');
+
+      ctx.strokeStyle='rgba(135,200,240,.10)'; ctx.lineWidth=1*scale;
+      ctx.beginPath(); ctx.moveTo(55*scale,307*scale); ctx.lineTo(782*scale,307*scale); ctx.stroke();
+
+      specialReplayCanvasText(ctx,specialReplayKindLabel(event.k),55*scale,348*scale,300*scale,16*scale,'900',colors.scored?'#efc968':colors.color);
+      const resultSize = result.length>18 ? 38 : result.length>10 ? 46 : 56;
+      specialReplayCanvasText(ctx,result,55*scale,421*scale,705*scale,resultSize*scale,'900',colors.color);
+      specialReplayCanvasText(ctx,(detail.away_team||'')+' '+(Number(scores[0])||0)+' : '+(Number(scores[1])||0)+' '+(detail.home_team||''),55*scale,486*scale,700*scale,20*scale,'800','#8dacbf');
+
+      // chips
+      const chips=[baseText,outs+' 出局',specialReplayKindLabel(event.k)];
+      let chipX=55*scale;
+      for(const chip of chips){
+        const chipW=Math.max(105,chip.length*22+32)*scale;
+        specialReplayCanvasRoundRect(ctx,chipX,535*scale,chipW,42*scale,21*scale,'#0d3149',null);
+        specialReplayCanvasText(ctx,chip,chipX+chipW/2,556*scale,chipW-18*scale,15*scale,'900','#9fc9e1','center');
+        chipX+=chipW+10*scale;
       }
 
-      const file = {
-        format: 'diamondscope-special-game-replay',
-        format_version: 1,
-        exported_at: new Date().toISOString(),
-        game: {
-          id: detail.id || null,
-          slug: detail.slug || null,
-          title: detail.title || null,
-          game_date: detail.game_date || null,
-          game_time: detail.game_time || null,
-          venue: detail.venue || null,
-          away_team: detail.away_team || null,
-          home_team: detail.home_team || null,
-          status: detail.status || null,
-          league: detail.league || null,
-          external_game_id: detail.external_game_id || null
-        },
-        payload: exportedPayload
-      };
+      // side card
+      const sideX=836*scale, sideY=154*scale, sideW=420*scale, sideH=514*scale;
+      specialReplayCanvasRoundRect(ctx,sideX,sideY,sideW,sideH,20*scale,'#071a28','rgba(135,200,240,.15)');
+      specialReplayCanvasText(ctx,'GAME STATE',866*scale,188*scale,200*scale,14*scale,'900','#75afd3');
+      specialReplayCanvasBaseState(ctx,baseMask,925*scale,288*scale,94*scale);
+      specialReplayCanvasText(ctx,baseText,1020*scale,250*scale,195*scale,22*scale,'900','#eef9ff');
+      specialReplayCanvasText(ctx,outs+' 出局',1020*scale,288*scale,195*scale,18*scale,'800','#ff7b7b');
 
-      const blob = new Blob([JSON.stringify(file,null,2)], { type:'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      const safe = value => String(value || '').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_');
-      anchor.href = url;
-      anchor.download = [safe(detail.game_date),safe(detail.away_team),safe(detail.home_team),'replay'].filter(Boolean).join('_') + '.json';
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      ctx.strokeStyle='rgba(135,200,240,.10)'; ctx.beginPath(); ctx.moveTo(866*scale,350*scale); ctx.lineTo(1226*scale,350*scale); ctx.stroke();
+      specialReplayCanvasText(ctx,'投手',866*scale,390*scale,90*scale,14*scale,'800','#5d869f');
+      specialReplayCanvasText(ctx,pitcher||'-',1226*scale,390*scale,250*scale,20*scale,'900','#eef9ff','right');
+      specialReplayCanvasText(ctx,'打者 / 事件',866*scale,438*scale,120*scale,14*scale,'800','#5d869f');
+      specialReplayCanvasText(ctx,subject,1226*scale,438*scale,250*scale,20*scale,'900','#eef9ff','right');
+      specialReplayCanvasText(ctx,'事件 '+(index+1)+' / '+state.events.length,866*scale,488*scale,180*scale,14*scale,'800','#5d869f');
+      specialReplayCanvasText(ctx,specialReplayInningLabel(event),1226*scale,488*scale,180*scale,20*scale,'900','#9bd0ef','right');
+
+      // footer
+      const duration=specialReplayDurationMs(state,index)/1000;
+      specialReplayCanvasText(ctx,'DiamondScope Replay',28*scale,699*scale,260*scale,14*scale,'800','#587c93');
+      specialReplayCanvasText(ctx,duration.toFixed(1)+' 秒',1250*scale,699*scale,120*scale,14*scale,'800','#587c93','right');
+    }
+
+    async function specialReplayDownloadMp4() {
+      const state=specialReplayActive;
+      if(!state||!state.detail||!state.events.length)return;
+      if(state.exporting)return;
+
+      if(typeof VideoEncoder==='undefined'){
+        alert('這台裝置目前不支援本機 MP4 編碼（WebCodecs）。請改用最新版 Chrome / Edge / Safari 後再試。');
+        return;
+      }
+
+      state.exporting=true;
+      const wasPlaying=state.playing;
+      if(wasPlaying) toggleSpecialReplayPlayback();
+
+      const overlay=document.createElement('div');
+      overlay.className='special-replay-exporting';
+      overlay.innerHTML='<div class="special-replay-export-card"><strong>正在產生 MP4</strong><span data-special-export-text>準備編碼…</span><div class="special-replay-export-track"><div class="special-replay-export-bar" data-special-export-bar></div></div></div>';
+      state.overlay.appendChild(overlay);
+
+      try{
+        const mb=await import('https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/+esm');
+        const {Output,Mp4OutputFormat,BufferTarget,CanvasSource,Quality}=mb;
+
+        const width=1280,height=720;
+        const canvas=document.createElement('canvas');
+        canvas.width=width; canvas.height=height;
+        const ctx=canvas.getContext('2d',{alpha:false});
+        if(!ctx)throw new Error('Canvas unavailable');
+
+        const target=new BufferTarget();
+        const output=new Output({format:new Mp4OutputFormat(),target});
+        const source=new CanvasSource(canvas,{
+          codec:'avc',
+          quality:new Quality({bitrate:900000})
+        });
+        output.addVideoTrack(source,{frameRate:30});
+        await output.start();
+
+        let timestamp=0;
+        for(let i=0;i<state.events.length;i+=1){
+          const duration=specialReplayDurationMs(state,i)/1000;
+          specialReplayRenderMp4Frame(ctx,state,i,width,height);
+          await source.add(timestamp,duration);
+          timestamp+=duration;
+
+          if(i%3===0||i===state.events.length-1){
+            const pct=Math.round(((i+1)/state.events.length)*100);
+            const bar=overlay.querySelector('[data-special-export-bar]');
+            const label=overlay.querySelector('[data-special-export-text]');
+            if(bar)bar.style.width=pct+'%';
+            if(label)label.textContent='編碼 '+pct+'% · '+(i+1)+' / '+state.events.length;
+            await new Promise(resolve=>setTimeout(resolve,0));
+          }
+        }
+
+        await output.finalize();
+        const bytes=target.buffer;
+        if(!bytes||!bytes.byteLength)throw new Error('MP4 output is empty');
+
+        const blob=new Blob([bytes],{type:'video/mp4'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        const safe=value=>String(value||'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_');
+        a.href=url;
+        a.download=[safe(state.detail.game_date),safe(state.detail.away_team),safe(state.detail.home_team),'replay'].filter(Boolean).join('_')+'.mp4';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),3000);
+      }catch(error){
+        console.error('MP4 export failed',error);
+        alert('MP4 產生失敗：'+(error&&error.message?error.message:'此裝置暫不支援'));
+      }finally{
+        state.exporting=false;
+        overlay.remove();
+        if(wasPlaying&&!document.hidden&&specialReplayActive===state){
+          state.playing=true;
+          state.remainingMs=specialReplayDurationMs(state,state.index);
+          renderSpecialReplayFrame();
+          scheduleSpecialReplayAdvance();
+        }
+      }
     }
 
     function specialReplayFooterHtml(state,event) {
@@ -814,7 +1099,7 @@
       const lastEvent = state.index >= state.events.length - 1;
       const eventKind = specialReplayKindLabel(event.k);
       const duration = specialReplayDurationMs(state,state.index);
-      return '<div class="special-replay-footer"><div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(eventKind) + ' · ' + (duration/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div><div class="special-replay-controls"><button class="special-replay-control special-replay-download" type="button" data-special-replay-download>下載檔案</button><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div></div>';
+      return '<div class="special-replay-footer"><div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(eventKind) + ' · ' + (duration/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div><div class="special-replay-controls"><button class="special-replay-control special-replay-download" type="button" data-special-replay-download>下載 MP4</button><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div></div>';
     }
 
     async function openSpecialGameReplay(game) {
@@ -873,7 +1158,7 @@
 
       state.overlay.querySelector('[data-special-replay-close]').addEventListener('click', closeSpecialGameReplay);
       state.overlay.querySelector('[data-special-replay-toggle]').addEventListener('click', toggleSpecialReplayPlayback);
-      state.overlay.querySelector('[data-special-replay-download]').addEventListener('click', specialReplayDownloadFile);
+      state.overlay.querySelector('[data-special-replay-download]').addEventListener('click', specialReplayDownloadMp4);
       state.overlay.querySelector('[data-special-replay-prev]').addEventListener('click', () => seekSpecialReplay(-1));
       state.overlay.querySelector('[data-special-replay-next]').addEventListener('click', () => seekSpecialReplay(1));
     }
