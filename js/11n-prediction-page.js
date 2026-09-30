@@ -1201,7 +1201,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
     }
 
     async function predictionStandingData(league, date) {
-      const data = await predictionPost(LEAGUE_STANDINGS_API_URL, {
+      const data = await predictionPost(leagueStandingsApiUrl(league), {
         appKey:CPBL_APP_KEY, action:'current', league, date
       });
       return data?.[String(league || '').toLowerCase()] || {};
@@ -1218,7 +1218,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         try {
           const hit = predictionStandingHit(standing, team);
           const view = league === 'CPBL' ? 'annual' : league === 'KBO' ? 'regular' : (hit?.section || 'central');
-          const detail = await predictionPost(LEAGUE_TEAM_DETAIL_API_URL, {
+          const detail = await predictionPost(leagueTeamDetailApiUrl(league), {
             appKey:CPBL_APP_KEY, league, team, view
           });
           details.set(predictionNormTeam(team), detail);
