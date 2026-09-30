@@ -439,6 +439,220 @@
           .special-replay-control.primary{min-width:62px}
         }
 
+
+        /* v7.76: cinematic play-by-play stage; no defensive field diagram */
+        .special-replay-showcase{
+          min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,29%);
+          gap:10px;padding:10px
+        }
+        .special-replay-playcard{
+          --play-accent:#55b8f2;
+          position:relative;min-width:0;min-height:0;display:grid;
+          grid-template-rows:auto auto minmax(0,1fr) auto;gap:12px;
+          padding:18px 20px 16px;border:1px solid rgba(130,197,241,.10);border-radius:16px;
+          overflow:hidden;
+          background:
+            radial-gradient(circle at 80% 10%,color-mix(in srgb,var(--play-accent) 16%,transparent),transparent 38%),
+            linear-gradient(145deg,rgba(10,45,68,.82),rgba(3,20,33,.97));
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.025)
+        }
+        .special-replay-playcard:before{
+          content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+          background:linear-gradient(180deg,var(--play-accent),transparent 88%);
+          box-shadow:0 0 24px color-mix(in srgb,var(--play-accent) 38%,transparent)
+        }
+        .special-replay-playcard.tone-hr{--play-accent:#ffbf59}
+        .special-replay-playcard.tone-score{--play-accent:#63dfb2}
+        .special-replay-playcard.tone-k{--play-accent:#6ebdff}
+        .special-replay-playcard.tone-walk{--play-accent:#c78cff}
+        .special-replay-playcard.tone-change{--play-accent:#80d6da}
+        .special-replay-playcard.tone-half{--play-accent:#90a7b9}
+
+        .special-replay-playhead{
+          display:flex;align-items:center;justify-content:space-between;gap:10px
+        }
+        .special-replay-live-label{
+          display:inline-flex;align-items:center;gap:6px;color:#8cccf4;
+          font-size:8px;font-weight:1000;letter-spacing:.12em
+        }
+        .special-replay-live-dot{
+          width:7px;height:7px;border-radius:50%;background:var(--play-accent);
+          box-shadow:0 0 12px color-mix(in srgb,var(--play-accent) 72%,transparent)
+        }
+        .special-replay-playhead-meta{
+          color:#628ca8;font-size:8px;font-weight:900
+        }
+
+        .special-replay-matchup{
+          display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+          gap:14px;align-items:center;padding:7px 0 12px;
+          border-bottom:1px solid rgba(126,193,240,.08)
+        }
+        .special-replay-matchup-person{min-width:0}
+        .special-replay-matchup-person.right{text-align:right}
+        .special-replay-matchup-person span{
+          display:block;margin-bottom:5px;color:#5f8daa;font-size:7px;font-weight:1000;letter-spacing:.10em
+        }
+        .special-replay-matchup-person strong{
+          display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#f5fbff;font-size:16px;font-weight:1000
+        }
+        .special-replay-matchup-vs{
+          display:grid;place-items:center;width:34px;height:34px;border-radius:50%;
+          border:1px solid rgba(135,201,244,.12);background:rgba(8,36,55,.78);
+          color:#70a9cf;font-size:8px;font-weight:1000
+        }
+
+        .special-replay-result-hero{
+          align-self:center;min-width:0;padding:3px 0 7px
+        }
+        .special-replay-result-eyebrow{
+          display:block;margin-bottom:7px;color:var(--play-accent);
+          font-size:8px;font-weight:1000;letter-spacing:.08em
+        }
+        .special-replay-result-title{
+          display:block;color:#fff;font-size:clamp(20px,2.2vw,34px);font-weight:1000;
+          line-height:1.18;letter-spacing:-.02em;text-wrap:balance
+        }
+        .special-replay-result-sub{
+          display:block;margin-top:8px;color:#89a8bc;font-size:9px;font-weight:800
+        }
+
+        .special-replay-playchips{
+          display:flex;flex-wrap:wrap;gap:6px;padding-top:2px
+        }
+        .special-replay-playchip{
+          padding:5px 8px;border:1px solid rgba(132,200,244,.09);border-radius:999px;
+          background:rgba(9,41,62,.72);color:#8ebbd8;font-size:7px;font-weight:950
+        }
+        .special-replay-playchip.strong{
+          border-color:color-mix(in srgb,var(--play-accent) 25%,transparent);
+          background:color-mix(in srgb,var(--play-accent) 10%,rgba(9,41,62,.72));
+          color:color-mix(in srgb,var(--play-accent) 82%,white)
+        }
+
+        .special-replay-rail{
+          min-height:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr);
+          gap:8px;padding:12px;border:1px solid rgba(126,193,240,.10);border-radius:16px;
+          background:linear-gradient(180deg,rgba(9,42,64,.76),rgba(4,24,39,.94))
+        }
+        .special-replay-rail-top{
+          display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start
+        }
+        .special-replay-rail-kicker{
+          color:#619bc3;font-size:7px;font-weight:1000;letter-spacing:.10em
+        }
+        .special-replay-rail-inning{
+          margin-top:3px;color:#f1f9ff;font-size:17px;font-weight:1000
+        }
+        .special-replay-rail-outs{
+          display:grid;gap:4px;justify-items:end
+        }
+        .special-replay-rail-outs-label{
+          color:#5c849e;font-size:6px;font-weight:900
+        }
+
+        .special-replay-basebox{
+          display:grid;grid-template-columns:78px minmax(0,1fr);gap:12px;align-items:center;
+          padding:10px;border-radius:12px;background:rgba(4,22,35,.48)
+        }
+        .special-replay-basebox-copy{min-width:0}
+        .special-replay-basebox-copy span{display:block;color:#5f8eac;font-size:7px;font-weight:900}
+        .special-replay-basebox-copy strong{
+          display:block;margin-top:4px;color:#eaf6ff;font-size:10px;font-weight:1000;
+          line-height:1.3
+        }
+
+        .special-replay-rail-people{
+          display:grid;grid-template-columns:1fr 1fr;gap:7px
+        }
+        .special-replay-person-card{
+          min-width:0;padding:9px;border-radius:11px;background:rgba(5,25,40,.62)
+        }
+        .special-replay-person-card span{
+          display:block;color:#5f8eac;font-size:6px;font-weight:950;letter-spacing:.08em
+        }
+        .special-replay-person-card strong{
+          display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#f0f9ff;font-size:9px;font-weight:1000
+        }
+
+        .special-replay-previous-card{
+          align-self:end;min-width:0;padding-top:9px;border-top:1px solid rgba(126,193,240,.07)
+        }
+        .special-replay-previous-card span{
+          display:block;color:#5c849e;font-size:6px;font-weight:900
+        }
+        .special-replay-previous-card strong{
+          display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#89a8bc;font-size:8px;font-weight:850
+        }
+
+        @media (min-width:1200px) and (min-height:650px){
+          .special-replay-showcase{
+            grid-template-columns:minmax(0,1fr) minmax(260px,31%);
+            gap:14px;padding:14px
+          }
+          .special-replay-playcard{gap:17px;padding:24px 28px 22px}
+          .special-replay-live-label,.special-replay-playhead-meta{font-size:11px}
+          .special-replay-live-dot{width:9px;height:9px}
+          .special-replay-matchup{gap:20px;padding:10px 0 16px}
+          .special-replay-matchup-person span{font-size:10px}
+          .special-replay-matchup-person strong{font-size:23px}
+          .special-replay-matchup-vs{width:42px;height:42px;font-size:10px}
+          .special-replay-result-eyebrow{font-size:11px;margin-bottom:10px}
+          .special-replay-result-title{font-size:clamp(30px,2.7vw,48px)}
+          .special-replay-result-sub{margin-top:10px;font-size:13px}
+          .special-replay-playchips{gap:8px}
+          .special-replay-playchip{padding:7px 10px;font-size:10px}
+
+          .special-replay-rail{gap:12px;padding:16px}
+          .special-replay-rail-kicker{font-size:10px}
+          .special-replay-rail-inning{font-size:24px}
+          .special-replay-rail-outs-label{font-size:8px}
+          .special-replay-basebox{grid-template-columns:104px minmax(0,1fr);gap:16px;padding:14px}
+          .special-replay-basebox .special-replay-diamond{width:78px}
+          .special-replay-basebox-copy span{font-size:9px}
+          .special-replay-basebox-copy strong{font-size:14px}
+          .special-replay-rail-people{gap:10px}
+          .special-replay-person-card{padding:12px}
+          .special-replay-person-card span{font-size:8px}
+          .special-replay-person-card strong{font-size:13px}
+          .special-replay-previous-card{padding-top:12px}
+          .special-replay-previous-card span{font-size:8px}
+          .special-replay-previous-card strong{font-size:11px}
+        }
+
+        @media (max-height:520px) and (orientation:landscape){
+          .special-replay-showcase{grid-template-columns:minmax(0,1fr) 30%;gap:5px;padding:5px}
+          .special-replay-playcard{gap:6px;padding:8px 10px 7px;border-radius:9px}
+          .special-replay-playhead{gap:5px}
+          .special-replay-live-label,.special-replay-playhead-meta{font-size:5px}
+          .special-replay-live-dot{width:5px;height:5px}
+          .special-replay-matchup{gap:7px;padding:3px 0 5px}
+          .special-replay-matchup-person span{margin-bottom:2px;font-size:5px}
+          .special-replay-matchup-person strong{font-size:8px}
+          .special-replay-matchup-vs{width:23px;height:23px;font-size:5px}
+          .special-replay-result-eyebrow{margin-bottom:3px;font-size:5px}
+          .special-replay-result-title{font-size:14px}
+          .special-replay-result-sub{margin-top:3px;font-size:5px}
+          .special-replay-playchips{gap:3px}
+          .special-replay-playchip{padding:3px 5px;font-size:5px}
+          .special-replay-rail{gap:4px;padding:6px;border-radius:9px}
+          .special-replay-rail-kicker{font-size:5px}
+          .special-replay-rail-inning{font-size:9px}
+          .special-replay-basebox{grid-template-columns:48px minmax(0,1fr);gap:5px;padding:5px}
+          .special-replay-basebox .special-replay-diamond{width:36px}
+          .special-replay-basebox-copy span{font-size:5px}
+          .special-replay-basebox-copy strong{font-size:6px}
+          .special-replay-person-card{padding:5px}
+          .special-replay-person-card span{font-size:4px}
+          .special-replay-person-card strong{font-size:6px}
+          .special-replay-previous-card{padding-top:4px}
+          .special-replay-previous-card span{font-size:4px}
+          .special-replay-previous-card strong{font-size:5px}
+        }
+
         @media (orientation:portrait){
           .special-replay-broadcast{grid-template-columns:1fr;padding:7px}
           .special-replay-lineup{display:none}
@@ -620,67 +834,89 @@
       return '<div class="special-replay-linescore"><table><thead><tr>' + head + '</tr></thead><tbody>' + row(detail.away_team || '中華台北',away,summary.away_score,summary.away_hits,summary.away_errors) + row(detail.home_team || '韓國',home,summary.home_score,summary.home_hits,summary.home_errors) + '</tbody></table></div>';
     }
 
+    function specialReplayTone(event) {
+      const text = String((event && event.r) || '') + ' ' + String((event && event.k) || '');
+      if (/全壘打|home run|homer|hr/i.test(text)) return 'tone-hr';
+      if (/超前|追平|得分|跑回|兩分|三分|滿貫|score/i.test(text)) return 'tone-score';
+      if (/三振|strikeout/i.test(text)) return 'tone-k';
+      if (/保送|觸身|walk/i.test(text)) return 'tone-walk';
+      if (/換投|代打|代跑|換人|pitch|sub/i.test(text)) return 'tone-change';
+      if (/half|結束/.test(text)) return 'tone-half';
+      return '';
+    }
+
     function specialReplayCenterHtml(state,event) {
       const detail = state.detail;
-      const payload = detail.payload || {};
       const scores = Array.isArray(event.s) ? event.s : [0,0];
       const prev = specialReplayPreviousPa(state);
       const pitcher = specialReplayCurrentPitcher(state,event);
-      const batter = event.k === 'pa' ? event.n : '';
-      const fieldLabel = String(event.h || 'T') === 'T' ? (detail.home_team || '韓國') + ' 守備' : (detail.away_team || '中華台北') + ' 守備';
+      const subject = event.n || specialReplayInningLabel(event);
+      const result = event.r || '—';
+      const isPlateAppearance = String(event.k || '') === 'pa';
+      const subjectLabel = isPlateAppearance ? 'BATTER' : specialReplayKindLabel(event.k).toUpperCase();
       const lastEvent = state.index >= state.events.length - 1;
       const statusText = lastEvent ? '比賽結束' : specialReplayInningLabel(event);
-      const eventTitle = event.n || specialReplayInningLabel(event);
-      const eventCopy = event.r || '';
       const progress = Math.max(0, Math.min(100, ((state.index + 1) / state.events.length) * 100));
       const baseMask = Number(event.b) || 0;
-      const baseText = baseMask === 0 ? '壘上無人'
+      const baseText = baseMask === 0
+        ? '壘上無人'
         : [baseMask & 1 ? '一壘' : '', baseMask & 2 ? '二壘' : '', baseMask & 4 ? '三壘' : ''].filter(Boolean).join('、') + '有人';
-      const eventBadges = [
-        specialReplayInningLabel(event),
-        String(Math.max(0,Math.min(3,Number(event.o)||0))) + ' 出局',
-        baseText,
-        (Number(scores[0]) || 0) + '：' + (Number(scores[1]) || 0)
-      ];
+      const outs = Math.max(0, Math.min(3, Number(event.o) || 0));
+      const tone = specialReplayTone(event);
+      const eventKind = specialReplayKindLabel(event.k);
 
       return '<main class="special-replay-center">'
         + '<div class="special-replay-rotate-hint">請將手機橫向觀看</div>'
         + '<div class="special-replay-score">'
-        + '<span class="special-replay-score-team away">' + escapeHtml(detail.away_team || '中華台北') + '</span>'
-        + '<strong class="special-replay-score-num">' + (Number(scores[0]) || 0) + '</strong>'
-        + '<span class="special-replay-status-pill">' + escapeHtml(statusText) + '</span>'
-        + '<strong class="special-replay-score-num">' + (Number(scores[1]) || 0) + '</strong>'
-        + '<span class="special-replay-score-team home">' + escapeHtml(detail.home_team || '韓國') + '</span>'
-        + '<span class="special-replay-score-sub">' + escapeHtml([detail.game_date,detail.venue].filter(Boolean).join('｜')) + '</span>'
+        +   '<span class="special-replay-score-team away">' + escapeHtml(detail.away_team || '中華台北') + '</span>'
+        +   '<strong class="special-replay-score-num">' + (Number(scores[0]) || 0) + '</strong>'
+        +   '<span class="special-replay-status-pill">' + escapeHtml(statusText) + '</span>'
+        +   '<strong class="special-replay-score-num">' + (Number(scores[1]) || 0) + '</strong>'
+        +   '<span class="special-replay-score-team home">' + escapeHtml(detail.home_team || '韓國') + '</span>'
+        +   '<span class="special-replay-score-sub">' + escapeHtml([detail.game_date,detail.venue].filter(Boolean).join('｜')) + '</span>'
         + '</div>'
         + specialReplayLineScoreHtml(detail,event)
-        + '<div class="special-replay-arena">'
-        + '<section class="special-replay-field">'
-        + '<span class="special-replay-field-label">' + escapeHtml(fieldLabel) + '</span>'
-        + '<div class="special-replay-field-lines"><i class="special-replay-field-line left"></i><i class="special-replay-field-line right"></i><i class="special-replay-infield-line"></i></div>'
-        + specialReplayDefenseHtml(state,event)
-        + '<div class="special-replay-callout"><span class="special-replay-callout-tag">' + escapeHtml(specialReplayKindLabel(event.k)) + '</span><div class="special-replay-callout-copy"><strong>' + escapeHtml(eventTitle) + '</strong><span>' + escapeHtml(eventCopy) + '</span></div></div>'
-        + '</section>'
-        + '<aside class="special-replay-state-card">'
-        + '<span class="special-replay-state-title">本打席 / 本事件</span>'
-        + '<div class="special-replay-event-panel">'
-        + '<span class="special-replay-event-kicker">' + escapeHtml(specialReplayKindLabel(event.k)) + '</span>'
-        + '<strong class="special-replay-event-batter">' + escapeHtml(eventTitle) + '</strong>'
-        + '<div class="special-replay-event-result">' + escapeHtml(eventCopy || '—') + '</div>'
-        + '<div class="special-replay-event-badges">' + eventBadges.map(text => '<span class="special-replay-event-badge">' + escapeHtml(text) + '</span>').join('') + '</div>'
-        + '</div>'
-        + '<div class="special-replay-diamond-wrap">' + specialReplayBaseHtml(event.b) + '</div>'
-        + '<div class="special-replay-state-inning">' + escapeHtml(specialReplayInningLabel(event)) + '</div>'
-        + '<div class="special-replay-state-info">'
-        + '<div class="special-replay-state-info-row"><span>投手</span><strong>' + escapeHtml(pitcher || '-') + '</strong>' + specialReplayOutsHtml(event.o) + '</div>'
-        + '<div class="special-replay-state-info-row"><span>打者</span><strong>' + escapeHtml(batter || event.n || '-') + '</strong><span></span></div>'
-        + '<div class="special-replay-prev">上一棒　' + escapeHtml(prev ? prev.n + '｜' + prev.r : '—') + '</div>'
-        + '</div>'
-        + '</aside>'
+        + '<div class="special-replay-showcase">'
+        +   '<section class="special-replay-playcard ' + tone + '">'
+        +     '<div class="special-replay-playhead">'
+        +       '<span class="special-replay-live-label"><i class="special-replay-live-dot"></i>PLAY BY PLAY</span>'
+        +       '<span class="special-replay-playhead-meta">EVENT ' + (state.index + 1) + ' / ' + state.events.length + '</span>'
+        +     '</div>'
+        +     '<div class="special-replay-matchup">'
+        +       '<div class="special-replay-matchup-person"><span>PITCHER</span><strong>' + escapeHtml(pitcher || '-') + '</strong></div>'
+        +       '<div class="special-replay-matchup-vs">VS</div>'
+        +       '<div class="special-replay-matchup-person right"><span>' + escapeHtml(subjectLabel) + '</span><strong>' + escapeHtml(subject) + '</strong></div>'
+        +     '</div>'
+        +     '<div class="special-replay-result-hero">'
+        +       '<span class="special-replay-result-eyebrow">' + escapeHtml(eventKind) + '</span>'
+        +       '<strong class="special-replay-result-title">' + escapeHtml(result) + '</strong>'
+        +       '<span class="special-replay-result-sub">' + escapeHtml(specialReplayInningLabel(event)) + ' · ' + escapeHtml(detail.away_team || '') + ' ' + (Number(scores[0]) || 0) + '：' + (Number(scores[1]) || 0) + ' ' + escapeHtml(detail.home_team || '') + '</span>'
+        +     '</div>'
+        +     '<div class="special-replay-playchips">'
+        +       '<span class="special-replay-playchip strong">' + escapeHtml(baseText) + '</span>'
+        +       '<span class="special-replay-playchip">' + outs + ' 出局</span>'
+        +       '<span class="special-replay-playchip">' + escapeHtml(eventKind) + '</span>'
+        +     '</div>'
+        +   '</section>'
+        +   '<aside class="special-replay-rail">'
+        +     '<div class="special-replay-rail-top">'
+        +       '<div><span class="special-replay-rail-kicker">GAME STATE</span><div class="special-replay-rail-inning">' + escapeHtml(specialReplayInningLabel(event)) + '</div></div>'
+        +       '<div class="special-replay-rail-outs"><span class="special-replay-rail-outs-label">OUT</span>' + specialReplayOutsHtml(outs) + '</div>'
+        +     '</div>'
+        +     '<div class="special-replay-basebox">'
+        +       '<div class="special-replay-diamond-wrap">' + specialReplayBaseHtml(event.b) + '</div>'
+        +       '<div class="special-replay-basebox-copy"><span>壘況</span><strong>' + escapeHtml(baseText) + '</strong></div>'
+        +     '</div>'
+        +     '<div class="special-replay-rail-people">'
+        +       '<div class="special-replay-person-card"><span>投手</span><strong>' + escapeHtml(pitcher || '-') + '</strong></div>'
+        +       '<div class="special-replay-person-card"><span>' + escapeHtml(isPlateAppearance ? '打者' : '事件') + '</span><strong>' + escapeHtml(subject || '-') + '</strong></div>'
+        +     '</div>'
+        +     '<div class="special-replay-previous-card"><span>上一打席</span><strong>' + escapeHtml(prev ? prev.n + '｜' + prev.r : '—') + '</strong></div>'
+        +   '</aside>'
         + '</div>'
         + '<div class="special-replay-footer">'
-        + '<div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(specialReplayKindLabel(event.k)) + ' · ' + (Math.max(250,Number(event.d)||1000)/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div>'
-        + '<div class="special-replay-controls"><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div>'
+        +   '<div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(eventKind) + ' · ' + (Math.max(250,Number(event.d)||1000)/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div>'
+        +   '<div class="special-replay-controls"><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div>'
         + '</div>'
         + '</main>';
     }
