@@ -13521,3 +13521,26 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 
 .pitcher-batter-flow>.pitcher-batter-query{width:100%;justify-self:stretch}
 /* ===== PITCHER BATTER MATCHUP END ===== */
+
+
+/* v7.70: equal-width root navigation */
+#homePage #homeZoneSwitch{
+  display:grid !important;
+  grid-template-columns:repeat(3,1fr) !important;
+  grid-template-rows:auto !important;
+  column-gap:4px !important;
+}
+#homePage #homeZoneSwitch > .home-zone-btn[data-home-root]{
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding-left:2px !important;
+  padding-right:2px !important;
+}
+#homePage #homeZoneSwitch > .home-zone-btn[data-home-root="pro"],
+#homePage #homeZoneSwitch > .home-zone-btn[data-home-root="international"],
+#homePage #homeZoneSwitch > .home-zone-btn[data-home-root="special"]{
+  grid-row:1 !important;
+}
