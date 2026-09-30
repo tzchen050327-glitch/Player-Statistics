@@ -5,7 +5,7 @@
 
   const nativeFetch = window.fetch.bind(window);
   const DAY = 86400000;
-  const DB_NAME = 'diamondscope-offline-v1';
+  const DB_NAME = 'diamondscope-offline-v2';
   const STORE = 'responses';
   const MAX_BYTES = 2500000;
   const rules = [
@@ -131,7 +131,11 @@
     const date = requestedDate(requestText);
     const historical = Boolean(date && date < today());
     let fresh = rule.fresh;
-    if (rule.kind === 'detail') fresh = live ? 0 : (final ? 30 * DAY : 120000);
+    if (rule.kind === 'detail') {
+      if (live) fresh = 0;
+      else if (final) fresh = historical ? 30 * DAY : 5 * 60 * 1000;
+      else fresh = 120000;
+    }
     if (rule.kind === 'daily') fresh = live ? 0 : (historical ? 7 * DAY : rule.fresh);
     return { final, live, historical, fresh };
   }
