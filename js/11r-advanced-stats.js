@@ -310,6 +310,12 @@
     function advancedStatsBindSearch() {
       const input = document.getElementById('advancedStatsSearchInput');
       if (!input) return;
+      const unlockSearchInput = () => {
+        if (!input.hasAttribute('readonly')) return;
+        requestAnimationFrame(() => input.removeAttribute('readonly'));
+      };
+      input.addEventListener('pointerdown', unlockSearchInput, { once:true });
+      input.addEventListener('focus', unlockSearchInput, { once:true });
       input.addEventListener('input', () => {
         advancedStatsSearchQuery = String(input.value || '').trim();
         advancedStatsSuggestions = [];
@@ -383,7 +389,7 @@
             <span>輸入姓名，直接讀取 CPBL 官方分項成績。</span>
           </div>
           <div class="advanced-stats-search-wrap">
-            <input id="advancedStatsSearchInput" name="diamondScopePlayerSearch" type="search" role="searchbox" aria-controls="advancedStatsSearchResults" aria-expanded="false" autocomplete="off" inputmode="search" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" placeholder="輸入球員姓名" value="${escapeHtml(advancedStatsSearchQuery)}" />
+            <input id="advancedStatsSearchInput" name="dsAdvancedPlayerSearch" type="search" role="searchbox" aria-controls="advancedStatsSearchResults" aria-expanded="false" autocomplete="one-time-code" inputmode="search" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" data-purpose="search" placeholder="輸入球員姓名" value="${escapeHtml(advancedStatsSearchQuery)}" />
             <div id="advancedStatsSearchResults" class="advanced-stats-search-results hidden" role="listbox"></div>
           </div>
         </section>
