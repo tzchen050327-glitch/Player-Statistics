@@ -336,6 +336,14 @@
       });
 
       const playerInput = document.getElementById('pitcherBatterPlayerSearch');
+      if (playerInput && !playerInput.disabled) {
+        const unlockSearchInput = () => {
+          if (!playerInput.hasAttribute('readonly')) return;
+          requestAnimationFrame(() => playerInput.removeAttribute('readonly'));
+        };
+        playerInput.addEventListener('pointerdown', unlockSearchInput, { once:true });
+        playerInput.addEventListener('focus', unlockSearchInput, { once:true });
+      }
       playerInput?.addEventListener('focus', () => {
         pitcherBatterPlayerOpen = true;
         pitcherBatterRenderPlayerResults();
@@ -446,20 +454,24 @@
                 <span class="pitcher-batter-search-icon" aria-hidden="true">⌕</span>
                 <input
                   id="pitcherBatterPlayerSearch"
-                  name="pitcher-batter-player-query"
+                  name="dsMatchupSearch"
                   type="search"
-                  role="combobox"
-                  aria-autocomplete="list"
+                  role="searchbox"
                   aria-controls="pitcherBatterPlayerResults"
                   aria-expanded="false"
-                  autocomplete="off"
+                  autocomplete="one-time-code"
+                  inputmode="search"
                   autocapitalize="off"
                   autocorrect="off"
                   spellcheck="false"
                   enterkeyhint="search"
+                  readonly
                   data-lpignore="true"
                   data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-protonpass-ignore="true"
                   data-form-type="other"
+                  data-purpose="search"
                   placeholder="${pitcherBatterRosterLoading ? '正在讀取球員…' : pitcherBatterTeam ? '輸入球員姓名' : '先選擇球隊'}"
                   value="${escapeHtml(pitcherBatterPlayerQuery)}"
                   ${!pitcherBatterTeam || pitcherBatterRosterLoading ? 'disabled' : ''}
