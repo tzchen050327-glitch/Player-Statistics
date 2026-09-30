@@ -13544,3 +13544,32 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 #homePage #homeZoneSwitch > .home-zone-btn[data-home-root="special"]{
   grid-row:1 !important;
 }
+
+
+/* v7.71: fixed root switch shell + exact equal thirds */
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch{
+  box-sizing:border-box !important;
+  display:grid !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:42px !important;
+  gap:4px !important;
+  padding:4px !important;
+  overflow:hidden !important;
+}
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root]{
+  box-sizing:border-box !important;
+  position:static !important;
+  display:flex !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:100% !important;
+  margin:0 !important;
+  padding:0 2px !important;
+  transform:none !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
