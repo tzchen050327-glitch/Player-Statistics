@@ -437,7 +437,7 @@
       </div>
       <div class="grid two">
         <label class="field new-player-name-field">球員名稱
-          <input id="newPlayerName" type="text" maxlength="30" autocomplete="off" />
+          <input id="newPlayerName" name="dsNewPlayerSearch" type="text" maxlength="30" autocomplete="one-time-code" inputmode="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" data-purpose="search" />
           <div id="newPlayerSuggestions" class="new-player-suggestions hidden" role="listbox" aria-label="球員搜尋建議"></div>
         </label>
         <label class="field">背號
@@ -570,7 +570,7 @@
         <button class="press-btn dialog-close" type="button" aria-label="關閉" title="關閉">×</button>
       </div>
       <label class="field">搜尋
-        <input id="playerSearchInput" type="search" autocomplete="off" placeholder="輸入球員姓名" />
+        <input id="playerSearchInput" name="dsPlayerSearch" type="search" role="searchbox" autocomplete="one-time-code" inputmode="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" data-purpose="search" placeholder="輸入球員姓名" />
       </label>
       <div id="playerSearchResults" class="player-search-results"></div>
     </div>
