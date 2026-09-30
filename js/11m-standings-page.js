@@ -352,10 +352,11 @@
       standingsOfficialError = '';
       renderStandingsPage();
       try {
-        const response = await fetch(LEAGUE_STANDINGS_API_URL, {
+        const requestedLeague = standingsLeagueCode();
+        const response = await fetch(leagueStandingsApiUrl(requestedLeague), {
           method:'POST',
           headers:{ 'content-type':'application/json' },
-          body:JSON.stringify({ appKey:CPBL_APP_KEY, league:'ALL' })
+          body:JSON.stringify({ appKey:CPBL_APP_KEY, league:requestedLeague })
         });
         const text = await response.text();
         let data = {};
@@ -374,7 +375,7 @@
               : data?.mlb?.[standingsUiState.mlbView];
 
         if (!selectedSection) {
-          const retryResponse = await fetch(LEAGUE_STANDINGS_API_URL, {
+          const retryResponse = await fetch(leagueStandingsApiUrl(standingsLeagueCode()), {
             method:'POST',
             headers:{ 'content-type':'application/json' },
             body:JSON.stringify({ appKey:CPBL_APP_KEY, league:standingsLeagueCode() })
@@ -659,7 +660,7 @@
       standingsTeamDetailError = '';
       renderStandingsPage();
       try {
-        const response = await fetch(LEAGUE_TEAM_DETAIL_API_URL, {
+        const response = await fetch(leagueTeamDetailApiUrl(standingsLeagueCode()), {
           method:'POST',
           headers:{ 'content-type':'application/json' },
           body:JSON.stringify({
