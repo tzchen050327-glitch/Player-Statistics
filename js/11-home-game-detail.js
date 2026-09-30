@@ -206,7 +206,9 @@
           date,
           gameId:String(game?.id || ''),
           away:String(game?.away || ''),
-          home:String(game?.home || '')
+          home:String(game?.home || ''),
+          awayCode:String(game?.awayCode || '').slice(0,3),
+          homeCode:String(game?.homeCode || '').slice(0,3)
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -219,6 +221,7 @@
       if (status === 'live') return ['比賽中', detail?.game?.inningLabel || ''].filter(Boolean).join('｜');
       if (status === 'final') return '比賽結束';
       if (status === 'cancelled') return '延賽／取消';
+      if (status === 'suspended') return '保留比賽';
       return '尚未開打';
     }
 
@@ -1869,7 +1872,12 @@
           !starterHasStats(existingPregame?.homeStarter)
         );
         const shouldLoadPregameStarters = supportsPregameStarters && (
-          (detailStatus === 'scheduled' && (force || !existingPregame)) ||
+          (['scheduled','suspended'].includes(detailStatus) && (
+            force ||
+            !existingPregame ||
+            !starterHasStats(existingPregame?.awayStarter) ||
+            !starterHasStats(existingPregame?.homeStarter)
+          )) ||
           npbNeedsStarterSnapshot
         );
         if (shouldLoadPregameStarters) {
