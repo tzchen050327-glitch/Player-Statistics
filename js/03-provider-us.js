@@ -26,26 +26,64 @@
 
     async function cpblRequest(action, payload = {}) {
       const requestKindCode = String(payload?.kindCode || 'A').toUpperCase();
+      const useHistoryBackend = useSecondaryCpblBackend(action, payload);
       const requestUrl = ['current-roster','current-rosters'].includes(action)
         ? CPBL_CURRENT_ROSTER_API_URL
         : action === 'daily' && ['A','D','E','C'].includes(requestKindCode)
           ? CPBL_DAILY_CACHE_API_URL
-          : useSecondaryCpblBackend(action, payload)
+          : useHistoryBackend
             ? CPBL_HISTORY_API_URL
             : CPBL_API_URL;
-      const response = await fetch(requestUrl, {
+      const requestBody = JSON.stringify({
+        appKey: CPBL_APP_KEY,
+        anonKey: CPBL_ANON_KEY,
+        action,
+        ...payload
+      });
+      const requestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body: JSON.stringify({
-          appKey: CPBL_APP_KEY,
-          anonKey: CPBL_ANON_KEY,
-          action,
-          ...payload
-        })
-      });
+        body: requestBody
+      };
+
+      let response;
       let data = null;
-      try { data = await response.json(); } catch (_) {}
-      if (!response.ok || !data?.ok) throw new Error(data?.error || `中職官網連線失敗（${response.status}）`);
+      let primaryError = null;
+      try {
+        response = await fetch(requestUrl, requestInit);
+        try { data = await response.json(); } catch (_) {}
+      } catch (error) {
+        primaryError = error;
+      }
+
+      const secondaryUnavailable = useHistoryBackend && (
+        primaryError
+        || !response
+        || response.status === 404
+        || response.status >= 500
+      );
+
+      if (secondaryUnavailable) {
+        console.warn('中職歷史後端暫時不可用，改由主要後端讀取', {
+          action,
+          status: response?.status || 0
+        });
+        try {
+          const fallbackResponse = await fetch(CPBL_API_URL, requestInit);
+          let fallbackData = null;
+          try { fallbackData = await fallbackResponse.json(); } catch (_) {}
+          if (fallbackResponse.ok && fallbackData?.ok) return fallbackData;
+          throw new Error(fallbackData?.error || `中職官網連線失敗（${fallbackResponse.status}）`);
+        } catch (fallbackError) {
+          throw fallbackError instanceof Error
+            ? fallbackError
+            : new Error(String(fallbackError || '中職歷史資料讀取失敗'));
+        }
+      }
+
+      if (!response?.ok || !data?.ok) {
+        throw new Error(data?.error || `中職官網連線失敗（${response?.status || 0}）`);
+      }
       return data;
     }
 
