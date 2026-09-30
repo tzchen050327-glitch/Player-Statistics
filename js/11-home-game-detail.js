@@ -57,7 +57,15 @@
           home:String(game?.home || ''),
           venue:String(game?.venue || ''),
           status:String(game?.status || ''),
-          force:Boolean(force)
+          force:Boolean(force),
+          _networkFresh:Boolean(
+            force
+            || (
+              league === 'CPBL'
+              && date === localISODate()
+              && String(game?.status || '').toLowerCase() === 'final'
+            )
+          )
         })
       });
       const data = await response.json().catch(() => ({}));
