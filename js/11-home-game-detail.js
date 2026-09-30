@@ -1736,6 +1736,9 @@
       if (status === 'final') {
         const plays = Array.isArray(detail?.plays) ? detail.plays : [];
         if (activeHomeGameDetail?.league === 'CPBL' && plays.length === 0) return 0;
+        const cpblSameDay = activeHomeGameDetail?.league === 'CPBL'
+          && String(activeHomeGameDetail?.date || '') === localISODate();
+        if (cpblSameDay) return 5 * 60 * 1000;
         return homeGameDecisionsSettled(detail) && homeGameDecisionCountsSettled(detail)
           ? 12 * 60 * 60 * 1000
           : 60 * 1000;
