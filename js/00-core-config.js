@@ -32,11 +32,23 @@
     const NPB_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/npb-pregame-starters`;
     const CPBL_PREGAME_STARTERS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/pregame-starters`;
 
-    const LEAGUE_STANDINGS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
+    const LEAGUE_STANDINGS_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-standings-state`;
+    const LEAGUE_STANDINGS_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
+    const LEAGUE_STANDINGS_API_URL = LEAGUE_STANDINGS_B_API_URL;
+    function leagueStandingsApiUrl(league = 'CPBL') {
+      const code = String(league || 'CPBL').toUpperCase();
+      return ['CPBL','NPB'].includes(code) ? LEAGUE_STANDINGS_A_API_URL : LEAGUE_STANDINGS_B_API_URL;
+    }
     const LEAGUE_PLAYER_STATS_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-player-stats`;
     const LEAGUE_PREGAME_CENTER_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-pregame-center`;
     const LEAGUE_BULLPEN_STATUS_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-bullpen-status`;
-    const LEAGUE_TEAM_DETAIL_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-team-detail`;
+    const LEAGUE_TEAM_DETAIL_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-team-detail`;
+    const LEAGUE_TEAM_DETAIL_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-team-detail`;
+    const LEAGUE_TEAM_DETAIL_API_URL = LEAGUE_TEAM_DETAIL_B_API_URL;
+    function leagueTeamDetailApiUrl(league = 'CPBL') {
+      const code = String(league || 'CPBL').toUpperCase();
+      return ['CPBL','NPB'].includes(code) ? LEAGUE_TEAM_DETAIL_A_API_URL : LEAGUE_TEAM_DETAIL_B_API_URL;
+    }
     const LEAGUE_GAME_DETAIL_A_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/league-game-detail`;
     const LEAGUE_GAME_DETAIL_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-game-detail`;
     const LEAGUE_GAME_DETAIL_API_URL = LEAGUE_GAME_DETAIL_A_API_URL;
