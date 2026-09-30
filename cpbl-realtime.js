@@ -76,16 +76,29 @@
   }
 
   function publishedDetail(row) {
-    const status = String(row?.status || row?.payload?.status || row?.published_payload?.status || '').toLowerCase();
+    const status = String(
+      row?.published_status ||
+      row?.status ||
+      row?.published_payload?.status ||
+      row?.payload?.status ||
+      ''
+    ).toLowerCase();
     const terminal = isTerminalStatus(status);
-    // LIVE uses the revisioned published snapshot. Once a game is terminal,
-    // prefer the newest payload because official decisions (W/L/HLD/SV/GWRBI)
-    // can settle several minutes after the first FINAL publication.
-    const detail = terminal && row?.payload && typeof row.payload === 'object' && !Array.isArray(row.payload)
-      ? row.payload
-      : row?.published_payload;
+
+    // published_payload is the revisioned client-facing snapshot. The raw
+    // payload can still contain unhydrated/game-only batting totals after FINAL,
+    // so a terminal read must never downgrade from published_payload to payload.
+    const published = row?.published_payload;
+    const raw = row?.payload;
+    const detail = published && typeof published === 'object' && !Array.isArray(published)
+      ? published
+      : (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : null);
+
     if (!terminal && Number(row?.published_revision || 0) <= 0) return null;
-    return detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
+    if (detail && !detail.cacheSource) {
+      detail.cacheSource = published === detail ? 'published_payload' : 'payload_fallback';
+    }
+    return detail;
   }
 
   async function readPublished(date, gameId, kindCode = 'A') {
@@ -97,7 +110,7 @@
       game_date:`eq.${d}`,
       game_id:`eq.${id}`,
       kind_code:`eq.${kind}`,
-      select:'game_date,game_id,kind_code,status,payload,fetched_at,published_payload,published_revision,published_at',
+      select:'game_date,game_id,kind_code,status,published_status,payload,fetched_at,published_payload,published_revision,published_at',
       limit:'1'
     });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/cpbl_live_game_cache?${query}`, {
