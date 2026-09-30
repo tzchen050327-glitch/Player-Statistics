@@ -12759,9 +12759,9 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   background:var(--panel);
 }
 .advanced-stats-table{
-  --advanced-stats-label-width:clamp(130px,calc(50vw - 32px),320px);
+  --advanced-stats-label-width:clamp(108px,26vw,160px);
   width:100%;
-  min-width:920px;
+  min-width:820px;
   border-collapse:separate;
   border-spacing:0;
   color:var(--text);
@@ -12857,7 +12857,7 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
     gap:2px;
   }
   .advanced-stats-table{
-    --advanced-stats-label-width:calc(50vw - 34px);
+    --advanced-stats-label-width:clamp(104px,28vw,120px);
   }
   .advanced-stats-table th,
   .advanced-stats-table td{padding:9px 8px}
