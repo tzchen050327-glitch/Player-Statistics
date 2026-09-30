@@ -354,6 +354,91 @@
           .special-replay-control{height:20px;font-size:6px}
         }
 
+
+        .special-replay-event-panel{
+          display:grid;gap:5px;padding:9px 10px;margin-bottom:7px;
+          border:1px solid rgba(126,193,240,.10);border-radius:10px;
+          background:linear-gradient(180deg,rgba(20,72,106,.30),rgba(5,28,44,.22))
+        }
+        .special-replay-event-kicker{color:#71b7e6;font-size:7px;font-weight:1000;letter-spacing:.10em}
+        .special-replay-event-batter{
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#fff;font-size:11px;font-weight:1000
+        }
+        .special-replay-event-result{color:#b9d9ef;font-size:8px;font-weight:850;line-height:1.35}
+        .special-replay-event-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px}
+        .special-replay-event-badge{
+          padding:3px 6px;border-radius:999px;background:rgba(108,183,235,.10);
+          color:#8cccf7;font-size:6px;font-weight:950
+        }
+
+        @media (min-width:1200px) and (min-height:650px){
+          .special-replay-broadcast{
+            grid-template-columns:minmax(250px,20%) minmax(0,60%) minmax(250px,20%);
+            gap:12px;padding:14px
+          }
+          .special-replay-lineup{grid-template-rows:72px 38px minmax(0,1fr)}
+          .special-replay-lineup-head{padding:0 16px}
+          .special-replay-lineup-side{font-size:11px}
+          .special-replay-lineup-team{font-size:20px}
+          .special-replay-lineup-title{font-size:9px;padding:5px 8px}
+          .special-replay-lineup-cols,.special-replay-lineup-row{
+            grid-template-columns:24px minmax(0,1fr) 30px 30px 38px 48px;
+            gap:4px;padding:0 12px
+          }
+          .special-replay-lineup-cols{font-size:10px}
+          .special-replay-lineup-list{padding:8px}
+          .special-replay-lineup-row{font-size:11px}
+          .special-replay-lineup-name{font-size:15px}
+          .special-replay-lineup-pos{font-size:10px!important}
+
+          .special-replay-center{grid-template-rows:110px 96px minmax(0,1fr) 48px}
+          .special-replay-score{gap:12px;padding:10px 42px 8px}
+          .special-replay-score-team{font-size:18px}
+          .special-replay-score-num{font-size:58px;min-width:60px}
+          .special-replay-status-pill{min-width:88px;padding:8px 13px;font-size:11px}
+          .special-replay-score-sub{bottom:6px;font-size:9px}
+
+          .special-replay-linescore th,.special-replay-linescore td{font-size:11px}
+          .special-replay-linescore thead th{height:32px;font-size:10px}
+          .special-replay-linescore th:first-child,.special-replay-linescore td:first-child{
+            width:112px;padding-left:16px;font-size:12px
+          }
+
+          .special-replay-arena{grid-template-columns:minmax(0,1fr) 31%;gap:12px;padding:12px}
+          .special-replay-field-label{left:14px;top:12px;font-size:10px;padding:5px 9px}
+          .special-replay-defender{font-size:11px;padding:6px 10px}
+          .special-replay-defender small{font-size:8px}
+          .special-replay-callout{left:14px;right:14px;bottom:12px;padding:10px 13px}
+          .special-replay-callout-tag{font-size:9px;padding:5px 8px}
+          .special-replay-callout-copy strong{font-size:14px}
+          .special-replay-callout-copy span{font-size:11px}
+
+          .special-replay-state-card{
+            grid-template-rows:auto auto 132px auto minmax(0,1fr);
+            padding:14px
+          }
+          .special-replay-state-title{font-size:10px}
+          .special-replay-event-panel{gap:7px;padding:12px 13px;margin-bottom:8px}
+          .special-replay-event-kicker{font-size:9px}
+          .special-replay-event-batter{font-size:16px}
+          .special-replay-event-result{font-size:13px;line-height:1.45}
+          .special-replay-event-badge{font-size:9px;padding:4px 7px}
+          .special-replay-diamond{width:86px}
+          .special-replay-state-inning{font-size:14px}
+          .special-replay-state-info{gap:8px;padding-top:10px}
+          .special-replay-state-info-row{grid-template-columns:40px minmax(0,1fr) auto;gap:8px}
+          .special-replay-state-info-row span:first-child{font-size:9px}
+          .special-replay-state-info-row strong{font-size:12px}
+          .special-replay-outs{gap:5px}
+          .special-replay-outs i{width:9px;height:9px}
+          .special-replay-prev{font-size:9px;padding-top:8px}
+
+          .special-replay-progress-top{font-size:9px}
+          .special-replay-control{height:32px;min-width:38px;font-size:10px}
+          .special-replay-control.primary{min-width:62px}
+        }
+
         @media (orientation:portrait){
           .special-replay-broadcast{grid-template-columns:1fr;padding:7px}
           .special-replay-lineup{display:none}
@@ -538,7 +623,6 @@
     function specialReplayCenterHtml(state,event) {
       const detail = state.detail;
       const payload = detail.payload || {};
-      const summary = payload.summary || {};
       const scores = Array.isArray(event.s) ? event.s : [0,0];
       const prev = specialReplayPreviousPa(state);
       const pitcher = specialReplayCurrentPitcher(state,event);
@@ -549,7 +633,56 @@
       const eventTitle = event.n || specialReplayInningLabel(event);
       const eventCopy = event.r || '';
       const progress = Math.max(0, Math.min(100, ((state.index + 1) / state.events.length) * 100));
-      return '<main class="special-replay-center"><div class="special-replay-rotate-hint">請將手機橫向觀看</div><div class="special-replay-score"><span class="special-replay-score-team away">' + escapeHtml(detail.away_team || '中華台北') + '</span><strong class="special-replay-score-num">' + (Number(scores[0]) || 0) + '</strong><span class="special-replay-status-pill">' + escapeHtml(statusText) + '</span><strong class="special-replay-score-num">' + (Number(scores[1]) || 0) + '</strong><span class="special-replay-score-team home">' + escapeHtml(detail.home_team || '韓國') + '</span><span class="special-replay-score-sub">' + escapeHtml([detail.game_date,detail.venue].filter(Boolean).join('｜')) + '</span></div>' + specialReplayLineScoreHtml(detail,event) + '<div class="special-replay-arena"><section class="special-replay-field"><span class="special-replay-field-label">' + escapeHtml(fieldLabel) + '</span><div class="special-replay-field-lines"><i class="special-replay-field-line left"></i><i class="special-replay-field-line right"></i><i class="special-replay-infield-line"></i></div>' + specialReplayDefenseHtml(state,event) + '<div class="special-replay-callout"><span class="special-replay-callout-tag">' + escapeHtml(specialReplayKindLabel(event.k)) + '</span><div class="special-replay-callout-copy"><strong>' + escapeHtml(eventTitle) + '</strong><span>' + escapeHtml(eventCopy) + '</span></div></div></section><aside class="special-replay-state-card"><span class="special-replay-state-title">壘上</span><div class="special-replay-diamond-wrap">' + specialReplayBaseHtml(event.b) + '</div><div class="special-replay-state-inning">' + escapeHtml(specialReplayInningLabel(event)) + '</div><div class="special-replay-state-info"><div class="special-replay-state-info-row"><span>投手</span><strong>' + escapeHtml(pitcher || '-') + '</strong>' + specialReplayOutsHtml(event.o) + '</div><div class="special-replay-state-info-row"><span>打者</span><strong>' + escapeHtml(batter || event.n || '-') + '</strong><span></span></div><div class="special-replay-state-info-row"><span>比分</span><strong>' + (Number(scores[0]) || 0) + ' : ' + (Number(scores[1]) || 0) + '</strong><span></span></div><div class="special-replay-prev">上一棒　' + escapeHtml(prev ? prev.n + '｜' + prev.r : '—') + '</div></div></aside></div><div class="special-replay-footer"><div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(specialReplayKindLabel(event.k)) + ' · ' + (Math.max(250,Number(event.d)||1000)/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div><div class="special-replay-controls"><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div></div></main>';
+      const baseMask = Number(event.b) || 0;
+      const baseText = baseMask === 0 ? '壘上無人'
+        : [baseMask & 1 ? '一壘' : '', baseMask & 2 ? '二壘' : '', baseMask & 4 ? '三壘' : ''].filter(Boolean).join('、') + '有人';
+      const eventBadges = [
+        specialReplayInningLabel(event),
+        String(Math.max(0,Math.min(3,Number(event.o)||0))) + ' 出局',
+        baseText,
+        (Number(scores[0]) || 0) + '：' + (Number(scores[1]) || 0)
+      ];
+
+      return '<main class="special-replay-center">'
+        + '<div class="special-replay-rotate-hint">請將手機橫向觀看</div>'
+        + '<div class="special-replay-score">'
+        + '<span class="special-replay-score-team away">' + escapeHtml(detail.away_team || '中華台北') + '</span>'
+        + '<strong class="special-replay-score-num">' + (Number(scores[0]) || 0) + '</strong>'
+        + '<span class="special-replay-status-pill">' + escapeHtml(statusText) + '</span>'
+        + '<strong class="special-replay-score-num">' + (Number(scores[1]) || 0) + '</strong>'
+        + '<span class="special-replay-score-team home">' + escapeHtml(detail.home_team || '韓國') + '</span>'
+        + '<span class="special-replay-score-sub">' + escapeHtml([detail.game_date,detail.venue].filter(Boolean).join('｜')) + '</span>'
+        + '</div>'
+        + specialReplayLineScoreHtml(detail,event)
+        + '<div class="special-replay-arena">'
+        + '<section class="special-replay-field">'
+        + '<span class="special-replay-field-label">' + escapeHtml(fieldLabel) + '</span>'
+        + '<div class="special-replay-field-lines"><i class="special-replay-field-line left"></i><i class="special-replay-field-line right"></i><i class="special-replay-infield-line"></i></div>'
+        + specialReplayDefenseHtml(state,event)
+        + '<div class="special-replay-callout"><span class="special-replay-callout-tag">' + escapeHtml(specialReplayKindLabel(event.k)) + '</span><div class="special-replay-callout-copy"><strong>' + escapeHtml(eventTitle) + '</strong><span>' + escapeHtml(eventCopy) + '</span></div></div>'
+        + '</section>'
+        + '<aside class="special-replay-state-card">'
+        + '<span class="special-replay-state-title">本打席 / 本事件</span>'
+        + '<div class="special-replay-event-panel">'
+        + '<span class="special-replay-event-kicker">' + escapeHtml(specialReplayKindLabel(event.k)) + '</span>'
+        + '<strong class="special-replay-event-batter">' + escapeHtml(eventTitle) + '</strong>'
+        + '<div class="special-replay-event-result">' + escapeHtml(eventCopy || '—') + '</div>'
+        + '<div class="special-replay-event-badges">' + eventBadges.map(text => '<span class="special-replay-event-badge">' + escapeHtml(text) + '</span>').join('') + '</div>'
+        + '</div>'
+        + '<div class="special-replay-diamond-wrap">' + specialReplayBaseHtml(event.b) + '</div>'
+        + '<div class="special-replay-state-inning">' + escapeHtml(specialReplayInningLabel(event)) + '</div>'
+        + '<div class="special-replay-state-info">'
+        + '<div class="special-replay-state-info-row"><span>投手</span><strong>' + escapeHtml(pitcher || '-') + '</strong>' + specialReplayOutsHtml(event.o) + '</div>'
+        + '<div class="special-replay-state-info-row"><span>打者</span><strong>' + escapeHtml(batter || event.n || '-') + '</strong><span></span></div>'
+        + '<div class="special-replay-prev">上一棒　' + escapeHtml(prev ? prev.n + '｜' + prev.r : '—') + '</div>'
+        + '</div>'
+        + '</aside>'
+        + '</div>'
+        + '<div class="special-replay-footer">'
+        + '<div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(specialReplayKindLabel(event.k)) + ' · ' + (Math.max(250,Number(event.d)||1000)/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div>'
+        + '<div class="special-replay-controls"><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div>'
+        + '</div>'
+        + '</main>';
     }
 
     async function openSpecialGameReplay(game) {
