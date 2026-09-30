@@ -13217,6 +13217,10 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   .pitcher-batter-select-grid{
     grid-template-columns:1fr;
   }
+  .pitcher-batter-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pitcher-batter-opponent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pitcher-batter-step{padding:10px}
+  .pitcher-batter-player-results{max-height:230px}
   .pitcher-batter-query{
     width:100%;
     justify-self:stretch;
@@ -13240,4 +13244,280 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
     max-width:122px;
   }
 }
+
+.pitcher-batter-flow-head>div{
+  display:grid;
+  gap:3px;
+}
+.pitcher-batter-step{
+  display:grid;
+  gap:8px;
+  padding:12px;
+  border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--panel) 88%,var(--bg));
+}
+.pitcher-batter-step.disabled{
+  opacity:.58;
+}
+.pitcher-batter-step-title{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+}
+.pitcher-batter-step-title b{
+  flex:0 0 auto;
+  display:inline-grid;
+  place-items:center;
+  width:21px;
+  height:21px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  color:var(--accent);
+  font-size:9px;
+}
+.pitcher-batter-step-title span{
+  color:var(--text);
+  font-size:11px;
+  font-weight:950;
+}
+.pitcher-batter-step-title small{
+  min-width:0;
+  margin-left:auto;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+}
+.pitcher-batter-chip-grid{
+  display:grid;
+  gap:7px;
+}
+.pitcher-batter-team-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.pitcher-batter-opponent-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.pitcher-batter-choice,
+.pitcher-batter-year{
+  min-width:0;
+  min-height:40px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--text);
+  font:inherit;
+  font-size:10px;
+  font-weight:900;
+  line-height:1.2;
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,transform .12s ease;
+}
+.pitcher-batter-choice:active,
+.pitcher-batter-year:active{
+  transform:scale(.98);
+}
+.pitcher-batter-choice.active,
+.pitcher-batter-year.active{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 58%,transparent);
+  color:var(--text);
+}
+.pitcher-batter-choice:disabled,
+.pitcher-batter-year:disabled{
+  cursor:not-allowed;
+}
+.pitcher-batter-combobox{
+  position:relative;
+  z-index:8;
+}
+.pitcher-batter-combobox.disabled{
+  opacity:.55;
+}
+.pitcher-batter-search-box{
+  position:relative;
+  display:flex;
+  align-items:center;
+  min-height:46px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--panel);
+  overflow:hidden;
+}
+.pitcher-batter-search-box:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent);
+}
+.pitcher-batter-search-icon{
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  width:40px;
+  color:var(--muted);
+  font-size:20px;
+  font-weight:800;
+  transform:rotate(-18deg);
+}
+.pitcher-batter-search-box input{
+  min-width:0;
+  flex:1 1 auto;
+  height:44px;
+  padding:0 6px 0 0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font:inherit;
+  font-size:12px;
+  font-weight:900;
+}
+.pitcher-batter-search-box input::placeholder{
+  color:var(--muted);
+  font-weight:750;
+}
+.pitcher-batter-search-box input::-webkit-search-cancel-button{
+  display:none;
+}
+.pitcher-batter-search-clear{
+  flex:0 0 auto;
+  width:38px;
+  height:38px;
+  margin-right:3px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:var(--muted);
+  font-size:21px;
+  line-height:1;
+  cursor:pointer;
+}
+.pitcher-batter-player-results{
+  position:absolute;
+  z-index:20;
+  top:calc(100% + 6px);
+  left:0;
+  right:0;
+  max-height:260px;
+  overflow-y:auto;
+  padding:6px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel);
+  box-shadow:0 16px 34px rgba(0,0,0,.32);
+  overscroll-behavior:contain;
+}
+.pitcher-batter-player-results.hidden{
+  display:none;
+}
+.pitcher-batter-player-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 10px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
+}
+.pitcher-batter-player-option:hover,
+.pitcher-batter-player-option:focus-visible{
+  background:color-mix(in srgb,var(--accent) 9%,transparent);
+  outline:none;
+}
+.pitcher-batter-player-option.active{
+  background:color-mix(in srgb,var(--accent) 13%,transparent);
+}
+.pitcher-batter-player-option>span{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+}
+.pitcher-batter-player-option strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+  font-weight:950;
+}
+.pitcher-batter-player-option small,
+.pitcher-batter-player-option em{
+  flex:0 0 auto;
+  color:var(--muted);
+  font-size:8px;
+  font-style:normal;
+  font-weight:850;
+}
+.pitcher-batter-player-option.active em{
+  color:var(--accent);
+}
+.pitcher-batter-search-empty{
+  padding:14px 10px;
+  color:var(--muted);
+  text-align:center;
+  font-size:9px;
+  font-weight:800;
+}
+.pitcher-batter-selected-player{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  padding:2px 2px 0;
+}
+.pitcher-batter-selected-player span{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+}
+.pitcher-batter-selected-player strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text);
+  font-size:10px;
+  font-weight:950;
+}
+.pitcher-batter-selected-player em{
+  flex:0 0 auto;
+  padding:3px 7px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  color:var(--accent);
+  font-size:8px;
+  font-style:normal;
+  font-weight:900;
+}
+.pitcher-batter-year-strip{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:2px;
+  scrollbar-width:none;
+  overscroll-behavior-inline:contain;
+}
+.pitcher-batter-year-strip::-webkit-scrollbar{
+  display:none;
+}
+.pitcher-batter-year{
+  flex:0 0 auto;
+  min-width:65px;
+}
+
+.pitcher-batter-flow>.pitcher-batter-query{width:100%;justify-self:stretch}
 /* ===== PITCHER BATTER MATCHUP END ===== */
