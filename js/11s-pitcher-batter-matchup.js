@@ -21,6 +21,10 @@
     let pitcherBatterError = '';
     let pitcherBatterHasQueried = false;
     let pitcherBatterSeq = 0;
+    let pitcherBatterPlayerQuery = '';
+    let pitcherBatterPlayerOpen = false;
+    let pitcherBatterSource = '';
+    let pitcherBatterHistoricalUnavailable = false;
 
     function pitcherBatterTeamName(code) {
       return PITCHER_BATTER_TEAMS.find(item => item.code === String(code || '').slice(0,3))?.name || '';
@@ -53,6 +57,64 @@
       return pitcherBatterRoster.find(item => String(item.acnt) === String(pitcherBatterPlayerAcnt)) || null;
     }
 
+    function pitcherBatterRole() {
+      const position = String(pitcherBatterPlayerProfile?.position || '');
+      const roster = pitcherBatterSelectedRosterPlayer();
+      if (/投手/.test(position)) return 'pitching';
+      if (roster?.role === 'pitcher') return 'pitching';
+      return 'batting';
+    }
+
+    function pitcherBatterFilteredPlayers() {
+      const query = pitcherBatterCleanName(pitcherBatterPlayerQuery).toLocaleLowerCase('zh-Hant');
+      const list = query
+        ? pitcherBatterRoster.filter(item => pitcherBatterCleanName(item.name).toLocaleLowerCase('zh-Hant').includes(query))
+        : pitcherBatterRoster;
+      return list.slice(0, 14);
+    }
+
+    function pitcherBatterPlayerRoleLabel(player) {
+      if (player?.role === 'pitcher') return '投手';
+      if (player?.role === 'hitter') return '打者';
+      if (player?.role === 'two-way') return '投打';
+      return '球員';
+    }
+
+    function pitcherBatterRenderPlayerResults() {
+      const box = document.getElementById('pitcherBatterPlayerResults');
+      if (!box) return;
+      const input = document.getElementById('pitcherBatterPlayerSearch');
+      const players = pitcherBatterFilteredPlayers();
+      const open = pitcherBatterPlayerOpen && pitcherBatterTeam && !pitcherBatterRosterLoading;
+      box.classList.toggle('hidden', !open);
+      input?.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (!open) return;
+      box.innerHTML = pitcherBatterRosterError
+        ? `<div class="pitcher-batter-search-empty">${escapeHtml(pitcherBatterRosterError)}</div>`
+        : !pitcherBatterRoster.length
+          ? '<div class="pitcher-batter-search-empty">目前沒有可選球員。</div>'
+          : !players.length
+            ? `<div class="pitcher-batter-search-empty">找不到「${escapeHtml(pitcherBatterPlayerQuery)}」</div>`
+            : players.map(item => `
+                <button type="button" class="pitcher-batter-player-option ${String(item.acnt) === String(pitcherBatterPlayerAcnt) ? 'active' : ''}" data-pitcher-batter-player="${escapeHtml(item.acnt)}">
+                  <span>
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <small>${escapeHtml(pitcherBatterPlayerRoleLabel(item))}</small>
+                  </span>
+                  <em>${String(item.acnt) === String(pitcherBatterPlayerAcnt) ? '已選' : '選擇'}</em>
+                </button>
+              `).join('');
+      box.querySelectorAll('[data-pitcher-batter-player]').forEach(button => {
+        button.addEventListener('click', () => {
+          const player = pitcherBatterRoster.find(item => String(item.acnt) === String(button.dataset.pitcherBatterPlayer || ''));
+          if (!player) return;
+          pitcherBatterPlayerQuery = player.name;
+          pitcherBatterPlayerOpen = false;
+          void pitcherBatterLoadPlayer(player.acnt);
+        });
+      });
+    }
+
     function pitcherBatterIsPitcher() {
       const position = String(pitcherBatterPlayerProfile?.position || '');
       if (/投手/.test(position)) return true;
@@ -71,11 +133,15 @@
       pitcherBatterRoster = [];
       pitcherBatterPlayerAcnt = '';
       pitcherBatterPlayerProfile = null;
+      pitcherBatterPlayerQuery = '';
+      pitcherBatterPlayerOpen = false;
       pitcherBatterYears = [];
       pitcherBatterOpponent = '';
       pitcherBatterYear = 9999;
       pitcherBatterRows = [];
       pitcherBatterError = '';
+      pitcherBatterSource = '';
+      pitcherBatterHistoricalUnavailable = false;
       pitcherBatterHasQueried = false;
       renderPitcherBatterPage();
       try {
@@ -104,29 +170,34 @@
       const id = String(acnt || '').trim();
       if (!id) return;
       const seq = ++pitcherBatterSeq;
+      const rosterPlayer = pitcherBatterRoster.find(item => String(item.acnt) === id) || null;
       pitcherBatterPlayerAcnt = id;
-      pitcherBatterPlayerProfile = null;
-      pitcherBatterYears = [];
+      pitcherBatterPlayerQuery = rosterPlayer?.name || pitcherBatterPlayerQuery;
+      pitcherBatterPlayerOpen = false;
+      pitcherBatterPlayerProfile = rosterPlayer ? {
+        acnt:id,
+        name:rosterPlayer.name,
+        position:rosterPlayer.role === 'pitcher' ? '投手' : ''
+      } : null;
+      pitcherBatterYears = [CURRENT_YEAR];
       pitcherBatterOpponent = '';
       pitcherBatterYear = 9999;
       pitcherBatterRows = [];
       pitcherBatterError = '';
+      pitcherBatterSource = '';
+      pitcherBatterHistoricalUnavailable = false;
       pitcherBatterHasQueried = false;
       renderPitcherBatterPage();
       try {
-        const [profileData, historyData] = await Promise.all([
-          cpblRequest('player-profile', { acnt:id }),
-          cpblRequest('season-history', { acnt:id, kindCode:'A' })
-        ]);
+        const profileData = await cpblRequest('player-profile', { acnt:id });
         if (seq !== pitcherBatterSeq) return;
-        pitcherBatterPlayerProfile = profileData?.player || null;
-        pitcherBatterYears = (Array.isArray(historyData?.history?.years) ? historyData.history.years : [])
-          .map(Number)
-          .filter(year => Number.isInteger(year) && year >= 1990 && year <= CURRENT_YEAR)
-          .sort((a,b) => b-a);
+        pitcherBatterPlayerProfile = profileData?.player || pitcherBatterPlayerProfile;
+        const debut = Math.max(1990, Math.min(CURRENT_YEAR, Number(pitcherBatterPlayerProfile?.debutYear) || CURRENT_YEAR));
+        pitcherBatterYears = Array.from({ length:CURRENT_YEAR - debut + 1 }, (_, index) => CURRENT_YEAR - index);
+        pitcherBatterPlayerQuery = pitcherBatterCleanName(pitcherBatterPlayerProfile?.name || rosterPlayer?.name || pitcherBatterPlayerQuery);
       } catch (error) {
         if (seq !== pitcherBatterSeq) return;
-        pitcherBatterError = error?.message || '球員資料讀取失敗。';
+        pitcherBatterYears = [CURRENT_YEAR];
       } finally {
         if (seq === pitcherBatterSeq) renderPitcherBatterPage();
       }
@@ -138,6 +209,8 @@
       pitcherBatterLoading = true;
       pitcherBatterError = '';
       pitcherBatterRows = [];
+      pitcherBatterSource = '';
+      pitcherBatterHistoricalUnavailable = false;
       pitcherBatterHasQueried = true;
       renderPitcherBatterPage();
       try {
@@ -145,13 +218,20 @@
           acnt:pitcherBatterPlayerAcnt,
           year:pitcherBatterYear,
           kindCode:'A',
-          fightingTeamNo:pitcherBatterOpponent
+          fightingTeamNo:pitcherBatterOpponent,
+          role:pitcherBatterRole()
         });
         if (seq !== pitcherBatterSeq) return;
-        pitcherBatterRows = Array.isArray(data?.matchup?.rows) ? data.matchup.rows : [];
+        const matchup = data?.matchup || {};
+        pitcherBatterRows = Array.isArray(matchup?.rows) ? matchup.rows : [];
+        pitcherBatterSource = String(matchup?.source || '');
+        pitcherBatterHistoricalUnavailable = Boolean(matchup?.historicalUnavailable);
       } catch (error) {
         if (seq !== pitcherBatterSeq) return;
-        pitcherBatterError = error?.message || '投打對決資料讀取失敗。';
+        const message = String(error?.message || '');
+        pitcherBatterError = /(?:404|CPBL GET|redirect)/i.test(message)
+          ? 'CPBL 投打對決目前連線異常，請稍後再試。'
+          : (message || '投打對決資料讀取失敗。');
       } finally {
         if (seq === pitcherBatterSeq) {
           pitcherBatterLoading = false;
@@ -246,53 +326,81 @@
     }
 
     function pitcherBatterBind() {
-      document.getElementById('pitcherBatterTeamSelect')?.addEventListener('change', event => {
-        pitcherBatterTeam = String(event.target.value || '');
-        if (pitcherBatterTeam) void pitcherBatterLoadRoster(pitcherBatterTeam);
-        else {
-          pitcherBatterRoster = [];
-          pitcherBatterPlayerAcnt = '';
-          pitcherBatterPlayerProfile = null;
-          pitcherBatterYears = [];
-          pitcherBatterOpponent = '';
-          pitcherBatterRows = [];
-          renderPitcherBatterPage();
+      document.querySelectorAll('[data-pitcher-batter-team]').forEach(button => {
+        button.addEventListener('click', () => {
+          const team = String(button.dataset.pitcherBatterTeam || '');
+          if (!team || team === pitcherBatterTeam) return;
+          pitcherBatterTeam = team;
+          void pitcherBatterLoadRoster(team);
+        });
+      });
+
+      const playerInput = document.getElementById('pitcherBatterPlayerSearch');
+      playerInput?.addEventListener('focus', () => {
+        pitcherBatterPlayerOpen = true;
+        pitcherBatterRenderPlayerResults();
+      });
+      playerInput?.addEventListener('input', event => {
+        pitcherBatterPlayerQuery = String(event.target.value || '');
+        pitcherBatterPlayerOpen = true;
+        pitcherBatterRenderPlayerResults();
+      });
+      playerInput?.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          pitcherBatterPlayerOpen = false;
+          pitcherBatterRenderPlayerResults();
+          playerInput.blur();
         }
       });
+      document.getElementById('pitcherBatterPlayerClear')?.addEventListener('click', () => {
+        pitcherBatterPlayerQuery = '';
+        pitcherBatterPlayerAcnt = '';
+        pitcherBatterPlayerProfile = null;
+        pitcherBatterPlayerOpen = true;
+        pitcherBatterYears = [];
+        pitcherBatterOpponent = '';
+        pitcherBatterYear = 9999;
+        pitcherBatterRows = [];
+        pitcherBatterError = '';
+        pitcherBatterSource = '';
+        pitcherBatterHistoricalUnavailable = false;
+        pitcherBatterHasQueried = false;
+        renderPitcherBatterPage();
+        requestAnimationFrame(() => document.getElementById('pitcherBatterPlayerSearch')?.focus());
+      });
 
-      document.getElementById('pitcherBatterPlayerSelect')?.addEventListener('change', event => {
-        const acnt = String(event.target.value || '');
-        pitcherBatterPlayerAcnt = acnt;
-        if (acnt) void pitcherBatterLoadPlayer(acnt);
-        else {
-          pitcherBatterPlayerProfile = null;
-          pitcherBatterYears = [];
-          pitcherBatterOpponent = '';
+      document.querySelectorAll('[data-pitcher-batter-opponent]').forEach(button => {
+        button.addEventListener('click', () => {
+          if (!pitcherBatterPlayerAcnt) return;
+          pitcherBatterOpponent = String(button.dataset.pitcherBatterOpponent || '');
           pitcherBatterRows = [];
+          pitcherBatterError = '';
+          pitcherBatterSource = '';
+          pitcherBatterHistoricalUnavailable = false;
+          pitcherBatterHasQueried = false;
           renderPitcherBatterPage();
-        }
+        });
       });
 
-      document.getElementById('pitcherBatterOpponentSelect')?.addEventListener('change', event => {
-        pitcherBatterOpponent = String(event.target.value || '');
-        pitcherBatterRows = [];
-        pitcherBatterError = '';
-        pitcherBatterHasQueried = false;
-        renderPitcherBatterPage();
-      });
-
-      document.getElementById('pitcherBatterYearSelect')?.addEventListener('change', event => {
-        const raw = String(event.target.value || '9999');
-        pitcherBatterYear = raw === '9999' ? 9999 : Number(raw);
-        pitcherBatterRows = [];
-        pitcherBatterError = '';
-        pitcherBatterHasQueried = false;
-        renderPitcherBatterPage();
+      document.querySelectorAll('[data-pitcher-batter-year]').forEach(button => {
+        button.addEventListener('click', () => {
+          if (!pitcherBatterPlayerAcnt) return;
+          const raw = String(button.dataset.pitcherBatterYear || '9999');
+          pitcherBatterYear = raw === '9999' ? 9999 : Number(raw);
+          pitcherBatterRows = [];
+          pitcherBatterError = '';
+          pitcherBatterSource = '';
+          pitcherBatterHistoricalUnavailable = false;
+          pitcherBatterHasQueried = false;
+          renderPitcherBatterPage();
+        });
       });
 
       document.getElementById('pitcherBatterQueryBtn')?.addEventListener('click', () => {
         void pitcherBatterQuery();
       });
+
+      pitcherBatterRenderPlayerResults();
     }
 
     function renderPitcherBatterPage() {
@@ -302,50 +410,101 @@
       const selectedName = pitcherBatterCleanName(pitcherBatterPlayerProfile?.name || selectedRoster?.name || '');
       const selectedPosition = String(pitcherBatterPlayerProfile?.position || (selectedRoster?.role === 'pitcher' ? '投手' : selectedRoster?.role === 'hitter' ? '打者' : '')).trim();
       const periodLabel = pitcherBatterYear === 9999 ? '生涯' : `${pitcherBatterYear} 年`;
+      const sourceLabel = pitcherBatterSource === 'cpbl-official'
+        ? '來源：CPBL 官方投打對決'
+        : pitcherBatterSource
+          ? '來源：CPBL 官方資料同步備援'
+          : '';
 
       els.pitcherBatterPageContent.innerHTML = `
         <section class="pitcher-batter-flow">
           <div class="pitcher-batter-flow-head">
-            <strong>中職官方投打對決</strong>
-            <span>依序選擇球隊、球員、對戰球隊與年度。</span>
+            <div>
+              <strong>中職投打對決</strong>
+              <span>球員可直接輸入姓名搜尋，不再使用系統下拉選單。</span>
+            </div>
           </div>
-          <div class="pitcher-batter-select-grid">
-            <label>
-              <span><b>1</b> 球隊</span>
-              <select id="pitcherBatterTeamSelect">
-                <option value="">選擇球隊</option>
-                ${PITCHER_BATTER_TEAMS.map(item => `<option value="${item.code}" ${pitcherBatterTeam === item.code ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
-              </select>
-            </label>
-            <label>
-              <span><b>2</b> 球員</span>
-              <select id="pitcherBatterPlayerSelect" ${!pitcherBatterTeam || pitcherBatterRosterLoading ? 'disabled' : ''}>
-                <option value="">${pitcherBatterRosterLoading ? '讀取球員中…' : pitcherBatterRosterError ? '名單讀取失敗' : '選擇球員'}</option>
-                ${pitcherBatterRoster.map(item => `<option value="${escapeHtml(item.acnt)}" ${pitcherBatterPlayerAcnt === item.acnt ? 'selected' : ''}>${escapeHtml(item.name)}${item.role === 'pitcher' ? '｜投手' : item.role === 'hitter' ? '｜打者' : ''}</option>`).join('')}
-              </select>
-            </label>
-            <label>
-              <span><b>3</b> 對戰球隊</span>
-              <select id="pitcherBatterOpponentSelect" ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}>
-                <option value="">選擇對戰球隊</option>
-                ${opponentTeams.map(item => `<option value="${item.code}" ${pitcherBatterOpponent === item.code ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
-              </select>
-            </label>
-            <label>
-              <span><b>4</b> 年度</span>
-              <select id="pitcherBatterYearSelect" ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}>
-                <option value="9999" ${pitcherBatterYear === 9999 ? 'selected' : ''}>生涯</option>
-                ${pitcherBatterYears.map(year => `<option value="${year}" ${pitcherBatterYear === year ? 'selected' : ''}>${year}</option>`).join('')}
-              </select>
-            </label>
+
+          <div class="pitcher-batter-step">
+            <div class="pitcher-batter-step-title"><b>1</b><span>選擇球隊</span></div>
+            <div class="pitcher-batter-chip-grid pitcher-batter-team-grid">
+              ${PITCHER_BATTER_TEAMS.map(item => `
+                <button type="button" class="pitcher-batter-choice ${pitcherBatterTeam === item.code ? 'active' : ''}" data-pitcher-batter-team="${item.code}">
+                  ${escapeHtml(item.name)}
+                </button>
+              `).join('')}
+            </div>
           </div>
+
+          <div class="pitcher-batter-step">
+            <div class="pitcher-batter-step-title">
+              <b>2</b><span>搜尋球員</span>
+              ${pitcherBatterTeam ? `<small>${escapeHtml(pitcherBatterTeamName(pitcherBatterTeam))}</small>` : ''}
+            </div>
+            <div class="pitcher-batter-combobox ${!pitcherBatterTeam ? 'disabled' : ''}">
+              <div class="pitcher-batter-search-box">
+                <span class="pitcher-batter-search-icon" aria-hidden="true">⌕</span>
+                <input
+                  id="pitcherBatterPlayerSearch"
+                  name="pitcher-batter-player-query"
+                  type="search"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="pitcherBatterPlayerResults"
+                  aria-expanded="false"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  enterkeyhint="search"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  placeholder="${pitcherBatterRosterLoading ? '正在讀取球員…' : pitcherBatterTeam ? '輸入球員姓名' : '先選擇球隊'}"
+                  value="${escapeHtml(pitcherBatterPlayerQuery)}"
+                  ${!pitcherBatterTeam || pitcherBatterRosterLoading ? 'disabled' : ''}
+                />
+                ${pitcherBatterPlayerQuery ? '<button id="pitcherBatterPlayerClear" class="pitcher-batter-search-clear" type="button" aria-label="清除球員">×</button>' : ''}
+              </div>
+              <div id="pitcherBatterPlayerResults" class="pitcher-batter-player-results hidden"></div>
+            </div>
+            ${selectedName ? `
+              <div class="pitcher-batter-selected-player">
+                <span>已選球員</span>
+                <strong>${escapeHtml(selectedName)}</strong>
+                <em>${escapeHtml(selectedPosition || pitcherBatterPlayerRoleLabel(selectedRoster))}</em>
+              </div>
+            ` : ''}
+            ${pitcherBatterRosterError ? `<div class="pitcher-batter-inline-error">${escapeHtml(pitcherBatterRosterError)}</div>` : ''}
+          </div>
+
+          <div class="pitcher-batter-step ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}">
+            <div class="pitcher-batter-step-title"><b>3</b><span>對戰球隊</span></div>
+            <div class="pitcher-batter-chip-grid pitcher-batter-opponent-grid">
+              ${opponentTeams.map(item => `
+                <button type="button" class="pitcher-batter-choice ${pitcherBatterOpponent === item.code ? 'active' : ''}" data-pitcher-batter-opponent="${item.code}" ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}>
+                  ${escapeHtml(item.name)}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="pitcher-batter-step ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}">
+            <div class="pitcher-batter-step-title"><b>4</b><span>年度</span></div>
+            <div class="pitcher-batter-year-strip">
+              <button type="button" class="pitcher-batter-year ${pitcherBatterYear === 9999 ? 'active' : ''}" data-pitcher-batter-year="9999" ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}>生涯</button>
+              ${pitcherBatterYears.map(year => `
+                <button type="button" class="pitcher-batter-year ${pitcherBatterYear === year ? 'active' : ''}" data-pitcher-batter-year="${year}" ${!pitcherBatterPlayerAcnt ? 'disabled' : ''}>${year}</button>
+              `).join('')}
+            </div>
+          </div>
+
           <button id="pitcherBatterQueryBtn" class="press-btn pitcher-batter-query" type="button" ${!pitcherBatterPlayerAcnt || !pitcherBatterOpponent || pitcherBatterLoading ? 'disabled' : ''}>
             ${pitcherBatterLoading ? '查詢中…' : '查詢投打對決'}
           </button>
-          ${pitcherBatterRosterError ? `<div class="pitcher-batter-inline-error">${escapeHtml(pitcherBatterRosterError)}</div>` : ''}
         </section>
 
-        ${selectedName ? `
+        ${selectedName && pitcherBatterOpponent ? `
           <section class="pitcher-batter-selection-summary">
             <div>
               <span>查看球員</span>
@@ -354,16 +513,21 @@
             </div>
             <div>
               <span>對戰條件</span>
-              <strong>${escapeHtml(pitcherBatterTeamName(pitcherBatterOpponent) || '尚未選擇')}</strong>
+              <strong>${escapeHtml(pitcherBatterTeamName(pitcherBatterOpponent))}</strong>
               <small>${escapeHtml(periodLabel)}｜一軍例行賽</small>
             </div>
           </section>
         ` : ''}
 
         ${pitcherBatterLoading ? `
-          <div class="player-tools-empty">正在讀取 CPBL 官方投打對決…</div>
+          <div class="player-tools-empty">正在讀取投打對決資料…</div>
         ` : pitcherBatterError ? `
           <div class="player-tools-error">${escapeHtml(pitcherBatterError)}</div>
+        ` : pitcherBatterHistoricalUnavailable ? `
+          <div class="pitcher-batter-empty">
+            <strong>${escapeHtml(String(pitcherBatterYear))} 年目前無法從雲端備援取得</strong>
+            <span>CPBL 主站目前會阻擋雲端查詢；生涯與 ${CURRENT_YEAR} 單年度仍可查。主站恢復後會自動優先使用官方即時資料。</span>
+          </div>
         ` : pitcherBatterHasQueried && !pitcherBatterRows.length ? `
           <div class="player-tools-empty">這個條件沒有投打對決紀錄。</div>
         ` : pitcherBatterRows.length ? `
@@ -372,16 +536,17 @@
               <strong>${escapeHtml(selectedName)}</strong>
               <span>vs ${escapeHtml(pitcherBatterTeamName(pitcherBatterOpponent))}｜${escapeHtml(periodLabel)}</span>
             </div>
-            <small>來源：CPBL 官方投打對決</small>
+            <small>${escapeHtml(sourceLabel)}</small>
           </div>
           ${pitcherBatterIsPitcher() ? pitcherBatterPitcherTable(pitcherBatterRows) : pitcherBatterHitterTable(pitcherBatterRows)}
         ` : `
           <div class="pitcher-batter-empty">
-            <strong>選完四個條件後查詢</strong>
-            <span>會列出這位球員對指定球隊每一位對戰球員的官方累計數據。</span>
+            <strong>依序完成四個條件</strong>
+            <span>選擇球隊後直接搜尋球員姓名，再選對戰球隊與年度。</span>
           </div>
         `}
       `;
 
       pitcherBatterBind();
     }
+
