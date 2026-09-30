@@ -288,13 +288,107 @@
           .special-replay-context-card strong{font-size:13px}
         }
 
+
+        /* v7.79 sizing, semantic event colors, scoring emphasis */
+        .special-replay-main{
+          grid-template-columns:minmax(0,56%) minmax(0,44%);
+        }
+        .special-replay-focus.event-hit{--event-accent:#ff6767}
+        .special-replay-focus.event-walk{--event-accent:#55d88a}
+        .special-replay-focus.event-sac{--event-accent:#5f9eff}
+        .special-replay-focus.event-hr{--event-accent:#b978ff}
+        .special-replay-focus.event-scored{
+          border-color:#e7bc58;
+          box-shadow:0 0 0 1px rgba(231,188,88,.25),0 0 28px rgba(231,188,88,.16),0 18px 46px rgba(0,0,0,.19)
+        }
+        .special-replay-focus.event-scored:after{
+          height:4px;background:linear-gradient(90deg,transparent,#f2c965 18%,#ffe4a0 50%,#f2c965 82%,transparent);opacity:1
+        }
+        .special-replay-focus.event-hit .special-replay-result-title{color:#ff7d7d}
+        .special-replay-focus.event-walk .special-replay-result-title{color:#6ee49d}
+        .special-replay-focus.event-sac .special-replay-result-title{color:#79b0ff}
+        .special-replay-focus.event-hr .special-replay-result-title{color:#c590ff}
+        .special-replay-focus.event-scored .special-replay-result-panel{
+          border-color:rgba(235,194,94,.24);
+          box-shadow:inset 0 0 0 1px rgba(235,194,94,.06)
+        }
+        .special-replay-focus.event-scored .special-replay-result-kicker{color:#f0c75e}
+
+        .special-replay-feed-head span{font-size:10px}
+        .special-replay-feed-head strong{font-size:21px}
+        .special-replay-feed-count{font-size:10px}
+        .special-replay-feed-inning{font-size:10px}
+        .special-replay-feed-copy strong{font-size:13px}
+        .special-replay-feed-copy span{font-size:10px}
+        .special-replay-feed-current-result{font-size:12px!important}
+
+        .special-replay-score-meta-item span{font-size:9px}
+        .special-replay-score-meta-item strong{font-size:15px}
+        .special-replay-result-detail-card span{font-size:9px}
+        .special-replay-result-detail-card strong{font-size:13px}
+        .special-replay-state-panel-head span{font-size:9px}
+        .special-replay-state-panel-head strong{font-size:15px}
+        .special-replay-state-copy span{font-size:9px}
+        .special-replay-state-copy strong{font-size:16px}
+        .special-replay-state-summary-card span{font-size:8px}
+        .special-replay-state-summary-card strong{font-size:12px}
+        .special-replay-context-card span{font-size:9px}
+        .special-replay-context-card strong{font-size:13px}
+
+        .special-replay-lineup-team span{font-size:9px}
+        .special-replay-lineup-team strong{font-size:13px}
+        .special-replay-lineup-cell b{font-size:11px}
+        .special-replay-lineup-cell small{font-size:8px}
+
+        .special-replay-download{
+          min-width:76px!important;padding:0 11px!important;
+          border-color:rgba(125,202,247,.18)!important;
+          background:linear-gradient(180deg,#124a70,#0d3856)!important
+        }
+
+        @media (min-width:1200px) and (min-height:650px){
+          .special-replay-main{
+            grid-template-columns:minmax(0,56%) minmax(430px,44%);
+            gap:14px
+          }
+          .special-replay-feed{padding:22px}
+          .special-replay-feed-head span{font-size:12px}
+          .special-replay-feed-head strong{font-size:26px}
+          .special-replay-feed-count{font-size:11px}
+          .special-replay-feed-inning{font-size:12px}
+          .special-replay-feed-copy strong{font-size:16px}
+          .special-replay-feed-copy span{font-size:12px}
+          .special-replay-feed-current-result{font-size:14px!important}
+          .special-replay-feed-state span{font-size:11px}
+          .special-replay-feed-state strong{font-size:16px}
+
+          .special-replay-score-meta-item span{font-size:10px}
+          .special-replay-score-meta-item strong{font-size:17px}
+          .special-replay-result-detail-card span{font-size:10px}
+          .special-replay-result-detail-card strong{font-size:15px}
+          .special-replay-state-panel-head span{font-size:10px}
+          .special-replay-state-panel-head strong{font-size:18px}
+          .special-replay-state-copy span{font-size:10px}
+          .special-replay-state-copy strong{font-size:18px}
+          .special-replay-state-summary-card span{font-size:9px}
+          .special-replay-state-summary-card strong{font-size:14px}
+          .special-replay-context-card span{font-size:10px}
+          .special-replay-context-card strong{font-size:15px}
+
+          .special-replay-lineup-team span{font-size:10px}
+          .special-replay-lineup-team strong{font-size:15px}
+          .special-replay-lineup-cell b{font-size:12px}
+          .special-replay-lineup-cell small{font-size:9px}
+          .special-replay-progress-top{font-size:10px}
+        }
+
         @media (max-height:560px) and (orientation:landscape){
           .special-replay-shell{grid-template-rows:auto minmax(0,1fr) auto auto;gap:5px;padding:5px}
           .special-replay-scoreboard{min-height:58px;grid-template-columns:115px minmax(0,1fr) 115px;gap:6px;padding:5px 40px 5px 8px;border-radius:10px}
           .special-replay-brand-kicker{font-size:6px}.special-replay-brand-title{margin-top:2px;font-size:7px}
           .special-replay-score-main{gap:5px}.special-replay-score-team{font-size:8px}.special-replay-score-number{min-width:28px;font-size:28px}.special-replay-inning-pill{min-width:52px;padding:4px 6px;font-size:6px}
           .special-replay-score-meta{gap:2px}.special-replay-score-meta-item{padding:3px 2px;border-radius:5px}.special-replay-score-meta-item span{font-size:4px}.special-replay-score-meta-item strong{margin-top:1px;font-size:7px}
-          .special-replay-main{grid-template-columns:minmax(0,1fr) 34%;gap:5px}
+          .special-replay-main{grid-template-columns:minmax(0,58%) minmax(0,42%);gap:5px}
           .special-replay-focus{gap:6px;padding:8px 10px;border-radius:9px}.special-replay-focus-label,.special-replay-focus-event{font-size:5px}.special-replay-focus-label i{width:5px;height:5px}
           .special-replay-matchup{gap:7px;padding:2px 0 5px}.special-replay-person span{margin-bottom:1px;font-size:4px}.special-replay-person strong{font-size:8px}.special-replay-vs{width:22px;height:22px;font-size:5px}
           .special-replay-result-kicker{margin-bottom:2px;font-size:5px}.special-replay-result-title{font-size:15px}.special-replay-result-caption{margin-top:3px;font-size:5px}
@@ -485,15 +579,58 @@
       return '<div class="special-replay-linescore"><table><thead><tr>' + head + '</tr></thead><tbody>' + row(detail.away_team || '中華台北',away,summary.away_score,summary.away_hits,summary.away_errors) + row(detail.home_team || '韓國',home,summary.home_score,summary.home_hits,summary.home_errors) + '</tbody></table></div>';
     }
 
-    function specialReplayTone(event) {
+    function specialReplayEventSemantic(event, previousEvent) {
+      const text = String((event && event.r) || '');
+      const previousScores = previousEvent && Array.isArray(previousEvent.s) ? previousEvent.s : [0,0];
+      const scores = event && Array.isArray(event.s) ? event.s : previousScores;
+      const scored = (Number(scores[0]) || 0) > (Number(previousScores[0]) || 0)
+        || (Number(scores[1]) || 0) > (Number(previousScores[1]) || 0);
+
+      let type = 'normal';
+      if (/全壘打|home run|homer/i.test(text)) type = 'hr';
+      else if (/犧牲|sacrifice|犧牲觸擊|犧牲飛球/i.test(text)) type = 'sac';
+      else if (/四壞|保送|故意四壞|觸身球|walk|hit by pitch/i.test(text)) type = 'walk';
+      else if (/一壘安打|二壘安打|三壘安打|內野安打|安打|single|double|triple/i.test(text)) type = 'hit';
+
+      const onBase = type === 'hr' || type === 'walk' || type === 'hit'
+        || /失誤.*上壘|野手選擇|上壘/i.test(text);
+
+      return { type, scored, onBase };
+    }
+
+    function specialReplayTone(event, previousEvent) {
+      const semantic = specialReplayEventSemantic(event, previousEvent);
+      if (semantic.type === 'hr') return 'event-hr';
+      if (semantic.type === 'hit') return 'event-hit';
+      if (semantic.type === 'walk') return 'event-walk';
+      if (semantic.type === 'sac') return 'event-sac';
       const text = String((event && event.r) || '') + ' ' + String((event && event.k) || '');
-      if (/全壘打|home run|homer|hr/i.test(text)) return 'tone-hr';
-      if (/超前|追平|得分|跑回|兩分|三分|滿貫|score/i.test(text)) return 'tone-score';
       if (/三振|strikeout/i.test(text)) return 'tone-k';
-      if (/保送|觸身|walk/i.test(text)) return 'tone-walk';
       if (/換投|代打|代跑|換人|pitch|sub/i.test(text)) return 'tone-change';
       if (/half|結束/.test(text)) return 'tone-half';
       return '';
+    }
+
+    function specialReplayVisualClasses(state,event) {
+      const previous = state.index > 0 ? state.events[state.index - 1] : null;
+      const semantic = specialReplayEventSemantic(event, previous);
+      const classes = [];
+      const tone = specialReplayTone(event, previous);
+      if (tone) classes.push(tone);
+      if (semantic.scored) classes.push('event-scored');
+      return classes.join(' ');
+    }
+
+    function specialReplayDurationMs(state,index) {
+      const event = state.events[index] || {};
+      const previous = index > 0 ? state.events[index - 1] : null;
+      const semantic = specialReplayEventSemantic(event, previous);
+      const kind = String(event.k || '');
+      if (kind === 'half') return 5000;
+      if (semantic.type === 'hr') return 4000;
+      if (semantic.scored) return 3000;
+      if (semantic.onBase) return 2200;
+      return 1000;
     }
 
     function specialReplayScoreboardHtml(state,event) {
@@ -571,7 +708,7 @@
       const baseText = baseMask === 0 ? '壘上無人'
         : [baseMask & 1 ? '一壘' : '', baseMask & 2 ? '二壘' : '', baseMask & 4 ? '三壘' : ''].filter(Boolean).join('、') + '有人';
       const outs = Math.max(0, Math.min(3, Number(event.o) || 0));
-      const tone = specialReplayTone(event);
+      const visualClasses = specialReplayVisualClasses(state,event);
       const eventKind = specialReplayKindLabel(event.k);
       const inningIndex = Math.max(0, (Number(event.i) || 1) - 1);
       const awayInningRuns = Array.isArray(lineScore.away) && lineScore.away[inningIndex] != null ? lineScore.away[inningIndex] : 0;
@@ -579,7 +716,7 @@
       const battingTeam = String(event.h || 'T') === 'T' ? detail.away_team : detail.home_team;
 
       return '<div class="special-replay-main">'
-        + '<section class="special-replay-focus ' + tone + '">'
+        + '<section class="special-replay-focus ' + visualClasses + '">'
         +   '<div class="special-replay-focus-head"><span class="special-replay-focus-label"><i></i>LIVE PLAY</span><span class="special-replay-focus-event">EVENT ' + (state.index + 1) + ' / ' + state.events.length + '</span></div>'
         +   '<div class="special-replay-matchup">'
         +     '<div class="special-replay-person"><span>PITCHER</span><strong>' + escapeHtml(pitcher || '-') + '</strong></div>'
@@ -620,11 +757,64 @@
         + '</div>';
     }
 
+    function specialReplayDownloadFile() {
+      const state = specialReplayActive;
+      if (!state || !state.detail || !state.events.length) return;
+
+      const detail = state.detail;
+      const exportedPayload = JSON.parse(JSON.stringify(detail.payload || {}));
+      exportedPayload.playback = {
+        default_ms: 1000,
+        on_base_ms: 2200,
+        scoring_ms: 3000,
+        home_run_ms: 4000,
+        half_inning_ms: 5000
+      };
+      if (Array.isArray(exportedPayload.events)) {
+        exportedPayload.events = exportedPayload.events.map((event,index) => ({
+          ...event,
+          d: specialReplayDurationMs(state,index)
+        }));
+      }
+
+      const file = {
+        format: 'diamondscope-special-game-replay',
+        format_version: 1,
+        exported_at: new Date().toISOString(),
+        game: {
+          id: detail.id || null,
+          slug: detail.slug || null,
+          title: detail.title || null,
+          game_date: detail.game_date || null,
+          game_time: detail.game_time || null,
+          venue: detail.venue || null,
+          away_team: detail.away_team || null,
+          home_team: detail.home_team || null,
+          status: detail.status || null,
+          league: detail.league || null,
+          external_game_id: detail.external_game_id || null
+        },
+        payload: exportedPayload
+      };
+
+      const blob = new Blob([JSON.stringify(file,null,2)], { type:'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safe = value => String(value || '').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_');
+      anchor.href = url;
+      anchor.download = [safe(detail.game_date),safe(detail.away_team),safe(detail.home_team),'replay'].filter(Boolean).join('_') + '.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
     function specialReplayFooterHtml(state,event) {
       const progress = Math.max(0, Math.min(100, ((state.index + 1) / state.events.length) * 100));
       const lastEvent = state.index >= state.events.length - 1;
       const eventKind = specialReplayKindLabel(event.k);
-      return '<div class="special-replay-footer"><div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(eventKind) + ' · ' + (Math.max(250,Number(event.d)||1000)/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div><div class="special-replay-controls"><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div></div>';
+      const duration = specialReplayDurationMs(state,state.index);
+      return '<div class="special-replay-footer"><div class="special-replay-progress"><div class="special-replay-progress-top"><span>' + escapeHtml(eventKind) + ' · ' + (duration/1000).toFixed(1) + ' 秒</span><span>' + (state.index + 1) + ' / ' + state.events.length + '</span></div><div class="special-replay-progress-track"><div class="special-replay-progress-bar" style="width:' + progress.toFixed(2) + '%"></div></div></div><div class="special-replay-controls"><button class="special-replay-control special-replay-download" type="button" data-special-replay-download>下載檔案</button><button class="special-replay-control" type="button" data-special-replay-prev>‹</button><button class="special-replay-control primary" type="button" data-special-replay-toggle>' + (state.playing ? '暫停' : (lastEvent ? '重播' : '播放')) + '</button><button class="special-replay-control" type="button" data-special-replay-next>›</button></div></div>';
     }
 
     async function openSpecialGameReplay(game) {
@@ -651,7 +841,7 @@
         specialReplayActive.detail = detail;
         specialReplayActive.events = detail.payload.events;
         specialReplayActive.playing = true;
-        specialReplayActive.remainingMs = Math.max(250, Number(detail.payload.events[0] && detail.payload.events[0].d) || 1000);
+        specialReplayActive.remainingMs = specialReplayDurationMs(specialReplayActive,0);
         renderSpecialReplayFrame();
         scheduleSpecialReplayAdvance();
       } catch (error) {
@@ -668,9 +858,7 @@
       const payload = state.detail.payload || {};
       const lineups = payload.lineups || specialReplayFallbackLineups();
 
-      state.overlay.classList.remove('tone-hr','tone-score','tone-k','tone-walk','tone-change','tone-half');
-      const tone = specialReplayTone(event);
-      if (tone) state.overlay.classList.add(tone);
+      state.overlay.className = 'special-replay-overlay';
 
       state.overlay.innerHTML = '<button class="special-replay-close" type="button" data-special-replay-close aria-label="關閉">×</button>'
         + '<div class="special-replay-shell">'
@@ -685,6 +873,7 @@
 
       state.overlay.querySelector('[data-special-replay-close]').addEventListener('click', closeSpecialGameReplay);
       state.overlay.querySelector('[data-special-replay-toggle]').addEventListener('click', toggleSpecialReplayPlayback);
+      state.overlay.querySelector('[data-special-replay-download]').addEventListener('click', specialReplayDownloadFile);
       state.overlay.querySelector('[data-special-replay-prev]').addEventListener('click', () => seekSpecialReplay(-1));
       state.overlay.querySelector('[data-special-replay-next]').addEventListener('click', () => seekSpecialReplay(1));
     }
@@ -693,7 +882,7 @@
       const state = specialReplayActive;
       if (!state || !state.playing || !state.events.length) return;
       clearTimeout(state.timer);
-      state.remainingMs = Math.max(100, Number(state.remainingMs) || Number(state.events[state.index] && state.events[state.index].d) || 1000);
+      state.remainingMs = Math.max(100, Number(state.remainingMs) || specialReplayDurationMs(state,state.index));
       state.startedAt = performance.now();
       state.timer = setTimeout(() => {
         const current = specialReplayActive;
@@ -704,7 +893,7 @@
           return;
         }
         current.index += 1;
-        current.remainingMs = Math.max(250, Number(current.events[current.index] && current.events[current.index].d) || 1000);
+        current.remainingMs = specialReplayDurationMs(current,current.index);
         renderSpecialReplayFrame();
         scheduleSpecialReplayAdvance();
       }, state.remainingMs);
@@ -722,7 +911,7 @@
       }
       if (state.index >= state.events.length - 1) {
         state.index = 0;
-        state.remainingMs = Math.max(250, Number(state.events[0] && state.events[0].d) || 1000);
+        state.remainingMs = specialReplayDurationMs(state,0);
       }
       state.playing = true;
       renderSpecialReplayFrame();
@@ -734,7 +923,7 @@
       if (!state || !state.events.length) return;
       clearTimeout(state.timer);
       state.index = Math.max(0, Math.min(state.events.length - 1, state.index + Number(delta || 0)));
-      state.remainingMs = Math.max(250, Number(state.events[state.index] && state.events[state.index].d) || 1000);
+      state.remainingMs = specialReplayDurationMs(state,state.index);
       renderSpecialReplayFrame();
       if (state.playing) scheduleSpecialReplayAdvance();
     }
