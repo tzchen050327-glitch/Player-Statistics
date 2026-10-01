@@ -110,17 +110,28 @@
     if(String(detail?.league||'').toUpperCase()!=='CPBL' || !last) return false;
     const hasAfter=last?.baseStateAfter!==undefined&&last?.baseStateAfter!==null || !!last?.basesAfter;
     if(!hasAfter) return false;
-    const beforeValue=last?.baseState ?? last?.bases ?? '';
+
+    const beforeValue=last?.baseStateBefore ?? last?.basesBefore ?? last?.baseState ?? last?.bases ?? '';
     const afterValue=last?.baseStateAfter ?? last?.basesAfter ?? '';
     const currentValue=detail?.current?.baseState ?? detail?.current?.bases ?? '';
     const beforeKey=baseStateKey(beforeValue), afterKey=baseStateKey(afterValue), currentKey=baseStateKey(currentValue);
 
-    // CPBL can advance current.batter before current.baseState catches up.
-    // If current still equals the completed PA's pre-PA state while the post-PA
-    // state changed, the post-PA state is the authoritative live situation.
     const hasCurrent = detail?.current?.baseState !== undefined && detail?.current?.baseState !== null
       || detail?.current?.bases !== undefined && detail?.current?.bases !== null;
-    return hasCurrent && beforeKey!==afterKey && currentKey===beforeKey;
+
+    // Normal CPBL lag: current still reports the completed PA's pre-PA runners.
+    if (hasCurrent && beforeKey!==afterKey && currentKey===beforeKey) return true;
+
+    // Some live rows briefly reset current bases to empty after a completed out
+    // even though the PA description already contains an explicit runner advance
+    // (e.g. sacrifice bunt: first-base runner -> second). In that window the
+    // completed PA's post-state is more authoritative than the empty current row.
+    const text=`${last?.result||''} ${last?.raw||''} ${last?.description||''}`;
+    const explicitAdvance=/[一二三]壘跑者[^。]*?(?:上|進|到)[二三]壘/.test(text);
+    const sacrifice=/犧牲短打|犧短|犠打|犧牲觸擊/.test(text);
+    if (hasCurrent && sacrifice && explicitAdvance && currentKey==='000' && afterKey!=='000') return true;
+
+    return false;
   }
 
   function currentBaseState(detail) {
