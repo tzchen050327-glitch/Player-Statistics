@@ -2197,7 +2197,7 @@
             fromAnyCache = true;
           } catch {}
         }
-        if (!detail && staleDetail) detail = staleDetail;
+        if (!detail && staleDetail && !cpblFinalDecisionIncomplete) detail = staleDetail;
         if (!detail) detail = await leagueGameDetailRequest(league, date, game, league === 'CPBL' ? false : force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         // Preserve a previously fetched pregame card when a fresh published-cache detail
