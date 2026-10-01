@@ -181,7 +181,9 @@
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.pitcherRecordsLoading = false;
         const latest = homeGameDetailCache.get(key)?.detail || detail;
-        renderHomeGameDetail(latest, activeHomeGameDetail.game || game);
+        if (activeHomeGameDetail.centerTab === 'pitchers') {
+          renderHomeGameDetail(latest, activeHomeGameDetail.game || game);
+        }
       }
     }
 
@@ -789,7 +791,9 @@
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
         activeHomeGameDetail.bullpenLoading = false;
         const latest = homeGameDetailCache.get(key)?.detail || detail;
-        renderHomeGameDetail(latest, game);
+        if (activeHomeGameDetail.centerTab === 'pitchers') {
+          renderHomeGameDetail(latest, game);
+        }
       }
     }
 
@@ -1677,9 +1681,6 @@
       const status = String(detail?.status || game?.status || 'scheduled').toLowerCase();
       const currentBatter = String(detail?.current?.batter?.name || '').trim();
       const currentPitcher = String(detail?.current?.pitcher?.name || '').trim();
-      const displayPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
-      const seasonResultLabels = homeGameDetailSeasonResultLabels(detail, displayPlays);
-      const groups = homeGameDetailGroups(displayPlays);
       const gameInfo = detail?.game || game || {};
       const leagueLabel = activeHomeGameDetail?.league === 'CPBL' ? '中華職棒' : '日本職棒';
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
@@ -1713,22 +1714,30 @@
               : centerTab === 'umpire'
                 ? ''
                 : '';
-      const matchup = status === 'live' ? `
-        <div class="game-detail-current-grid">
-          <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
-          <div class="game-detail-current-card"><span>目前投手</span><strong>${escapeHtml(currentPitcher || '讀取中')}</strong></div>
-        </div>` : '';
-      const playsHtml = groups.length ? groups.map(group => `
-        <details class="game-detail-inning" open>
-          <summary>${group.inning || '—'}局${group.half === 'top' ? '上' : group.half === 'bottom' ? '下' : ''}${group.team ? `｜${escapeHtml(group.team)}` : ''}<span>${group.plays.length} 打席</span></summary>
-          <div class="game-detail-pa-list">
-            ${group.plays.map(play => `
-              <div class="game-detail-pa-row">
-                <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(seasonResultLabels.get(play) || play?.result || '—'))}</span></div>
-                <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
-              </div>`).join('')}
-          </div>
-        </details>`).join('') : `<div class="game-detail-empty">${status === 'scheduled' ? '比賽尚未開始，開打後這裡會顯示逐打席。' : loading ? '正在讀取官方逐打席…' : '官方來源目前沒有可顯示的逐打席。'}</div>`;
+      let matchup = '';
+      let displayPlays = [];
+      let playsHtml = '';
+      if (centerTab === 'play') {
+        displayPlays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
+        const seasonResultLabels = homeGameDetailSeasonResultLabels(detail, displayPlays);
+        const groups = homeGameDetailGroups(displayPlays);
+        matchup = status === 'live' ? `
+          <div class="game-detail-current-grid">
+            <div class="game-detail-current-card"><span>目前打者</span><strong>${escapeHtml(currentBatter || '等待下一位打者')}</strong></div>
+            <div class="game-detail-current-card"><span>目前投手</span><strong>${escapeHtml(currentPitcher || '讀取中')}</strong></div>
+          </div>` : '';
+        playsHtml = groups.length ? groups.map(group => `
+          <details class="game-detail-inning" open>
+            <summary>${group.inning || '—'}局${group.half === 'top' ? '上' : group.half === 'bottom' ? '下' : ''}${group.team ? `｜${escapeHtml(group.team)}` : ''}<span>${group.plays.length} 打席</span></summary>
+            <div class="game-detail-pa-list">
+              ${group.plays.map(play => `
+                <div class="game-detail-pa-row">
+                  <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(seasonResultLabels.get(play) || play?.result || '—'))}</span></div>
+                  <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
+                </div>`).join('')}
+            </div>
+          </details>`).join('') : `<div class="game-detail-empty">${status === 'scheduled' ? '比賽尚未開始，開打後這裡會顯示逐打席。' : loading ? '正在讀取官方逐打席…' : '官方來源目前沒有可顯示的逐打席。'}</div>`;
+      }
 
       body.innerHTML = `
         <header class="game-detail-sticky-head">
@@ -1745,7 +1754,8 @@
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
         </nav>
         <main class="game-detail-content">
-          <div class="match-center-panel ${centerTab === 'play' ? 'active' : ''}" data-match-center-panel="play">
+          ${centerTab === 'play' ? `
+          <div class="match-center-panel active" data-match-center-panel="play">
             <section class="game-detail-score-card">
               <div class="game-detail-status">${escapeHtml(homeGameDetailStatusLabel(detail || {status,game:gameInfo}))}${loading ? '｜更新中…' : ''}</div>
               <div class="game-detail-score-row">
@@ -1760,8 +1770,8 @@
               <div class="game-detail-section-title"><strong>全場逐打席</strong><span>${displayPlays.length} 筆</span></div>
               ${playsHtml}
             </section>
-          </div>
-          ${centerTab !== 'play' ? `<div class="match-center-panel active ${centerTab === 'pitchers' ? 'game-pitcher-panel' : centerTab === 'batters' ? 'game-batter-panel' : ''}" data-match-center-panel="${centerTab}">${centerDataPanel}</div>` : ''}
+          </div>` : `
+          <div class="match-center-panel active ${centerTab === 'pitchers' ? 'game-pitcher-panel' : centerTab === 'batters' ? 'game-batter-panel' : ''}" data-match-center-panel="${centerTab}">${centerDataPanel}</div>`}
         </main>`;
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
