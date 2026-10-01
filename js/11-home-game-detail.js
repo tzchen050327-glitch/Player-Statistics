@@ -2146,7 +2146,17 @@
       const key = homeGameDetailKey(league, date, game);
       const cached = homeGameDetailCache.get(key);
       const age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
-      if (!force && cached && age < homeGameDetailCacheTtl(cached.detail)) {
+      const cachedStatus = String(cached?.detail?.status || '').toLowerCase();
+      const cpblFinalDecisionIncomplete = Boolean(
+        league === 'CPBL'
+        && cachedStatus === 'final'
+        && !homeGameDecisionsSettled(cached?.detail)
+      );
+      // Never let an old in-memory FINAL payload hide a W/L decision that was
+      // repaired in Supabase after the user first opened the game. Historical
+      // games do not receive today's Realtime signal, so an incomplete FINAL
+      // must re-read the shared cache when the game view is entered/refreshed.
+      if (!force && cached && !cpblFinalDecisionIncomplete && age < homeGameDetailCacheTtl(cached.detail)) {
         renderHomeGameDetail(cached.detail, game);
         scheduleHomeGameDetailRefresh(cached.detail);
         return;
