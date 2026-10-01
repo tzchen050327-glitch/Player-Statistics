@@ -1760,8 +1760,8 @@
         // Baseball markers must remain true circles. The strike-zone axes use
         // different display scales, so deriving separate SVG rx/ry values makes
         // the ball look oval even though the source distance is correct.
-        const ballRadiusPx = 18;
-        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx}"></circle><text y="5" text-anchor="middle">${index + 1}</text></g>`;
+        const ballRadiusPx = 14;
+        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx}"></circle><text y="4" text-anchor="middle">${index + 1}</text></g>`;
       }).join('');
 
       const rows = data.misses.map((miss, index) => {
