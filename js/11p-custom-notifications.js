@@ -18,30 +18,65 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
       localStorage.setItem(CUSTOM_NOTIFICATION_STORAGE_KEY, JSON.stringify(state || {}));
     }
 
+    function customNotificationPlayerLeague(player) {
+      return playerScope(player) === 'overseas'
+        && String(player?.externalProvider || '').toUpperCase() === 'NPB'
+        ? 'NPB'
+        : 'CPBL';
+    }
+
+    function customNotificationPlayerId(player) {
+      return customNotificationPlayerLeague(player) === 'NPB'
+        ? String(player?.externalPlayerId || '').trim()
+        : String(player?.cpblAcnt || '').trim();
+    }
+
+    function customNotificationPlayerTeam(player) {
+      return customNotificationPlayerLeague(player) === 'NPB'
+        ? String(player?.externalTeam || player?.externalCurrentTeam || '').trim()
+        : String(player?.cpblTeam || '').trim();
+    }
+
     function customNotificationPlayerKey(player) {
-      return String(player?.cpblAcnt || player?.id || '').trim();
+      const league = customNotificationPlayerLeague(player);
+      const id = customNotificationPlayerId(player);
+      return league === 'NPB' ? `NPB:${id}` : id;
     }
 
     function customNotificationPlayers() {
       return (Array.isArray(players) ? players : [])
-        .filter(player => playerScope(player) === 'cpbl' && String(player?.cpblAcnt || '').trim())
+        .filter(player => {
+          const league = customNotificationPlayerLeague(player);
+          const id = customNotificationPlayerId(player);
+          return Boolean(id) && (
+            (league === 'CPBL' && playerScope(player) === 'cpbl')
+            || (league === 'NPB'
+              && playerScope(player) === 'overseas'
+              && String(player?.externalProvider || '').toUpperCase() === 'NPB')
+          );
+        })
         .sort((a, b) => {
-          const team = String(a?.cpblTeam || '').localeCompare(String(b?.cpblTeam || ''), 'zh-Hant');
+          const league = customNotificationPlayerLeague(a).localeCompare(customNotificationPlayerLeague(b));
+          if (league) return league;
+          const team = customNotificationPlayerTeam(a).localeCompare(customNotificationPlayerTeam(b), 'zh-Hant');
           if (team) return team;
           return String(a?.name || '').localeCompare(String(b?.name || ''), 'zh-Hant');
         });
     }
 
     function customNotificationDefaultRule(player) {
+      const league = customNotificationPlayerLeague(player);
+      const playerId = customNotificationPlayerId(player);
       return {
-        playerId:String(player?.id || ''),
-        cpblAcnt:String(player?.cpblAcnt || ''),
+        league,
+        playerId,
+        cpblAcnt:league === 'CPBL' ? playerId : '',
         name:String(player?.name || ''),
-        team:String(player?.cpblTeam || ''),
-        teamCode:String(player?.cpblTeamCode || ''),
+        team:customNotificationPlayerTeam(player),
+        teamCode:league === 'CPBL' ? String(player?.cpblTeamCode || '') : '',
         playerType:String(player?.type || ''),
         major:true,
-        minor:true,
+        minor:league === 'CPBL',
         lineup:true,
         appearance:true,
         plateAppearance:false,
@@ -87,14 +122,18 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
       return customNotificationPlayers().map(player => {
         const rule = customNotificationRule(player, state);
         if (!rule) return null;
+        const league = customNotificationPlayerLeague(player);
+        const playerId = customNotificationPlayerId(player);
         return {
-          cpblAcnt:String(player.cpblAcnt || ''),
+          league,
+          playerId,
+          cpblAcnt:league === 'CPBL' ? playerId : '',
           name:String(player.name || rule.name || ''),
-          team:String(player.cpblTeam || rule.team || ''),
-          teamCode:String(player.cpblTeamCode || rule.teamCode || ''),
+          team:customNotificationPlayerTeam(player) || String(rule.team || ''),
+          teamCode:league === 'CPBL' ? String(player.cpblTeamCode || rule.teamCode || '') : '',
           playerType:String(player.type || rule.playerType || ''),
-          major:rule.major !== false,
-          minor:rule.minor !== false,
+          major:true,
+          minor:league === 'CPBL' ? rule.minor !== false : false,
           lineup:rule.lineup !== false,
           appearance:rule.appearance !== false,
           plateAppearance:rule.plateAppearance === true
@@ -147,6 +186,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         action:'sync',
         deviceToken:customNotificationDeviceToken(),
         subscription:json,
+        watchSchemaVersion:2,
         watches:customNotificationWatchPayload()
       });
     }
@@ -186,12 +226,17 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
       const key = customNotificationPlayerKey(player);
       const rule = customNotificationRule(player, state);
       const active = Boolean(rule);
+      const league = customNotificationPlayerLeague(player);
+      const team = customNotificationPlayerTeam(player);
       const currentLevel = String(player?.cpblCurrentLevel || '').toUpperCase() === 'D' ? '目前二軍' : '目前一軍';
-      const meta = [
-        normalizeTeamName(player?.cpblTeam || ''),
-        player?.number ? `#${player.number}` : '',
-        currentLevel
-      ].filter(Boolean).join('｜');
+      const meta = league === 'NPB'
+        ? [team, player?.number ? `#${player.number}` : '', '日職'].filter(Boolean).join('｜')
+        : [normalizeTeamName(team), player?.number ? `#${player.number}` : '', currentLevel].filter(Boolean).join('｜');
+
+      const levelOptions = league === 'CPBL'
+        ? `${customNotificationOption('一軍', 'major', true, true, key)}
+           ${customNotificationOption('二軍', 'minor', rule?.minor !== false, !active, key)}`
+        : '';
 
       return `
         <article class="custom-notification-row ${active ? 'is-active' : ''}" data-custom-notification-row="${escapeHtml(key)}">
@@ -202,12 +247,11 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
             </label>
             <div class="custom-notification-player-text">
               <strong>${escapeHtml(String(player?.name || '未命名球員'))}</strong>
-              <span>${escapeHtml(meta || '中職球員')}</span>
+              <span>${escapeHtml(meta || (league === 'NPB' ? '日職球員' : '中職球員'))}</span>
             </div>
           </div>
           <div class="custom-notification-options">
-            ${customNotificationOption('一軍', 'major', rule?.major !== false, !active, key)}
-            ${customNotificationOption('二軍', 'minor', rule?.minor !== false, !active, key)}
+            ${levelOptions}
             ${customNotificationOption('先發公布', 'lineup', rule?.lineup !== false, !active, key)}
             ${customNotificationOption('實際出賽', 'appearance', rule?.appearance !== false, !active, key)}
             ${player?.type === 'pitcher' ? '' : customNotificationOption('逐打席', 'plateAppearance', rule?.plateAppearance === true, !active, key)}
@@ -324,8 +368,8 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         ? available.map(player => customNotificationRow(player, state)).join('')
         : `
           <div class="custom-notification-empty">
-            <strong>目前沒有可設定的中職球員</strong>
-            <span>先把球員加入首頁名單後，就能在這裡建立一軍／二軍出賽通知條件。</span>
+            <strong>目前沒有可設定的中職／日職球員</strong>
+            <span>先把中職或日職球員加入首頁名單後，就能在這裡建立出賽通知條件。</span>
           </div>
         `;
 
@@ -334,7 +378,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
           <div>
             <span>CUSTOM ALERTS</span>
             <strong>球員出賽通知</strong>
-            <small>一軍沿用既有即時資料觸發；二軍只檢查有訂閱的球員，不掃整場名單。</small>
+            <small>中職與日職都沿用既有即時資料觸發；中職二軍只檢查有訂閱的球員。</small>
           </div>
           <b>${activeCount} 人</b>
         </section>
@@ -354,7 +398,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         ${customNotificationFlash?.message ? `<div class="custom-notification-flash ${customNotificationFlash.error ? 'is-error' : ''}">${escapeHtml(customNotificationFlash.message)}</div>` : ''}
 
         <div class="custom-notification-toolbar">
-          <span>勾選球員後，再決定要追蹤的一／二軍與通知事件。</span>
+          <span>勾選球員後，再決定要追蹤的通知事件；日職不顯示一／二軍選項。</span>
           ${activeCount ? '<button type="button" class="press-btn custom-notification-clear" data-custom-notification-clear>全部取消</button>' : ''}
         </div>
 
@@ -363,7 +407,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         </div>
 
         <div class="custom-notification-footnote">
-          一軍不增加額外輪詢；二軍每 3 分鐘只查有勾選二軍通知的球員本人，沒有二軍訂閱時不執行。打者可另外開啟逐打席通知。
+          中職一軍與日職都不增加額外輪詢；中職二軍每 3 分鐘只查有勾選二軍通知的球員本人。打者可另外開啟逐打席通知。
         </div>
       `;
 
