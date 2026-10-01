@@ -1677,15 +1677,11 @@
         const span = Math.max(0.001, Number(miss.top) - Number(miss.bottom));
         const py = Math.max(18, Math.min(342, 300 - ((Number(miss.z) - Number(miss.bottom)) / span) * 240));
         const cls = miss.kind === 'ball-strike' ? 'is-red' : 'is-green';
-        // Plot the baseball at physical scale instead of using a fixed icon size.
-        // x uses the regulation plate half-width (21.59 cm => 90 px here);
-        // z is normalized to each batter's strike-zone height (240 px here).
-        // This makes a pitch whose ball edge is 0.05 cm from the zone actually
-        // appear almost tangent to the zone boundary in the report.
-        const ballRadiusM = 0.0366;
-        const rx = Math.max(13, Math.min(19, (ballRadiusM / halfPlate) * 90));
-        const ry = Math.max(13, Math.min(22, (ballRadiusM / span) * 240));
-        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><ellipse rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"></ellipse><text y="5" text-anchor="middle">${index + 1}</text></g>`;
+        // Baseball markers must remain true circles. The strike-zone axes use
+        // different display scales, so deriving separate SVG rx/ry values makes
+        // the ball look oval even though the source distance is correct.
+        const ballRadiusPx = 18;
+        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx}"></circle><text y="5" text-anchor="middle">${index + 1}</text></g>`;
       }).join('');
 
       const rows = data.misses.map((miss, index) => {
