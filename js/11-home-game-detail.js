@@ -1757,11 +1757,17 @@
         const span = Math.max(0.001, Number(miss.top) - Number(miss.bottom));
         const py = Math.max(18, Math.min(342, 300 - ((Number(miss.z) - Number(miss.bottom)) / span) * 240));
         const cls = miss.kind === 'ball-strike' ? 'is-red' : 'is-green';
-        // Baseball markers must remain true circles. The strike-zone axes use
-        // different display scales, so deriving separate SVG rx/ry values makes
-        // the ball look oval even though the source distance is correct.
-        const ballRadiusPx = 14;
-        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx}"></circle><text y="4" text-anchor="middle">${index + 1}</text></g>`;
+        // Keep the pitch marker a true circle, but size it from a real baseball
+        // radius (~3.66 cm). The SVG itself already scales with the 2/3-width
+        // strike-zone panel, so do not shrink the radius a second time.
+        // Because x/y use different chart scales, use the larger mapped radius:
+        // a pitch whose ball edge clips the zone (e.g. 0.05 cm) must visually
+        // touch the zone instead of showing an artificial gap.
+        const baseballRadiusM = 0.0366;
+        const radiusX = (baseballRadiusM / halfPlate) * 90;
+        const radiusY = (baseballRadiusM / span) * 240;
+        const ballRadiusPx = Math.max(radiusX, radiusY);
+        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx.toFixed(1)}"></circle><text y="5" text-anchor="middle">${index + 1}</text></g>`;
       }).join('');
 
       const rows = data.misses.map((miss, index) => {
