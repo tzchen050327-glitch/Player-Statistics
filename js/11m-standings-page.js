@@ -106,7 +106,11 @@
         if (!['cpbl','npb'].includes(standingsUiState.league)) return;
         const state = String(standingsCurrentMeta()?.status || '');
         if (!['base','live','pending_reconcile'].includes(state)) return;
-        void loadOfficialStandings({ force:true });
+        void loadOfficialStandings({ force:true }).then(() => {
+          if (standingsSelectedTeam) {
+            void loadStandingsTeamDetail(standingsSelectedTeam, { force:true });
+          }
+        });
       }, 60 * 1000);
     }
 
@@ -836,7 +840,7 @@
           standingsTeamTab = 'h2h';
           standingsTeamDetailError = '';
           renderStandingsPage();
-          void loadStandingsTeamDetail(team, { force:false });
+          void loadStandingsTeamDetail(team, { force:['cpbl','npb'].includes(standingsUiState.league) });
           requestAnimationFrame(() => document.getElementById('standingsTeamDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }));
         });
       });
@@ -844,6 +848,9 @@
         btn.addEventListener('click', () => {
           standingsTeamTab = btn.dataset.standingsTeamTab === 'schedule' ? 'schedule' : 'h2h';
           renderStandingsPage();
+          if (standingsTeamTab === 'schedule' && standingsSelectedTeam && ['cpbl','npb'].includes(standingsUiState.league)) {
+            void loadStandingsTeamDetail(standingsSelectedTeam, { force:true });
+          }
         });
       });
       els.standingsPageContent.querySelector('[data-standings-team-close]')?.addEventListener('click', () => {
