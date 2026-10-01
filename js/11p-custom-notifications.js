@@ -132,7 +132,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
           team:customNotificationPlayerTeam(player) || String(rule.team || ''),
           teamCode:league === 'CPBL' ? String(player.cpblTeamCode || rule.teamCode || '') : '',
           playerType:String(player.type || rule.playerType || ''),
-          major:true,
+          major:league === 'CPBL' ? rule.major !== false : true,
           minor:league === 'CPBL' ? rule.minor !== false : false,
           lineup:rule.lineup !== false,
           appearance:rule.appearance !== false,
@@ -234,7 +234,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         : [normalizeTeamName(team), player?.number ? `#${player.number}` : '', currentLevel].filter(Boolean).join('｜');
 
       const levelOptions = league === 'CPBL'
-        ? `${customNotificationOption('一軍', 'major', true, true, key)}
+        ? `${customNotificationOption('一軍', 'major', rule?.major !== false, !active, key)}
            ${customNotificationOption('二軍', 'minor', rule?.minor !== false, !active, key)}`
         : '';
 
