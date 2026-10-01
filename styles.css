@@ -13668,7 +13668,7 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 }
 .umpire-metrics-grid{
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;
   margin:16px 0;
 }
@@ -13729,6 +13729,12 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 }
 .umpire-metric.is-impact .umpire-donut-core strong,
 .umpire-metric.is-impact .umpire-donut-core span{color:var(--team-color,#334155)}
+.umpire-zone-summary-layout{
+  display:grid;
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+  gap:12px;
+  align-items:stretch;
+}
 .umpire-zone-section{
   margin-top:14px;
   padding:18px;
@@ -13736,6 +13742,19 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   border-radius:22px;
   background:rgba(255,255,255,.025);
 }
+.umpire-zone-summary-side{
+  min-width:0;
+  margin-top:14px;
+  display:grid;
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.umpire-zone-summary-side .umpire-metric{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
 .umpire-zone-heading{
   display:flex;
   align-items:center;
@@ -13838,11 +13857,22 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   .umpire-report-official span{font-size:10px;letter-spacing:.04em}
   .umpire-report-official strong{font-size:19px}
   .umpire-metrics-grid{
-    grid-template-columns:repeat(5,minmax(104px,1fr));
+    grid-template-columns:repeat(3,minmax(104px,1fr));
     overflow-x:auto;
     scroll-snap-type:x mandatory;
     padding-bottom:6px;
   }
+  .umpire-zone-summary-layout{
+    grid-template-columns:minmax(0,2fr) minmax(96px,1fr);
+    gap:8px;
+  }
+  .umpire-zone-section{padding:12px}
+  .umpire-zone-summary-side{gap:8px}
+  .umpire-zone-summary-side .umpire-metric{padding:10px 4px}
+  .umpire-zone-summary-side .umpire-metric-label{font-size:11px}
+  .umpire-zone-summary-side .umpire-donut{width:82px;height:82px}
+  .umpire-zone-summary-side .umpire-donut-core strong{font-size:16px}
+  .umpire-zone-summary-side .umpire-donut-core span{font-size:9px}
   .umpire-metric{scroll-snap-align:start;padding:12px 6px}
   .umpire-donut{width:92px;height:92px}
   .umpire-donut-core strong{font-size:18px}

@@ -1807,24 +1807,28 @@
             ${homeUmpireDonut('整體準確率', overallPct + '%', `${data.correct} / ${data.total}`, '', `style="--metric-value:${overallPct}"`)}
             ${homeUmpireDonut('好球準確率', strikePct + '%', `${data.strikeCorrect} / ${data.strikeTotal}`, '', `style="--metric-value:${strikePct}"`)}
             ${homeUmpireDonut('壞球準確率', ballPct + '%', `${data.ballCorrect} / ${data.ballTotal}`, '', `style="--metric-value:${ballPct}"`)}
-            ${homeUmpireDonut('整體判決淨效果', '+' + data.netImpact.toFixed(2), data.favorTeam, 'is-impact', `style="--team-color:${favorColor}"`)}
-            ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${consistencyTotal}`, '', `style="--metric-value:${consistencyPct}"`)}
           </div>
 
-          <div class="umpire-zone-section">
-            <div class="umpire-zone-heading">
-              <strong>誤判球點</strong>
-              <span><i class="is-red"></i>壞球判好球　<i class="is-green"></i>好球判壞球</span>
+          <div class="umpire-zone-summary-layout">
+            <div class="umpire-zone-section">
+              <div class="umpire-zone-heading">
+                <strong>誤判球點</strong>
+                <span><i class="is-red"></i>壞球判好球　<i class="is-green"></i>好球判壞球</span>
+              </div>
+              <div class="umpire-zone-wrap">
+                <svg class="umpire-zone-svg" viewBox="0 0 320 360" role="img" aria-label="九宮格好球帶誤判位置">
+                  <rect x="70" y="60" width="180" height="240" class="umpire-zone-box"></rect>
+                  <line x1="130" y1="60" x2="130" y2="300"></line>
+                  <line x1="190" y1="60" x2="190" y2="300"></line>
+                  <line x1="70" y1="140" x2="250" y2="140"></line>
+                  <line x1="70" y1="220" x2="250" y2="220"></line>
+                  ${points}
+                </svg>
+              </div>
             </div>
-            <div class="umpire-zone-wrap">
-              <svg class="umpire-zone-svg" viewBox="0 0 320 360" role="img" aria-label="九宮格好球帶誤判位置">
-                <rect x="70" y="60" width="180" height="240" class="umpire-zone-box"></rect>
-                <line x1="130" y1="60" x2="130" y2="300"></line>
-                <line x1="190" y1="60" x2="190" y2="300"></line>
-                <line x1="70" y1="140" x2="250" y2="140"></line>
-                <line x1="70" y1="220" x2="250" y2="220"></line>
-                ${points}
-              </svg>
+            <div class="umpire-zone-summary-side">
+              ${homeUmpireDonut('整體判決淨效果', '+' + data.netImpact.toFixed(2), data.favorTeam, 'is-impact', `style="--team-color:${favorColor}"`)}
+              ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${consistencyTotal}`, '', `style="--metric-value:${consistencyPct}"`)}
             </div>
           </div>
 
