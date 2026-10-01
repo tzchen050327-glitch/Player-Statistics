@@ -1860,6 +1860,7 @@
         ? ['play','batters','pitchers','snapshot', ...(supportsUmpire ? ['umpire'] : []), 'overview']
         : ['play','batters','snapshot', ...(supportsUmpire ? ['umpire'] : []), 'overview'];
       const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
+      body.dataset.matchCenterActive = centerTab;
       const centerDataPanel = centerTab === 'overview'
         ? homeMatchCenterDataPanel('overview', detail, gameInfo, game)
         : centerTab === 'batters'

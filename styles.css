@@ -13850,3 +13850,13 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   .umpire-miss-list{grid-template-columns:1fr}
   .umpire-zone-heading{align-items:flex-start;flex-direction:column}
 }
+
+
+/* Hard guard: enhanced game-summary blocks belong to play-by-play only. */
+#homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="live"],
+#homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="scoreboard"],
+#homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="decisions"],
+#homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="last-play"],
+#homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="landscape"] {
+  display: none !important;
+}

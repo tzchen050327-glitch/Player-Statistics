@@ -1454,7 +1454,8 @@
     if (!supportsLandscape) body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
 
-    const onPlayTab=Boolean(body.querySelector('[data-match-center-panel="play"]'));
+    const onPlayTab = String(body.dataset.matchCenterActive || '') === 'play'
+      || (!body.dataset.matchCenterActive && Boolean(body.querySelector('[data-match-center-panel="play"]')));
     if (!onPlayTab) {
       body.querySelectorAll(
         '[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="decisions"],[data-gdx="last-play"],[data-gdx="landscape"]'
