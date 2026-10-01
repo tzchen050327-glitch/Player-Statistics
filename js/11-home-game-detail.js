@@ -762,10 +762,13 @@
 
       const cached = homeBullpenSessionCache.get(key) || null;
       if (!force && cached?.data && homeBullpenDataUsable(cached.data)) {
+        const changed = activeHomeGameDetail.bullpenData !== cached.data;
         activeHomeGameDetail.bullpenData = cached.data;
         activeHomeGameDetail.bullpenError = '';
-        const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
-        renderHomeGameDetail(detail, game);
+        if (changed) {
+          const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+          renderHomeGameDetail(detail, game);
+        }
         return;
       }
 
@@ -1621,11 +1624,19 @@
       const viewport = root?.querySelector?.('[data-pitcher-pager]');
       if (!viewport || !activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
       let settleTimer = 0;
+      let programmatic = false;
+      const initial = String(activeHomeGameDetail.pitcherView || homePitchingDefaultView(
+        homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null,
+        activeHomeGameDetail.game || null
+      ));
+      let lastView = initial === 'records' ? 'records' : 'status';
 
       const setActive = (view, { fetchData = true } = {}) => {
         const next = view === 'records' ? 'records' : 'status';
+        const changed = next !== lastView;
+        lastView = next;
         if (activeHomeGameDetail) activeHomeGameDetail.pitcherView = next;
-        if (!fetchData || !activeHomeGameDetail) return;
+        if (!fetchData || !changed || !activeHomeGameDetail) return;
         if (next === 'records') void refreshHomePitcherRecords({ force:false });
         else void refreshHomeBullpenStatus({ force:false });
       };
@@ -1633,21 +1644,21 @@
       const go = (view, smooth = true, fetchData = true) => {
         const next = view === 'records' ? 'records' : 'status';
         const left = next === 'records' ? viewport.clientWidth : 0;
+        programmatic = true;
         viewport.scrollTo({ left, behavior:smooth ? 'smooth' : 'auto' });
         setActive(next, { fetchData });
+        requestAnimationFrame(() => { programmatic = false; });
       };
+
       viewport.addEventListener('scroll', () => {
+        if (programmatic) return;
         clearTimeout(settleTimer);
         settleTimer = setTimeout(() => {
           const view = viewport.scrollLeft >= viewport.clientWidth * 0.5 ? 'records' : 'status';
           setActive(view, { fetchData:true });
-        }, 90);
+        }, 120);
       }, { passive:true });
 
-      const initial = String(activeHomeGameDetail.pitcherView || homePitchingDefaultView(
-        homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null,
-        activeHomeGameDetail.game || null
-      ));
       requestAnimationFrame(() => go(initial, false, false));
     }
 
