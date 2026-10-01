@@ -171,7 +171,49 @@
   }
 
   function usable(entry) { return Boolean(entry && Date.now() <= Number(entry.staleUntil || 0)); }
-  function fresh(entry) { return Boolean(entry && !entry.live && Date.now() <= Number(entry.freshUntil || 0)); }
+
+  function cpblFinalDecisionCacheIncomplete(entry) {
+    if (!entry || entry.kind !== 'detail' || !entry.final) return false;
+    try {
+      const data = JSON.parse(entry.body || '{}');
+      if (String(data?.league || '').toUpperCase() !== 'CPBL') return false;
+      if (String(data?.status || '').toLowerCase() !== 'final') return false;
+
+      const awayScore = Number(data?.game?.awayScore);
+      const homeScore = Number(data?.game?.homeScore);
+      if (Number.isFinite(awayScore) && Number.isFinite(homeScore) && awayScore === homeScore) return false;
+
+      const decisions = data?.decisions || data?.gameDecisions || {};
+      const win = decisions?.winningPitcher;
+      const loss = decisions?.losingPitcher;
+      const named = player => Boolean(String(player?.name || player?.fullName || '').trim());
+      const counted = player => !named(player) || Number(player?.count) > 0;
+
+      if (!named(win) || !named(loss)) return true;
+      if (!counted(win) || !counted(loss)) return true;
+
+      const save = decisions?.savePitcher || decisions?.savingPitcher || null;
+      if (named(save) && !counted(save)) return true;
+
+      const holds = Array.isArray(decisions?.holds)
+        ? decisions.holds
+        : Array.isArray(decisions?.holdPitchers) ? decisions.holdPitchers : [];
+      if (holds.some(player => named(player) && !counted(player))) return true;
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  function fresh(entry) {
+    return Boolean(
+      entry
+      && !entry.live
+      && !cpblFinalDecisionCacheIncomplete(entry)
+      && Date.now() <= Number(entry.freshUntil || 0)
+    );
+  }
 
   function ensureBadge() {
     if (badge && badge.isConnected) return badge;
