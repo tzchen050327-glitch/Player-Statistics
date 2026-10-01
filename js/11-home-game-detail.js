@@ -1607,10 +1607,6 @@
       activeHomeGameDetail.pitcherView = defaultView;
       return `
         <div class="pitcher-combined-page" data-pitcher-view="${defaultView}">
-          <div class="pitcher-combined-switch" role="tablist" aria-label="投手狀態內頁">
-            <button type="button" data-pitcher-subtab="status" class="${defaultView === 'status' ? 'active' : ''}">投手狀態</button>
-            <button type="button" data-pitcher-subtab="records" class="${defaultView === 'records' ? 'active' : ''}">投手紀錄</button>
-          </div>
           <div class="pitcher-combined-viewport" data-pitcher-pager>
             <div class="pitcher-combined-track">
               <section class="pitcher-combined-slide" data-pitcher-slide="status">${homeBullpenDetailPanel(detail, gameInfo, game)}</section>
@@ -1624,13 +1620,11 @@
     function bindHomePitchingPager(root) {
       const viewport = root?.querySelector?.('[data-pitcher-pager]');
       if (!viewport || !activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
-      const buttons = Array.from(root.querySelectorAll('[data-pitcher-subtab]'));
       let settleTimer = 0;
 
       const setActive = (view, { fetchData = true } = {}) => {
         const next = view === 'records' ? 'records' : 'status';
         if (activeHomeGameDetail) activeHomeGameDetail.pitcherView = next;
-        buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.pitcherSubtab === next));
         if (!fetchData || !activeHomeGameDetail) return;
         if (next === 'records') void refreshHomePitcherRecords({ force:false });
         else void refreshHomeBullpenStatus({ force:false });
@@ -1642,10 +1636,6 @@
         viewport.scrollTo({ left, behavior:smooth ? 'smooth' : 'auto' });
         setActive(next, { fetchData });
       };
-
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => go(String(btn.dataset.pitcherSubtab || 'status'), true, true));
-      });
       viewport.addEventListener('scroll', () => {
         clearTimeout(settleTimer);
         settleTimer = setTimeout(() => {

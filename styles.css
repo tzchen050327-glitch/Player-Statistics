@@ -13579,33 +13579,6 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 .pitcher-combined-page{
   min-width:0;
 }
-.pitcher-combined-switch{
-  position:sticky;
-  top:110px;
-  z-index:4;
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:4px;
-  padding:8px 10px;
-  border-bottom:1px solid rgba(151,165,181,.14);
-  background:var(--bg, #fff);
-}
-.pitcher-combined-switch>button{
-  min-height:34px;
-  border:1px solid rgba(151,165,181,.20);
-  border-radius:9px;
-  background:rgba(255,255,255,.025);
-  color:var(--muted,#7e8d9b);
-  font:inherit;
-  font-size:11px;
-  font-weight:900;
-  cursor:pointer;
-}
-.pitcher-combined-switch>button.active{
-  border-color:rgba(183,138,43,.55);
-  color:#d2ac4e;
-  background:rgba(183,138,43,.10);
-}
 .pitcher-combined-viewport{
   width:100%;
   overflow-x:auto;
@@ -13629,15 +13602,5 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   min-width:0;
   scroll-snap-align:start;
   scroll-snap-stop:always;
-}
-@media(max-width:720px){
-  .pitcher-combined-switch{
-    top:99px;
-    padding:7px 8px;
-  }
-  .pitcher-combined-switch>button{
-    min-height:32px;
-    font-size:10.5px;
-  }
 }
 /* ===== MATCH CENTER MERGED PITCHING PAGER END ===== */
