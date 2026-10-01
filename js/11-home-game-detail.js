@@ -1598,6 +1598,157 @@
       }
     }
 
+
+    function homeUmpirePreviewData(gameInfo = {}) {
+      const date = String(activeHomeGameDetail?.date || '');
+      const gameId = String(gameInfo?.id || activeHomeGameDetail?.game?.id || '');
+      if (date !== '2026-10-01' || gameId !== '277') return null;
+      return {
+        umpire:'木內九二生',
+        total:133,
+        correct:120,
+        strikeTotal:45,
+        strikeCorrect:40,
+        ballTotal:88,
+        ballCorrect:80,
+        consistencyCorrect:118,
+        netImpact:0.43,
+        favorTeam:'台鋼雄鷹',
+        misses:[
+          { inning:'1局上', outs:0, count:'1-0', pitcher:'廖乙忠', batter:'威克', called:'好球', actual:'壞球', kind:'ball-strike', dist:4.54, impact:0.2671, favor:'台鋼雄鷹', x:-0.3023044886, z:0.7859663364, top:1.0486, bottom:0.5292 },
+          { inning:'1局上', outs:1, count:'0-0', pitcher:'廖乙忠', batter:'梁家榮', called:'壞球', actual:'好球', kind:'strike-ball', dist:0.05, impact:0.1162, favor:'樂天桃猿', x:0.1544551092, z:0.4496240218, top:0.9630, bottom:0.4860 },
+          { inning:'1局下', outs:1, count:'1-0', pitcher:'艾菩樂', batter:'紀慶然', called:'壞球', actual:'好球', kind:'strike-ball', dist:0.70, impact:0.0649, favor:'台鋼雄鷹', x:-0.2314372258, z:0.9745560171, top:0.94695, bottom:0.4779 },
+          { inning:'3局下', outs:2, count:'0-0', pitcher:'艾菩樂', batter:'陳世嘉', called:'壞球', actual:'好球', kind:'strike-ball', dist:4.05, impact:0.0311, favor:'台鋼雄鷹', x:-0.0435675948, z:0.4841548473, top:0.9523, bottom:0.4806 },
+          { inning:'4局上', outs:1, count:'0-1', pitcher:'廖乙忠', batter:'成晉', called:'壞球', actual:'好球', kind:'strike-ball', dist:2.40, impact:0.1577, favor:'樂天桃猿', x:-0.1818328137, z:0.4839031016, top:0.9844, bottom:0.4968 },
+          { inning:'5局上', outs:0, count:'2-0', pitcher:'廖乙忠', batter:'陳晨威', called:'好球', actual:'壞球', kind:'ball-strike', dist:2.00, impact:0.5713, favor:'台鋼雄鷹', x:0.2769151421, z:0.8707694655, top:0.9630, bottom:0.4860 },
+          { inning:'6局上', outs:2, count:'0-0', pitcher:'陳宇宏', batter:'成晉', called:'好球', actual:'壞球', kind:'ball-strike', dist:1.91, impact:0.0311, favor:'台鋼雄鷹', x:-0.1008327480, z:0.4408180845, top:0.9844, bottom:0.4968 },
+          { inning:'7局上', outs:1, count:'0-0', pitcher:'許峻暘', batter:'威克', called:'好球', actual:'壞球', kind:'ball-strike', dist:5.88, impact:0.0184, favor:'台鋼雄鷹', x:0.3157444289, z:0.8031739287, top:1.0486, bottom:0.5292 },
+          { inning:'8局下', outs:2, count:'0-0', pitcher:'蘇俊璋', batter:'王博玄', called:'好球', actual:'壞球', kind:'ball-strike', dist:0.61, impact:0.0493, favor:'樂天桃猿', x:0.2228387993, z:1.0273196922, top:0.9844, bottom:0.4968 },
+          { inning:'8局下', outs:2, count:'2-0', pitcher:'蘇俊璋', batter:'高聖恩', called:'好球', actual:'壞球', kind:'ball-strike', dist:8.07, impact:0.2916, favor:'樂天桃猿', x:-0.3375953022, z:0.7858141708, top:0.96835, bottom:0.4887 },
+          { inning:'9局上', outs:1, count:'1-0', pitcher:'黃群', batter:'成晉', called:'好球', actual:'壞球', kind:'ball-strike', dist:6.17, impact:0.0649, favor:'台鋼雄鷹', x:-0.3186050498, z:0.5768166125, top:0.9844, bottom:0.4968 },
+          { inning:'9局下', outs:0, count:'0-2', pitcher:'陳冠宇', batter:'湯家豪', called:'好球', actual:'壞球', kind:'ball-strike', dist:1.82, impact:0.1490, favor:'樂天桃猿', x:0.2751423888, z:0.6125385169, top:0.9095, bottom:0.4590 },
+          { inning:'9局下', outs:1, count:'0-1', pitcher:'陳冠宇', batter:'陳致嘉', called:'壞球', actual:'好球', kind:'strike-ball', dist:2.17, impact:0.1476, favor:'台鋼雄鷹', x:0.2351874685, z:0.5813082073, top:0.94695, bottom:0.4779 }
+        ]
+      };
+    }
+
+    function homeUmpireTeamColor(team) {
+      const name = String(team || '');
+      if (name.includes('台鋼')) return '#006d33';
+      if (name.includes('統一')) return '#ed6c00';
+      if (name.includes('樂天')) return '#8b1538';
+      if (name.includes('富邦')) return '#1f5aa6';
+      if (name.includes('中信')) return '#d6a900';
+      if (name.includes('味全')) return '#c8102e';
+      return '#334155';
+    }
+
+    function homeUmpireDonut(label, value, sub, className = '', style = '') {
+      return `
+        <article class="umpire-metric ${className}" ${style}>
+          <div class="umpire-metric-label">${escapeHtml(label)}</div>
+          <div class="umpire-donut">
+            <div class="umpire-donut-core">
+              <strong>${escapeHtml(value)}</strong>
+              <span>${escapeHtml(sub)}</span>
+            </div>
+          </div>
+        </article>`;
+    }
+
+    function homeUmpirePreviewPanel(detail, gameInfo = {}, game = {}) {
+      const data = homeUmpirePreviewData(gameInfo);
+      if (!data) {
+        return '<div class="game-detail-empty">這場目前還沒有裁判判決報告。</div>';
+      }
+      const away = String(gameInfo?.away || game?.away || '客隊');
+      const home = String(gameInfo?.home || game?.home || '主隊');
+      const awayScore = Number.isFinite(Number(gameInfo?.awayScore)) ? Number(gameInfo.awayScore) : 2;
+      const homeScore = Number.isFinite(Number(gameInfo?.homeScore)) ? Number(gameInfo.homeScore) : 1;
+      const overallPct = (data.correct / data.total * 100).toFixed(1);
+      const strikePct = (data.strikeCorrect / data.strikeTotal * 100).toFixed(1);
+      const ballPct = (data.ballCorrect / data.ballTotal * 100).toFixed(1);
+      const consistencyPct = (data.consistencyCorrect / data.total * 100).toFixed(1);
+      const favorColor = homeUmpireTeamColor(data.favorTeam);
+
+      const points = data.misses.map((miss, index) => {
+        const halfPlate = 0.2159;
+        const px = Math.max(18, Math.min(302, 160 + (Number(miss.x) / halfPlate) * 90));
+        const span = Math.max(0.001, Number(miss.top) - Number(miss.bottom));
+        const py = Math.max(18, Math.min(342, 300 - ((Number(miss.z) - Number(miss.bottom)) / span) * 240));
+        const cls = miss.kind === 'ball-strike' ? 'is-red' : 'is-green';
+        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="13"></circle><text y="5" text-anchor="middle">${index + 1}</text></g>`;
+      }).join('');
+
+      const rows = data.misses.map((miss, index) => {
+        const red = miss.kind === 'ball-strike';
+        const typeLabel = red ? '壞球判好球' : '好球判壞球';
+        const position = red ? `帶外 ${miss.dist.toFixed(2)} cm` : `帶內 ${miss.dist.toFixed(2)} cm`;
+        const impact = Number(miss.impact || 0);
+        const teamColor = homeUmpireTeamColor(miss.favor);
+        return `
+          <article class="umpire-miss-card ${red ? 'is-red' : 'is-green'}">
+            <div class="umpire-miss-head">
+              <strong>誤判 ${String(index + 1).padStart(2, '0')}</strong>
+              <span>${typeLabel}</span>
+            </div>
+            <div class="umpire-miss-lines">
+              <div>${escapeHtml(miss.inning)} / ${miss.outs}出局 / ${escapeHtml(miss.count)}</div>
+              <div><b>${escapeHtml(miss.pitcher)}</b> VS <b>${escapeHtml(miss.batter)}</b></div>
+              <div>主審判決：<b>${escapeHtml(miss.called)}</b></div>
+              <div>實際位置：<b>${escapeHtml(position)}</b> / 球種：<b>—</b></div>
+              <div class="umpire-benefit" style="--team-color:${teamColor}">${escapeHtml(miss.favor)} +${impact.toFixed(2)}</div>
+            </div>
+          </article>`;
+      }).join('');
+
+      return `
+        <section class="umpire-report-preview">
+          <div class="umpire-report-titlebar">
+            <div class="umpire-team-side">
+              <strong>${escapeHtml(away)}</strong>
+              <b>${awayScore}</b>
+            </div>
+            <div class="umpire-report-official">
+              <span>主審判決報告</span>
+              <strong>${escapeHtml(data.umpire)}</strong>
+            </div>
+            <div class="umpire-team-side is-home">
+              <b>${homeScore}</b>
+              <strong>${escapeHtml(home)}</strong>
+            </div>
+          </div>
+
+          <div class="umpire-metrics-grid">
+            ${homeUmpireDonut('整體準確率', overallPct + '%', `${data.correct} / ${data.total}`, '', `style="--metric-value:${overallPct}"`)}
+            ${homeUmpireDonut('好球準確率', strikePct + '%', `${data.strikeCorrect} / ${data.strikeTotal}`, '', `style="--metric-value:${strikePct}"`)}
+            ${homeUmpireDonut('壞球準確率', ballPct + '%', `${data.ballCorrect} / ${data.ballTotal}`, '', `style="--metric-value:${ballPct}"`)}
+            ${homeUmpireDonut('整體判決淨效果', '+' + data.netImpact.toFixed(2), data.favorTeam, 'is-impact', `style="--team-color:${favorColor}"`)}
+            ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${data.total}`, '', `style="--metric-value:${consistencyPct}"`)}
+          </div>
+
+          <div class="umpire-zone-section">
+            <div class="umpire-zone-heading">
+              <strong>誤判球點</strong>
+              <span><i class="is-red"></i>壞球判好球　<i class="is-green"></i>好球判壞球</span>
+            </div>
+            <div class="umpire-zone-wrap">
+              <svg class="umpire-zone-svg" viewBox="0 0 320 360" role="img" aria-label="九宮格好球帶誤判位置">
+                <rect x="70" y="60" width="180" height="240" class="umpire-zone-box"></rect>
+                <line x1="130" y1="60" x2="130" y2="300"></line>
+                <line x1="190" y1="60" x2="190" y2="300"></line>
+                <line x1="70" y1="140" x2="250" y2="140"></line>
+                <line x1="70" y1="220" x2="250" y2="220"></line>
+                ${points}
+              </svg>
+            </div>
+          </div>
+
+          <div class="umpire-miss-list">${rows}</div>
+          <div class="umpire-preview-note">此頁先以 2026/10/1 樂天桃猿－台鋼雄鷹場次做版型預覽；球種欄位尚未接入正式來源。</div>
+        </section>`;
+    }
+
     function homePitchingDefaultView(detail = null, game = null) {
       const status = String(detail?.status || detail?.game?.status || game?.status || '').toLowerCase();
       return ['live','final','suspended'].includes(status) ? 'records' : 'status';
@@ -1712,7 +1863,7 @@
             : centerTab === 'snapshot'
               ? homeSnapshotPanel(detail, gameInfo, game)
               : centerTab === 'umpire'
-                ? ''
+                ? homeUmpirePreviewPanel(detail, gameInfo, game)
                 : '';
       let matchup = '';
       let displayPlays = [];

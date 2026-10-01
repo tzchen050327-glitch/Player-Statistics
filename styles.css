@@ -13604,3 +13604,249 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   scroll-snap-stop:always;
 }
 /* ===== MATCH CENTER MERGED PITCHING PAGER END ===== */
+
+
+/* Umpire report preview */
+.umpire-report-preview{
+  width:min(1180px,100%);
+  margin:0 auto;
+  padding:18px 18px 34px;
+  box-sizing:border-box;
+}
+.umpire-report-titlebar{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(210px,.9fr) minmax(0,1fr);
+  align-items:center;
+  gap:18px;
+  padding:20px 24px;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(15,23,42,.90));
+  box-shadow:0 16px 42px rgba(2,6,23,.18);
+}
+.umpire-team-side{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  min-width:0;
+}
+.umpire-team-side.is-home{justify-content:flex-end}
+.umpire-team-side strong{
+  font-size:clamp(17px,2vw,25px);
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#f8fafc;
+}
+.umpire-team-side b{
+  min-width:54px;
+  text-align:center;
+  font-size:clamp(34px,4vw,54px);
+  line-height:1;
+  color:#fff;
+}
+.umpire-report-official{
+  text-align:center;
+  padding:0 14px;
+  border-left:1px solid rgba(255,255,255,.14);
+  border-right:1px solid rgba(255,255,255,.14);
+}
+.umpire-report-official span{
+  display:block;
+  color:#94a3b8;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+.umpire-report-official strong{
+  display:block;
+  margin-top:5px;
+  color:#fff;
+  font-size:clamp(22px,2.8vw,34px);
+  font-weight:950;
+}
+.umpire-metrics-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+  margin:16px 0;
+}
+.umpire-metric{
+  min-width:0;
+  padding:16px 8px 14px;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:20px;
+  background:rgba(255,255,255,.035);
+  text-align:center;
+}
+.umpire-metric-label{
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-secondary,#94a3b8);
+  font-size:13px;
+  font-weight:850;
+}
+.umpire-donut{
+  width:112px;
+  height:112px;
+  margin:6px auto 0;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(#e2b95c calc(var(--metric-value,0) * 1%),rgba(148,163,184,.18) 0);
+  position:relative;
+}
+.umpire-donut::after{
+  content:"";
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  background:var(--surface,#101826);
+}
+.umpire-donut-core{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+.umpire-donut-core strong{
+  font-size:22px;
+  line-height:1;
+  color:var(--text-primary,#f8fafc);
+}
+.umpire-donut-core span{
+  font-size:11px;
+  font-weight:800;
+  color:var(--text-secondary,#94a3b8);
+}
+.umpire-metric.is-impact .umpire-donut{
+  background:conic-gradient(var(--team-color,#334155) 0 100%);
+}
+.umpire-metric.is-impact .umpire-donut-core strong,
+.umpire-metric.is-impact .umpire-donut-core span{color:var(--team-color,#334155)}
+.umpire-zone-section{
+  margin-top:14px;
+  padding:18px;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:22px;
+  background:rgba(255,255,255,.025);
+}
+.umpire-zone-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.umpire-zone-heading strong{font-size:20px}
+.umpire-zone-heading span{font-size:12px;color:var(--text-secondary,#94a3b8);font-weight:800}
+.umpire-zone-heading i{
+  width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px
+}
+.umpire-zone-heading i.is-red{background:#ef4444}
+.umpire-zone-heading i.is-green{background:#22c55e}
+.umpire-zone-wrap{
+  width:min(440px,100%);
+  margin:0 auto;
+}
+.umpire-zone-svg{
+  display:block;
+  width:100%;
+  height:auto;
+  overflow:visible;
+}
+.umpire-zone-svg line,.umpire-zone-box{
+  stroke:rgba(226,232,240,.52);
+  stroke-width:2;
+  fill:none;
+}
+.umpire-zone-box{stroke-width:3}
+.umpire-zone-point circle{stroke:#fff;stroke-width:2}
+.umpire-zone-point text{fill:#fff;font-size:12px;font-weight:950;pointer-events:none}
+.umpire-zone-point.is-red circle{fill:#ef4444}
+.umpire-zone-point.is-green circle{fill:#16a34a}
+.umpire-miss-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+.umpire-miss-card{
+  position:relative;
+  overflow:hidden;
+  padding:14px 16px 15px;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+}
+.umpire-miss-card::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;width:4px;
+}
+.umpire-miss-card.is-red::before{background:#ef4444}
+.umpire-miss-card.is-green::before{background:#22c55e}
+.umpire-miss-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:9px;
+}
+.umpire-miss-head strong{font-size:16px}
+.umpire-miss-head span{
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+}
+.umpire-miss-card.is-red .umpire-miss-head span{background:rgba(239,68,68,.14);color:#ef4444}
+.umpire-miss-card.is-green .umpire-miss-head span{background:rgba(34,197,94,.14);color:#22c55e}
+.umpire-miss-lines{
+  display:grid;
+  gap:4px;
+  font-size:13px;
+  line-height:1.5;
+  color:var(--text-secondary,#cbd5e1);
+}
+.umpire-miss-lines b{color:var(--text-primary,#f8fafc)}
+.umpire-benefit{
+  margin-top:3px;
+  color:var(--team-color,#fff);
+  font-size:15px;
+  font-weight:950;
+}
+.umpire-preview-note{
+  margin-top:14px;
+  text-align:center;
+  font-size:11px;
+  color:var(--text-secondary,#94a3b8);
+}
+@media(max-width:760px){
+  .umpire-report-preview{padding:12px 10px 28px}
+  .umpire-report-titlebar{grid-template-columns:1fr auto 1fr;gap:8px;padding:15px 10px;border-radius:16px}
+  .umpire-team-side{gap:6px;flex-direction:column}
+  .umpire-team-side.is-home{flex-direction:column-reverse}
+  .umpire-team-side strong{font-size:14px;max-width:108px;text-align:center}
+  .umpire-team-side b{min-width:auto;font-size:34px}
+  .umpire-report-official{padding:0 8px}
+  .umpire-report-official span{font-size:10px;letter-spacing:.04em}
+  .umpire-report-official strong{font-size:19px}
+  .umpire-metrics-grid{
+    grid-template-columns:repeat(5,minmax(104px,1fr));
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding-bottom:6px;
+  }
+  .umpire-metric{scroll-snap-align:start;padding:12px 6px}
+  .umpire-donut{width:92px;height:92px}
+  .umpire-donut-core strong{font-size:18px}
+  .umpire-donut-core span{font-size:10px}
+  .umpire-miss-list{grid-template-columns:1fr}
+  .umpire-zone-heading{align-items:flex-start;flex-direction:column}
+}
