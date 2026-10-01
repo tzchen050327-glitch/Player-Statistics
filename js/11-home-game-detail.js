@@ -1822,12 +1822,18 @@
       const body = overlay.querySelector('#homeGameDetailBody');
       if (!body) return;
       if (detail?.game) {
+        const shouldDispatchDetailState = window.__latestHomeGameDetail !== detail;
         window.__latestHomeGameDetail = detail;
-        queueMicrotask(() => {
-          window.dispatchEvent(new CustomEvent('home-game-detail-state', {
-            detail:{ detail, league:activeHomeGameDetail?.league || detail?.league || '', date:activeHomeGameDetail?.date || detail?.date || '' }
-          }));
-        });
+        // Tab switches reuse the exact same cached detail object. Do not rebroadcast
+        // the full game payload on every UI-only render; the enhancement layer already
+        // observes the DOM and this event used to make rapid tab switching do duplicate work.
+        if (shouldDispatchDetailState) {
+          queueMicrotask(() => {
+            window.dispatchEvent(new CustomEvent('home-game-detail-state', {
+              detail:{ detail, league:activeHomeGameDetail?.league || detail?.league || '', date:activeHomeGameDetail?.date || detail?.date || '' }
+            }));
+          });
+        }
       }
       const status = String(detail?.status || game?.status || 'scheduled').toLowerCase();
       const currentBatter = String(detail?.current?.batter?.name || '').trim();
@@ -1987,12 +1993,11 @@
       if (status === 'final') {
         const plays = Array.isArray(detail?.plays) ? detail.plays : [];
         if (activeHomeGameDetail?.league === 'CPBL' && plays.length === 0) return 0;
-        const cpblSameDay = activeHomeGameDetail?.league === 'CPBL'
-          && String(activeHomeGameDetail?.date || '') === localISODate();
-        if (cpblSameDay) return 5 * 60 * 1000;
-        return homeGameDecisionsSettled(detail) && homeGameDecisionCountsSettled(detail)
-          ? 12 * 60 * 60 * 1000
-          : 60 * 1000;
+        // Once a final game has complete decisions/counts, the payload is immutable
+        // for this page session. Keep it in the front-end Map permanently instead of
+        // re-reading Supabase every few minutes just because the game ended today.
+        if (homeGameDecisionsSettled(detail) && homeGameDecisionCountsSettled(detail)) return Infinity;
+        return 60 * 1000;
       }
       if (status === 'cancelled') return 12 * 60 * 60 * 1000;
       if (status === 'scheduled') return 2 * 60 * 1000;
