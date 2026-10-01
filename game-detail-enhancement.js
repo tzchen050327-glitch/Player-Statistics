@@ -1453,6 +1453,18 @@
     document.body.classList.toggle('gdx-cpbl-landscape',supportsLandscape);
     if (!supportsLandscape) body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
+
+    const activeTab=String(
+      body.querySelector('[data-match-center-tab].active')?.dataset?.matchCenterTab || 'play'
+    );
+    if (activeTab !== 'play') {
+      body.querySelectorAll(
+        '[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="decisions"],[data-gdx="last-play"],[data-gdx="landscape"]'
+      ).forEach(node=>node.remove());
+      delete body.dataset.gdxStamp;
+      return;
+    }
+
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
     const stamp=`${detailStamp(detail)}|${landscapeMode?'landscape':'portrait'}`;
