@@ -13766,10 +13766,10 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   fill:none;
 }
 .umpire-zone-box{stroke-width:3}
-.umpire-zone-point circle{stroke:#fff;stroke-width:2}
+.umpire-zone-point circle,.umpire-zone-point ellipse{stroke:#fff;stroke-width:2}
 .umpire-zone-point text{fill:#fff;font-size:12px;font-weight:950;pointer-events:none}
-.umpire-zone-point.is-red circle{fill:#ef4444}
-.umpire-zone-point.is-green circle{fill:#16a34a}
+.umpire-zone-point.is-red circle,.umpire-zone-point.is-red ellipse{fill:#ef4444}
+.umpire-zone-point.is-green circle,.umpire-zone-point.is-green ellipse{fill:#16a34a}
 .umpire-miss-list{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
