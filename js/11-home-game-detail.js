@@ -1,5 +1,7 @@
     const homePitcherRecordsCache = new Map();
     const homeBullpenSessionCache = new Map();
+    const homeUmpireReportCache = new Map();
+    const HOME_UMPIRE_REPORT_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-umpire-report-sync';
 
     function homeGameDetailSupported(league) {
       return league === 'CPBL' || league === 'NPB';
@@ -1599,9 +1601,86 @@
     }
 
 
+
+    function homeUmpireReportKey(date, gameId) {
+      return [String(date || ''), String(gameId || '')].join('|');
+    }
+
+    async function refreshHomeUmpireReport({ force = false } = {}) {
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
+      const date = String(activeHomeGameDetail.date || '');
+      const game = activeHomeGameDetail.game || {};
+      const gameId = String(game?.id || '');
+      if (!gameId || date < '2026-10-02') return;
+      const reportKey = homeUmpireReportKey(date, gameId);
+      if (!force && homeUmpireReportCache.has(reportKey)) return;
+      try {
+        const response = await fetch(HOME_UMPIRE_REPORT_API_URL, {
+          method:'POST',
+          headers:{ 'content-type':'application/json' },
+          body:JSON.stringify({
+            appKey:CPBL_APP_KEY,
+            action:'get',
+            date,
+            gameId
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.ok) throw new Error(data?.error || `裁判報告讀取失敗（${response.status}）`);
+        homeUmpireReportCache.set(reportKey, data?.report || null);
+      } catch (error) {
+        homeUmpireReportCache.set(reportKey, null);
+      }
+      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL'
+          || String(activeHomeGameDetail.date || '') !== date
+          || String(activeHomeGameDetail.game?.id || '') !== gameId
+          || activeHomeGameDetail.centerTab !== 'umpire') return;
+      const detail = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null;
+      if (detail) renderHomeGameDetail(detail, activeHomeGameDetail.game);
+    }
+
     function homeUmpirePreviewData(gameInfo = {}) {
       const date = String(activeHomeGameDetail?.date || '');
       const gameId = String(gameInfo?.id || activeHomeGameDetail?.game?.id || '');
+      const liveReport = homeUmpireReportCache.get(homeUmpireReportKey(date, gameId));
+      if (liveReport) {
+        const misses = Array.isArray(liveReport?.missed_calls) ? liveReport.missed_calls.map((p) => {
+          const called = String(p?.called || '').toUpperCase();
+          const actual = String(p?.true_call || '').toUpperCase();
+          const half = String(p?.inning_half || '') === '▲' ? '上' : String(p?.inning_half || '') === '▼' ? '下' : '';
+          return {
+            inning:`${Number(p?.inning_num) || ''}局${half}`,
+            outs:Math.max(0, Number(p?.outs) || 0),
+            count:`${Math.max(0, Number(p?.count_b) || 0)}-${Math.max(0, Number(p?.count_s) || 0)}`,
+            pitcher:String(p?.pitcher || ''),
+            batter:String(p?.batter || ''),
+            called:called === 'STRIKE' ? '好球' : '壞球',
+            actual:actual === 'STRIKE' ? '好球' : '壞球',
+            kind:called === 'STRIKE' && actual === 'BALL' ? 'ball-strike' : 'strike-ball',
+            dist:Number(p?.dist_cm) || 0,
+            impact:Number(p?.impact) || 0,
+            favor:String(p?.favor_team || ''),
+            x:Number(p?.x) || 0,
+            z:Number(p?.z) || 0,
+            top:Number(p?.sz_top) || 0,
+            bottom:Number(p?.sz_bottom) || 0
+          };
+        }) : [];
+        return {
+          umpire:String(liveReport?.umpire_name || ''),
+          total:Number(liveReport?.total_calls) || 0,
+          correct:Number(liveReport?.correct_calls) || 0,
+          strikeTotal:Number(liveReport?.strike_total) || 0,
+          strikeCorrect:Number(liveReport?.strike_correct) || 0,
+          ballTotal:Number(liveReport?.ball_total) || 0,
+          ballCorrect:Number(liveReport?.ball_correct) || 0,
+          consistencyCorrect:Number(liveReport?.consistency_correct) || 0,
+          consistencyTotal:Number(liveReport?.consistency_total) || Number(liveReport?.total_calls) || 0,
+          netImpact:Number(liveReport?.net_favor) || 0,
+          favorTeam:String(liveReport?.net_favor_team || ''),
+          misses
+        };
+      }
       if (date !== '2026-10-01' || gameId !== '277') return null;
       return {
         umpire:'木內九二生',
@@ -1668,7 +1747,8 @@
       const overallPct = (data.correct / data.total * 100).toFixed(1);
       const strikePct = (data.strikeCorrect / data.strikeTotal * 100).toFixed(1);
       const ballPct = (data.ballCorrect / data.ballTotal * 100).toFixed(1);
-      const consistencyPct = (data.consistencyCorrect / data.total * 100).toFixed(1);
+      const consistencyTotal = Number(data.consistencyTotal || data.total || 0);
+      const consistencyPct = consistencyTotal > 0 ? (data.consistencyCorrect / consistencyTotal * 100).toFixed(1) : '0.0';
       const favorColor = homeUmpireTeamColor(data.favorTeam);
 
       const points = data.misses.map((miss, index) => {
@@ -1728,7 +1808,7 @@
             ${homeUmpireDonut('好球準確率', strikePct + '%', `${data.strikeCorrect} / ${data.strikeTotal}`, '', `style="--metric-value:${strikePct}"`)}
             ${homeUmpireDonut('壞球準確率', ballPct + '%', `${data.ballCorrect} / ${data.ballTotal}`, '', `style="--metric-value:${ballPct}"`)}
             ${homeUmpireDonut('整體判決淨效果', '+' + data.netImpact.toFixed(2), data.favorTeam, 'is-impact', `style="--team-color:${favorColor}"`)}
-            ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${data.total}`, '', `style="--metric-value:${consistencyPct}"`)}
+            ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${consistencyTotal}`, '', `style="--metric-value:${consistencyPct}"`)}
           </div>
 
           <div class="umpire-zone-section">
@@ -1959,6 +2039,8 @@
           if (tab === 'pitchers') {
             if (hasBullpen && activeHomeGameDetail.pitcherView === 'status') void refreshHomeBullpenStatus({ force:false });
             else if (hasPitchers) void refreshHomePitcherRecords({ force:false });
+          } else if (tab === 'umpire') {
+            void refreshHomeUmpireReport({ force:false });
           }
         });
       });
