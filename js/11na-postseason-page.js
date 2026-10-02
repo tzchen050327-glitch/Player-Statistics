@@ -56,6 +56,24 @@
       if (postseasonHasSelectedLeagueData()) return Promise.resolve(standingsOfficialCache);
       if (postseasonLoadPromise) return postseasonLoadPromise;
 
+      if (standingsOfficialLoading) {
+        postseasonLoadPromise = new Promise(resolve => {
+          const started = Date.now();
+          const waitForSharedRequest = () => {
+            if (!standingsOfficialLoading || Date.now() - started >= 8000) {
+              resolve(standingsOfficialCache || null);
+              return;
+            }
+            setTimeout(waitForSharedRequest, 120);
+          };
+          waitForSharedRequest();
+        }).finally(() => {
+          postseasonLoadPromise = null;
+          if (currentPage === 'postseason') renderPostseasonPage();
+        });
+        return postseasonLoadPromise;
+      }
+
       const key = String(leagueHubLeague || 'cpbl');
       const last = Number(postseasonLastAttemptAt.get(key) || 0);
       if (Date.now() - last < 30000) return Promise.resolve(null);
