@@ -99,7 +99,6 @@
       homePitcherBatterBtn: document.getElementById('homePitcherBatterBtn'),
       trafficMonitorPage: document.getElementById('trafficMonitorPage'),
       trafficMonitorPageContent: document.getElementById('trafficMonitorPageContent'),
-      homeTrafficMonitorBtn: document.getElementById('homeTrafficMonitorBtn'),
       trafficMonitorBackHomeBtn: document.getElementById('trafficMonitorBackHomeBtn'),
       pitcherBatterBackHomeBtn: document.getElementById('pitcherBatterBackHomeBtn'),
       leagueHubPage: document.getElementById('leagueHubPage'),
