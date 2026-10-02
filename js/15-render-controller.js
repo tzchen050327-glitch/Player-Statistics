@@ -45,6 +45,7 @@
       const advancedStatsPageActive = currentPage === 'advanced-stats';
       const playerRankingPageActive = currentPage === 'player-ranking';
       const schedulePageActive = currentPage === 'schedule';
+      const trafficMonitorPageActive = currentPage === 'traffic-monitor';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
       if (leagueHubPageActive) {
         predictionUiState.league = leagueHubLeague;
@@ -56,7 +57,7 @@
         forceOfficialRefreshBtn.classList.toggle('hidden', !showOfficialRefresh);
       }
 
-      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || leagueHubPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homePage?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || leagueHubPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive || trafficMonitorPageActive);
       els.playerPage?.classList.toggle('hidden', !playerPageActive);
       els.customNotificationPage?.classList.toggle('hidden', !customNotificationPageActive);
       els.pitcherBatterPage?.classList.toggle('hidden', !pitcherBatterPageActive);
@@ -64,6 +65,7 @@
       els.advancedStatsPage?.classList.toggle('hidden', !advancedStatsPageActive);
       els.playerRankingPage?.classList.toggle('hidden', !playerRankingPageActive);
       els.schedulePage?.classList.toggle('hidden', !schedulePageActive);
+      els.trafficMonitorPage?.classList.toggle('hidden', !trafficMonitorPageActive);
       els.predictionPageContent?.classList.toggle('hidden', !predictionPageActive);
       els.standingsPageContent?.classList.toggle('hidden', !standingsPageActive);
       els.postseasonPageContent?.classList.toggle('hidden', !postseasonPageActive);
@@ -73,6 +75,7 @@
       if (postseasonPageActive) renderPostseasonPage();
       if (playerRankingPageActive) renderPlayerRankingPage();
       if (schedulePageActive) renderSchedulePage();
+      if (trafficMonitorPageActive) renderTrafficMonitorPage();
       if (advancedStatsPageActive) renderAdvancedStatsPage();
       if (pitcherBatterPageActive) renderPitcherBatterPage();
 
@@ -92,6 +95,7 @@
         let subtitle = homePageBreadcrumb();
         if (playerRankingPageActive) subtitle = '數據排行';
         else if (schedulePageActive) subtitle = '聯盟賽程';
+        else if (trafficMonitorPageActive) subtitle = '流量監控';
         else if (customNotificationPageActive) subtitle = '通知中心';
         else if (pitcherBatterPageActive) subtitle = '投打對決';
         else if (leagueHubPageActive) subtitle = '聯盟分析';
@@ -110,7 +114,7 @@
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || standingsPageActive || postseasonPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || standingsPageActive || postseasonPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive || trafficMonitorPageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
