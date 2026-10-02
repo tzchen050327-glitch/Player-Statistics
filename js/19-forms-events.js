@@ -988,12 +988,6 @@
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.homeTrafficMonitorBtn?.addEventListener('click', () => {
-      currentPage = 'traffic-monitor';
-      renderAll();
-      window.scrollTo({ top:0, behavior:'instant' });
-    });
-
     els.trafficMonitorBackHomeBtn?.addEventListener('click', () => {
       currentPage = 'home';
       renderAll();
