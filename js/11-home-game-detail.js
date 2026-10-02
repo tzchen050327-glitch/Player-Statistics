@@ -1633,7 +1633,11 @@
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data?.ok) throw new Error(data?.error || `裁判報告讀取失敗（${response.status}）`);
-        homeUmpireReportCache.set(reportKey, data?.report || null);
+        const cached = data?.report
+          || (String(data?.status || '') === 'unavailable'
+            ? { __noReport:true, status:'unavailable' }
+            : null);
+        homeUmpireReportCache.set(reportKey, cached);
         homeUmpireReportFetchedAt.set(reportKey, Date.now());
       } catch (error) {
         homeUmpireReportCache.set(reportKey, null);
@@ -1651,6 +1655,7 @@
       const date = String(activeHomeGameDetail?.date || '');
       const gameId = String(gameInfo?.id || activeHomeGameDetail?.game?.id || '');
       const liveReport = homeUmpireReportCache.get(homeUmpireReportKey(date, gameId));
+      if (liveReport?.__noReport) return { noReport:true };
       if (liveReport) {
         const misses = Array.isArray(liveReport?.missed_calls) ? liveReport.missed_calls.map((p) => {
           const called = String(p?.called || '').toUpperCase();
@@ -1749,6 +1754,9 @@
       const data = homeUmpirePreviewData(gameInfo);
       if (!data) {
         return '<div class="game-detail-empty">這場目前還沒有裁判判決報告。</div>';
+      }
+      if (data?.noReport) {
+        return '<div class="game-detail-empty">本場無裁判報告</div>';
       }
       const away = String(gameInfo?.away || game?.away || '客隊');
       const home = String(gameInfo?.home || game?.home || '主隊');
