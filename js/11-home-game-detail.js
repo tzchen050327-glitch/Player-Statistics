@@ -1,6 +1,7 @@
     const homePitcherRecordsCache = new Map();
     const homeBullpenSessionCache = new Map();
     const homeUmpireReportCache = new Map();
+    const homeUmpireReportFetchedAt = new Map();
     const HOME_UMPIRE_REPORT_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-umpire-report-sync';
 
     function homeGameDetailSupported(league) {
@@ -1613,7 +1614,12 @@
       const gameId = String(game?.id || '');
       if (!gameId || date < '2026-10-02') return;
       const reportKey = homeUmpireReportKey(date, gameId);
-      if (!force && homeUmpireReportCache.has(reportKey)) return;
+      const cachedReport = homeUmpireReportCache.get(reportKey);
+      const cachedAt = Number(homeUmpireReportFetchedAt.get(reportKey) || 0);
+      const provisional = !cachedReport || String(cachedReport?.source_updated_at || '').startsWith('direct-stats-');
+      const ttl = provisional ? 60_000 : Infinity;
+      if (!force && homeUmpireReportCache.has(reportKey)
+          && (ttl === Infinity || Date.now() - cachedAt < ttl)) return;
       try {
         const response = await fetch(HOME_UMPIRE_REPORT_API_URL, {
           method:'POST',
@@ -1628,8 +1634,10 @@
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data?.ok) throw new Error(data?.error || `裁判報告讀取失敗（${response.status}）`);
         homeUmpireReportCache.set(reportKey, data?.report || null);
+        homeUmpireReportFetchedAt.set(reportKey, Date.now());
       } catch (error) {
         homeUmpireReportCache.set(reportKey, null);
+        homeUmpireReportFetchedAt.set(reportKey, Date.now());
       }
       if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL'
           || String(activeHomeGameDetail.date || '') !== date
