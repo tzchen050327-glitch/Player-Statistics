@@ -1787,18 +1787,54 @@
       const favorColor = homeUmpireTeamColor(data.favorTeam);
 
       const points = data.misses.map((miss, index) => {
-        // Keep the plot geometry identical to the backend strike-zone model.
-        // Physical circles become ellipses on this SVG because X/Y use different scales.
-        // Using an SVG circle here overstates one axis and can make a true ball appear
-        // to touch the zone even though the real baseball is fully outside.
+        // Keep the physical geometry identical to the backend model.
+        // The chart uses different X/Y scales, so a real baseball projects as an ellipse.
         const halfPlate = 0.22;
         const baseballRadiusM = 0.0369;
-        const px = Math.max(18, Math.min(302, 160 + (Number(miss.x) / halfPlate) * 90));
         const span = Math.max(0.001, Number(miss.top) - Number(miss.bottom));
-        const py = Math.max(18, Math.min(342, 300 - ((Number(miss.z) - Number(miss.bottom)) / span) * 240));
+        const xScale = 90 / halfPlate;
+        const zScale = 240 / span;
+        const radiusX = baseballRadiusM * xScale;
+        const radiusY = baseballRadiusM * zScale;
         const cls = miss.kind === 'ball-strike' ? 'is-red' : 'is-green';
-        const radiusX = (baseballRadiusM / halfPlate) * 90;
-        const radiusY = (baseballRadiusM / span) * 240;
+
+        let displayX = Number(miss.x) || 0;
+        let displayZ = Number(miss.z) || 0;
+
+        if (miss.kind === 'ball-strike') {
+          // A red point is physically outside the strike zone. Very small real gaps
+          // (e.g. 0.05 cm) disappear on screen because the zone and ball both have
+          // visible strokes. Preserve the real coordinates in the data/card, but move
+          // only the rendered marker outward by the minimum amount needed to leave a
+          // clear 4px gap between strokes.
+          const left = -halfPlate;
+          const right = halfPlate;
+          const bottom = Number(miss.bottom) || 0;
+          const top = Number(miss.top) || 0;
+          const nearestX = Math.max(left, Math.min(right, displayX));
+          const nearestZ = Math.max(bottom, Math.min(top, displayZ));
+          const dx = displayX - nearestX;
+          const dz = displayZ - nearestZ;
+          const distanceM = Math.hypot(dx, dz);
+
+          if (distanceM > 0) {
+            const ux = dx / distanceM;
+            const uz = dz / distanceM;
+            const normalPxPerM = Math.hypot(ux * xScale, uz * zScale);
+            const physicalGapPx = Math.max(0, (distanceM - baseballRadiusM) * normalPxPerM);
+            const targetEmptyGapPx = 4;
+            const strokeAllowancePx = 2.5; // 1/2 zone stroke + 1/2 ball stroke
+            const extraPx = Math.max(0, targetEmptyGapPx + strokeAllowancePx - physicalGapPx);
+            if (normalPxPerM > 0 && extraPx > 0) {
+              const extraM = extraPx / normalPxPerM;
+              displayX += ux * extraM;
+              displayZ += uz * extraM;
+            }
+          }
+        }
+
+        const px = Math.max(18, Math.min(302, 160 + displayX * xScale));
+        const py = Math.max(18, Math.min(342, 300 - ((displayZ - Number(miss.bottom)) / span) * 240));
         return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><ellipse rx="${radiusX.toFixed(1)}" ry="${radiusY.toFixed(1)}"></ellipse><text y="5" text-anchor="middle">${index + 1}</text></g>`;
       }).join('');
 
