@@ -1014,7 +1014,7 @@
     }
 
     function openLeagueHub(view = leagueHubView) {
-      const nextView = view === 'standings' ? 'standings' : 'prediction';
+      const nextView = ['prediction','standings','postseason'].includes(view) ? view : 'prediction';
       leagueHubView = nextView;
       localStorage.setItem('leagueHubView', nextView);
       syncLeagueHubLeague(leagueHubLeague);
