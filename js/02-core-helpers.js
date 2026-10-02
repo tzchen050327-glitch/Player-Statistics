@@ -102,7 +102,7 @@
     const pitcherDefaults = () => ({
       cg: 0, sho: 0, noWalkHbp: 0,
       w: 0, l: 0, sv: 0, bsv: 0, hld: 0,
-      outs: 0, h: 0, bb: 0, hbp: 0, k: 0, er: 0
+      outs: 0, h: 0, hrAllowed: 0, bb: 0, hbp: 0, k: 0, er: 0
     });
 
     const PITCHER_LAST_METRIC_OPTIONS = [
