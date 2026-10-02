@@ -42,6 +42,7 @@
 11r-advanced-stats.js
 11s-special-games.js
 11s-pitcher-batter-matchup.js
+11t-traffic-monitor.js
 12-player-pages.js
 13-daily-editor.js
 13a-daily-sync-progress.js
