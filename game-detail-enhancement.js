@@ -1021,6 +1021,27 @@
     return runners;
   }
 
+  function cpblResolveRunnerSubstitutions(detail,names) {
+    if(String(detail?.league||'').toUpperCase()!=='CPBL') return names;
+    const side=currentOffenseSide(detail);
+    const roster=Array.isArray(detail?.lineups?.[side]?.roster)?detail.lineups[side].roster:[];
+    if(!roster.length) return names;
+    const out={...names};
+    for(const base of ['first','second','third']){
+      const current=compactName(out[base]||'');
+      if(!current) continue;
+      const original=roster.find(entry=>samePlayerName(entry?.name||entry?.fullName||'',current));
+      const order=Number(original?.order)||0;
+      if(!(order>=1&&order<=9)) continue;
+      const chain=roster.filter(entry=>Number(entry?.order)===order&&compactName(entry?.name||entry?.fullName||''));
+      if(chain.length<2) continue;
+      const latest=chain.at(-1);
+      const latestName=compactName(latest?.name||latest?.fullName||'');
+      if(latestName&&!samePlayerName(latestName,current)) out[base]=latestName;
+    }
+    return out;
+  }
+
   function currentRunnerNames(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
@@ -1059,8 +1080,9 @@
       : useNpbSnapshot
         ? {first:inferred.first||direct.first,second:inferred.second||direct.second,third:inferred.third||direct.third}
         : {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
+    const resolved=cpblResolveRunnerSubstitutions(detail,merged);
     const state=normalizeBaseState(currentBaseState(detail));
-    return {first:state.first?merged.first:'',second:state.second?merged.second:'',third:state.third?merged.third:''};
+    return {first:state.first?resolved.first:'',second:state.second?resolved.second:'',third:state.third?resolved.third:''};
   }
 
   function detailStamp(detail) {
