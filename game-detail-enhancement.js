@@ -689,6 +689,28 @@
     return entry ? {...entry,inferredFromCompletedPa:true,previousLineupOrder:previousOrder} : null;
   }
 
+  function cpblKnownLineupPlayer(detail,side,name) {
+    const target=compactName(name);
+    if(!target) return false;
+    const pools=[
+      detail?.startingLineup?.[side],
+      detail?.lineups?.[side]?.roster
+    ];
+    return pools.some(list=>Array.isArray(list)&&list.some(entry=>
+      samePlayerName(entry?.name||entry?.fullName||entry?.playerName||'',target)
+    ));
+  }
+
+  function cpblLatestSlotOccupant(detail,side,order) {
+    const slot=Number(order)||0;
+    if(!(slot>=1&&slot<=9)) return null;
+    let latest=null;
+    for(const entry of lineupDisplayEntries(detail,side)){
+      if(Number(entry?.order)===slot) latest=entry;
+    }
+    return latest;
+  }
+
   function effectiveCurrentBatter(detail) {
     const official=detail?.current?.batter||{};
     if(String(detail?.league||'').toUpperCase()!=='CPBL') return official;
@@ -719,7 +741,16 @@
       if(lastName&&samePlayerName(officialName,lastName)) return expected;
       if(officialEntry && Number(officialEntry?.order)===Number(expected?.order)) return official;
       if(!officialEntry) {
-        // A name not present in the latest lineup can be a just-announced pinch hitter.
+        const latest=cpblLatestSlotOccupant(detail,offense,expected?.order);
+        // If the stale official name is a known original/roster player and the
+        // same lineup slot has already been replaced, trust the replacement now.
+        // Preserve an unknown official name because that can be a brand-new pinch
+        // hitter announced before the lineup cache catches up.
+        if(latest
+          && samePlayerName(latest?.name,expected?.name)
+          && cpblKnownLineupPlayer(detail,offense,officialName)) {
+          return {...expected,...latest,substitutionResolved:true};
+        }
         return official;
       }
       return expected;
@@ -733,6 +764,12 @@
       if(officialDefense) return expected;
       if(officialOffense){
         return Number(officialOffense?.order)===Number(expected?.order) ? official : expected;
+      }
+      const latest=cpblLatestSlotOccupant(detail,offense,expected?.order);
+      if(latest
+        && samePlayerName(latest?.name,expected?.name)
+        && cpblKnownLineupPlayer(detail,offense,officialName)) {
+        return {...expected,...latest,substitutionResolved:true};
       }
       // Unknown names may be a just-announced pinch hitter not yet reflected in lineup cache.
       return official;
