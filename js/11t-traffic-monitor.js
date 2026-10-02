@@ -7,7 +7,7 @@
       loadedAt:0,
       error:'',
       managementConnected:false,
-      settings:{ enabled:false, threshold_a_mb:10, threshold_b_mb:10, threshold_total_mb:20 },
+      settings:{ enabled:false, threshold_a_mb:100, threshold_b_mb:10, threshold_total_mb:20 },
       usage:{ date:'', rows:[] }
     };
 
@@ -122,7 +122,7 @@
 
     function trafficMonitorReadInputs() {
       const host = els.trafficMonitorPageContent;
-      const get = key => Math.max(0.1, Number(host?.querySelector('[data-traffic-threshold="' + key + '"]')?.value) || (key === 'TOTAL' ? 20 : 10));
+      const get = key => Math.max(0.1, Number(host?.querySelector('[data-traffic-threshold="' + key + '"]')?.value) || (key === 'TOTAL' ? 20 : (key === 'A' ? 100 : 10)));
       return { thresholdA:get('A'), thresholdB:get('B'), thresholdTotal:get('TOTAL') };
     }
 
