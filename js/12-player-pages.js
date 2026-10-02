@@ -58,6 +58,7 @@
         <div class="grid four">
           ${readonlyStatField('投球局數', outsToIP(stats?.outs || 0))}
           ${readonlyStatField('被安打', stats?.h || 0)}
+          ${readonlyStatField('被全壘打', stats?.hrAllowed || 0)}
           ${readonlyStatField('保送', stats?.bb || 0)}
           ${readonlyStatField('死球', stats?.hbp || 0)}
           ${readonlyStatField('三振', stats?.k || 0)}
@@ -174,6 +175,7 @@
             ${pitcherInput('中繼成功', 'hld', s.hld)}
             <label class="field">投球局數<input id="base-outs" type="text" value="${outsToIP(s.outs)}" /></label>
             ${pitcherInput('安打', 'h', s.h)}
+            ${pitcherInput('被全壘打', 'hrAllowed', s.hrAllowed)}
             ${pitcherInput('保送', 'bb', s.bb)}
             ${pitcherInput('死球', 'hbp', s.hbp)}
             ${pitcherInput('三振', 'k', s.k)}
