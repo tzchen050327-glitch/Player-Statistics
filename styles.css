@@ -13945,3 +13945,34 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   .postseason-world-series{place-items:stretch}
   .postseason-world-series .postseason-round{width:auto}
 }
+
+
+/* v8.18 app interaction lock: app-like touch behavior without breaking form fields. */
+html,
+body,
+.app,
+button,
+a,
+label,
+.panel,
+[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable="plaintext-only"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: manipulation;
+}
