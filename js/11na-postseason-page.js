@@ -147,6 +147,163 @@
     }
 
 
+    function postseasonTodayKey() {
+      try {
+        return new Intl.DateTimeFormat('en-CA', {
+          timeZone:'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit'
+        }).format(new Date());
+      } catch {
+        return new Date().toISOString().slice(0,10);
+      }
+    }
+
+    function postseasonSeasonActive() {
+      const today = postseasonTodayKey();
+      if (leagueHubLeague === 'mlb') {
+        const start = ({ 2026:'2026-09-29' })[CURRENT_YEAR] || `${CURRENT_YEAR}-09-25`;
+        return today >= start;
+      }
+      if (leagueHubLeague === 'npb') {
+        const start = ({ 2026:'2026-10-10' })[CURRENT_YEAR] || `${CURRENT_YEAR}-10-08`;
+        return today >= start;
+      }
+      if (leagueHubLeague === 'kbo') {
+        const rows = postseasonSectionRows(standingsOfficialCache?.kbo?.regular,5);
+        return rows.length >= 5 && rows.every(row => Number(row?.games) >= 144);
+      }
+      if (leagueHubLeague === 'cpbl') {
+        const rows = postseasonSectionRows(standingsOfficialCache?.cpbl?.annual,99);
+        return rows.length >= 6 && rows.every(row => Number(row?.games) >= 120);
+      }
+      return false;
+    }
+
+    function postseasonMatchCard(title, teamA, teamB, note = '') {
+      const a = postseasonEscape(teamA || '待定');
+      const b = postseasonEscape(teamB || '待定');
+      return '<div class="postseason-series-card">' +
+        '<div class="postseason-series-meta"><span>' + postseasonEscape(title) + '</span><em>' + postseasonEscape(note) + '</em></div>' +
+        '<div class="postseason-bracket-teams">' +
+          '<div class="postseason-bracket-team"><strong>' + a + '</strong><b>—</b></div>' +
+          '<div class="postseason-bracket-team"><strong>' + b + '</strong><b>—</b></div>' +
+        '</div></div>';
+    }
+
+    function postseasonNpbBracketContent() {
+      const npb = standingsOfficialCache?.npb || {};
+      const central = postseasonSectionRows(npb.central,3);
+      const pacific = postseasonSectionRows(npb.pacific,3);
+      const leagueBlock = (label, rows) => {
+        const first = postseasonTeamName(rows[0]);
+        const second = postseasonTeamName(rows[1]);
+        const third = postseasonTeamName(rows[2]);
+        return '<div class="postseason-league-bracket">' +
+          '<div class="postseason-bracket-league-label">' + postseasonEscape(label) + '</div>' +
+          '<div class="postseason-bracket">' +
+            '<section class="postseason-round"><div class="postseason-round-title">FIRST STAGE</div><div class="postseason-round-series">' +
+              postseasonMatchCard('第一階段', second, third, '勝者晉級 Final Stage') +
+            '</div></section>' +
+            '<section class="postseason-round"><div class="postseason-round-title">FINAL STAGE</div><div class="postseason-round-series">' +
+              postseasonMatchCard('決勝階段', first, '第一階段勝者', '勝者晉級日本大賽') +
+            '</div></section>' +
+          '</div></div>';
+      };
+      return '<div class="postseason-bracket-wrap">' +
+        leagueBlock('CENTRAL LEAGUE', central) +
+        '<div class="postseason-world-series">' +
+          '<section class="postseason-round"><div class="postseason-round-title">JAPAN SERIES</div><div class="postseason-round-series">' +
+            postseasonMatchCard('日本大賽', '央聯 CS 勝者', '洋聯 CS 勝者', '') +
+          '</div></section></div>' +
+        leagueBlock('PACIFIC LEAGUE', pacific) +
+      '</div>';
+    }
+
+    function postseasonKboBracketContent() {
+      const rows = postseasonSectionRows(standingsOfficialCache?.kbo?.regular,5);
+      const t = index => postseasonTeamName(rows[index]);
+      return '<div class="postseason-bracket-wrap">' +
+        '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">KBO POSTSEASON</div>' +
+        '<div class="postseason-bracket">' +
+          '<section class="postseason-round"><div class="postseason-round-title">WILD CARD</div><div class="postseason-round-series">' +
+            postseasonMatchCard('外卡決定戰', t(3), t(4), '4 號種子帶 1 勝優勢') +
+          '</div></section>' +
+          '<section class="postseason-round"><div class="postseason-round-title">SEMI-PLAYOFF</div><div class="postseason-round-series">' +
+            postseasonMatchCard('準季後賽', t(2), '外卡勝者', '') +
+          '</div></section>' +
+          '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF</div><div class="postseason-round-series">' +
+            postseasonMatchCard('季後賽', t(1), '準季後賽勝者', '') +
+          '</div></section>' +
+        '</div></div>' +
+        '<div class="postseason-world-series"><section class="postseason-round"><div class="postseason-round-title">KOREAN SERIES</div><div class="postseason-round-series">' +
+          postseasonMatchCard('韓國大賽', t(0), '季後賽勝者', '') +
+        '</div></section></div>' +
+      '</div>';
+    }
+
+    function postseasonCpblBracketContent() {
+      const cpbl = standingsOfficialCache?.cpbl || {};
+      const first = postseasonSectionRows(cpbl.first,1)[0] || null;
+      const second = postseasonSectionRows(cpbl.second,1)[0] || null;
+      const annual = postseasonSectionRows(cpbl.annual,6);
+      const firstName = postseasonTeamName(first);
+      const secondName = postseasonTeamName(second);
+      const sameChampion = firstName && secondName && firstName === secondName;
+      let playoffA = '';
+      let playoffB = '';
+      let direct = '';
+
+      if (sameChampion) {
+        direct = postseasonTeamName(annual[0]);
+        playoffA = postseasonTeamName(annual[1]);
+        playoffB = postseasonTeamName(annual[2]);
+      } else {
+        const annualIndex = new Map(annual.map((row,index) => [postseasonTeamName(row), index]));
+        const fi = annualIndex.has(firstName) ? annualIndex.get(firstName) : 99;
+        const si = annualIndex.has(secondName) ? annualIndex.get(secondName) : 99;
+        direct = fi < si ? firstName : secondName;
+        playoffA = fi < si ? secondName : firstName;
+        const outsider = annual.find(row => {
+          const name = postseasonTeamName(row);
+          return name !== firstName && name !== secondName;
+        });
+        playoffB = postseasonTeamName(outsider);
+      }
+
+      return '<div class="postseason-bracket-wrap">' +
+        '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">CPBL POSTSEASON</div>' +
+        '<div class="postseason-bracket">' +
+          '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF SERIES</div><div class="postseason-round-series">' +
+            postseasonMatchCard('季後挑戰賽', playoffA, playoffB, sameChampion ? '' : '半季冠軍規則適用') +
+          '</div></section>' +
+          '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
+            postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '') +
+          '</div></section>' +
+        '</div></div></div>';
+    }
+
+    function postseasonMlbQualificationContent() {
+      const mlb = standingsOfficialCache?.mlb || {};
+      const block = (prefix, title) => {
+        const keys = prefix === 'al' ? ['alEast','alCentral','alWest'] : ['nlEast','nlCentral','nlWest'];
+        const divisions = keys.map(key => postseasonSectionRows(mlb[key],99));
+        const leaders = divisions.map(rows => rows[0]).filter(Boolean);
+        const leaderNames = new Set(leaders.map(row => String(row?.team || row?.sourceTeam || '').trim()));
+        const wildcards = divisions.flat()
+          .filter(row => !leaderNames.has(String(row?.team || row?.sourceTeam || '').trim()))
+          .sort((a,b) => {
+            const ap = Number(a?.pct), bp = Number(b?.pct);
+            if (Number.isFinite(ap) && Number.isFinite(bp) && ap !== bp) return bp - ap;
+            return (Number(b?.wins) || 0) - (Number(a?.wins) || 0);
+          }).slice(0,3);
+        const rows = [...leaders, ...wildcards];
+        return postseasonCard(title, '3 個分區冠軍位置 + 3 個外卡資格', rows, {
+          labels:['分區冠軍','分區冠軍','分區冠軍','WC1','WC2','WC3']
+        });
+      };
+      return '<div class="postseason-grid">' + block('al','美國聯盟') + block('nl','國家聯盟') + '</div>';
+    }
+
+
     function postseasonMlbTeamZh(name) {
       const raw = String(name || '').trim();
       return typeof mlbStandingsTeamZh === 'function' ? mlbStandingsTeamZh(raw) : raw;
@@ -304,15 +461,9 @@
     function renderPostseasonPage() {
       if (!els.postseasonPageContent) return;
 
-      if (leagueHubLeague === 'mlb' && !postseasonMlbBracket) {
-        els.postseasonPageContent.innerHTML = '<div class="postseason-overview">' +
-          '<div class="postseason-intro"><div><span>POSTSEASON</span><strong>美國大聯盟｜季後賽對戰圖</strong></div><p>實際系列賽結果 · 無背景輪詢</p></div>' +
-          postseasonMlbContent() + '</div>';
-        if (!postseasonMlbBracketPromise) void loadPostseasonMlbBracket();
-        return;
-      }
+      const active = postseasonSeasonActive();
 
-      if (!postseasonHasSelectedLeagueData()) {
+      if (!active && !postseasonHasSelectedLeagueData()) {
         const key = String(leagueHubLeague || 'cpbl');
         const recentAttempt = Date.now() - Number(postseasonLastAttemptAt.get(key) || 0) < 30000;
         const error = String(standingsOfficialError || '').trim();
@@ -320,7 +471,7 @@
           <div class="postseason-overview">
             <div class="postseason-intro">
               <div><span>POSTSEASON</span><strong>${postseasonEscape(postseasonLeagueLabel())}｜季後賽專區</strong></div>
-              <p>共用戰績快取 · 不新增背景輪詢</p>
+              <p>例行賽資格狀態 · 共用戰績快取</p>
             </div>
             <div class="postseason-loading">${postseasonLoadPromise ? '正在讀取現有戰績快取…' : (recentAttempt && error ? postseasonEscape(error) : '準備現有戰績資料…')}</div>
           </div>`;
@@ -328,20 +479,41 @@
         return;
       }
 
+      if (leagueHubLeague === 'mlb' && active && !postseasonMlbBracket) {
+        els.postseasonPageContent.innerHTML = '<div class="postseason-overview">' +
+          '<div class="postseason-intro"><div><span>POSTSEASON</span><strong>美國大聯盟｜季後賽對戰圖</strong></div><p>實際系列賽結果 · 無背景輪詢</p></div>' +
+          postseasonMlbContent() + '</div>';
+        if (!postseasonMlbBracketPromise) void loadPostseasonMlbBracket();
+        return;
+      }
+
+      if (!postseasonHasSelectedLeagueData() && leagueHubLeague !== 'mlb') {
+        if (!postseasonLoadPromise) void ensurePostseasonData();
+      }
+
       const fetchedAt = standingsOfficialCache?.fetchedAt ? new Date(standingsOfficialCache.fetchedAt) : null;
       const fetchedText = fetchedAt && !Number.isNaN(fetchedAt.getTime())
         ? fetchedAt.toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})
         : '沿用現有快取';
-      const body = leagueHubLeague === 'cpbl' ? postseasonCpblContent()
-        : leagueHubLeague === 'npb' ? postseasonNpbContent()
-        : leagueHubLeague === 'kbo' ? postseasonKboContent()
-        : postseasonMlbContent();
+
+      let body = '';
+      if (!active) {
+        body = leagueHubLeague === 'cpbl' ? postseasonCpblContent()
+          : leagueHubLeague === 'npb' ? postseasonNpbContent()
+          : leagueHubLeague === 'kbo' ? postseasonKboContent()
+          : postseasonMlbQualificationContent();
+      } else {
+        body = leagueHubLeague === 'cpbl' ? postseasonCpblBracketContent()
+          : leagueHubLeague === 'npb' ? postseasonNpbBracketContent()
+          : leagueHubLeague === 'kbo' ? postseasonKboBracketContent()
+          : postseasonMlbContent();
+      }
 
       els.postseasonPageContent.innerHTML = `
         <div class="postseason-overview">
           <div class="postseason-intro">
-            <div><span>POSTSEASON</span><strong>${postseasonEscape(postseasonLeagueLabel())}｜季後賽專區</strong></div>
-            <p>${leagueHubLeague === 'mlb' ? '資料：MLB 官方季後賽系列賽快取' : `資料：戰績排名共用快取 · ${postseasonEscape(fetchedText)}`}</p>
+            <div><span>POSTSEASON</span><strong>${postseasonEscape(postseasonLeagueLabel())}｜${active ? '季後賽對戰表' : '季後賽資格'}</strong></div>
+            <p>${active ? '已進入季後賽階段' : ('例行賽進行中 · ' + postseasonEscape(fetchedText))}</p>
           </div>
           ${body}
         </div>`;
