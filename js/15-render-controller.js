@@ -40,7 +40,8 @@
       const pitcherBatterPageActive = currentPage === 'pitcher-batter';
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
-      const leagueHubPageActive = predictionPageActive || standingsPageActive;
+      const postseasonPageActive = currentPage === 'postseason';
+      const leagueHubPageActive = predictionPageActive || standingsPageActive || postseasonPageActive;
       const advancedStatsPageActive = currentPage === 'advanced-stats';
       const playerRankingPageActive = currentPage === 'player-ranking';
       const schedulePageActive = currentPage === 'schedule';
@@ -65,9 +66,11 @@
       els.schedulePage?.classList.toggle('hidden', !schedulePageActive);
       els.predictionPageContent?.classList.toggle('hidden', !predictionPageActive);
       els.standingsPageContent?.classList.toggle('hidden', !standingsPageActive);
+      els.postseasonPageContent?.classList.toggle('hidden', !postseasonPageActive);
       if (customNotificationPageActive) renderCustomNotificationPage();
       if (predictionPageActive) renderPredictionPage();
       if (standingsPageActive) renderStandingsPage();
+      if (postseasonPageActive) renderPostseasonPage();
       if (playerRankingPageActive) renderPlayerRankingPage();
       if (schedulePageActive) renderSchedulePage();
       if (advancedStatsPageActive) renderAdvancedStatsPage();
@@ -107,7 +110,7 @@
           ? `#${player.number} ${player.name}（${player.type === 'pitcher' ? '投手' : '打者'}｜${scopeLabel(playerScope(player))}）`
           : '';
       }
-      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || standingsPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
+      els.homeHeaderDateControl?.classList.toggle('hidden', playerPageActive || customNotificationPageActive || pitcherBatterPageActive || standingsPageActive || postseasonPageActive || advancedStatsPageActive || playerRankingPageActive || schedulePageActive);
       const playerScopeCode = player ? playerScope(player) : 'cpbl';
       if (els.playerPageDate) {
         if (!playerPageActive) {
