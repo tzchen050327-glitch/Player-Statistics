@@ -13890,3 +13890,26 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
 #homeGameDetailBody[data-match-center-active]:not([data-match-center-active="play"]) [data-gdx="landscape"] {
   display: none !important;
 }
+
+
+/* v8.13 League Center postseason view: derived from the shared standings cache. */
+.postseason-overview{display:grid;gap:14px}
+.postseason-intro{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 17px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--accent,#1f4e79) 7%,transparent)}
+.postseason-intro>div{display:grid;gap:3px}
+.postseason-intro span{font-size:11px;font-weight:900;letter-spacing:.14em;opacity:.62}
+.postseason-intro strong{font-size:18px}
+.postseason-intro p{margin:0;font-size:12px;opacity:.65;text-align:right}
+.postseason-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.postseason-grid-single{grid-template-columns:minmax(0,1fr)}
+.postseason-card{min-width:0;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--surface,#fff)}
+.postseason-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:11px}
+.postseason-card-head strong{display:block;font-size:16px}
+.postseason-card-head span{display:block;margin-top:3px;font-size:12px;opacity:.6}
+.postseason-seed-list{display:grid;gap:7px}
+.postseason-seed{display:grid;grid-template-columns:54px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:43px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:12px;background:color-mix(in srgb,var(--surface,#fff) 94%,var(--accent,#1f4e79) 6%)}
+.postseason-seed-rank{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent,#1f4e79) 14%,transparent);font-size:11px;font-weight:900;white-space:nowrap}
+.postseason-team{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.postseason-record{font-size:12px;opacity:.65;white-space:nowrap}
+.postseason-empty,.postseason-loading{padding:28px 18px;border:1px dashed var(--line);border-radius:15px;text-align:center;font-size:13px;opacity:.68}
+.postseason-footnote{padding:11px 13px;border-radius:12px;font-size:12px;line-height:1.55;opacity:.66}
+@media(max-width:720px){.postseason-intro{align-items:flex-start;flex-direction:column}.postseason-intro p{text-align:left}.postseason-grid{grid-template-columns:1fr}.postseason-seed{grid-template-columns:48px minmax(0,1fr);gap:8px}.postseason-record{grid-column:2;font-size:11px}}
