@@ -13971,3 +13971,24 @@ select,
   -webkit-touch-callout: default;
   touch-action: manipulation;
 }
+
+/* ===== PROJECT TRAFFIC MONITOR v8.25 ===== */
+.home-traffic-entry .home-standings-entry-icon{color:#4f8fbf}
+.traffic-monitor-page-panel{min-height:calc(100vh - 170px)}
+.traffic-monitor-overview{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);margin-bottom:12px}
+.traffic-monitor-overview>div{display:flex;flex-direction:column;gap:3px}
+.traffic-monitor-overview span,.traffic-project-head span{color:#4f8fbf;font-size:9px;font-weight:950;letter-spacing:.13em}
+.traffic-monitor-overview strong{font-size:20px;color:var(--text)}
+.traffic-monitor-overview small,.traffic-project-head small{color:var(--muted);font-size:10px;line-height:1.5}
+.traffic-project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.traffic-project-card{padding:14px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--panel) 94%,var(--bg))}
+.traffic-project-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.traffic-project-head>div{display:flex;min-width:0;flex-direction:column;gap:3px}
+.traffic-project-head strong{font-size:17px;color:var(--text)}
+.traffic-project-head>b{padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:9px;color:var(--muted);white-space:nowrap}
+.traffic-project-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.traffic-project-metrics>div{padding:11px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.traffic-project-metrics span,.traffic-project-metrics small{display:block;color:var(--muted);font-size:9px}
+.traffic-project-metrics strong{display:block;margin:4px 0;color:var(--text);font-size:19px;font-weight:950}
+.traffic-monitor-warning{margin-top:12px;padding:11px 13px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:10px;line-height:1.65}
+@media(max-width:760px){.traffic-project-grid{grid-template-columns:1fr}.traffic-project-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
