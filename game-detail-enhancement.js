@@ -779,6 +779,13 @@
 
   function positionKey(value) {
     const p = compactName(value).toUpperCase();
+    const codeMap={P:'p',C:'c','1B':'1b','2B':'2b','3B':'3b',SS:'ss',LF:'lf',CF:'cf',RF:'rf'};
+    // CPBL substitution positions can be composite: (PH)(CF), (PH)(SS), SS(3B).
+    // Use the last real defensive position, ignoring PH/PR/DH markers.
+    const tokens=p.split(/[^A-Z0-9]+/).filter(Boolean);
+    for(let i=tokens.length-1;i>=0;i--){
+      if(codeMap[tokens[i]]) return codeMap[tokens[i]];
+    }
     if (/^(P|投|投手|PITCHER)$/.test(p)) return 'p';
     if (/^(C|捕|捕手|CATCHER)$/.test(p)) return 'c';
     if (/^(1B|一|一壘|一塁|一壘手|一塁手|FIRST)$/.test(p)) return '1b';
