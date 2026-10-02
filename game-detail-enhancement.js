@@ -178,9 +178,9 @@
     const resultText=`${play.result || ''} ${play.raw || ''}`;
     const description=String(play.description || '');
     const text=`${resultText} ${description}`;
-    const explicit=text.match(/([0-3])\s*人出局/i);
-    if (explicit) return Math.min(3,Number(explicit[1]));
-    if (/三人出局|3\s*出局/i.test(text)) return 3;
+    const explicitOuts=[...text.matchAll(/([0-3])\s*人出局/gi)].map(m=>Number(m[1])).filter(Number.isFinite);
+    if (/三人出局|3\s*出局/i.test(text) || explicitOuts.includes(3)) return 3;
+    if (explicitOuts.length) return Math.min(3,Math.max(...explicitOuts));
     // A hit can contain words such as '高飛球' in its description; that is not an out.
     if (/全壘打|三壘安打|二壘安打|一壘安打|安打|四壞|故意四壞|觸身|死球|失誤上壘|野手選擇|趁傳上壘/i.test(resultText)) return before;
     let added = 0;
