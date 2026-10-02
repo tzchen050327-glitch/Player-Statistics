@@ -1684,6 +1684,8 @@
           ballCorrect:Number(liveReport?.ball_correct) || 0,
           consistencyCorrect:Number.isFinite(Number(liveReport?.consistency_correct)) ? Number(liveReport.consistency_correct) : null,
           consistencyTotal:Number.isFinite(Number(liveReport?.consistency_total)) ? Number(liveReport.consistency_total) : null,
+          consistencyPct:Number.isFinite(Number(liveReport?.consistency)) ? Number(liveReport.consistency) : null,
+          consistencyEstimated:String(liveReport?.source_updated_at || '').includes('consistency=estimated'),
           netImpact:Number.isFinite(Number(liveReport?.net_favor)) ? Number(liveReport.net_favor) : null,
           favorTeam:String(liveReport?.net_favor_team || ''),
           misses
@@ -1755,33 +1757,41 @@
       const overallPct = (data.correct / data.total * 100).toFixed(1);
       const strikePct = (data.strikeCorrect / data.strikeTotal * 100).toFixed(1);
       const ballPct = (data.ballCorrect / data.ballTotal * 100).toFixed(1);
-      const hasConsistency = Number.isFinite(Number(data.consistencyCorrect))
+      const hasConsistencyCounts = Number.isFinite(Number(data.consistencyCorrect))
         && Number.isFinite(Number(data.consistencyTotal))
         && Number(data.consistencyTotal) > 0;
-      const consistencyTotal = hasConsistency ? Number(data.consistencyTotal) : null;
-      const consistencyPct = hasConsistency
-        ? (Number(data.consistencyCorrect) / consistencyTotal * 100).toFixed(1)
-        : '—';
+      const hasConsistencyPct = Number.isFinite(Number(data.consistencyPct));
+      const hasConsistency = hasConsistencyCounts || hasConsistencyPct;
+      const consistencyTotal = hasConsistencyCounts ? Number(data.consistencyTotal) : null;
+      const consistencyPct = hasConsistencyPct
+        ? Number(data.consistencyPct).toFixed(1)
+        : hasConsistencyCounts
+          ? (Number(data.consistencyCorrect) / consistencyTotal * 100).toFixed(1)
+          : '—';
+      const consistencySub = !hasConsistency
+        ? '完整報告待補'
+        : data.consistencyEstimated
+          ? '估算值'
+          : hasConsistencyCounts
+            ? `${data.consistencyCorrect} / ${consistencyTotal}`
+            : '正式報告';
       const hasImpact = Number.isFinite(Number(data.netImpact)) && Boolean(String(data.favorTeam || '').trim());
       const favorColor = homeUmpireTeamColor(data.favorTeam);
 
       const points = data.misses.map((miss, index) => {
-        const halfPlate = 0.2159;
+        // Keep the plot geometry identical to the backend strike-zone model.
+        // Physical circles become ellipses on this SVG because X/Y use different scales.
+        // Using an SVG circle here overstates one axis and can make a true ball appear
+        // to touch the zone even though the real baseball is fully outside.
+        const halfPlate = 0.22;
+        const baseballRadiusM = 0.0369;
         const px = Math.max(18, Math.min(302, 160 + (Number(miss.x) / halfPlate) * 90));
         const span = Math.max(0.001, Number(miss.top) - Number(miss.bottom));
         const py = Math.max(18, Math.min(342, 300 - ((Number(miss.z) - Number(miss.bottom)) / span) * 240));
         const cls = miss.kind === 'ball-strike' ? 'is-red' : 'is-green';
-        // Keep the pitch marker a true circle, but size it from a real baseball
-        // radius (~3.66 cm). The SVG itself already scales with the 2/3-width
-        // strike-zone panel, so do not shrink the radius a second time.
-        // Because x/y use different chart scales, use the larger mapped radius:
-        // a pitch whose ball edge clips the zone (e.g. 0.05 cm) must visually
-        // touch the zone instead of showing an artificial gap.
-        const baseballRadiusM = 0.0366;
         const radiusX = (baseballRadiusM / halfPlate) * 90;
         const radiusY = (baseballRadiusM / span) * 240;
-        const ballRadiusPx = Math.max(radiusX, radiusY);
-        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><circle r="${ballRadiusPx.toFixed(1)}"></circle><text y="5" text-anchor="middle">${index + 1}</text></g>`;
+        return `<g class="umpire-zone-point ${cls}" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><ellipse rx="${radiusX.toFixed(1)}" ry="${radiusY.toFixed(1)}"></ellipse><text y="5" text-anchor="middle">${index + 1}</text></g>`;
       }).join('');
 
       const rows = data.misses.map((miss, index) => {
@@ -1860,7 +1870,7 @@
               ${homeUmpireDonut(
                 '判決一致性',
                 hasConsistency ? consistencyPct + '%' : '—',
-                hasConsistency ? `${data.consistencyCorrect} / ${consistencyTotal}` : '完整報告待補',
+                consistencySub,
                 '',
                 hasConsistency ? `style="--metric-value:${consistencyPct}"` : ''
               )}
@@ -1868,7 +1878,7 @@
           </div>
 
           <div class="umpire-miss-list">${rows}</div>
-          <div class="umpire-preview-note">此頁先以 2026/10/1 樂天桃猿－台鋼雄鷹場次做版型預覽；球種欄位尚未接入正式來源。</div>
+          <div class="umpire-preview-note">球點依打者動態好球帶與實際棒球半徑繪製；「估算值」會在正式 scorecard 到站後自動替換。</div>
         </section>`;
     }
 
