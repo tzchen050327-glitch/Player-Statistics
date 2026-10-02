@@ -183,6 +183,7 @@
         hld: result === 'HLD' ? 1 : 0,
         outs,
         h: Number(game.h) || 0,
+        hrAllowed: Number(game.hrAllowed ?? game.hr ?? game.homeRunsAllowed) || 0,
         bb: Number(game.bb) || 0,
         hbp: Number(game.hbp) || 0,
         k: Number(game.k) || 0,
