@@ -138,6 +138,16 @@
             <strong>聯盟分析</strong>
           </button>
 
+          <button id="homeTrafficMonitorBtn" class="panel home-standings-entry home-traffic-entry" type="button" aria-label="開啟流量監控">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 18.5h16M6 15l3-4 3 2 4-6 2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="6" cy="15" r="1" fill="currentColor"/><circle cx="9" cy="11" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/><circle cx="16" cy="7" r="1" fill="currentColor"/>
+              </svg>
+            </span>
+            <strong>流量監控</strong>
+          </button>
+
           <button id="homePitcherBatterBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟投打對決">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -252,6 +262,21 @@
           </div>
         </div>
         <div id="customNotificationPageContent" class="custom-notification-page-content" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section id="trafficMonitorPage" class="hidden player-tools-page">
+      <div class="player-tools-page-top">
+        <button id="trafficMonitorBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel player-tools-page-panel traffic-monitor-page-panel">
+        <div class="player-tools-page-head">
+          <div>
+            <span class="player-tools-page-kicker">PROJECT USAGE</span>
+            <h2>流量監控</h2>
+          </div>
+        </div>
+        <div id="trafficMonitorPageContent" class="player-tools-page-content" aria-live="polite"></div>
       </section>
     </section>
 
