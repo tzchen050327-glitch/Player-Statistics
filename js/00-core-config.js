@@ -36,6 +36,7 @@
     const LEAGUE_STANDINGS_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
     const LEAGUE_STANDINGS_API_URL = LEAGUE_STANDINGS_B_API_URL;
     const LEAGUE_POSTSEASON_BRACKET_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-postseason-bracket`;
+    const TRAFFIC_USAGE_MONITOR_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/traffic-usage-monitor`;
     function leagueStandingsApiUrl(league = 'CPBL') {
       const code = String(league || 'CPBL').toUpperCase();
       return ['CPBL','NPB'].includes(code) ? LEAGUE_STANDINGS_A_API_URL : LEAGUE_STANDINGS_B_API_URL;
