@@ -206,6 +206,152 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
       customNotificationFlash = { message:String(message || ''), error:Boolean(error) };
     }
 
+
+    function trafficMonitorFormatBytes(value) {
+      const bytes = Math.max(0, Number(value) || 0);
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 2 : 1) + ' MB';
+    }
+
+    function trafficMonitorEndpointLabel(url) {
+      try {
+        const parsed = new URL(url, location.href);
+        const marker = '/functions/v1/';
+        if (parsed.pathname.includes(marker)) return parsed.pathname.split(marker)[1] || parsed.hostname;
+        if (parsed.hostname === location.hostname) {
+          const file = parsed.pathname.split('/').filter(Boolean).pop();
+          return file || 'App Shell';
+        }
+        return parsed.hostname;
+      } catch {
+        return String(url || '未知');
+      }
+    }
+
+    function trafficMonitorSnapshot() {
+      const entries = typeof performance?.getEntriesByType === 'function'
+        ? performance.getEntriesByType('resource').filter(entry => entry && entry.name)
+        : [];
+      const aHost = (() => { try { return new URL(SUPABASE_A_FUNCTIONS_BASE).hostname; } catch { return ''; } })();
+      const bHost = (() => { try { return new URL(SUPABASE_B_FUNCTIONS_BASE).hostname; } catch { return ''; } })();
+
+      const groups = {
+        A:{ key:'A', label:'A 專案', requests:0, bytes:0 },
+        B:{ key:'B', label:'B 專案', requests:0, bytes:0 },
+        STATIC:{ key:'STATIC', label:'App / 靜態檔', requests:0, bytes:0 },
+        OTHER:{ key:'OTHER', label:'其他來源', requests:0, bytes:0 }
+      };
+      const endpointMap = new Map();
+      let visibleBytes = 0;
+
+      entries.forEach(entry => {
+        let host = '';
+        try { host = new URL(entry.name, location.href).hostname; } catch {}
+        const size = Math.max(0, Number(entry.transferSize) || 0);
+        visibleBytes += size;
+
+        let group = groups.OTHER;
+        if (host && host === aHost) group = groups.A;
+        else if (host && host === bHost) group = groups.B;
+        else if (!host || host === location.hostname) group = groups.STATIC;
+
+        group.requests += 1;
+        group.bytes += size;
+
+        const label = trafficMonitorEndpointLabel(entry.name);
+        const key = group.key + '|' + label;
+        const current = endpointMap.get(key) || { group:group.key, label, requests:0, bytes:0 };
+        current.requests += 1;
+        current.bytes += size;
+        endpointMap.set(key, current);
+      });
+
+      const endpoints = [...endpointMap.values()]
+        .sort((a,b) => (b.bytes - a.bytes) || (b.requests - a.requests))
+        .slice(0,8);
+
+      return {
+        requests:entries.length,
+        visibleBytes,
+        groups:Object.values(groups),
+        endpoints,
+        startedAt:new Date(Number(performance?.timeOrigin) || Date.now())
+      };
+    }
+
+    function trafficMonitorSectionHtml() {
+      const snapshot = trafficMonitorSnapshot();
+      const groupCards = snapshot.groups.map(group => `
+        <div class="traffic-monitor-card">
+          <span>${escapeHtml(group.label)}</span>
+          <strong>${escapeHtml(trafficMonitorFormatBytes(group.bytes))}</strong>
+          <small>${group.requests} requests</small>
+        </div>
+      `).join('');
+
+      const endpointRows = snapshot.endpoints.length
+        ? snapshot.endpoints.map(item => `
+          <div class="traffic-monitor-row">
+            <div>
+              <strong>${escapeHtml(item.label)}</strong>
+              <span>${escapeHtml(item.group)} · ${item.requests} 次</span>
+            </div>
+            <b>${escapeHtml(trafficMonitorFormatBytes(item.bytes))}</b>
+          </div>
+        `).join('')
+        : '<div class="traffic-monitor-empty">目前還沒有可計量的資源請求。</div>';
+
+      const startedText = snapshot.startedAt.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+      return `
+        <section class="traffic-monitor-section" data-traffic-monitor-section>
+          <div class="traffic-monitor-head">
+            <div>
+              <span>TRAFFIC MONITOR</span>
+              <strong>流量監控</strong>
+              <small>本次開啟 · 自 ${escapeHtml(startedText)} 起</small>
+            </div>
+            <button type="button" class="press-btn traffic-monitor-refresh" data-traffic-monitor-refresh>重新計算</button>
+          </div>
+
+          <div class="traffic-monitor-total">
+            <div>
+              <span>瀏覽器可計量傳輸</span>
+              <strong>${escapeHtml(trafficMonitorFormatBytes(snapshot.visibleBytes))}</strong>
+            </div>
+            <b>${snapshot.requests} requests</b>
+          </div>
+
+          <div class="traffic-monitor-grid">
+            ${groupCards}
+          </div>
+
+          <div class="traffic-monitor-list-head">
+            <strong>主要來源</strong>
+            <span>依可計量傳輸量／請求數排序</span>
+          </div>
+          <div class="traffic-monitor-list">${endpointRows}</div>
+
+          <div class="traffic-monitor-note">
+            這裡不會新增任何網路請求，只讀取瀏覽器已存在的 Resource Timing。跨網域若未開放 Timing-Allow-Origin，位元組可能顯示 0，但 request 次數仍會計入；因此這是裝置端低流量診斷，不等同 Supabase Dashboard 的完整 egress。
+          </div>
+        </section>
+      `;
+    }
+
+    function bindTrafficMonitorEvents() {
+      if (!els.customNotificationPageContent) return;
+      els.customNotificationPageContent.querySelector('[data-traffic-monitor-refresh]')?.addEventListener('click', () => {
+        const section = els.customNotificationPageContent.querySelector('[data-traffic-monitor-section]');
+        if (!section) return;
+        const host = document.createElement('div');
+        host.innerHTML = trafficMonitorSectionHtml();
+        const next = host.firstElementChild;
+        if (next) section.replaceWith(next);
+        bindTrafficMonitorEvents();
+      });
+    }
+
     function customNotificationPushStatusText() {
       if (!customNotificationPushSupported()) return '此瀏覽器目前不能使用背景推播';
       if (Notification.permission === 'denied') return '通知權限已封鎖';
@@ -409,9 +555,12 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         <div class="custom-notification-footnote">
           中職一軍與日職都不增加額外輪詢；中職二軍每 3 分鐘只查有勾選二軍通知的球員本人。打者可另外開啟逐打席通知。
         </div>
+
+        ${trafficMonitorSectionHtml()}
       `;
 
       bindCustomNotificationEvents();
+      bindTrafficMonitorEvents();
 
       if (permission === 'granted' && Date.now() - customNotificationLastAutoSyncAt > 30000) {
         customNotificationLastAutoSyncAt = Date.now();
