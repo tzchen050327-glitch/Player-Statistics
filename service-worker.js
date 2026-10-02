@@ -1,5 +1,5 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v828-auto';
-const CACHE_VERSION = 'v8.28';
+const CACHE_NAME = 'baseball-player-card-pwa-v829-auto';
+const CACHE_VERSION = 'v8.29';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
@@ -57,29 +57,29 @@ const APP_SHELL = [
   './',
   './index.html',
   './diagnostics.html',
-  './styles.css?v=v8.28',
-  './dark-theme-overrides.css?v=v8.28',
-  './diagnostic-runtime.js?v=v8.28',
-  './live-static-update.js?v=v8.28',
-  './cpbl-realtime.js?v=v8.28',
-  './npb-realtime.js?v=v8.28',
-  './postseason-history.css?v=v8.28',
-  './js/module-loader.js?v=v8.28',
+  './styles.css?v=v8.29',
+  './dark-theme-overrides.css?v=v8.29',
+  './diagnostic-runtime.js?v=v8.29',
+  './live-static-update.js?v=v8.29',
+  './cpbl-realtime.js?v=v8.29',
+  './npb-realtime.js?v=v8.29',
+  './postseason-history.css?v=v8.29',
+  './js/module-loader.js?v=v8.29',
   MODULE_ORDER_URL,
   VERSIONED_MODULE_ORDER_URL,
-  './postseason-history.js?v=v8.28',
-  './cpbl-cache-router.js?v=v8.28',
-  './game-detail-enhancement.css?v=v8.28',
-  './report-layout.css?v=v8.28',
-  './landscape-state.css?v=v8.28',
-  './game-detail-enhancement.js?v=v8.28',
-  './report-layout.js?v=v8.28',
-  './manifest.webmanifest?v=v8.28',
-  './icon-192.png?v=v8.28',
-  './icon-512.png?v=v8.28',
-  './favicon-32.png?v=v8.28',
-  './favicon-16.png?v=v8.28',
-  './notification-badge.png?v=v8.28'
+  './postseason-history.js?v=v8.29',
+  './cpbl-cache-router.js?v=v8.29',
+  './game-detail-enhancement.css?v=v8.29',
+  './report-layout.css?v=v8.29',
+  './landscape-state.css?v=v8.29',
+  './game-detail-enhancement.js?v=v8.29',
+  './report-layout.js?v=v8.29',
+  './manifest.webmanifest?v=v8.29',
+  './icon-192.png?v=v8.29',
+  './icon-512.png?v=v8.29',
+  './favicon-32.png?v=v8.29',
+  './favicon-16.png?v=v8.29',
+  './notification-badge.png?v=v8.29'
 ];
 
 async function getModuleShell() {
