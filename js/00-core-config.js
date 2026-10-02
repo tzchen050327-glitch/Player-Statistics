@@ -36,7 +36,6 @@
     const LEAGUE_STANDINGS_B_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-standings-state`;
     const LEAGUE_STANDINGS_API_URL = LEAGUE_STANDINGS_B_API_URL;
     const LEAGUE_POSTSEASON_BRACKET_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-postseason-bracket`;
-    const TRAFFIC_USAGE_MONITOR_API_URL = `${SUPABASE_A_FUNCTIONS_BASE}/traffic-usage-monitor`;
     function leagueStandingsApiUrl(league = 'CPBL') {
       const code = String(league || 'CPBL').toUpperCase();
       return ['CPBL','NPB'].includes(code) ? LEAGUE_STANDINGS_A_API_URL : LEAGUE_STANDINGS_B_API_URL;
@@ -98,9 +97,6 @@
       pitcherBatterPage: document.getElementById('pitcherBatterPage'),
       pitcherBatterPageContent: document.getElementById('pitcherBatterPageContent'),
       homePitcherBatterBtn: document.getElementById('homePitcherBatterBtn'),
-      trafficMonitorPage: document.getElementById('trafficMonitorPage'),
-      trafficMonitorPageContent: document.getElementById('trafficMonitorPageContent'),
-      trafficMonitorBackHomeBtn: document.getElementById('trafficMonitorBackHomeBtn'),
       pitcherBatterBackHomeBtn: document.getElementById('pitcherBatterBackHomeBtn'),
       leagueHubPage: document.getElementById('leagueHubPage'),
       leagueHubCountrySwitch: document.getElementById('leagueHubCountrySwitch'),
