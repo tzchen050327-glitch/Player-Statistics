@@ -652,19 +652,6 @@
                 </span>
                 <span class="app-settings-option-arrow" aria-hidden="true">›</span>
               </button>
-              <button id="settingsTrafficMonitorBtn" class="app-settings-option" type="button">
-                <span class="app-settings-option-icon traffic" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M4 18.5h16M6 15l3-4 3 2 4-6 2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="6" cy="15" r="1" fill="currentColor"/><circle cx="9" cy="11" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/><circle cx="16" cy="7" r="1" fill="currentColor"/>
-                  </svg>
-                </span>
-                <span class="app-settings-option-copy">
-                  <strong>流量監控</strong>
-                  <small>查看 Supabase A / B 專案整體流量與用量</small>
-                </span>
-                <span class="app-settings-option-arrow" aria-hidden="true">›</span>
-              </button>
               <button id="settingsDiagnosticsBtn" class="app-settings-option" type="button">
                 <span class="app-settings-option-icon diagnostics" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -705,12 +692,6 @@
           settingsDialog.close();
           cloudSyncRefreshUi();
           document.getElementById('cloudSyncDialog')?.showModal();
-        });
-        settingsDialog.querySelector('#settingsTrafficMonitorBtn')?.addEventListener('click', () => {
-          settingsDialog.close();
-          currentPage = 'traffic-monitor';
-          renderAll();
-          window.scrollTo({ top:0, behavior:'instant' });
         });
         settingsDialog.querySelector('#settingsDiagnosticsBtn')?.addEventListener('click', () => {
           settingsDialog.close();
