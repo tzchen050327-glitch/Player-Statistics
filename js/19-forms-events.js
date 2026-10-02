@@ -988,12 +988,6 @@
       window.scrollTo({ top:0, behavior:'instant' });
     });
 
-    els.trafficMonitorBackHomeBtn?.addEventListener('click', () => {
-      currentPage = 'home';
-      renderAll();
-      window.scrollTo({ top:0, behavior:'instant' });
-    });
-
     els.pitcherBatterBackHomeBtn?.addEventListener('click', () => {
       currentPage = 'home';
       renderAll();
