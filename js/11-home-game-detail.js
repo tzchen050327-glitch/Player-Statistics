@@ -1658,7 +1658,7 @@
             actual:actual === 'STRIKE' ? '好球' : '壞球',
             kind:called === 'STRIKE' && actual === 'BALL' ? 'ball-strike' : 'strike-ball',
             dist:Number(p?.dist_cm) || 0,
-            impact:Number(p?.impact) || 0,
+            impact:Number.isFinite(Number(p?.impact)) ? Number(p.impact) : null,
             favor:String(p?.favor_team || ''),
             x:Number(p?.x) || 0,
             z:Number(p?.z) || 0,
@@ -1674,9 +1674,9 @@
           strikeCorrect:Number(liveReport?.strike_correct) || 0,
           ballTotal:Number(liveReport?.ball_total) || 0,
           ballCorrect:Number(liveReport?.ball_correct) || 0,
-          consistencyCorrect:Number(liveReport?.consistency_correct) || 0,
-          consistencyTotal:Number(liveReport?.consistency_total) || Number(liveReport?.total_calls) || 0,
-          netImpact:Number(liveReport?.net_favor) || 0,
+          consistencyCorrect:Number.isFinite(Number(liveReport?.consistency_correct)) ? Number(liveReport.consistency_correct) : null,
+          consistencyTotal:Number.isFinite(Number(liveReport?.consistency_total)) ? Number(liveReport.consistency_total) : null,
+          netImpact:Number.isFinite(Number(liveReport?.net_favor)) ? Number(liveReport.net_favor) : null,
           favorTeam:String(liveReport?.net_favor_team || ''),
           misses
         };
@@ -1747,8 +1747,14 @@
       const overallPct = (data.correct / data.total * 100).toFixed(1);
       const strikePct = (data.strikeCorrect / data.strikeTotal * 100).toFixed(1);
       const ballPct = (data.ballCorrect / data.ballTotal * 100).toFixed(1);
-      const consistencyTotal = Number(data.consistencyTotal || data.total || 0);
-      const consistencyPct = consistencyTotal > 0 ? (data.consistencyCorrect / consistencyTotal * 100).toFixed(1) : '0.0';
+      const hasConsistency = Number.isFinite(Number(data.consistencyCorrect))
+        && Number.isFinite(Number(data.consistencyTotal))
+        && Number(data.consistencyTotal) > 0;
+      const consistencyTotal = hasConsistency ? Number(data.consistencyTotal) : null;
+      const consistencyPct = hasConsistency
+        ? (Number(data.consistencyCorrect) / consistencyTotal * 100).toFixed(1)
+        : '—';
+      const hasImpact = Number.isFinite(Number(data.netImpact)) && Boolean(String(data.favorTeam || '').trim());
       const favorColor = homeUmpireTeamColor(data.favorTeam);
 
       const points = data.misses.map((miss, index) => {
@@ -1774,7 +1780,8 @@
         const red = miss.kind === 'ball-strike';
         const typeLabel = red ? '壞球判好球' : '好球判壞球';
         const position = red ? `帶外 ${miss.dist.toFixed(2)} cm` : `帶內 ${miss.dist.toFixed(2)} cm`;
-        const impact = Number(miss.impact || 0);
+        const hasImpact = Number.isFinite(Number(miss.impact)) && Boolean(String(miss.favor || '').trim());
+        const impact = hasImpact ? Number(miss.impact) : null;
         const teamColor = homeUmpireTeamColor(miss.favor);
         return `
           <article class="umpire-miss-card ${red ? 'is-red' : 'is-green'}">
@@ -1787,7 +1794,9 @@
               <div><b>${escapeHtml(miss.pitcher)}</b> VS <b>${escapeHtml(miss.batter)}</b></div>
               <div>主審判決：<b>${escapeHtml(miss.called)}</b></div>
               <div>實際位置：<b>${escapeHtml(position)}</b> / 球種：<b>—</b></div>
-              <div class="umpire-benefit" style="--team-color:${teamColor}">${escapeHtml(miss.favor)} +${impact.toFixed(2)}</div>
+              ${hasImpact
+                ? `<div class="umpire-benefit" style="--team-color:${teamColor}">${escapeHtml(miss.favor)} +${impact.toFixed(2)}</div>`
+                : '<div class="umpire-benefit">淨效果待完整報告</div>'}
             </div>
           </article>`;
       }).join('');
@@ -1833,8 +1842,20 @@
               </div>
             </div>
             <div class="umpire-zone-summary-side">
-              ${homeUmpireDonut('整體判決淨效果', '+' + data.netImpact.toFixed(2), data.favorTeam, 'is-impact', `style="--team-color:${favorColor}"`)}
-              ${homeUmpireDonut('判決一致性', consistencyPct + '%', `${data.consistencyCorrect} / ${consistencyTotal}`, '', `style="--metric-value:${consistencyPct}"`)}
+              ${homeUmpireDonut(
+                '整體判決淨效果',
+                hasImpact ? '+' + Number(data.netImpact).toFixed(2) : '—',
+                hasImpact ? data.favorTeam : '完整報告待補',
+                hasImpact ? 'is-impact' : '',
+                hasImpact ? `style="--team-color:${favorColor}"` : ''
+              )}
+              ${homeUmpireDonut(
+                '判決一致性',
+                hasConsistency ? consistencyPct + '%' : '—',
+                hasConsistency ? `${data.consistencyCorrect} / ${consistencyTotal}` : '完整報告待補',
+                '',
+                hasConsistency ? `style="--metric-value:${consistencyPct}"` : ''
+              )}
             </div>
           </div>
 
