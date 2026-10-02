@@ -30,7 +30,7 @@
     }
 
     function appNavigationPageRoute(page = currentPage) {
-      const normalized = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(page)) ? String(page) : 'home';
+      const normalized = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'postseason', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(page)) ? String(page) : 'home';
       return {
         kind: 'page',
         page: normalized,
@@ -52,13 +52,13 @@
 
     function appNavigationSyncRenderedPage() {
       if (appNavigationApplyingHistory) return;
-      const page = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(currentPage)) ? String(currentPage) : 'home';
+      const page = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'postseason', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(currentPage)) ? String(currentPage) : 'home';
       if (page === 'home') return;
       const route = appNavigationRoute();
       if (appNavigationRouteRepresentsPage(route, page)) return;
       const switchingLeagueHubView = route?.kind === 'page'
-        && ['prediction','standings'].includes(String(route.page))
-        && ['prediction','standings'].includes(page);
+        && ['prediction','standings','postseason'].includes(String(route.page))
+        && ['prediction','standings','postseason'].includes(page);
       if (switchingLeagueHubView) {
         appNavigationReplace(appNavigationPageRoute(page));
         return;
@@ -80,7 +80,7 @@
 
     function appNavigationApplyPageRoute(route) {
       appNavigationCloseGameDetailNow();
-      const page = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(route?.page))
+      const page = ['player', 'notifications', 'pitcher-batter', 'prediction', 'standings', 'postseason', 'advanced-stats', 'player-ranking', 'schedule'].includes(String(route?.page))
         ? String(route.page)
         : 'home';
 
@@ -95,7 +95,7 @@
       }
 
       currentPage = page;
-      if (page === 'prediction' || page === 'standings') {
+      if (page === 'prediction' || page === 'standings' || page === 'postseason') {
         leagueHubView = page;
         localStorage.setItem('leagueHubView', page);
       }
