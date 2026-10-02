@@ -541,6 +541,7 @@
         g.k = Number(pitcher.k)||0;
         g.bb = Number(pitcher.bb)||0;
         g.h = Number(pitcher.h)||0;
+        g.hrAllowed = Number(pitcher.hrAllowed ?? pitcher.hr ?? pitcher.homeRunsAllowed)||0;
         g.hbp = Number(pitcher.hbp)||0;
         g.r = Number(pitcher.r)||0;
         g.er = Math.min(g.r,Math.max(0,Number(pitcher.er)||0));
