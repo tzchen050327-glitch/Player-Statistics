@@ -2020,6 +2020,9 @@
       const dateLabel = String(activeHomeGameDetail?.date || '').replaceAll('-', '/');
       const detailCacheAt = activeHomeGameDetail ? Number(homeGameDetailCache.get(activeHomeGameDetail.key)?.at || 0) : 0;
       const detailUpdateTime = homeMatchCenterDisplayTime(detail?.updatedAt || detail?.fetchedAt || detailCacheAt || 0);
+      const desktopDisplayControl = window.matchMedia('(min-width: 981px) and (pointer: fine)').matches;
+      let largeDisplayEnabled = false;
+      try { largeDisplayEnabled = localStorage.getItem('baseball-game-detail-large-screen-v1') === '1'; } catch {}
       const pregame = detail?.pregame || null;
       if (pregame && activeHomeGameDetail?.pregameCenter) {
         const existing = activeHomeGameDetail.pregameCenter.starters || {};
@@ -2076,7 +2079,10 @@
 
       body.innerHTML = `
         <header class="game-detail-sticky-head">
-          <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回首頁</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回首頁</button>
+            ${desktopDisplayControl ? `<button id="homeGameDetailDisplayMode" class="game-detail-back" type="button" aria-pressed="${largeDisplayEnabled ? 'true' : 'false'}">${largeDisplayEnabled ? '關閉大螢幕' : '大螢幕模式'}</button>` : ''}
+          </div>
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
@@ -2111,6 +2117,17 @@
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
+      body.querySelector('#homeGameDetailDisplayMode')?.addEventListener('click', () => {
+        try {
+          const next = localStorage.getItem('baseball-game-detail-large-screen-v1') === '1' ? '0' : '1';
+          localStorage.setItem('baseball-game-detail-large-screen-v1', next);
+        } catch {}
+        const current = activeHomeGameDetail
+          ? (homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail)
+          : detail;
+        renderHomeGameDetail(current, game);
+        window.dispatchEvent(new Event('resize'));
+      });
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
       body.querySelectorAll('[data-match-center-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
