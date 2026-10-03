@@ -1510,13 +1510,17 @@
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
     const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
     const supportsLandscape=isCpbl||isNpb;
-    const landscapeMode=supportsLandscape && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
+    const desktopDisplayControl=window.matchMedia('(min-width: 981px) and (pointer: fine)').matches;
+    let manualLargeScreen=false;
+    try{manualLargeScreen=localStorage.getItem('baseball-game-detail-large-screen-v1')==='1';}catch{}
+    const autoLandscape=!desktopDisplayControl && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
+    const landscapeMode=supportsLandscape && (desktopDisplayControl ? manualLargeScreen : autoLandscape);
     if (!isCpbl && !isNpb) {
       document.body.classList.remove('gdx-cpbl-landscape');
       body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
       return;
     }
-    document.body.classList.toggle('gdx-cpbl-landscape',supportsLandscape);
+    document.body.classList.toggle('gdx-cpbl-landscape',landscapeMode);
     if (!supportsLandscape) body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
     if (!overlay||overlay.classList.contains('hidden')||!body||!sameGame(body,detail)) return;
 
