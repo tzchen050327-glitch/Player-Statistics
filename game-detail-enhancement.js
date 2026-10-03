@@ -1504,6 +1504,53 @@
     return (!away||text.includes(away))&&(!home||text.includes(home));
   }
 
+  function syncLargeScreenExitControl(enabled) {
+    let button=document.getElementById('gdxLargeScreenExit');
+    if(!enabled){
+      button?.remove();
+      return;
+    }
+    if(!button){
+      button=document.createElement('button');
+      button.id='gdxLargeScreenExit';
+      button.type='button';
+      button.textContent='✕ 關閉大螢幕';
+      button.setAttribute('aria-label','關閉大螢幕模式');
+      Object.assign(button.style,{
+        position:'fixed',
+        top:'14px',
+        right:'14px',
+        zIndex:'2147483000',
+        appearance:'none',
+        border:'1px solid rgba(255,255,255,.28)',
+        borderRadius:'10px',
+        padding:'9px 13px',
+        background:'rgba(5,24,42,.88)',
+        color:'#fff',
+        fontSize:'13px',
+        fontWeight:'800',
+        lineHeight:'1',
+        cursor:'pointer',
+        boxShadow:'0 6px 20px rgba(0,0,0,.28)',
+        backdropFilter:'blur(10px)'
+      });
+      button.addEventListener('click',()=>{
+        try{localStorage.setItem('baseball-game-detail-large-screen-v1','0');}catch{}
+        document.body.classList.remove('gdx-cpbl-landscape');
+        button.remove();
+        const headerToggle=document.getElementById('homeGameDetailDisplayMode');
+        if(headerToggle){
+          headerToggle.textContent='大螢幕模式';
+          headerToggle.setAttribute('aria-pressed','false');
+        }
+        document.querySelector('#homeGameDetailBody')?.removeAttribute('data-gdx-stamp');
+        window.dispatchEvent(new Event('resize'));
+        scheduleEnhance();
+      });
+      document.body.appendChild(button);
+    }
+  }
+
   function enhanceGameDetail() {
     applyVersionLabel();
     const detail=latestDetail || window.__latestHomeGameDetail || null; if (!detail?.game) return;
@@ -1515,7 +1562,9 @@
     try{manualLargeScreen=localStorage.getItem('baseball-game-detail-large-screen-v1')==='1';}catch{}
     const autoLandscape=!desktopDisplayControl && window.matchMedia('(orientation: landscape) and (min-width: 700px)').matches;
     const landscapeMode=supportsLandscape && (desktopDisplayControl ? manualLargeScreen : autoLandscape);
+    syncLargeScreenExitControl(Boolean(landscapeMode && desktopDisplayControl));
     if (!isCpbl && !isNpb) {
+      syncLargeScreenExitControl(false);
       document.body.classList.remove('gdx-cpbl-landscape');
       body?.querySelectorAll('[data-gdx="landscape"],[data-gdx="live"]').forEach(node=>node.remove());
       return;
