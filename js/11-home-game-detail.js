@@ -435,8 +435,8 @@
       return found ? total : null;
     }
 
-    function homeDetailLineupReady(detail) {
-      return ['away','home'].every(side => {
+    function homeDetailLineupReady(detail, game = null, league = '') {
+      const ready = ['away','home'].every(side => {
         const batters = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
         return batters.length >= 9 && batters.slice(0, 9).every((player, index) => {
           const name = String(player?.fullName || player?.name || '').trim();
@@ -444,6 +444,20 @@
           return Boolean(name) && order >= 1 && order <= 9;
         });
       });
+      if (!ready) return false;
+
+      const normalizedLeague = String(league || activeHomeGameDetail?.league || detail?.league || '').toUpperCase();
+      const normalizedStatus = String(detail?.status || detail?.game?.status || game?.status || '').toLowerCase();
+
+      // CPBL rescheduled games keep the same game id, so the box/detail endpoint can
+      // still expose the lineup from the original postponed date. For a game that is
+      // still scheduled, the current-day daily feed is the authority for whether a
+      // lineup has actually been announced. Suspended games are intentionally exempt:
+      // they must keep the original batting order when play resumes.
+      if (normalizedLeague === 'CPBL' && normalizedStatus === 'scheduled') {
+        return Boolean(game?.lineupReady);
+      }
+      return true;
     }
 
     function syncHomeDailyGameFromDetail(league, date, game, detail) {
@@ -459,7 +473,7 @@
         if (Number.isFinite(homeScore)) target.homeScore = homeScore;
         if (normalizedStatus) target.status = normalizedStatus;
         if (info?.id && !target.id) target.id = info.id;
-        if (homeDetailLineupReady(detail)) target.lineupReady = true;
+        if (homeDetailLineupReady(detail, target, league)) target.lineupReady = true;
       };
       apply(game);
       const daily = homeDailyGamesCache.get(`${league}|${date}`);
@@ -1489,7 +1503,7 @@
 
     function homePregameOverviewPager(center, detail, gameInfo, game) {
       const overviewHtml = homePregameMatchupPanel(center, gameInfo, game);
-      const lineupReady = homeDetailLineupReady(detail);
+      const lineupReady = homeDetailLineupReady(detail, game, activeHomeGameDetail?.league);
       if (!lineupReady) {
         if (activeHomeGameDetail) activeHomeGameDetail.overviewPage = 0;
         return overviewHtml;
@@ -2511,7 +2525,7 @@
         ...gameInfo,
         id:incomingId || cached.games[index]?.id,
         status:String(detail?.status || row?.status || cached.games[index]?.status || 'scheduled'),
-        lineupReady:Boolean(cached.games[index]?.lineupReady || homeDetailLineupReady(detail))
+        lineupReady:Boolean(cached.games[index]?.lineupReady || homeDetailLineupReady(detail, cached.games[index], 'CPBL'))
       };
       cached.at = Date.now();
       cached.error = '';
