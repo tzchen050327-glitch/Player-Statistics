@@ -454,8 +454,16 @@
       // still scheduled, the current-day daily feed is the authority for whether a
       // lineup has actually been announced. Suspended games are intentionally exempt:
       // they must keep the original batting order when play resumes.
-      if (normalizedLeague === 'CPBL' && normalizedStatus === 'scheduled') {
-        return Boolean(game?.lineupReady);
+      if (normalizedLeague === 'CPBL') {
+        const hasPlayed = Array.isArray(detail?.plays) && detail.plays.length > 0;
+        // CPBL's schedule feed can roll past the listed start time before the game
+        // actually begins. Do not let a clock-derived "live" state re-validate a
+        // stale lineup from a previously postponed date. Suspended games are the
+        // exception because their original batting order must be preserved.
+        if (normalizedStatus === 'suspended') return true;
+        if (normalizedStatus === 'scheduled' || (normalizedStatus === 'live' && !hasPlayed)) {
+          return Boolean(game?.lineupReady);
+        }
       }
       return true;
     }
