@@ -1701,6 +1701,33 @@
             bottom:Number(p?.sz_bottom) || 0
           };
         }) : [];
+
+        // A partial umpire report can already contain per-miss impact/favor data
+        // before the backend publishes the aggregate net_favor fields. In that
+        // state, derive the card directly from the rows that are already visible.
+        let netImpact = Number.isFinite(Number(liveReport?.net_favor)) ? Number(liveReport.net_favor) : null;
+        let favorTeam = String(liveReport?.net_favor_team || '').trim();
+        if (!Number.isFinite(netImpact) || !favorTeam) {
+          const impactByTeam = new Map();
+          for (const miss of misses) {
+            const team = String(miss?.favor || '').trim();
+            const impact = Number(miss?.impact);
+            if (!team || !Number.isFinite(impact)) continue;
+            impactByTeam.set(team, (impactByTeam.get(team) || 0) + impact);
+          }
+
+          const ranked = [...impactByTeam.entries()]
+            .sort((a, b) => Number(b[1]) - Number(a[1]));
+          if (ranked.length) {
+            const leaderTotal = Number(ranked[0][1]) || 0;
+            const runnerUpTotal = ranked.length > 1 ? (Number(ranked[1][1]) || 0) : 0;
+            netImpact = Math.max(0, leaderTotal - runnerUpTotal);
+            favorTeam = ranked.length > 1 && Math.abs(leaderTotal - runnerUpTotal) < 1e-9
+              ? '兩隊持平'
+              : ranked[0][0];
+          }
+        }
+
         return {
           umpire:String(liveReport?.umpire_name || ''),
           total:Number(liveReport?.total_calls) || 0,
@@ -1713,8 +1740,8 @@
           consistencyTotal:Number.isFinite(Number(liveReport?.consistency_total)) ? Number(liveReport.consistency_total) : null,
           consistencyPct:Number.isFinite(Number(liveReport?.consistency)) ? Number(liveReport.consistency) : null,
           consistencyEstimated:String(liveReport?.source_updated_at || '').includes('consistency=estimated'),
-          netImpact:Number.isFinite(Number(liveReport?.net_favor)) ? Number(liveReport.net_favor) : null,
-          favorTeam:String(liveReport?.net_favor_team || ''),
+          netImpact,
+          favorTeam,
           misses
         };
       }
