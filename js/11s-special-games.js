@@ -695,6 +695,22 @@
             {year:'2026/04/05',title:'最後一舞',detail:'新莊對樂天以第一棒、中外野手先發，首打席敲出生涯第 772 支安打，二局再完成最後一次正式接殺後退場。'},
             {year:'2026/04/06',title:'正式引退',detail:'新莊引退儀式最後再次站回中外野，接下好友高國輝擊出的飛球，為從少棒一路走到大聯盟與中職的球員生涯正式收尾。'}
           ],
+          yearbookTitle:'中職逐年球季檔案',
+          yearbookIntro:'如果把林哲瑄的中職生涯拆成年份來看，可以清楚看到一條從巔峰攻守、金手套連霸，到傷勢、角色轉換與最後一舞的曲線。以下不是只有數字，而是每一季他在球隊裡的樣子。',
+          yearbook:[
+            {year:'2015',team:'義大犀牛',line:'20 G｜.244/.359/.372｜19 H｜1 HR｜8 RBI',label:'回台元年',story:'季中返台、第一輪加入義大，只有 20 場例行賽，但中外野的速度與守備範圍立即讓聯盟感受到不同層級的壓迫感。這一年更像適應期，也是下一季全面爆發的前奏。'},
+            {year:'2016',team:'義大犀牛',line:'107 G｜.345/.434/.570｜22 HR｜79 RBI｜12 SB｜OPS 1.004',label:'生涯代表作',story:'打擊、長打、選球與速度同時拉到最高檔。22 轟、79 打點，拿下最佳十人與外野金手套；季後賽更帶著義大完成最後一座總冠軍，並獲台灣大賽 MVP。這是「攻守一體林哲瑄」最完整的一季。'},
+            {year:'2017',team:'富邦悍將',line:'91 G｜.296/.375/.405｜104 H｜43 RBI｜9 SB',label:'悍將元年',story:'球隊更名富邦後，他成為新世代悍將的核心人物。長打下降，但上壘與中外野防區仍具高價值，完成金手套二連霸，也開始形成日後球迷熟悉的「蝦池」形象。'},
+            {year:'2018',team:'富邦悍將',line:'106 G｜.278/.345/.425｜10 HR｜59 RBI｜18 SB',label:'速度與守備',story:'打線中不再只是強攻型角色，18 次盜壘讓速度重新成為武器；守備穩定度持續維持高檔，外野金手套三連霸。'},
+            {year:'2019',team:'富邦悍將',line:'112 G｜.314/.366/.469｜130 H｜9 HR｜15 SB',label:'攻守再登峰',story:'單季 130 安、打擊率超過三成，外野守備 112 場零失誤，完成金手套四連霸。這一年是他在富邦時期最平衡、最成熟的球季之一。'},
+            {year:'2020',team:'富邦悍將',line:'73 G｜.291/.392/.455｜9 HR｜32 RBI｜14 SB',label:'高上壘率的一年',story:'出賽數下降，但攻擊效率沒有跟著掉。上壘率接近四成、仍有 9 轟與 14 盜，顯示即使球季不完整，他依舊能透過選球、跑壘與守備維持影響力。'},
+            {year:'2021',team:'富邦悍將',line:'84 G｜.238/.334/.331｜69 H｜5 HR｜13 SB',label:'打擊震盪',story:'打擊率進入低潮，但仍靠保送與速度維持一定上壘能力。此時的價值開始從「主砲級中外野手」逐漸轉向守備、跑壘與資深球員角色。'},
+            {year:'2022',team:'富邦悍將',line:'38 G｜.244/.321/.319｜29 H｜5 SB',label:'傷勢轉折',story:'7 月新竹球場撲接造成左肩關節唇破裂與旋轉肌傷勢，球季幾乎被迫中止。這不只影響當年，也改變了生涯後段的身體狀態與出賽節奏。'},
+            {year:'2023',team:'富邦悍將',line:'105 G｜.240/.313/.311｜80 H｜18 SB',label:'回到球場',story:'重傷後重新站回一軍，而且出賽超過百場。打擊火力不若巔峰，但 18 次盜壘證明速度仍在；對球隊而言，能回到中外野本身就是一次完整復出。'},
+            {year:'2024',team:'富邦悍將',line:'55 G｜.192/.304/.219｜28 H｜17 RBI',label:'角色轉換',story:'出賽與打擊內容都明顯縮減，先發位置逐漸交棒給更年輕的外野手。這一年開始更清楚看見他從場上核心轉為資深領袖與守備支援者。'},
+            {year:'2025',team:'富邦悍將',line:'11 G｜.095/.136/.143｜2 H｜2 RBI',label:'最後一季前夕',story:'一軍出賽只剩 11 場，身體與球隊戰力布局都讓他的角色進一步縮小。季後宣布將在下一個球季初完成正式告別。'},
+            {year:'2026',team:'富邦悍將',line:'1 G｜1 PA｜1 H｜生涯第 772 安',label:'最後一舞',story:'4 月 5 日最後一戰，首打席就敲出安打並跑回分數；二局完成最後一次正式中外野接殺後退場。隔天的引退儀式，再一次站回最熟悉的中外野，為球員生涯畫下句點。'}
+          ],
           source:'資料整理：CPBL、MLB、中央社、聯合報、TSNA；截至 2026/10/06。'
         },
         {
@@ -743,6 +759,22 @@
             }
           ],
           quote:'第一年不是「立即兌現」，而是重新找到自己在新球隊的使用方式。',
+          yearbookTitle:'林岱安逐年球季檔案',
+          yearbookIntro:'捕手的價值很難只用打擊率解釋。從替補、主戰、金手套，到自由球員轉隊，林岱安的生涯曲線其實是一部「捕手如何累積信任」的長篇紀錄。',
+          yearbook:[
+            {year:'2015',team:'統一7-ELEVEn獅',line:'20 G｜.283/.295/.317｜17 H｜6 RBI｜捕手 16 場',label:'新人起步',story:'第四輪加入統一後在 9 月升上一軍。打擊表現不差，但更重要的是開始累積與職業投手合作、臨場配球與阻殺的實戰經驗。'},
+            {year:'2016',team:'統一7-ELEVEn獅',line:'51 G｜.301/.325/.425｜34 H｜1 HR｜22 RBI',label:'打擊成長',story:'一軍出賽超過 50 場，打擊率站上三成，長打與打點同步增加。這一年開始從輪替捕手走向更穩定的一軍角色。'},
+            {year:'2017',team:'統一7-ELEVEn獅',line:'40 G｜.222/.267/.283｜22 H｜阻殺率 .500',label:'守備價值浮現',story:'攻擊端回落，但捕手守備開始留下更強烈的存在感，阻殺率達五成。對捕手來說，這種「打擊低潮仍能靠守備留在一軍」是角色成熟的重要階段。'},
+            {year:'2018',team:'統一7-ELEVEn獅',line:'26 G｜.193/.203/.281｜守備率 1.000｜阻殺率 .600',label:'少量出賽、守備精準',story:'出賽不多，打擊也處於低檔，但捕手守備未出現失誤，阻殺率達六成。這是一個數據很小、但守備品質很醒目的球季。'},
+            {year:'2019',team:'統一7-ELEVEn獅',line:'87 G｜.258/.295/.326｜61 H｜4 HR｜阻殺率 .529',label:'主戰捕手成形',story:'出賽直接跳到 87 場，成為真正的主戰捕手；36 次阻殺、阻殺率超過五成，拿下生涯首座捕手金手套。從這一年開始，他不再只是「可以用的捕手」，而是獅隊投手群的主要搭檔。'},
+            {year:'2020',team:'統一7-ELEVEn獅',line:'86 G｜.246/.290/.392｜8 HR｜40 RBI',label:'攻擊巔峰與冠軍',story:'8 轟、40 打點都是生涯代表級輸出。捕手本業之外，他也能在打線提供長打，並陪球隊走完整季與季後賽，成為統一奪冠班底的重要一員。'},
+            {year:'2021',team:'統一7-ELEVEn獅',line:'91 G｜.276/.345/.343｜74 H｜39 RBI｜OPS+ 100',label:'金手套＋最佳十人',story:'攻守最完整的一季。出賽 91 場，打擊效率回到聯盟平均以上，守備率 .996；季末同時拿下捕手金手套與最佳十人，正式站上聯盟頂尖捕手行列。'},
+            {year:'2022',team:'統一7-ELEVEn獅',line:'83 G｜.224/.277/.274｜49 H｜17 RBI',label:'工作量維持',story:'打擊下滑，但依舊承擔 81 場捕手守備。捕手生涯的中段，價值逐漸更集中在投手引導、賽前準備與守備穩定性。'},
+            {year:'2023',team:'統一7-ELEVEn獅',line:'54 G｜.224/.272/.276｜35 H｜2 HR｜阻殺率 .410',label:'輪替深化',story:'出賽下降，但阻殺效率回升。球隊捕手分工改變後，他更多以經驗與特定投手搭配方式維持角色。'},
+            {year:'2024',team:'統一7-ELEVEn獅',line:'42 G｜.271/.347/.308｜29 H｜阻殺率 .462',label:'效率反彈',story:'打席不多，但打擊率與上壘率明顯回升，阻殺率也接近五成。雖然不是高出賽量球季，卻是一個攻守效率都相對漂亮的年份。'},
+            {year:'2025',team:'統一7-ELEVEn獅',line:'70 G｜.208/.257/.319｜5 HR｜17 RBI｜守備率 .998',label:'獅袍最後一年',story:'打擊率下滑，但 5 支全壘打仍是生涯次高級別火力；捕手守備率 .998。季後行使自由球員權利，結束超過十年的統一生涯。'},
+            {year:'2026',team:'富邦悍將',line:'64 PA｜.088/.129/.175｜1 HR｜捕手 31 場',label:'轉隊第一年',story:'新球隊第一年並不順。春季打擊低迷、一度下二軍，捕手順位也面臨競爭；但 7 月搭配陳仕朋完成 94 球完封，9 月 16 日又以二壘安打與轉隊首轟拿下 MVP、幫球隊止敗。第一年的貢獻，更多藏在投捕合作、比賽閱讀與關鍵場次，而不是整季打擊率。'}
+          ],
           source:'資料整理：CPBL、中央社、自由體育；打擊數據截至 2026/10/06。'
         }
       ];
@@ -759,6 +791,20 @@
           + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
           + '</button>').join('')
         + '</div>';
+    }
+
+    function authorNewsYearbookHtml(item) {
+      if(!Array.isArray(item.yearbook) || !item.yearbook.length) return '';
+      return '<section class="author-news-yearbook">'
+        + '<div class="author-news-yearbook-head"><div><span>SEASON BY SEASON</span><h3>'+escapeHtml(item.yearbookTitle || '逐年球季檔案')+'</h3><p>'+escapeHtml(item.yearbookIntro || '')+'</p></div><b>'+escapeHtml(item.person)+'</b></div>'
+        + '<div class="author-news-yearbook-list">'
+        + item.yearbook.map((season,index) => '<article class="author-news-year">'
+          + '<div class="author-news-year-stamp"><strong>'+escapeHtml(season.year)+'</strong><span>'+escapeHtml(season.team)+'</span></div>'
+          + '<div class="author-news-year-body"><div class="author-news-year-label">'+escapeHtml(season.label || '')+'</div><h4>'+escapeHtml(season.story)+'</h4><div class="author-news-year-line">'+escapeHtml(season.line || '')+'</div></div>'
+          + '<div class="author-news-year-no">'+String(index+1).padStart(2,'0')+'</div>'
+          + '</article>').join('')
+        + '</div>'
+        + '</section>';
     }
 
     function authorNewsTimelineHtml(item) {
@@ -800,6 +846,7 @@
         + '</section>'
         + '<div class="author-news-story">'+sections+'</div>'
         + authorNewsTimelineHtml(item)
+        + authorNewsYearbookHtml(item)
         + '<blockquote class="author-news-quote">'+escapeHtml(item.quote)+'</blockquote>'
         + '<footer class="author-record-source">'+escapeHtml(item.source)+'</footer>'
         + '</main></div>';
@@ -885,7 +932,7 @@
         ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
         : '';
       els.homeSpecialGamesExplorer.innerHTML =
-        '<div class="author-collection-scroll-head"><div><span>AUTHOR ARCHIVE</span><strong>作者收藏</strong></div><small>左右滑動瀏覽 →</small></div>'
+        '<div class="author-collection-scroll-head"><div><span>AUTHOR ARCHIVE</span><strong>作者收藏</strong></div><small>上下滾動瀏覽 ↓</small></div>'
         + '<div class="author-collection-rail" data-author-collection-rail>'
         + recordCard + newsCards + replayCards
         + '</div>';
