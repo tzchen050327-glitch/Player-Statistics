@@ -14750,3 +14750,160 @@ select,
     text-align:left;
   }
 }
+
+
+/* ===== LIU JUNHAO NINE POSITION FIELD OVERRIDE ===== */
+.author-record-source-image{display:none!important}
+
+.author-record-field{
+  position:relative;
+  width:min(760px,100%);
+  aspect-ratio:1.38/1;
+  margin:28px auto 0;
+  overflow:hidden;
+  border:1px solid rgba(120,186,242,.12);
+  border-radius:28px;
+  background:
+    radial-gradient(ellipse at 50% 87%,rgba(221,183,118,.40) 0 8%,transparent 8.5%),
+    linear-gradient(180deg,#0d503e,#0b3e32);
+  box-shadow:0 18px 42px rgba(0,0,0,.18);
+}
+
+.author-field-grass{
+  position:absolute;
+  inset:0;
+  opacity:.20;
+  background:repeating-linear-gradient(
+    115deg,
+    rgba(255,255,255,.05) 0 18px,
+    transparent 18px 36px
+  );
+}
+
+.author-field-diamond{
+  position:absolute;
+  left:50%;
+  bottom:10%;
+  width:43%;
+  aspect-ratio:1;
+  transform:translateX(-50%) rotate(45deg);
+  border:3px solid rgba(224,190,132,.58);
+  background:rgba(194,157,96,.18);
+}
+
+.author-position-node{
+  position:absolute;
+  z-index:3;
+  width:96px;
+  min-height:68px;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:8px 6px;
+  border:1px solid rgba(153,209,255,.24);
+  border-radius:12px;
+  background:rgba(5,24,41,.92);
+  box-shadow:0 8px 20px rgba(0,0,0,.20);
+  text-align:center;
+}
+
+.author-position-node strong{
+  color:#fff;
+  font-size:12px;
+  font-weight:1000;
+  line-height:1.1;
+}
+
+.author-position-node span{
+  color:#7fb2dd;
+  font-size:9px;
+  font-weight:900;
+  line-height:1.1;
+}
+
+.author-position-node small{
+  color:#b8d4ea;
+  font-size:8px;
+  font-weight:800;
+  line-height:1.1;
+  white-space:nowrap;
+}
+
+.author-position-node.cf{left:50%;top:13%}
+.author-position-node.lf{left:20%;top:21%}
+.author-position-node.rf{left:80%;top:21%}
+.author-position-node.ss{left:40%;top:48%}
+.author-position-node.b2{left:60%;top:48%}
+.author-position-node.b3{left:28%;top:64%}
+.author-position-node.b1{left:72%;top:64%}
+.author-position-node.p{left:50%;top:67%}
+.author-position-node.c{left:50%;top:91%}
+
+.author-field-center{
+  position:absolute;
+  left:50%;
+  top:36%;
+  z-index:2;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  pointer-events:none;
+}
+
+.author-field-center strong{
+  display:block;
+  color:#fff;
+  font-size:34px;
+  font-weight:1000;
+  line-height:1;
+}
+
+.author-field-center span{
+  display:block;
+  margin-top:4px;
+  color:rgba(255,255,255,.52);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+@media(max-width:760px){
+  .author-record-field{
+    aspect-ratio:1/1;
+    border-radius:22px;
+  }
+  .author-position-node{
+    width:80px;
+    min-height:60px;
+    padding:6px 4px;
+    border-radius:10px;
+  }
+  .author-position-node strong{font-size:10px}
+  .author-position-node span{font-size:8px}
+  .author-position-node small{font-size:7px}
+  .author-field-center strong{font-size:28px}
+}
+
+@media(max-width:430px){
+  .author-record-field{
+    aspect-ratio:.92/1;
+  }
+  .author-position-node{
+    width:68px;
+    min-height:54px;
+    padding:5px 3px;
+  }
+  .author-position-node strong{font-size:9px}
+  .author-position-node span{font-size:7px}
+  .author-position-node small{font-size:6px}
+  .author-position-node.cf{top:12%}
+  .author-position-node.lf{left:18%;top:21%}
+  .author-position-node.rf{left:82%;top:21%}
+  .author-position-node.ss{left:38%;top:48%}
+  .author-position-node.b2{left:62%;top:48%}
+  .author-position-node.b3{left:25%;top:65%}
+  .author-position-node.b1{left:75%;top:65%}
+  .author-position-node.c{top:91%}
+}
