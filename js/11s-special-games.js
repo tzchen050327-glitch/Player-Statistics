@@ -932,8 +932,7 @@
         ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
         : '';
       els.homeSpecialGamesExplorer.innerHTML =
-        '<div class="author-collection-scroll-head"><div><span>AUTHOR ARCHIVE</span><strong>作者收藏</strong></div><small>上下滾動瀏覽 ↓</small></div>'
-        + '<div class="author-collection-rail" data-author-collection-rail>'
+        '<div class="author-collection-rail" data-author-collection-rail>'
         + recordCard + newsCards + replayCards
         + '</div>';
       els.homeSpecialGamesExplorer.querySelector('[data-author-collection]')?.addEventListener('click',event => openAuthorCollectionRecord(event.currentTarget.dataset.authorCollection));
