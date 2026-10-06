@@ -679,6 +679,8 @@
             }
           ],
           quote:'中外野那塊草皮，往後仍會讓人想起「蝦哥」。',
+          timelineTitle:'從少棒到最後一舞',
+          timelineIntro:'一條從台南少棒、美國職棒最高殿堂，再回到新莊中外野的生涯軌跡。',
           timeline:[
             {year:'國小三年級',title:'崇學國小・棒球啟蒙',detail:'原本同時接觸田徑，因為速度與運動能力被少棒教練注意，加入崇學國小少棒隊。棒球也成為他一路走下去的起點。'},
             {year:'2000',title:'世界少棒冠軍',detail:'隨中華隊參加小馬聯盟世界少棒賽，在冠軍戰轟出滿貫全壘打，幫助台灣奪冠。'},
@@ -696,12 +698,15 @@
             {year:'2026/04/06',title:'正式引退',detail:'新莊引退儀式最後再次站回中外野，接下好友高國輝擊出的飛球，為從少棒一路走到大聯盟與中職的球員生涯正式收尾。'}
           ],
           internationalTitle:'三大國際賽事・全部開轟',
+          internationalBadge:'3 / 3',
           internationalIntro:'奧運、世界棒球經典賽、世界12強，是台灣成棒最具代表性的三項一級國際賽。林哲瑄不只全部參加過，還在三個舞台都留下全壘打；截至 2026 年，他仍是台灣唯一完成這項紀錄的球員。',
           international:[
             {year:'2008',event:'北京奧運',opponent:'加拿大',score:'中華 6：5 加拿大',inning:'2局上',homer:'2分全壘打',detail:'19 歲、旅美第二年的林哲瑄已是中華隊主戰中外野手。面對加拿大，他在二局上轟出兩分砲，幫助中華隊單局攻下 4 分，最終延長 12 局以 6：5 勝出。這支全壘打成為「三大賽開轟」的第一塊拼圖。'},
             {year:'2017',event:'世界棒球經典賽',opponent:'南韓',score:'中華 8：11 南韓',inning:'4局下',homer:'2分全壘打',detail:'首爾台韓戰，中華隊一度落後 0：6。四局下林哲瑄轟出兩分砲，把比分追近到 5：8；球隊後來一路追成 8：8，最終才在延長賽落敗。這一轟是那場經典逆襲的重要節點。'},
             {year:'2019',event:'世界12強',opponent:'澳洲',score:'中華 5：1 澳洲',inning:'8局下',homer:'3分全壘打',detail:'東京巨蛋最後一戰，前七局仍是 1：1。八局王威晨先敲超前安打，林哲瑄隨後補上一發三分砲，把比賽直接拉開成 5：1，也替中華隊的 2019 12強之旅畫下最有力的句點。'}
           ],
+          honorsTitle:'生涯榮譽牆',
+          honorsIntro:'把一整段職業生涯濃縮成幾個最能代表林哲瑄的里程碑。',
           honors:[
             {value:'2008',title:'MLB 未來之星賽 MVP',detail:'在舊洋基球場開轟，成為少數在全球頂尖新秀舞台拿下 MVP 的台灣野手。'},
             {value:'2012',title:'登上美國大聯盟',detail:'波士頓紅襪 9 場出賽、12 打數 3 安，完成台灣野手的重要旅美里程碑。'},
@@ -710,6 +715,7 @@
             {value:'3/3',title:'三大一級國際賽皆開轟',detail:'2008 奧運、2017 經典賽、2019 世界12強全部敲出全壘打；截至 2026 年為台灣唯一。'},
             {value:'772',title:'中職生涯安打',detail:'2026 年最後一戰首打席敲出生涯第 772 安，讓球員生涯以一支安打作結。'}
           ],
+          usPeriod:'USA BASEBALL · 2007–2014',
           usCareerTitle:'旅美職棒逐年檔案',
           usCareerIntro:'2007 年以 18 歲之姿投入紅襪體系，從新人聯盟一路爬到 3A，2012 年登上大聯盟；離開紅襪後又在太空人 3A延續外野生涯，2014 年於遊騎兵體系改練投手。這段 8 年旅美路，是「蝦哥」守備、速度與職業球感真正成形的地方。',
           usCareerSummary:[
@@ -750,6 +756,144 @@
             {year:'2026',team:'富邦悍將',line:'1 G｜1 PA｜1 H｜生涯第 772 安',label:'最後一舞',story:'4 月 5 日最後一戰，首打席就敲出安打並跑回分數；二局完成最後一次正式中外野接殺後退場。隔天的引退儀式，再一次站回最熟悉的中外野，為球員生涯畫下句點。'}
           ],
           source:'資料整理：CPBL、MLB、中央社、聯合報、TSNA；截至 2026/10/06。'
+        },
+        {
+          slug:'chen-yung-chi-career-retirement-2026',
+          tone:'legacy',
+          tag:'CAREER SPECIAL',
+          date:'2026/10/06',
+          category:'人物特刊',
+          person:'陳鏞基',
+          eyebrow:'Mayaw Ciru・鏞不止步',
+          title:'鏞不止步',
+          headline:'陳鏞基：從台東海邊，到世界，再回到獅子的家',
+          deck:'童年用報紙做球、漂流木當球棒；旅美一路爬到 3A 與 40 人名單門口，國家隊無役不與，回台後成為統一隊史全壘打王。43 歲的最後一年，他仍然在替自己的故事加頁。',
+          cardMetric:'137',
+          cardMetricLabel:'CPBL CAREER HR',
+          stats:[
+            {value:'137',label:'中職全壘打'},
+            {value:'16',label:'連續開轟球季'},
+            {value:'515',label:'MiLB 安打'},
+            {value:'2006',label:'杜哈亞運金牌'}
+          ],
+          sections:[
+            {
+              kicker:'THE ORIGIN',
+              title:'台東不是後山，是他望向世界的起點',
+              body:'陳鏞基出生在台東成功鎮，童年最早的棒球場就在海邊。沒有正式器材，就把報紙揉成球、纏上膠帶，拿筆直的漂流木當球棒，在沙灘畫出界外線和壘包。看著哥哥打球，他也走進長濱國小少棒隊；從那片面向太平洋的海岸開始，他後來真的跨過海洋，走進美國職棒。',
+              accent:'TAITUNG'
+            },
+            {
+              kicker:'ALMOST MLB',
+              title:'離大聯盟最近的時候，身體卻按下暫停鍵',
+              body:'2006 年他在水手農場打出旅美最佳球季，從高階 1A 升上 2A，隔年直接從 3A Tacoma 開季，也進入球團 40 人名單視野。但肩膀手術讓 2007 球季只打 5 場，之後膝傷又反覆干擾。2007 到 2009，他連續站上 3A，卻也連續被傷勢打斷。沒有真正踏進 MLB，成了他自己承認最深的職業遺憾。',
+              accent:'AAA'
+            },
+            {
+              kicker:'THE LION',
+              title:'沒有登上大聯盟，卻把另一段傳奇留在台灣',
+              body:'2010 年底返台選秀，統一獅以第一輪第一指名選進陳鏞基。2011 年 3 月 20 日中職初登場，他就繳出 5 打數 4 安打、3 打點與全壘打。往後 16 個球季，他從游擊、二壘一路轉到三壘與一壘，從中心打線核心變成更衣室裡的老大哥，並把隊史全壘打紀錄一路推到 137 支。',
+              accent:'16 YEARS'
+            },
+            {
+              kicker:'THE FAREWELL',
+              title:'引退儀式不是終點，他還在繼續比賽',
+              body:'2026 年是陳鏞基公開宣告的最後一季。8 月先回到台東完成「回家的路」，9 月 19、20 日在亞太主場舉辦引退系列與儀式；但他沒有在儀式後立刻停下來。9 月 22 日生涯第一次以投手身分登板，9 月 24 日又轟出生涯第 137 轟，完成連續 16 季開轟。這很像他的生涯：告別也不是停下，而是做到最後一刻。',
+              accent:'137'
+            }
+          ],
+          quote:'謝謝你們愛棒球，因為我也很愛。',
+          timelineTitle:'從海邊棒球少年，到 43 歲的最後一季',
+          timelineIntro:'他的路不是直線：曾經嫌訓練太苦想放棄、曾經只差一步就可能上大聯盟，也曾在中職低潮時考慮 40 歲退休。每一次轉彎，最後都又回到棒球。',
+          timeline:[
+            {year:'童年',title:'成功鎮海邊・報紙球與漂流木',detail:'在台東海線長大，和部落朋友直接在沙灘畫球場，用揉成團的報紙與漂流木打球。棒球最初不是訓練，而是一種遊戲。'},
+            {year:'國小',title:'長濱國小・跟著哥哥開始打球',detail:'看著大哥陳志偉打球而走上棒球路。年紀小、身材也小，甚至曾用尼龍繩綁住太鬆的球褲，但球棒從此沒有真正放下。'},
+            {year:'國中',title:'泰源國中・一度退隊，又自己走回來',detail:'開始住校接受科班訓練後，因晨操與高強度生活太苦而一度退隊回家；後來看中華隊比賽又發現自己仍然愛棒球，甚至曾為了想回球隊和父母賭氣逃家。母親最後以「課業不能荒廢、品行不能變壞」為條件支持他繼續打。'},
+            {year:'高中',title:'高苑工商・離開台東',detail:'高中離開家鄉到高雄，進入棒球名校高苑工商。內野攻守逐漸成熟，也開始走進各級國家隊視野。'},
+            {year:'大學',title:'國立體育學院・北上再升級',detail:'大學再從南部移往北部，進入國立體育學院。2002 年哈連盃首度披上成棒中華隊戰袍，國際賽生涯正式開始。'},
+            {year:'2004',title:'西雅圖水手・旅美起點',detail:'與水手簽約，從短期 1A Everett 開始職業生涯。第一年就打出 .300、25 次盜壘，也同時從小聯盟回應國家隊徵召，參加雅典奧運。'},
+            {year:'2006',title:'旅美高峰＋國家隊黃金年',detail:'小聯盟全年打擊率 .324，從高階 1A 升上 2A；同一年又打 WBC、洲際盃與杜哈亞運，在亞運首戰對韓國單場雙響砲，最後幫助台灣拿下亞運棒球正式賽首金。'},
+            {year:'2007',title:'3A、40 人名單與肩膀手術',detail:'開季直接從 3A Tacoma 出發，距離大聯盟只差一步，但肩膀舊傷惡化，5 場後動刀、球季報銷。秋季聯盟復出後仍被水手放進 40 人名單，證明球團沒有放棄他。'},
+            {year:'2008–2010',title:'傷勢、轉隊與旅美最後三年',detail:'膝傷影響 2008 球季，之後離開水手轉戰運動家；2009 再打上 3A Sacramento，2010 先後待過運動家與海盜 2A。年底決定結束 7 年旅美，返台投入中職選秀。'},
+            {year:'2011',title:'統一獅・中職第一天就開轟',detail:'第一輪第一指名加入統一，3 月 20 日初登場就 5 打數 4 安打、3 打點並開轟。也以阿美族名 Mayaw Ciru 登錄，成為中職以原住民族名登錄的重要先例。'},
+            {year:'2020',title:'千安、百轟、百盜',detail:'先後完成生涯百轟、千安，再於 8 月 26 日跑出生涯第 100 次盜壘，成為中職史上第 8 位「千安百轟百盜」球員。'},
+            {year:'2021–2022',title:'低潮與退休念頭',detail:'打擊成績跌到生涯低點，他曾把 40 歲設定成可能的終點；但不想在狀態最差時離開，決定再拚，把退休時間往後延。'},
+            {year:'2023–2025',title:'老將反彈',detail:'2023 年打擊率回到 .336，2024 年仍有 .311，2025 年 42 歲球季也維持 .288。不是靠情懷留在一軍，而是持續證明自己仍能打。'},
+            {year:'2026/08',title:'回家的路・第一次在台東打中職',detail:'引退系列首部曲回到家鄉台東，也是他 16 年中職生涯第一次在台東出賽。故鄉部落、長濱國小與家人一起把他送回棒球夢開始的地方。'},
+            {year:'2026/09/20',title:'亞太引退儀式',detail:'在台南亞太主場完成「鏞不止步」引退儀式，回顧從台東、國家隊、旅美到統一的完整生涯。球季結束後，他將正式卸下球員身分。'},
+            {year:'2026/09/24',title:'第 137 轟・還沒停下',detail:'引退儀式後仍繼續出賽，從伍鐸手中敲出本季首轟、生涯第 137 轟，連續第 16 個中職球季開轟。'}
+          ],
+          internationalTitle:'一件國家隊球衣，穿了十五年',
+          internationalBadge:'CT',
+          internationalIntro:'從 2002 哈連盃初次進入成棒中華隊，到 2017 世界棒球經典賽，陳鏞基幾乎經歷了那個世代所有重要國際舞台。旅美最關鍵的發展期，他仍多次返台參賽；他自己在引退年回頭看，答案仍是：「重來一次，我還是會為國家隊出戰。」',
+          international:[
+            {year:'2002',event:'哈連盃',opponent:'成棒國家隊',score:'國際賽起點',inning:'大學時期',homer:'第一次披上成棒 CT',detail:'還在國立體院時就進入成棒代表隊，開啟長達十多年的國家隊生涯。'},
+            {year:'2004',event:'雅典奧運',opponent:'世界舞台',score:'中華隊第 5 名',inning:'旅美第一年',homer:'1A 新人直接進奧運',detail:'剛進水手小聯盟第一年就接受奧運徵召，甚至因此錯過西北聯盟明星賽。對 21 歲的內野手而言，國際賽與旅美從一開始就是平行進行。'},
+            {year:'2005',event:'世界盃',opponent:'荷蘭',score:'大會明星',inning:'二壘手',homer:'入選世界盃明星二壘手',detail:'在小聯盟 A 級完整球季後返隊參賽，最終獲選賽會明星二壘手；當時他已被視為台灣最有機會挑戰大聯盟的內野新星之一。'},
+            {year:'2006',event:'世界棒球經典賽',opponent:'首屆 WBC',score:'.357 / 1 HR / 5 RBI',inning:'3 場',homer:'5 安、5 打點',detail:'首屆經典賽 14 打數敲 5 安，包括 3 支二壘打與 1 支全壘打，OPS 1.143；國際賽打擊能力在這屆被世界看見。'},
+            {year:'2006',event:'洲際盃',opponent:'台中',score:'中華隊銅牌',inning:'9 場',homer:'打擊率接近五成',detail:'整屆賽事攻守俱佳，獲選明星二壘手，幫助中華隊拿下銅牌。'},
+            {year:'2006',event:'杜哈亞運',opponent:'南韓',score:'中華 4：2 南韓',inning:'首戰',homer:'單場雙響砲',detail:'面對韓國王牌投手群，陳鏞基單場兩發全壘打、2 分打點，成為關鍵勝利核心；中華隊最終一路奪下台灣亞運棒球正式賽史上第一面金牌，也是他最難忘的國際賽冠軍。'},
+            {year:'2010',event:'廣州亞運',opponent:'南韓',score:'銀牌',inning:'金牌戰',homer:'旅美最後一年仍回國參戰',detail:'旅美生涯尾聲仍接受國家隊徵召，中華隊一路闖進金牌戰，最終不敵韓國拿下銀牌。'},
+            {year:'2013',event:'世界棒球經典賽',opponent:'日本',score:'東京八強戰',inning:'延長賽',homer:'那次撲一壘，成為一代人的畫面',detail:'中華隊史上最接近擊敗日本的一場經典戰役。延長賽陳鏞基擊出雙殺打後全力撲向一壘，最終仍出局；多年後他說，2024 世界12強奪冠像是後輩替那一代人補起了一個夢。'},
+            {year:'2015',event:'世界12強',opponent:'首屆 Premier12',score:'中華隊主場',inning:'資深內野核心',homer:'再披 CT 戰袍',detail:'回到中職後仍是國家隊常客，首屆 12 強持續扮演中華隊內野與中心打線的重要角色。'},
+            {year:'2017',event:'世界棒球經典賽',opponent:'首爾',score:'第三度 WBC',inning:'34 歲',homer:'國家隊一級賽事最後篇章',detail:'第三次參加經典賽，也是他一級國際賽生涯的最後一站。從 2002 到 2017，他的國家隊跨度橫跨旅美、中職與不同世代。'}
+          ],
+          usPeriod:'USA BASEBALL · 2004–2010',
+          usCareerTitle:'七年旅美：離大聯盟只差一通電話',
+          usCareerIntro:'陳鏞基的旅美不是「曾經待過小聯盟」而已。2006 年他是水手農場打擊率最高的打者之一，2007 年直接從 3A 開季並進入 40 人名單；真正阻止他再往上一步的，是接連的肩膀與膝傷。七年後回頭看，515 支小聯盟安打是一段差點通往 MLB 的完整履歷。',
+          usCareerSummary:[
+            {value:'466',label:'MiLB 出賽'},
+            {value:'515',label:'MiLB 安打'},
+            {value:'24',label:'MiLB 全壘打'},
+            {value:'.742',label:'MiLB OPS'}
+          ],
+          usCareerTotalsRows:[
+            {label:'MiLB',value:'466 G｜1799 AB｜515 H｜24 HR｜263 RBI｜84 SB｜AVG .286｜OBP .340｜SLG .402｜OPS .742'},
+            {label:'AAA',value:'101 G｜358 AB｜93 H｜4 HR｜36 RBI｜14 SB｜AVG .260｜OBP .316｜SLG .335｜OPS .651'},
+            {label:'MLB',value:'未完成大聯盟初登場；2007 年已從 3A 開季，並在季後進入水手 40 人名單。'}
+          ],
+          usCareer:[
+            {year:'2004',level:'A-',team:'Everett AquaSox｜Seattle',line:'49 G｜200 AB｜60 H｜3 HR｜34 RBI｜25 SB｜.300/.353/.420｜OPS .773',label:'旅美第一年就打三成',story:'1 月與水手簽約，從短期 1A 開始。除了 .300 打擊率，更跑出 25 次盜壘並拿下聯盟盜壘王級表現；同年中途離隊參加雅典奧運。'},
+            {year:'2005',level:'A',team:'Wisconsin Timber Rattlers｜Seattle',line:'121 G｜503 AB｜147 H｜7 HR｜80 RBI｜15 SB｜.292/.339/.416｜OPS .755',label:'完整球季、80 打點',story:'第一次完整打滿小聯盟球季，147 安、80 打點都非常亮眼，並入選 Midwest League 明星賽。球季後段再離隊參加世界盃，最後獲選大會明星二壘手。'},
+            {year:'2006',level:'A+ → AA',team:'Inland Empire → San Antonio｜Seattle',line:'110 G｜438 AB｜142 H｜8 HR｜72 RBI｜26 SB｜.324/.380/.468｜OPS .848',label:'旅美生涯最高峰',story:'全年打擊率 .324，是水手農場最突出的打者之一。高階 1A 打 .342 後升上 2A仍有 .295，並參加未來之星賽；如果只看發展曲線，下一站就是 3A 與大聯盟。'},
+            {year:'2007',level:'AAA / AFL',team:'Tacoma Rainiers → Peoria Javelinas｜Seattle',line:'AAA：5 G｜15 AB｜5 H｜.333　／　AFL：17 G｜.339/.444/.424｜OPS .868',label:'最接近 MLB，卻先進手術房',story:'春天直接從 3A 開季，但肩膀舊傷在 5 場後惡化，接受手術、例行賽報銷。秋季聯盟復出表現出色，11 月水手仍把他放進 40 人名單，代表大聯盟機會並沒有消失。'},
+            {year:'2008',level:'AAA',team:'Tacoma Rainiers｜Seattle',line:'69 G｜251 AB｜62 H｜3 HR｜25 RBI｜9 SB｜.247/.304/.327｜OPS .631',label:'膝傷再把進度打斷',story:'肩膀復原後重返 3A，卻又陸續受到傷勢影響，6 月底因膝傷進傷兵名單並手術。季後水手將他移出 40 人名單，運動家隨即接手。'},
+            {year:'2009',level:'Rk / AA / AAA',team:'Athletics → Midland → Sacramento｜Oakland',line:'52 G｜186 AB｜57 H｜2 HR｜26 RBI｜6 SB｜.306/.375/.409｜OPS .784',label:'換體系後再回 3A',story:'在運動家系統從復健賽一路往上，AA Midland 打 .324，3A Sacramento 也有 .283。傷後依然能回到 3A，證明他的打擊與內野價值仍被球團肯定。'},
+            {year:'2010',level:'AA',team:'Midland → Altoona｜Oakland / Pittsburgh',line:'60 G｜206 AB｜42 H｜1 HR｜23 RBI｜2 SB｜.204/.258/.296｜OPS .554',label:'旅美最後一年',story:'先在運動家 2A 開季，6 月離隊後轉投海盜 2A Altoona。球季結束後成為自由球員，決定返台參加中職選秀；美國夢沒有走到 MLB，但七年旅美讓他回台後立即具備成熟職業球員的完整度。'}
+          ],
+          yearbookTitle:'統一獅逐年球季檔案',
+          yearbookIntro:'陳鏞基 28 歲才進中職，卻仍打滿 16 個球季。前半段是能守二游三壘、能跑能轟的中心打者；中段把長打推到生涯最高；後半段又從主力變成代打、輪替與更衣室領袖。這條曲線，也是統一獅 2010 年代到 2020 年代的縮影。',
+          yearbook:[
+            {year:'2011',team:'統一7-ELEVEn獅',line:'69 G｜84 H｜7 HR｜45 RBI｜5 SB｜.313/.377/.474｜OPS .851',label:'初登場就 4 安開轟',story:'旅美歸國第一年沒有適應期。首戰直接 5 打數 4 安打，整季打擊率 .313；季後也跟著統一拿下總冠軍，迅速成為獅隊內野核心。'},
+            {year:'2012',team:'統一7-ELEVEn獅',line:'104 G｜107 H｜8 HR｜57 RBI｜6 SB｜.273/.348/.398｜OPS .746',label:'第一個百場球季',story:'出賽突破百場，承擔更完整的先發工作量。打擊率雖下降，但 57 打點讓他持續留在打線核心。'},
+            {year:'2013',team:'統一7-ELEVEn獅',line:'101 G｜121 H｜9 HR｜51 RBI｜18 SB｜.314/.376/.439｜OPS .815',label:'國際賽與中職雙線高峰',story:'經典賽結束後回到中職仍維持三成以上打擊率，單季 18 盜更是中職生涯最高；同年統一再拿總冠軍。'},
+            {year:'2014',team:'統一7-ELEVEn獅',line:'100 G｜111 H｜6 HR｜54 RBI｜14 SB｜.314/.367/.442｜OPS .809',label:'穩定的三成內野手',story:'連兩年打擊率 .314，安打、打點、速度都維持高水準，是球隊最可靠的攻守連結者之一。'},
+            {year:'2015',team:'統一7-ELEVEn獅',line:'107 G｜95 H｜14 HR｜50 RBI｜16 SB｜.278/.344/.480｜OPS .824',label:'長打開始放大',story:'全壘打提高到 14 支、16 盜，開始從速度型內野手轉成更明顯的長打威脅；季後再代表台灣參加首屆世界12強。'},
+            {year:'2016',team:'統一7-ELEVEn獅',line:'99 G｜129 H｜20 HR｜95 RBI｜11 SB｜.327/.385/.528｜OPS .913',label:'中職生涯最強一季',story:'20 轟、95 打點、129 安與 .327 打擊率全面爆發，是他中職生涯最具代表性的進攻球季。旅美時期的打擊成熟度，在 33 歲這年完整轉化成中職頂級中心棒火力。'},
+            {year:'2017',team:'統一7-ELEVEn獅',line:'111 G｜115 H｜15 HR｜69 RBI｜9 SB｜.305/.361/.462｜OPS .823',label:'三成、15 轟',story:'前一年的火力不是曇花一現，仍繳出三成打擊率與 15 轟；同年第三度出征世界棒球經典賽。'},
+            {year:'2018',team:'統一7-ELEVEn獅',line:'96 G｜93 H｜12 HR｜54 RBI｜8 SB｜.304/.347/.458｜OPS .805',label:'35 歲仍是中心打者',story:'連續第三年雙位數全壘打，打擊率仍超過三成。守備位置逐步往三壘、一壘移動，但攻擊端仍沒有離開核心。'},
+            {year:'2019',team:'統一7-ELEVEn獅',line:'85 G｜85 H｜11 HR｜44 RBI｜6 SB｜.318/.391/.491｜OPS .882',label:'百轟之年',story:'9 月完成中職生涯第 100 支全壘打。出賽數下降，但 OPS 反而升高；老將階段開始以更有效率的打席內容延續生涯。'},
+            {year:'2020',team:'統一7-ELEVEn獅',line:'102 G｜109 H｜14 HR｜63 RBI｜10 SB｜.356/.416/.549｜OPS .965',label:'37 歲生涯打擊率新高',story:'打出中職生涯最高的 .356 與 .965 OPS，7 月完成千安，8 月完成百盜，正式加入千安百轟百盜俱樂部；同年統一再奪台灣大賽冠軍。'},
+            {year:'2021',team:'統一7-ELEVEn獅',line:'83 G｜35 H｜4 HR｜22 RBI｜6 SB｜.201/.304/.293｜OPS .597',label:'第一次真正的低谷',story:'打擊跌到加入中職後最低點之一。年齡與身體負荷開始變成現實，也讓他第一次認真把退休放進生涯規劃。'},
+            {year:'2022',team:'統一7-ELEVEn獅',line:'52 G｜33 H｜1 HR｜16 RBI｜1 SB｜.234/.304/.284｜OPS .588',label:'40 歲前的掙扎',story:'工作量再縮減，長打也明顯下降。他原本設定打到 40 歲，但不願意用低潮作為最後畫面，決定再拚一次。'},
+            {year:'2023',team:'統一7-ELEVEn獅',line:'86 G｜88 H｜5 HR｜48 RBI｜4 SB｜.336/.392/.458｜OPS .850',label:'老將大反彈',story:'40 歲球季打回 .336，證明延長生涯不是情懷，而是戰力。這一季也讓「再多打幾年」從勉強延命變成合理選擇。'},
+            {year:'2024',team:'統一7-ELEVEn獅',line:'75 G｜70 H｜5 HR｜39 RBI｜1 SB｜.311/.379/.440｜OPS .819',label:'41 歲仍打三成',story:'出賽角色持續調整，但打擊效率仍高。更多時間擔任一壘、指定打擊或代打，卻依然能提供中線打擊與關鍵打席品質。'},
+            {year:'2025',team:'統一7-ELEVEn獅',line:'54 G｜49 H｜5 HR｜28 RBI｜4 SB｜.288/.358/.418｜OPS .776',label:'宣布引退前的最後完整球季',story:'42 歲依舊有接近三成打擊率與 5 轟。球季後決定 2026 將是最後一年，並把告別設計成一整季，而不是突然停下。'},
+            {year:'2026',team:'統一7-ELEVEn獅',line:'截至 10/06：約 48 G｜32 H｜1 HR｜16 RBI｜2 SB｜AVG 約 .276',label:'最後一季還在改寫紀錄',story:'季中受腳關節發炎影響，但仍回到一軍完成引退巡迴。9 月 20 日引退儀式後，22 日首度登板投球，24 日再轟出生涯第 137 轟、連續 16 季開轟；最後一季沒有只剩儀式，仍然有新的棒球故事。'}
+          ],
+          honorsTitle:'一個世代的台灣內野手',
+          honorsIntro:'他的履歷同時橫跨三級棒球、七年旅美、國家隊與 16 年中職。沒有 MLB 出賽紀錄，卻有一整個世代球迷能立刻說出的國際賽畫面與獅隊紀錄。',
+          honors:[
+            {value:'515',title:'美國小聯盟安打',detail:'7 年旅美、466 場小聯盟出賽，最高站上 3A，也曾進入水手 40 人名單。'},
+            {value:'2005',title:'世界盃明星二壘手',detail:'旅美第二年返台代表國家隊參賽，獲選賽會明星二壘手。'},
+            {value:'2006',title:'杜哈亞運金牌',detail:'首戰對韓國單場雙響砲，中華隊最終奪下亞運棒球正式賽史上第一面金牌。'},
+            {value:'8th',title:'千安百轟百盜',detail:'2020 年成為中職史上第 8 位完成千安、百轟、百盜的球員。'},
+            {value:'137',title:'統一隊史全壘打王',detail:'2026 年 9 月 24 日將生涯全壘打推進到 137 支，持續堆高獅隊隊史紀錄。'},
+            {value:'16',title:'連續 16 球季開轟',detail:'2011 到 2026 每個中職球季都有全壘打，43 歲仍能把球送出牆外。'},
+            {value:'Mayaw',title:'原住民族名登錄先行者',detail:'返台加入中職後以阿美族名 Mayaw Ciru 登錄，讓原住民族名在職棒舞台被更多人看見。'},
+            {value:'23Y',title:'職業球員生涯',detail:'2004 開始旅美，2026 球季結束後卸下球員身分，職業棒球旅程橫跨 23 年。'}
+          ],
+          source:'資料整理：CPBL、MLB/MiLB、中央社、聯合報、TSNA；數據截至 2026/10/06。'
         },
         {
           slug:'lin-dai-an-fubon-impact-2026',
@@ -830,7 +974,7 @@
     function authorNewsInternationalHtml(item) {
       if(!Array.isArray(item.international) || !item.international.length) return '';
       return '<section class="author-news-international">'
-        + '<div class="author-news-international-head"><span>TEAM TAIWAN</span><h3>'+escapeHtml(item.internationalTitle || '國際賽')+'</h3><p>'+escapeHtml(item.internationalIntro || '')+'</p><strong>3 / 3</strong></div>'
+        + '<div class="author-news-international-head"><span>TEAM TAIWAN</span><h3>'+escapeHtml(item.internationalTitle || '國際賽')+'</h3><p>'+escapeHtml(item.internationalIntro || '')+'</p><strong>'+escapeHtml(item.internationalBadge || 'CT')+'</strong></div>'
         + '<div class="author-news-international-grid">'
         + item.international.map(game => '<article class="author-news-intl-card">'
           + '<div class="author-news-intl-year">'+escapeHtml(game.year)+'</div>'
@@ -846,7 +990,7 @@
     function authorNewsHonorsHtml(item) {
       if(!Array.isArray(item.honors) || !item.honors.length) return '';
       return '<section class="author-news-honors">'
-        + '<div class="author-news-honors-head"><span>CAREER HONORS</span><h3>生涯榮譽牆</h3><p>把一整段職業生涯濃縮成幾個最能代表林哲瑄的里程碑。</p></div>'
+        + '<div class="author-news-honors-head"><span>CAREER HONORS</span><h3>'+escapeHtml(item.honorsTitle || '生涯榮譽牆')+'</h3><p>'+escapeHtml(item.honorsIntro || '把一整段職業生涯濃縮成最具代表性的里程碑。')+'</p></div>'
         + '<div class="author-news-honors-grid">'
         + item.honors.map(honor => '<article class="author-news-honor"><strong>'+escapeHtml(honor.value)+'</strong><div><h4>'+escapeHtml(honor.title)+'</h4><p>'+escapeHtml(honor.detail)+'</p></div></article>').join('')
         + '</div>'
@@ -858,15 +1002,20 @@
       const summary=(item.usCareerSummary || []).map(stat =>
         '<div class="author-news-us-stat"><strong>'+escapeHtml(stat.value)+'</strong><span>'+escapeHtml(stat.label)+'</span></div>'
       ).join('');
-      const totals=item.usCareerTotals
-        ? '<div class="author-news-us-totals">'
-          + '<div><span>MiLB</span><strong>'+escapeHtml(item.usCareerTotals.milb || '')+'</strong></div>'
-          + '<div><span>MLB</span><strong>'+escapeHtml(item.usCareerTotals.mlb || '')+'</strong></div>'
-          + '<div><span>PITCHING</span><strong>'+escapeHtml(item.usCareerTotals.pitching || '')+'</strong></div>'
-          + '</div>'
+      const totalsRows=Array.isArray(item.usCareerTotalsRows)
+        ? item.usCareerTotalsRows
+        : (item.usCareerTotals ? [
+            {label:'MiLB',value:item.usCareerTotals.milb || ''},
+            {label:'MLB',value:item.usCareerTotals.mlb || ''},
+            {label:'PITCHING',value:item.usCareerTotals.pitching || ''}
+          ] : []);
+      const totals=totalsRows.length
+        ? '<div class="author-news-us-totals">' + totalsRows.filter(row => row && row.value).map(row =>
+            '<div><span>'+escapeHtml(row.label || '')+'</span><strong>'+escapeHtml(row.value || '')+'</strong></div>'
+          ).join('') + '</div>'
         : '';
       return '<section class="author-news-uscareer">'
-        + '<div class="author-news-us-head"><div><span>USA BASEBALL · 2007–2014</span><h3>'+escapeHtml(item.usCareerTitle || '旅美職棒逐年檔案')+'</h3><p>'+escapeHtml(item.usCareerIntro || '')+'</p></div><b>USA</b></div>'
+        + '<div class="author-news-us-head"><div><span>'+escapeHtml(item.usPeriod || 'USA BASEBALL')+'</span><h3>'+escapeHtml(item.usCareerTitle || '旅美職棒逐年檔案')+'</h3><p>'+escapeHtml(item.usCareerIntro || '')+'</p></div><b>USA</b></div>'
         + '<div class="author-news-us-summary">'+summary+'</div>'
         + totals
         + '<div class="author-news-us-list">'
@@ -895,7 +1044,7 @@
     function authorNewsTimelineHtml(item) {
       if(!Array.isArray(item.timeline) || !item.timeline.length) return '';
       return '<section class="author-news-life">'
-        + '<div class="author-record-section-head"><span>LIFE TIMELINE</span><h3>從少棒到最後一舞</h3><p>一條從台南少棒、美國職棒最高殿堂，再回到新莊中外野的生涯軌跡。</p></div>'
+        + '<div class="author-record-section-head"><span>LIFE TIMELINE</span><h3>'+escapeHtml(item.timelineTitle || '從少棒到最後一舞')+'</h3><p>'+escapeHtml(item.timelineIntro || '')+'</p></div>'
         + '<div class="author-news-life-rail">'
         + item.timeline.map((step,index) => '<article class="author-news-life-item '+(index===item.timeline.length-1?'final':'')+'">'
           + '<div class="author-news-life-year">'+escapeHtml(step.year)+'</div>'
