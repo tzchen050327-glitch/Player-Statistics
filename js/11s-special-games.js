@@ -695,6 +695,29 @@
             {year:'2026/04/05',title:'最後一舞',detail:'新莊對樂天以第一棒、中外野手先發，首打席敲出生涯第 772 支安打，二局再完成最後一次正式接殺後退場。'},
             {year:'2026/04/06',title:'正式引退',detail:'新莊引退儀式最後再次站回中外野，接下好友高國輝擊出的飛球，為從少棒一路走到大聯盟與中職的球員生涯正式收尾。'}
           ],
+          usCareerTitle:'旅美職棒逐年檔案',
+          usCareerIntro:'2007 年以 18 歲之姿投入紅襪體系，從新人聯盟一路爬到 3A，2012 年登上大聯盟；離開紅襪後又在太空人 3A延續外野生涯，2014 年於遊騎兵體系改練投手。這段 8 年旅美路，是「蝦哥」守備、速度與職業球感真正成形的地方。',
+          usCareerSummary:[
+            {value:'690',label:'MiLB 安打'},
+            {value:'164',label:'MiLB 盜壘'},
+            {value:'.688',label:'MiLB OPS'},
+            {value:'9',label:'MLB 出賽'}
+          ],
+          usCareer:[
+            {year:'2007',level:'Rk / A-',team:'GCL Red Sox → Lowell Spinners',line:'54 G｜218 AB｜53 H｜4 HR｜25 RBI｜17 SB｜.243/.317/.408｜OPS .726',label:'18 歲的第一個職業球季',story:'6 月與波士頓紅襪簽約後直接赴美。先在新人聯盟站穩腳步，再升到短期 1A Lowell。第一年最醒目的不是長打，而是速度、臂力與外野防守；紅襪系統很早就把他視為高階守備型中外野手。'},
+            {year:'2008',level:'A',team:'Greenville Drive',line:'91 G｜362 AB｜90 H｜5 HR｜37 RBI｜33 SB｜.249/.342/.359｜OPS .701',label:'未來之星賽 MVP',story:'第一個完整球季就跑出 33 次盜壘，並在洋基球場舉行的未來之星賽敲出兩分砲、獲選 MVP。這一年確立他「速度＋中外野防守」的招牌，也被評為紅襪農場頂尖防守外野手。'},
+            {year:'2009',level:'A+',team:'Salem Red Sox',line:'131 G｜479 AB｜127 H｜7 HR｜54 RBI｜26 SB｜.265/.355/.365｜OPS .720',label:'進階 1A 全季主力',story:'出賽 131 場，安打、保送與盜壘都維持穩定產量，並入選 Carolina League 季後明星隊。除了 26 盜，他在外野助殺與防守覆蓋範圍上的評價也持續上升。'},
+            {year:'2010',level:'AA',team:'Portland Sea Dogs',line:'119 G｜458 AB｜126 H｜2 HR｜34 RBI｜26 SB｜.275/.386/.343｜OPS .728',label:'AA 的上壘與守備巔峰',story:'上壘率 .386、72 次保送、26 盜，攻擊端靠選球與速度製造價值；守備端則獲紅襪小聯盟年度最佳防守球員。這一年他已經不是單純「工具很多」，而是距離大聯盟只剩最後一段路。'},
+            {year:'2011',level:'AA → AAA',team:'Portland → Pawtucket',line:'119 G｜466 AB｜114 H｜2 HR｜36 RBI｜28 SB｜.245/.340/.305｜OPS .644',label:'第一次升上 3A',story:'先在 AA 出賽 34 場，5 月升上 Pawtucket 3A 後再打 85 場；全年 28 盜。球季結束後被紅襪放進 40 人名單，正式站到大聯盟門口。'},
+            {year:'2012',level:'AAA + MLB',team:'Pawtucket / Boston Red Sox',line:'AAA：113 G｜98 H｜2 HR｜30 RBI｜15 SB｜.247/.323/.316｜OPS .638　／　MLB：9 G｜12 AB｜3 H｜.250/.250/.250｜OPS .500',label:'大聯盟的一年',story:'大部分時間仍在 3A，但全年四度被紅襪叫上大聯盟。4 月 14 日完成 MLB 初登場，全年 9 場、12 打數 3 安打；也是首位在紅襪出賽的台灣出生球員。10 月 1 日對洋基單場 3 打數 2 安，成為他的大聯盟最後一戰。'},
+            {year:'2013',level:'AAA',team:'Oklahoma City RedHawks｜Astros',line:'122 G｜350 AB｜82 H｜3 HR｜42 RBI｜19 SB｜.234/.356/.309｜OPS .665　／　投球：2 G｜1.2 IP｜0.00 ERA｜1 K',label:'太空人 3A・也開始登板',story:'被太空人接手後整季留在 3A。打擊率不高，但 60 次保送讓上壘率仍有 .356，另有 19 次盜壘；同季還以野手身分兩度登板，1.2 局沒有失分，替下一年的角色轉換埋下伏筆。'},
+            {year:'2014',level:'Rookie｜P',team:'AZL Rangers｜Texas',line:'14 G｜12.1 IP｜1–1｜2 SV｜5.84 ERA｜14 K｜3 BB｜WHIP 1.22',label:'從中外野手改練投手',story:'遊騎兵將他正式改造成投手。新人聯盟出賽 14 場全部後援，12.1 局送出 14 次三振並拿下 2 次救援。年底遭釋出，8 年美國職棒旅程在一個完全不同的位置告一段落。'}
+          ],
+          usCareerTotals:{
+            milb:'MiLB 打擊：2729 AB｜690 H｜25 HR｜258 RBI｜164 SB｜AVG .253｜OBP .349｜OPS .688',
+            mlb:'MLB 打擊：9 G｜12 AB｜3 H｜1 R｜AVG .250｜OBP .250｜SLG .250｜OPS .500',
+            pitching:'MiLB 投球：16 G｜14.0 IP｜1–1｜2 SV｜5.14 ERA｜15 K｜WHIP 1.07'
+          },
           yearbookTitle:'中職逐年球季檔案',
           yearbookIntro:'如果把林哲瑄的中職生涯拆成年份來看，可以清楚看到一條從巔峰攻守、金手套連霸，到傷勢、角色轉換與最後一舞的曲線。以下不是只有數字，而是每一季他在球隊裡的樣子。',
           yearbook:[
@@ -793,6 +816,31 @@
         + '</div>';
     }
 
+    function authorNewsUsCareerHtml(item) {
+      if(!Array.isArray(item.usCareer) || !item.usCareer.length) return '';
+      const summary=(item.usCareerSummary || []).map(stat =>
+        '<div class="author-news-us-stat"><strong>'+escapeHtml(stat.value)+'</strong><span>'+escapeHtml(stat.label)+'</span></div>'
+      ).join('');
+      const totals=item.usCareerTotals
+        ? '<div class="author-news-us-totals">'
+          + '<div><span>MiLB</span><strong>'+escapeHtml(item.usCareerTotals.milb || '')+'</strong></div>'
+          + '<div><span>MLB</span><strong>'+escapeHtml(item.usCareerTotals.mlb || '')+'</strong></div>'
+          + '<div><span>PITCHING</span><strong>'+escapeHtml(item.usCareerTotals.pitching || '')+'</strong></div>'
+          + '</div>'
+        : '';
+      return '<section class="author-news-uscareer">'
+        + '<div class="author-news-us-head"><div><span>USA BASEBALL · 2007–2014</span><h3>'+escapeHtml(item.usCareerTitle || '旅美職棒逐年檔案')+'</h3><p>'+escapeHtml(item.usCareerIntro || '')+'</p></div><b>USA</b></div>'
+        + '<div class="author-news-us-summary">'+summary+'</div>'
+        + totals
+        + '<div class="author-news-us-list">'
+        + item.usCareer.map(season => '<article class="author-news-us-year">'
+          + '<div class="author-news-us-stamp"><strong>'+escapeHtml(season.year)+'</strong><span>'+escapeHtml(season.level)+'</span></div>'
+          + '<div class="author-news-us-body"><div class="author-news-us-team">'+escapeHtml(season.team)+'</div><h4>'+escapeHtml(season.label)+'</h4><p>'+escapeHtml(season.story)+'</p><div class="author-news-us-line">'+escapeHtml(season.line)+'</div></div>'
+          + '</article>').join('')
+        + '</div>'
+        + '</section>';
+    }
+
     function authorNewsYearbookHtml(item) {
       if(!Array.isArray(item.yearbook) || !item.yearbook.length) return '';
       return '<section class="author-news-yearbook">'
@@ -846,6 +894,7 @@
         + '</section>'
         + '<div class="author-news-story">'+sections+'</div>'
         + authorNewsTimelineHtml(item)
+        + authorNewsUsCareerHtml(item)
         + authorNewsYearbookHtml(item)
         + '<blockquote class="author-news-quote">'+escapeHtml(item.quote)+'</blockquote>'
         + '<footer class="author-record-source">'+escapeHtml(item.source)+'</footer>'
