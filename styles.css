@@ -14548,3 +14548,119 @@ select,
   .author-position-node.b1{left:75%;top:65%}
   .author-position-node.c{top:91%}
 }
+
+
+/* ===== AUTHOR COLLECTION COMPACT HOME CARD ===== */
+#homeSpecialGamesExplorer .author-collection-feature{
+  border-radius:16px;
+}
+#homeSpecialGamesExplorer .author-collection-feature-head{
+  padding:10px 12px 0;
+  font-size:8px;
+}
+#homeSpecialGamesExplorer .author-collection-feature-head em{
+  padding:3px 6px;
+  font-size:7px;
+}
+#homeSpecialGamesExplorer .author-collection-feature-body{
+  grid-template-columns:minmax(0,1fr) 92px;
+  gap:12px;
+  padding:10px 12px 9px;
+  align-items:center;
+}
+#homeSpecialGamesExplorer .author-collection-feature-body small{
+  font-size:8px;
+}
+#homeSpecialGamesExplorer .author-collection-feature-body strong{
+  margin-top:3px;
+  font-size:16px;
+}
+#homeSpecialGamesExplorer .author-collection-feature-body h3{
+  margin-top:4px;
+  font-size:clamp(20px,2.8vw,30px);
+  line-height:1.02;
+}
+#homeSpecialGamesExplorer .author-collection-feature-body p{
+  display:none;
+}
+#homeSpecialGamesExplorer .author-collection-nine{
+  min-height:76px;
+  justify-content:center;
+}
+#homeSpecialGamesExplorer .author-collection-nine b{
+  font-size:62px;
+  line-height:.75;
+}
+#homeSpecialGamesExplorer .author-collection-nine span{
+  margin-top:7px;
+  font-size:7px;
+}
+#homeSpecialGamesExplorer .author-collection-nine small{
+  margin-top:2px;
+  font-size:7px;
+}
+#homeSpecialGamesExplorer .author-collection-position-strip{
+  grid-template-columns:repeat(9,minmax(0,1fr));
+  gap:3px;
+  padding:0 12px 8px;
+}
+#homeSpecialGamesExplorer .author-collection-position-strip span{
+  padding:5px 2px;
+  border-radius:7px;
+}
+#homeSpecialGamesExplorer .author-collection-position-strip b{
+  font-size:9px;
+}
+#homeSpecialGamesExplorer .author-collection-position-strip small{
+  display:none;
+}
+#homeSpecialGamesExplorer .author-collection-feature-foot{
+  padding:8px 12px;
+  font-size:8px;
+}
+#homeSpecialGamesExplorer .author-collection-subhead{
+  padding-top:2px;
+}
+#homeSpecialGamesExplorer .special-game-card{
+  padding:12px;
+  border-radius:14px;
+}
+#homeSpecialGamesExplorer .special-game-matchup{
+  margin:12px 0 8px;
+  font-size:16px;
+}
+#homeSpecialGamesExplorer .special-game-card-foot{
+  margin-top:8px;
+  padding-top:8px;
+  font-size:9px;
+}
+@media(max-width:560px){
+  #homeSpecialGamesExplorer .author-collection-feature-body{
+    grid-template-columns:minmax(0,1fr) 72px;
+    gap:8px;
+    padding:9px 10px 8px;
+  }
+  #homeSpecialGamesExplorer .author-collection-feature-body h3{
+    font-size:20px;
+  }
+  #homeSpecialGamesExplorer .author-collection-nine{
+    min-height:62px;
+  }
+  #homeSpecialGamesExplorer .author-collection-nine b{
+    font-size:50px;
+  }
+  #homeSpecialGamesExplorer .author-collection-position-strip{
+    grid-template-columns:repeat(9,minmax(0,1fr));
+    padding:0 10px 7px;
+  }
+  #homeSpecialGamesExplorer .author-collection-position-strip span{
+    min-width:0;
+    padding:4px 1px;
+  }
+  #homeSpecialGamesExplorer .author-collection-position-strip b{
+    font-size:8px;
+  }
+  #homeSpecialGamesExplorer .author-collection-feature-foot{
+    padding:7px 10px;
+  }
+}
