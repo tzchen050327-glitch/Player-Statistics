@@ -679,7 +679,23 @@
             }
           ],
           quote:'中外野那塊草皮，往後仍會讓人想起「蝦哥」。',
-          source:'資料整理：CPBL、中央社、自由體育；截至 2026/10/06。'
+          timeline:[
+            {year:'國小三年級',title:'崇學國小・棒球啟蒙',detail:'原本同時接觸田徑，因為速度與運動能力被少棒教練注意，加入崇學國小少棒隊。棒球也成為他一路走下去的起點。'},
+            {year:'2000',title:'世界少棒冠軍',detail:'隨中華隊參加小馬聯盟世界少棒賽，在冠軍戰轟出滿貫全壘打，幫助台灣奪冠。'},
+            {year:'國中',title:'金城國中・棒球與田徑雙棲',detail:'在父親林漢森的田徑訓練下持續強化速度、爆發力與協調性；棒球場上也曾兼任投手，奠定日後大範圍中外野守備的身體基礎。'},
+            {year:'高中',title:'南英商工・轉向專職野手',detail:'進入南英商工後因手臂不適逐漸放棄投手身分，專心朝野手發展。青棒階段的速度、守備與打擊表現，讓他受到美職球探高度關注。'},
+            {year:'2007',title:'18 歲簽約波士頓紅襪',detail:'6 月 8 日以國際自由球員身分與紅襪簽約，正式展開旅美生涯。'},
+            {year:'2008',title:'未來之星賽 MVP・北京奧運',detail:'在舊洋基球場舉行的 MLB 未來之星賽開轟並獲選 MVP；同年也代表中華隊參加北京奧運，開始在更大的國際舞台被看見。'},
+            {year:'2012',title:'登上大聯盟',detail:'4 月 14 日首次升上波士頓紅襪大聯盟，該季共出賽 9 場、敲出 3 支安打，成為台灣旅美野手的重要里程碑。'},
+            {year:'2015',title:'返台加盟義大犀牛',detail:'中職選秀由義大犀牛第一輪選進，8 月 14 日完成中職初登場，開啟超過 10 年的台灣職棒生涯。'},
+            {year:'2016',title:'台灣大賽 MVP',detail:'義大犀牛奪下年度總冠軍，林哲瑄在系列賽攻守兩端都扮演關鍵角色，最終獲選台灣大賽 MVP。'},
+            {year:'2016–2019',title:'外野金手套四連霸',detail:'連續四年拿下外野手金手套，守備判斷、第一步與覆蓋範圍讓「蝦池」成為中職中外野的代表畫面。'},
+            {year:'2022',title:'新竹撲接重傷',detail:'7 月 23 日在新竹棒球場撲接飛球造成左肩關節唇破裂並伴隨旋轉肌傷勢，之後接受手術與長期復健。這次受傷也成為他生涯後段的重要轉折。'},
+            {year:'2025',title:'宣布球季後引退',detail:'在富邦悍將生涯進入尾聲後，正式宣布將卸下球員身分，準備把多年外野經驗轉往下一個角色。'},
+            {year:'2026/04/05',title:'最後一舞',detail:'新莊對樂天以第一棒、中外野手先發，首打席敲出生涯第 772 支安打，二局再完成最後一次正式接殺後退場。'},
+            {year:'2026/04/06',title:'正式引退',detail:'新莊引退儀式最後再次站回中外野，接下好友高國輝擊出的飛球，為從少棒一路走到大聯盟與中職的球員生涯正式收尾。'}
+          ],
+          source:'資料整理：CPBL、MLB、中央社、聯合報、TSNA；截至 2026/10/06。'
         },
         {
           slug:'lin-dai-an-fubon-impact-2026',
@@ -745,6 +761,20 @@
         + '</div>';
     }
 
+    function authorNewsTimelineHtml(item) {
+      if(!Array.isArray(item.timeline) || !item.timeline.length) return '';
+      return '<section class="author-news-life">'
+        + '<div class="author-record-section-head"><span>LIFE TIMELINE</span><h3>從少棒到最後一舞</h3><p>一條從台南少棒、美國職棒最高殿堂，再回到新莊中外野的生涯軌跡。</p></div>'
+        + '<div class="author-news-life-rail">'
+        + item.timeline.map((step,index) => '<article class="author-news-life-item '+(index===item.timeline.length-1?'final':'')+'">'
+          + '<div class="author-news-life-year">'+escapeHtml(step.year)+'</div>'
+          + '<div class="author-news-life-dot"></div>'
+          + '<div class="author-news-life-copy"><strong>'+escapeHtml(step.title)+'</strong><p>'+escapeHtml(step.detail)+'</p></div>'
+          + '</article>').join('')
+        + '</div>'
+        + '</section>';
+    }
+
     function openAuthorCollectionNews(slug) {
       const item=authorCollectionNewsItems().find(entry => entry.slug===String(slug||''));
       if(!item) return;
@@ -769,6 +799,7 @@
         + '<div class="author-news-stats">'+stats+'</div>'
         + '</section>'
         + '<div class="author-news-story">'+sections+'</div>'
+        + authorNewsTimelineHtml(item)
         + '<blockquote class="author-news-quote">'+escapeHtml(item.quote)+'</blockquote>'
         + '<footer class="author-record-source">'+escapeHtml(item.source)+'</footer>'
         + '</main></div>';
@@ -853,7 +884,11 @@
       const replayCards=Array.isArray(homeSpecialGames) && homeSpecialGames.length
         ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
         : '';
-      els.homeSpecialGamesExplorer.innerHTML = recordCard + newsCards + replayCards;
+      els.homeSpecialGamesExplorer.innerHTML =
+        '<div class="author-collection-scroll-head"><div><span>AUTHOR ARCHIVE</span><strong>作者收藏</strong></div><small>左右滑動瀏覽 →</small></div>'
+        + '<div class="author-collection-rail" data-author-collection-rail>'
+        + recordCard + newsCards + replayCards
+        + '</div>';
       els.homeSpecialGamesExplorer.querySelector('[data-author-collection]')?.addEventListener('click',event => openAuthorCollectionRecord(event.currentTarget.dataset.authorCollection));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-author-news]').forEach(button => button.addEventListener('click',() => openAuthorCollectionNews(button.dataset.authorNews)));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-special-replay-slug]').forEach(button => button.addEventListener('click', () => {
