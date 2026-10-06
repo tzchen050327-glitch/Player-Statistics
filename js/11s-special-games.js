@@ -2,6 +2,7 @@
     const SPECIAL_REPLAY_CACHE_PREFIX = 'diamondscope:special-replay:v2:';
     const specialReplayMemory = new Map();
     let specialReplayActive = null;
+    let specialGamesLoadedOnce = false;
 
     function ensureSpecialReplayStyles() {
       if (document.getElementById('specialReplayStyles')) return;
@@ -578,6 +579,7 @@
 
     async function loadSpecialGames() {
       if (!els.homeSpecialGamesExplorer) return [];
+      specialGamesLoadedOnce = true;
       try {
         const response = await fetch(SPECIAL_GAMES_API_URL, { cache:'default' });
         if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -590,21 +592,112 @@
       return homeSpecialGames;
     }
 
+    function authorCollectionRecord() {
+      return {
+        slug:'liu-jun-hao-2026-nine-positions',
+        player:'劉俊豪',
+        team:'富邦悍將',
+        season:'2026',
+        title:'單季九守位・中職史上第一人',
+        achieved:'2026/10/06',
+        opponent:'樂天桃猿',
+        venue:'桃園',
+        positions:[
+          {code:'P',name:'投手',date:'06/03'},
+          {code:'C',name:'捕手',date:'10/06'},
+          {code:'1B',name:'一壘',date:'08/18'},
+          {code:'2B',name:'二壘',date:'04/14'},
+          {code:'3B',name:'三壘',date:'04/19'},
+          {code:'SS',name:'游擊',date:'04/14'},
+          {code:'LF',name:'左外野',date:'06/19'},
+          {code:'CF',name:'中外野',date:'08/16'},
+          {code:'RF',name:'右外野',date:'04/06'}
+        ],
+        timeline:[
+          {date:'04/06',title:'右外野',detail:'本季一軍首戰，代跑後接手右外野，九守位之旅從這裡開始。'},
+          {date:'04/14',title:'游擊 → 二壘',detail:'先發游擊，之後移防二壘，同場解鎖兩個內野位置。'},
+          {date:'04/19',title:'三壘',detail:'替補出賽後站上三壘，內野工具人版圖持續擴張。'},
+          {date:'06/03',title:'投手',detail:'澄清湖對台鋼，八局下以野手身分登板消化局數。'},
+          {date:'06/19',title:'左外野',detail:'替補守左外野，完成第二個外野位置。'},
+          {date:'08/16',title:'中外野',detail:'先發鎮守中外野，外野三個位置全部到齊。'},
+          {date:'08/18',title:'一壘',detail:'比賽後段移防一壘，單季累積八個守備位置。'},
+          {date:'10/06',title:'捕手・九守位完成',detail:'五局下接替林岱安蹲捕，補上最後一塊拼圖，正式寫下中職史上首次單季九守位。'}
+        ]
+      };
+    }
+
+    function authorCollectionFeatureCardHtml() {
+      const record=authorCollectionRecord();
+      const chips=record.positions.map(item => '<span><b>'+escapeHtml(item.code)+'</b><small>'+escapeHtml(item.name)+'</small></span>').join('');
+      return '<button class="author-collection-feature" type="button" data-author-collection="'+escapeHtml(record.slug)+'">'
+        + '<div class="author-collection-feature-head"><span>作者收藏 · CPBL HISTORY</span><em>NEW</em></div>'
+        + '<div class="author-collection-feature-body"><div><small>2026 · 富邦悍將</small><strong>劉俊豪</strong><h3>單季九守位<br>中職史上第一人</h3><p>從右外野開始，最後以捕手完成九個守備位置。這不是單場噱頭，而是一整季累積出的歷史紀錄。</p></div><div class="author-collection-nine"><b>9</b><span>POSITIONS</span><small>2026.10.06</small></div></div>'
+        + '<div class="author-collection-position-strip">'+chips+'</div>'
+        + '<div class="author-collection-feature-foot"><span>人物紀錄 · 2026/10/06</span><b>開啟紀念頁 →</b></div>'
+        + '</button>';
+    }
+
+    function authorCollectionDiamondHtml(record) {
+      const item=(code,label,cls)=>'<div class="author-position-node '+cls+'"><b>'+code+'</b><span>'+label+'</span></div>';
+      return '<div class="author-record-field" aria-label="九個守備位置">'
+        + '<div class="author-field-grass"></div><div class="author-field-diamond"></div>'
+        + item('CF','中外野','cf')+item('LF','左外野','lf')+item('RF','右外野','rf')
+        + item('SS','游擊','ss')+item('2B','二壘','b2')+item('3B','三壘','b3')+item('1B','一壘','b1')
+        + item('P','投手','p')+item('C','捕手','c')
+        + '<div class="author-field-center"><strong>9 / 9</strong><span>ALL POSITIONS</span></div>'
+        + '</div>';
+    }
+
+    function authorCollectionTimelineHtml(record) {
+      return record.timeline.map((item,index) => '<article class="author-record-timeline-item '+(index===record.timeline.length-1?'final':'')+'"><div class="author-record-timeline-date">2026/'+escapeHtml(item.date)+'</div><div class="author-record-timeline-copy"><strong>'+escapeHtml(item.title)+'</strong><p>'+escapeHtml(item.detail)+'</p></div></article>').join('');
+    }
+
+    function openAuthorCollectionRecord(slug) {
+      const record=authorCollectionRecord();
+      if(String(slug||'')!==record.slug) return;
+      const overlay=document.createElement('section');
+      overlay.className='author-record-overlay';
+      overlay.setAttribute('role','dialog');
+      overlay.setAttribute('aria-modal','true');
+      overlay.setAttribute('aria-label','劉俊豪單季九守位紀念頁');
+      const positionCards=record.positions.map(item => '<div class="author-record-position-card"><span>'+escapeHtml(item.code)+'</span><strong>'+escapeHtml(item.name)+'</strong><small>首次：2026/'+escapeHtml(item.date)+'</small></div>').join('');
+      overlay.innerHTML='<div class="author-record-shell">'
+        + '<header class="author-record-topbar"><button type="button" data-author-record-close>← 返回作者收藏</button><span>DIAMONDSCOPE · AUTHOR ARCHIVE</span></header>'
+        + '<main class="author-record-page">'
+        + '<section class="author-record-hero"><div class="author-record-hero-copy"><span class="author-record-kicker">CPBL HISTORY · 2026</span><h1><span>劉俊豪</span><b>9</b></h1><h2>單季九個守備位置<br>中職史上第一人</h2><p>2026 年 10 月 6 日，富邦悍將對樂天桃猿。五局下，劉俊豪接替林岱安蹲捕，完成本季第九個守備位置，也完成中華職棒從未有人達成的單季全守位紀錄。</p><div class="author-record-badges"><span><b>9</b> 守備位置</span><span><b>1st</b> 聯盟史上首位</span><span><b>10/06</b> 紀錄完成</span></div></div><div class="author-record-hero-mark"><small>ULTIMATE UTILITY</small><strong>9</strong><span>POSITION<br>PLAYER</span></div></section>'
+        + '<section class="author-record-section"><div class="author-record-section-head"><span>THE FIELD</span><h3>一個球季，站遍整座球場</h3><p>投手、捕手、四個內野位置與三個外野位置，全數留下正式出賽紀錄。</p></div>'+authorCollectionDiamondHtml(record)+'</section>'
+        + '<section class="author-record-section"><div class="author-record-section-head"><span>9 POSITIONS</span><h3>九個位置全部解鎖</h3></div><div class="author-record-position-grid">'+positionCards+'</div></section>'
+        + '<section class="author-record-section author-record-story"><div class="author-record-section-head"><span>ROAD TO NINE</span><h3>九守位完成時間線</h3></div><div class="author-record-timeline">'+authorCollectionTimelineHtml(record)+'</div></section>'
+        + '<section class="author-record-final"><span>2026.10.06 · 桃園</span><strong>最後一塊拼圖：捕手</strong><p>五局下兩出局時上場蹲捕，生涯首度以捕手身分出賽。完成一個出局數後，六局持續蹲捕，之後再移防二壘。從 4 月的右外野到 10 月的本壘後方，九個守位在同一個球季全部集滿。</p><div><b>中職原有單季最多：8 守位</b><b>劉俊豪：9 守位</b></div></section>'
+        + '<footer class="author-record-source">紀錄依 2026 球季公開賽事資訊整理 · 作者收藏</footer>'
+        + '</main></div>';
+      document.body.appendChild(overlay);
+      const oldOverflow=document.documentElement.style.overflow;
+      document.documentElement.style.overflow='hidden';
+      const close=()=>{document.documentElement.style.overflow=oldOverflow;document.removeEventListener('keydown',onKey);overlay.remove();};
+      const onKey=event=>{if(event.key==='Escape') close();};
+      overlay.querySelector('[data-author-record-close]')?.addEventListener('click',close);
+      document.addEventListener('keydown',onKey);
+      overlay.scrollTop=0;
+    }
+
     function renderSpecialGamesExplorer() {
       if (!els.homeSpecialGamesExplorer || homeRootSection !== 'special') return;
       ensureSpecialReplayStyles();
-      if (!Array.isArray(homeSpecialGames) || !homeSpecialGames.length) {
-        els.homeSpecialGamesExplorer.innerHTML = '<div class="special-games-empty"><strong>目前沒有特殊比賽</strong><span>你指定要收錄的比賽之後會顯示在這裡。</span></div>';
-        void loadSpecialGames().then(() => { if (homeRootSection === 'special' && homeSpecialGames.length) renderSpecialGamesExplorer(); });
-        return;
-      }
-      els.homeSpecialGamesExplorer.innerHTML = homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('');
+      const recordCard=authorCollectionFeatureCardHtml();
+      const replayCards=Array.isArray(homeSpecialGames) && homeSpecialGames.length
+        ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
+        : '';
+      els.homeSpecialGamesExplorer.innerHTML = recordCard + replayCards;
+      els.homeSpecialGamesExplorer.querySelector('[data-author-collection]')?.addEventListener('click',event => openAuthorCollectionRecord(event.currentTarget.dataset.authorCollection));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-special-replay-slug]').forEach(button => button.addEventListener('click', () => {
         const game = homeSpecialGames.find(item => String(item && item.slug || '') === String(button.dataset.specialReplaySlug || ''));
         if (game) void openSpecialGameReplay(game);
       }));
+      if (!specialGamesLoadedOnce) {
+        void loadSpecialGames().then(() => { if (homeRootSection === 'special') renderSpecialGamesExplorer(); });
+      }
     }
-
     function specialReplayKindLabel(kind) {
       return ({pa:'打席',runner:'跑壘',pitch:'換投',sub:'換人',half:'半局'})[String(kind || '')] || '事件';
     }
