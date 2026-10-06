@@ -15711,3 +15711,269 @@ select,
 .author-collection-rail::-webkit-scrollbar{
   display:none!important;
 }
+
+
+/* ===== AUTHOR COLLECTION SCROLL BUGFIX + USA CAREER ===== */
+/* Keep the root tabs in normal flow; only the archive content scrolls. */
+#homePage.special-home-mode .home-main-panel{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+#homePage.special-home-mode #homeZoneSwitch,
+#homePage.special-home-mode #homeZoneNote{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  z-index:2!important;
+  flex:0 0 auto!important;
+}
+#homePage.special-home-mode #homeSpecialGamesExplorer:not(.hidden){
+  display:block!important;
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  z-index:1!important;
+  flex:1 1 0!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin-top:8px!important;
+  padding:0 3px calc(22px + env(safe-area-inset-bottom)) 0!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  scrollbar-gutter:stable!important;
+}
+#homePage.special-home-mode #homeSpecialGamesExplorer::-webkit-scrollbar{
+  width:7px;
+}
+#homePage.special-home-mode #homeSpecialGamesExplorer::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:999px;
+  background:#7f8f9e;
+  background-clip:padding-box;
+}
+#homePage.special-home-mode .author-collection-rail{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+  width:100%!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  scroll-snap-type:none!important;
+}
+#homePage.special-home-mode .author-collection-scroll-head{
+  display:none!important;
+}
+
+/* Lin Che-hsuan: complete U.S. pro career */
+.author-news-uscareer{
+  margin-top:16px;
+  padding:clamp(22px,4vw,38px);
+  border:1px solid rgba(116,177,234,.11);
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 88% 2%,rgba(82,142,210,.15),transparent 28%),
+    linear-gradient(180deg,rgba(8,28,48,.95),rgba(5,18,31,.97));
+}
+.author-news-us-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:20px;
+  align-items:end;
+  padding-bottom:20px;
+  border-bottom:1px solid rgba(122,178,231,.10);
+}
+.author-news-us-head span{
+  display:block;
+  color:#78b7f0;
+  font-size:8px;
+  font-weight:1000;
+  letter-spacing:.15em;
+}
+.author-news-us-head h3{
+  margin:7px 0 0;
+  color:#f5faff;
+  font-size:clamp(24px,3.4vw,40px);
+  font-weight:1000;
+  line-height:1.06;
+  letter-spacing:-.035em;
+}
+.author-news-us-head p{
+  max-width:780px;
+  margin:10px 0 0;
+  color:#819db7;
+  font-size:10px;
+  font-weight:750;
+  line-height:1.72;
+}
+.author-news-us-head>b{
+  color:rgba(112,179,242,.22);
+  font-size:clamp(52px,8vw,92px);
+  font-weight:1000;
+  line-height:.8;
+  letter-spacing:-.08em;
+}
+.author-news-us-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  margin-top:20px;
+}
+.author-news-us-stat{
+  min-width:0;
+  padding:12px 13px;
+  border:1px solid rgba(111,175,236,.10);
+  border-radius:12px;
+  background:rgba(4,18,31,.48);
+}
+.author-news-us-stat strong{
+  display:block;
+  color:#fff;
+  font-size:22px;
+  font-weight:1000;
+  line-height:1;
+}
+.author-news-us-stat span{
+  display:block;
+  margin-top:5px;
+  color:#6f91af;
+  font-size:8px;
+  font-weight:850;
+}
+.author-news-us-totals{
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+.author-news-us-totals>div{
+  display:grid;
+  grid-template-columns:70px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+  padding:9px 11px;
+  border-radius:10px;
+  background:rgba(3,15,27,.48);
+}
+.author-news-us-totals span{
+  color:#6faee7;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.10em;
+}
+.author-news-us-totals strong{
+  color:#a9c2d8;
+  font-size:8px;
+  font-weight:850;
+  line-height:1.55;
+}
+.author-news-us-list{
+  display:grid;
+  gap:0;
+  margin-top:14px;
+}
+.author-news-us-year{
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:18px;
+  padding:22px 0;
+  border-bottom:1px solid rgba(118,174,226,.08);
+}
+.author-news-us-year:last-child{
+  padding-bottom:0;
+  border-bottom:0;
+}
+.author-news-us-stamp strong{
+  display:block;
+  color:#fff;
+  font-size:28px;
+  font-weight:1000;
+  line-height:.9;
+  letter-spacing:-.05em;
+}
+.author-news-us-stamp span{
+  display:block;
+  margin-top:8px;
+  color:#6ca9df;
+  font-size:8px;
+  font-weight:950;
+}
+.author-news-us-team{
+  color:#6d89a3;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.author-news-us-body h4{
+  margin:6px 0 0;
+  color:#f0f7fd;
+  font-size:16px;
+  font-weight:1000;
+  line-height:1.2;
+}
+.author-news-us-body p{
+  max-width:790px;
+  margin:8px 0 0;
+  color:#819bb3;
+  font-size:10px;
+  font-weight:750;
+  line-height:1.72;
+}
+.author-news-us-line{
+  display:inline-block;
+  max-width:100%;
+  margin-top:10px;
+  padding:7px 9px;
+  border-radius:8px;
+  background:rgba(3,15,27,.58);
+  color:#a4bdd3;
+  font-size:8px;
+  font-weight:900;
+  line-height:1.5;
+}
+@media(max-width:700px){
+  #homePage.special-home-mode #homeSpecialGamesExplorer:not(.hidden){
+    margin-top:6px!important;
+    padding-right:1px!important;
+  }
+  .author-news-uscareer{
+    padding:20px 15px;
+  }
+  .author-news-us-head{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .author-news-us-head>b{
+    display:none;
+  }
+  .author-news-us-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px;
+  }
+  .author-news-us-totals>div{
+    grid-template-columns:54px minmax(0,1fr);
+  }
+  .author-news-us-year{
+    grid-template-columns:62px minmax(0,1fr);
+    gap:11px;
+    padding:18px 0;
+  }
+  .author-news-us-stamp strong{
+    font-size:21px;
+  }
+  .author-news-us-body h4{
+    font-size:13px;
+  }
+  .author-news-us-body p{
+    font-size:9px;
+  }
+  .author-news-us-line{
+    font-size:7px;
+  }
+}
