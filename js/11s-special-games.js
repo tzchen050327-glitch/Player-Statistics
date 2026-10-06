@@ -637,6 +637,151 @@
         + '</button>';
     }
 
+    function authorCollectionNewsItems() {
+      return [
+        {
+          slug:'lin-che-hsuan-retirement-2026',
+          tone:'retirement',
+          tag:'RETIREMENT',
+          date:'2026/04/06',
+          category:'人物專題',
+          person:'林哲瑄',
+          eyebrow:'悍將遊俠・最後一舞',
+          title:'蝦哥謝幕',
+          headline:'林哲瑄的最後一舞，從「蝦池」走進回憶',
+          deck:'最後一戰敲出生涯第 772 安，最後一次守備仍在最熟悉的中外野。11 年中職生涯，在新莊滿場掌聲中正式落幕。',
+          cardMetric:'772',
+          cardMetricLabel:'CAREER HITS',
+          stats:[
+            {value:'803',label:'中職出賽'},
+            {value:'772',label:'生涯安打'},
+            {value:'64',label:'全壘打'},
+            {value:'109',label:'盜壘'}
+          ],
+          sections:[
+            {
+              kicker:'THE LAST GAME',
+              title:'最後一個打席，留下最後一支安打',
+              body:'2026 年 4 月 5 日對樂天桃猿，林哲瑄以第一棒、中外野手先發。首局首打席敲出中外野安打，成為中職生涯第 772 支安打，隨後跑回富邦全場第 1 分。二局上，他接殺宋嘉翔的中外野飛球，完成球員生涯最後一次正式守備，之後在 11,201 名球迷掌聲中退場。',
+              accent:'772'
+            },
+            {
+              kicker:'THE FAREWELL',
+              title:'隔天再回中外野，完成真正的告別',
+              body:'4 月 6 日，富邦在新莊主場為林哲瑄舉行引退儀式，現場 11,600 人滿場。他繞完四個壘包、收下球團與親友祝福，最後再次拿起手套站回中外野，由好友高國輝擊球，完成象徵性的最後一次守備。',
+              accent:'11,600'
+            },
+            {
+              kicker:'LEGACY',
+              title:'「蝦池」不只是一個守備位置',
+              body:'旅美時期曾在 2012 年登上大聯盟，2015 年返台投入中職選秀後加盟義大犀牛。2016 年幫助義大拿下總冠軍並獲台灣大賽 MVP；2016 至 2019 年完成外野手金手套四連霸。富邦接手球隊後，他也長期擔任隊長，成為悍將世代最具辨識度的中外野身影之一。',
+              accent:'4×GG'
+            }
+          ],
+          quote:'中外野那塊草皮，往後仍會讓人想起「蝦哥」。',
+          source:'資料整理：CPBL、中央社、自由體育；截至 2026/10/06。'
+        },
+        {
+          slug:'lin-dai-an-fubon-impact-2026',
+          tone:'transfer',
+          tag:'TRANSFER REVIEW',
+          date:'2026/10/06',
+          category:'球季觀察',
+          person:'林岱安',
+          eyebrow:'FA 轉隊・第一年',
+          title:'轉隊至今',
+          headline:'林岱安來到富邦後，貢獻不只在打擊欄',
+          deck:'第一年並不順遂：打擊陷入生涯少見低潮、出賽空間有限，但在捕手最難量化的區域，他仍留下幾場具代表性的內容。',
+          cardMetric:'64',
+          cardMetricLabel:'PA · 2026',
+          stats:[
+            {value:'64',label:'一軍打席'},
+            {value:'.088',label:'打擊率'},
+            {value:'.129',label:'上壘率'},
+            {value:'.175',label:'長打率'}
+          ],
+          sections:[
+            {
+              kicker:'NEW HOME',
+              title:'7 年合約之後，先面對的是適應',
+              body:'林岱安在 2025 球季後行使自由球員權利，離開長年效力的統一獅，以最高總值 5,600 萬元、附帶教練約的 7 年合約加盟富邦。新環境、新投手群與新的捕手分工，使他的第一年沒有直接複製過去在統一的角色。開季一軍 8 場、11 打數無安打後，他在 4 月下旬被下放二軍調整，5 月底重新回到一軍。',
+              accent:'7 YEARS'
+            },
+            {
+              kicker:'GAME CALLING',
+              title:'94 球完封，捕手價值最清楚的一晚',
+              body:'7 月 23 日對統一，林岱安先發蹲捕搭配陳仕朋。陳仕朋僅用 94 球投完 9 局，沒有失分、沒有四死球，完成生涯首次百球內完封。對林岱安而言，這場比賽也是轉隊後最具代表性的捕手工作之一：面對老東家，從配球、節奏到投捕溝通，完整陪先發投手走完 27 個出局數。',
+              accent:'94 PITCHES'
+            },
+            {
+              kicker:'TURNING POINT',
+              title:'9 月 16 日，終於用球棒直接改變比賽',
+              body:'對味全龍一戰，林岱安單場 4 打數 2 安打，先敲二壘安打送回球隊第一分，七局再轟出轉隊富邦後首發全壘打；兩支長打、2 分打點，包含勝利打點，幫助富邦 6：0 中止 4 連敗，並獲選單場 MVP。那支全壘打也是他相隔 437 天再次開轟。',
+              accent:'MVP'
+            },
+            {
+              kicker:'NOW',
+              title:'數字仍低，但第一年的價值正在重新定義',
+              body:'截至 10 月 6 日，林岱安本季一軍 64 打席，打擊三圍為 .088／.129／.175，攻擊端明顯低於他過往水準；同時，他的出賽順位也受到戴培峰等捕手競爭影響。若只看打擊數字，這不是理想的轉隊首季；但 94 球完封的投捕搭配、9 月中止連敗的 MVP 戰，以及資深捕手在投手準備與比賽閱讀上的經驗，構成他目前最具體的貢獻。',
+              accent:'.088'
+            }
+          ],
+          quote:'第一年不是「立即兌現」，而是重新找到自己在新球隊的使用方式。',
+          source:'資料整理：CPBL、中央社、自由體育；打擊數據截至 2026/10/06。'
+        }
+      ];
+    }
+
+    function authorCollectionNewsCardsHtml() {
+      const items=authorCollectionNewsItems();
+      return '<div class="author-collection-subhead author-news-subhead"><span>EDITORIAL</span><strong>人物新聞</strong></div>'
+        + '<div class="author-news-grid">'
+        + items.map(item => '<button class="author-news-card tone-'+escapeHtml(item.tone)+'" type="button" data-author-news="'+escapeHtml(item.slug)+'">'
+          + '<div class="author-news-card-top"><span>'+escapeHtml(item.tag)+'</span><small>'+escapeHtml(item.date)+'</small></div>'
+          + '<div class="author-news-card-main"><div><em>'+escapeHtml(item.eyebrow)+'</em><strong>'+escapeHtml(item.person)+'</strong><h3>'+escapeHtml(item.headline)+'</h3><p>'+escapeHtml(item.deck)+'</p></div>'
+          + '<div class="author-news-card-metric"><b>'+escapeHtml(item.cardMetric)+'</b><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
+          + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
+          + '</button>').join('')
+        + '</div>';
+    }
+
+    function openAuthorCollectionNews(slug) {
+      const item=authorCollectionNewsItems().find(entry => entry.slug===String(slug||''));
+      if(!item) return;
+      const overlay=document.createElement('section');
+      overlay.className='author-record-overlay author-news-overlay tone-'+item.tone;
+      overlay.setAttribute('role','dialog');
+      overlay.setAttribute('aria-modal','true');
+      overlay.setAttribute('aria-label',item.person+' '+item.headline);
+      const stats=item.stats.map(stat => '<div class="author-news-stat"><strong>'+escapeHtml(stat.value)+'</strong><span>'+escapeHtml(stat.label)+'</span></div>').join('');
+      const sections=item.sections.map((section,index) => '<section class="author-news-section">'
+        + '<div class="author-news-section-index">'+String(index+1).padStart(2,'0')+'</div>'
+        + '<div class="author-news-section-copy"><span>'+escapeHtml(section.kicker)+'</span><h2>'+escapeHtml(section.title)+'</h2><p>'+escapeHtml(section.body)+'</p></div>'
+        + '<div class="author-news-section-accent">'+escapeHtml(section.accent)+'</div>'
+        + '</section>').join('');
+      overlay.innerHTML='<div class="author-record-shell author-news-shell">'
+        + '<header class="author-record-topbar"><button type="button" data-author-news-close>← 返回作者收藏</button><span>DIAMONDSCOPE · EDITORIAL</span></header>'
+        + '<main class="author-news-page">'
+        + '<section class="author-news-hero">'
+        + '<div class="author-news-hero-meta"><span>'+escapeHtml(item.tag)+'</span><b>'+escapeHtml(item.date)+'</b></div>'
+        + '<div class="author-news-hero-grid"><div><small>'+escapeHtml(item.eyebrow)+'</small><h1>'+escapeHtml(item.person)+'</h1><h2>'+escapeHtml(item.headline)+'</h2><p>'+escapeHtml(item.deck)+'</p></div>'
+        + '<div class="author-news-hero-number"><strong>'+escapeHtml(item.cardMetric)+'</strong><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
+        + '<div class="author-news-stats">'+stats+'</div>'
+        + '</section>'
+        + '<div class="author-news-story">'+sections+'</div>'
+        + '<blockquote class="author-news-quote">'+escapeHtml(item.quote)+'</blockquote>'
+        + '<footer class="author-record-source">'+escapeHtml(item.source)+'</footer>'
+        + '</main></div>';
+      document.body.appendChild(overlay);
+      const oldOverflow=document.documentElement.style.overflow;
+      document.documentElement.style.overflow='hidden';
+      const close=()=>{document.documentElement.style.overflow=oldOverflow;document.removeEventListener('keydown',onKey);overlay.remove();};
+      const onKey=event=>{if(event.key==='Escape') close();};
+      overlay.querySelector('[data-author-news-close]')?.addEventListener('click',close);
+      document.addEventListener('keydown',onKey);
+      overlay.scrollTop=0;
+    }
+
     function authorCollectionDiamondHtml(record) {
       const byCode = Object.fromEntries(
         (record.positions || []).map(item => [String(item.code || '').toUpperCase(), item])
@@ -704,11 +849,13 @@
       if (!els.homeSpecialGamesExplorer || homeRootSection !== 'special') return;
       ensureSpecialReplayStyles();
       const recordCard=authorCollectionFeatureCardHtml();
+      const newsCards=authorCollectionNewsCardsHtml();
       const replayCards=Array.isArray(homeSpecialGames) && homeSpecialGames.length
         ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
         : '';
-      els.homeSpecialGamesExplorer.innerHTML = recordCard + replayCards;
+      els.homeSpecialGamesExplorer.innerHTML = recordCard + newsCards + replayCards;
       els.homeSpecialGamesExplorer.querySelector('[data-author-collection]')?.addEventListener('click',event => openAuthorCollectionRecord(event.currentTarget.dataset.authorCollection));
+      els.homeSpecialGamesExplorer.querySelectorAll('[data-author-news]').forEach(button => button.addEventListener('click',() => openAuthorCollectionNews(button.dataset.authorNews)));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-special-replay-slug]').forEach(button => button.addEventListener('click', () => {
         const game = homeSpecialGames.find(item => String(item && item.slug || '') === String(button.dataset.specialReplaySlug || ''));
         if (game) void openSpecialGameReplay(game);
