@@ -15697,3 +15697,17 @@ select,
     line-height:1.45;
   }
 }
+
+
+/* ===== AUTHOR COLLECTION NATURAL VERTICAL PAGE SCROLL ===== */
+.author-collection-rail{
+  max-height:none!important;
+  overflow-x:visible!important;
+  overflow-y:visible!important;
+  scroll-snap-type:none!important;
+  overscroll-behavior:auto!important;
+  scrollbar-width:auto!important;
+}
+.author-collection-rail::-webkit-scrollbar{
+  display:none!important;
+}
