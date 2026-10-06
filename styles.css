@@ -16242,3 +16242,54 @@ select,
     font-size:25px;
   }
 }
+
+
+/* ===== AUTHOR ARCHIVE SINGLE SCROLL FINAL FIX ===== */
+/* One scroll surface only: the whole right panel. */
+#homePage.special-home-mode .home-main-panel{
+  display:block!important;
+  height:auto!important;
+  max-height:100%!important;
+  min-height:0!important;
+  align-self:start!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-gutter:stable!important;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;
+}
+#homePage.special-home-mode #homeSpecialGamesExplorer:not(.hidden){
+  display:block!important;
+  position:static!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin-top:8px!important;
+  padding:0!important;
+  overflow:visible!important;
+  touch-action:auto!important;
+}
+#homePage.special-home-mode .author-collection-rail{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:10px!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+#homePage.special-home-mode .home-main-panel::-webkit-scrollbar{
+  width:7px!important;
+}
+#homePage.special-home-mode .home-main-panel::-webkit-scrollbar-thumb{
+  border:2px solid transparent!important;
+  border-radius:999px!important;
+  background:#7f8f9e!important;
+  background-clip:padding-box!important;
+}
