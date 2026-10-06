@@ -106,6 +106,7 @@
         } else if (homeRootSection === 'special') {
           homeZone = 'special';
           homeSpecialFilter = '';
+          if (els.homeSpecialGamesExplorer) els.homeSpecialGamesExplorer.scrollTop = 0;
         } else {
           applyHomeProSelection();
         }
