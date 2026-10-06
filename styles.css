@@ -16293,3 +16293,13 @@ select,
   background:#7f8f9e!important;
   background-clip:padding-box!important;
 }
+
+
+/* ===== CHEN YUNG-CHI LEGACY TONE ===== */
+.author-news-card.tone-legacy{--news-accent:#d7a941}
+.author-news-overlay.tone-legacy{--news-accent:#d7a941}
+.author-news-card.tone-legacy{
+  background:
+    radial-gradient(circle at 92% 8%,rgba(215,169,65,.18),transparent 34%),
+    linear-gradient(145deg,#17140d,#0a1826 62%,#09131d);
+}
