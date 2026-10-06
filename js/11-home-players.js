@@ -30,7 +30,7 @@
 
       if (els.homePlayerTitle) {
         if (international) els.homePlayerTitle.textContent = '國際賽';
-        else if (special) els.homePlayerTitle.textContent = '特殊比賽';
+        else if (special) els.homePlayerTitle.textContent = '作者收藏';
         else if (homeProCountry === 'TW') els.homePlayerTitle.textContent = '台灣｜中華職棒';
         else if (homeProCountry === 'US') els.homePlayerTitle.textContent = '美國｜MLB / MiLB';
         else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
@@ -44,7 +44,7 @@
           els.homeZoneNote.textContent = '請依序選擇「賽事 → 年份 → 球隊 → 球員」。';
         } else if (special) {
           els.homeZoneNote.classList.remove('hidden');
-          els.homeZoneNote.textContent = '由你指定收錄的特殊比賽。';
+          els.homeZoneNote.textContent = '作者整理收錄的特殊紀錄與比賽。';
         } else {
           els.homeZoneNote.classList.add('hidden');
           els.homeZoneNote.textContent = '';
