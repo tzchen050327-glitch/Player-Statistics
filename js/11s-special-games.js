@@ -695,6 +695,21 @@
             {year:'2026/04/05',title:'最後一舞',detail:'新莊對樂天以第一棒、中外野手先發，首打席敲出生涯第 772 支安打，二局再完成最後一次正式接殺後退場。'},
             {year:'2026/04/06',title:'正式引退',detail:'新莊引退儀式最後再次站回中外野，接下好友高國輝擊出的飛球，為從少棒一路走到大聯盟與中職的球員生涯正式收尾。'}
           ],
+          internationalTitle:'三大國際賽事・全部開轟',
+          internationalIntro:'奧運、世界棒球經典賽、世界12強，是台灣成棒最具代表性的三項一級國際賽。林哲瑄不只全部參加過，還在三個舞台都留下全壘打；截至 2026 年，他仍是台灣唯一完成這項紀錄的球員。',
+          international:[
+            {year:'2008',event:'北京奧運',opponent:'加拿大',score:'中華 6：5 加拿大',inning:'2局上',homer:'2分全壘打',detail:'19 歲、旅美第二年的林哲瑄已是中華隊主戰中外野手。面對加拿大，他在二局上轟出兩分砲，幫助中華隊單局攻下 4 分，最終延長 12 局以 6：5 勝出。這支全壘打成為「三大賽開轟」的第一塊拼圖。'},
+            {year:'2017',event:'世界棒球經典賽',opponent:'南韓',score:'中華 8：11 南韓',inning:'4局下',homer:'2分全壘打',detail:'首爾台韓戰，中華隊一度落後 0：6。四局下林哲瑄轟出兩分砲，把比分追近到 5：8；球隊後來一路追成 8：8，最終才在延長賽落敗。這一轟是那場經典逆襲的重要節點。'},
+            {year:'2019',event:'世界12強',opponent:'澳洲',score:'中華 5：1 澳洲',inning:'8局下',homer:'3分全壘打',detail:'東京巨蛋最後一戰，前七局仍是 1：1。八局王威晨先敲超前安打，林哲瑄隨後補上一發三分砲，把比賽直接拉開成 5：1，也替中華隊的 2019 12強之旅畫下最有力的句點。'}
+          ],
+          honors:[
+            {value:'2008',title:'MLB 未來之星賽 MVP',detail:'在舊洋基球場開轟，成為少數在全球頂尖新秀舞台拿下 MVP 的台灣野手。'},
+            {value:'2012',title:'登上美國大聯盟',detail:'波士頓紅襪 9 場出賽、12 打數 3 安，完成台灣野手的重要旅美里程碑。'},
+            {value:'2016',title:'台灣大賽 MVP',detail:'義大犀牛最後一季奪下總冠軍，他在系列賽攻守兩端都留下代表性表現。'},
+            {value:'4×',title:'外野金手套四連霸',detail:'2016–2019 連續四季拿下外野手金手套，「蝦池」成為中職中外野守備的代名詞。'},
+            {value:'3/3',title:'三大一級國際賽皆開轟',detail:'2008 奧運、2017 經典賽、2019 世界12強全部敲出全壘打；截至 2026 年為台灣唯一。'},
+            {value:'772',title:'中職生涯安打',detail:'2026 年最後一戰首打席敲出生涯第 772 安，讓球員生涯以一支安打作結。'}
+          ],
           usCareerTitle:'旅美職棒逐年檔案',
           usCareerIntro:'2007 年以 18 歲之姿投入紅襪體系，從新人聯盟一路爬到 3A，2012 年登上大聯盟；離開紅襪後又在太空人 3A延續外野生涯，2014 年於遊騎兵體系改練投手。這段 8 年旅美路，是「蝦哥」守備、速度與職業球感真正成形的地方。',
           usCareerSummary:[
@@ -804,16 +819,38 @@
     }
 
     function authorCollectionNewsCardsHtml() {
-      const items=authorCollectionNewsItems();
-      return '<div class="author-collection-subhead author-news-subhead"><span>EDITORIAL</span><strong>人物新聞</strong></div>'
-        + '<div class="author-news-grid">'
-        + items.map(item => '<button class="author-news-card tone-'+escapeHtml(item.tone)+'" type="button" data-author-news="'+escapeHtml(item.slug)+'">'
-          + '<div class="author-news-card-top"><span>'+escapeHtml(item.tag)+'</span><small>'+escapeHtml(item.date)+'</small></div>'
-          + '<div class="author-news-card-main"><div><em>'+escapeHtml(item.eyebrow)+'</em><strong>'+escapeHtml(item.person)+'</strong><h3>'+escapeHtml(item.headline)+'</h3><p>'+escapeHtml(item.deck)+'</p></div>'
-          + '<div class="author-news-card-metric"><b>'+escapeHtml(item.cardMetric)+'</b><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
-          + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
-          + '</button>').join('')
-        + '</div>';
+      return authorCollectionNewsItems().map(item => '<button class="author-news-card tone-'+escapeHtml(item.tone)+'" type="button" data-author-news="'+escapeHtml(item.slug)+'">'
+        + '<div class="author-news-card-top"><span>'+escapeHtml(item.tag)+'</span><small>'+escapeHtml(item.date)+'</small></div>'
+        + '<div class="author-news-card-main"><div><em>'+escapeHtml(item.eyebrow)+'</em><strong>'+escapeHtml(item.person)+'</strong><h3>'+escapeHtml(item.headline)+'</h3><p>'+escapeHtml(item.deck)+'</p></div>'
+        + '<div class="author-news-card-metric"><b>'+escapeHtml(item.cardMetric)+'</b><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
+        + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
+        + '</button>').join('');
+    }
+
+    function authorNewsInternationalHtml(item) {
+      if(!Array.isArray(item.international) || !item.international.length) return '';
+      return '<section class="author-news-international">'
+        + '<div class="author-news-international-head"><span>TEAM TAIWAN</span><h3>'+escapeHtml(item.internationalTitle || '國際賽')+'</h3><p>'+escapeHtml(item.internationalIntro || '')+'</p><strong>3 / 3</strong></div>'
+        + '<div class="author-news-international-grid">'
+        + item.international.map(game => '<article class="author-news-intl-card">'
+          + '<div class="author-news-intl-year">'+escapeHtml(game.year)+'</div>'
+          + '<div class="author-news-intl-meta"><span>'+escapeHtml(game.event)+'</span><b>'+escapeHtml(game.opponent)+'</b></div>'
+          + '<h4>'+escapeHtml(game.homer)+'</h4>'
+          + '<div class="author-news-intl-score">'+escapeHtml(game.inning)+'｜'+escapeHtml(game.score)+'</div>'
+          + '<p>'+escapeHtml(game.detail)+'</p>'
+          + '</article>').join('')
+        + '</div>'
+        + '</section>';
+    }
+
+    function authorNewsHonorsHtml(item) {
+      if(!Array.isArray(item.honors) || !item.honors.length) return '';
+      return '<section class="author-news-honors">'
+        + '<div class="author-news-honors-head"><span>CAREER HONORS</span><h3>生涯榮譽牆</h3><p>把一整段職業生涯濃縮成幾個最能代表林哲瑄的里程碑。</p></div>'
+        + '<div class="author-news-honors-grid">'
+        + item.honors.map(honor => '<article class="author-news-honor"><strong>'+escapeHtml(honor.value)+'</strong><div><h4>'+escapeHtml(honor.title)+'</h4><p>'+escapeHtml(honor.detail)+'</p></div></article>').join('')
+        + '</div>'
+        + '</section>';
     }
 
     function authorNewsUsCareerHtml(item) {
@@ -894,8 +931,10 @@
         + '</section>'
         + '<div class="author-news-story">'+sections+'</div>'
         + authorNewsTimelineHtml(item)
+        + authorNewsInternationalHtml(item)
         + authorNewsUsCareerHtml(item)
         + authorNewsYearbookHtml(item)
+        + authorNewsHonorsHtml(item)
         + '<blockquote class="author-news-quote">'+escapeHtml(item.quote)+'</blockquote>'
         + '<footer class="author-record-source">'+escapeHtml(item.source)+'</footer>'
         + '</main></div>';
