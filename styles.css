@@ -14664,3 +14664,89 @@ select,
     padding:7px 10px;
   }
 }
+
+
+/* ===== AUTHOR RECORD SOURCE IMAGE ===== */
+.author-record-source-image{
+  width:min(520px,100%);
+  margin:28px auto 0;
+}
+.author-record-source-image-frame{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(120,186,242,.16);
+  border-radius:18px;
+  background:#02080f;
+  box-shadow:0 18px 42px rgba(0,0,0,.28);
+}
+.author-record-source-image-frame img{
+  display:block;
+  width:100%;
+  height:auto;
+  object-fit:contain;
+}
+.author-record-source-image-frame:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.author-record-source-image-badge{
+  position:absolute;
+  right:10px;
+  bottom:10px;
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  padding:7px 9px;
+  border:1px solid rgba(126,190,249,.22);
+  border-radius:10px;
+  background:rgba(3,15,28,.82);
+  backdrop-filter:blur(8px);
+}
+.author-record-source-image-badge strong{
+  color:#fff;
+  font-size:17px;
+  font-weight:1000;
+}
+.author-record-source-image-badge span{
+  color:#7eb9ed;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.12em;
+}
+.author-record-source-image figcaption{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 3px 0;
+}
+.author-record-source-image figcaption strong{
+  color:#ddecfb;
+  font-size:10px;
+  font-weight:950;
+}
+.author-record-source-image figcaption span{
+  color:#63819c;
+  font-size:8px;
+  font-weight:800;
+  text-align:right;
+}
+@media(max-width:560px){
+  .author-record-source-image{
+    width:min(100%,460px);
+    margin-top:20px;
+  }
+  .author-record-source-image-frame{
+    border-radius:14px;
+  }
+  .author-record-source-image figcaption{
+    display:grid;
+    gap:3px;
+  }
+  .author-record-source-image figcaption span{
+    text-align:left;
+  }
+}
