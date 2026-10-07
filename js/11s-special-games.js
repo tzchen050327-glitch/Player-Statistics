@@ -646,7 +646,7 @@
           tag:'RETIREMENT',
           date:'2026/04/06',
           category:'人物專題',
-          collectionSection:'league-news',
+          collectionSection:'people-records',
           person:'林哲瑄',
           eyebrow:'悍將遊俠・最後一舞',
           title:'蝦哥謝幕',
@@ -904,7 +904,7 @@
           tag:'TRANSFER REVIEW',
           date:'2026/10/06',
           category:'球季觀察',
-          collectionSection:'league-news',
+          collectionSection:'people-records',
           person:'林岱安',
           eyebrow:'FA 轉隊・第一年',
           title:'轉隊至今',
@@ -1175,10 +1175,10 @@
           key:'league-news',
           kicker:'LEAGUE NEWS',
           title:'聯盟新聞',
-          desc:'引退、轉隊、球季故事與值得留下的聯盟事件。',
+          desc:'賽制、季後賽、官方公告與值得留下的聯盟重大事件。',
           count:newsCount,
           visual:'NEWS',
-          detail:'林哲瑄・林岱安'
+          detail:newsCount ? '最新聯盟動態' : '等待新增聯盟新聞'
         },
         {
           key:'people-records',
@@ -1187,7 +1187,7 @@
           desc:'紀錄球員生涯、歷史里程碑，以及值得被完整保存的棒球故事。',
           count:peopleCount,
           visual:'9 / 137',
-          detail:'劉俊豪・陳鏞基'
+          detail:'劉俊豪・林哲瑄・陳鏞基・林岱安'
         },
         {
           key:'saved-games',
@@ -1228,7 +1228,7 @@
     }
 
     function authorCollectionSectionBodyHtml(section) {
-      if(section === 'league-news') return authorCollectionNewsCardsHtml('league-news');
+      if(section === 'league-news') return authorCollectionNewsCardsHtml('league-news') || '<div class="author-section-empty"><strong>目前沒有聯盟新聞</strong><span>之後的賽制、季後賽、官方公告與重大聯盟事件會收在這裡。</span></div>';
       if(section === 'people-records') return authorCollectionFeatureCardHtml() + authorCollectionNewsCardsHtml('people-records');
       if(section === 'saved-games') return authorCollectionReplayCardsHtml();
       return '';
