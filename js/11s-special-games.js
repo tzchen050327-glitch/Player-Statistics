@@ -3,6 +3,7 @@
     const specialReplayMemory = new Map();
     let specialReplayActive = null;
     let specialGamesLoadedOnce = false;
+    let authorCollectionSection = '';
 
     function ensureSpecialReplayStyles() {
       if (document.getElementById('specialReplayStyles')) return;
@@ -645,6 +646,7 @@
           tag:'RETIREMENT',
           date:'2026/04/06',
           category:'人物專題',
+          collectionSection:'league-news',
           person:'林哲瑄',
           eyebrow:'悍將遊俠・最後一舞',
           title:'蝦哥謝幕',
@@ -763,6 +765,7 @@
           tag:'CAREER SPECIAL',
           date:'2026/10/06',
           category:'人物特刊',
+          collectionSection:'people-records',
           person:'陳鏞基',
           eyebrow:'Mayaw Ciru・鏞不止步',
           title:'鏞不止步',
@@ -901,6 +904,7 @@
           tag:'TRANSFER REVIEW',
           date:'2026/10/06',
           category:'球季觀察',
+          collectionSection:'league-news',
           person:'林岱安',
           eyebrow:'FA 轉隊・第一年',
           title:'轉隊至今',
@@ -962,13 +966,15 @@
       ];
     }
 
-    function authorCollectionNewsCardsHtml() {
-      return authorCollectionNewsItems().map(item => '<button class="author-news-card tone-'+escapeHtml(item.tone)+'" type="button" data-author-news="'+escapeHtml(item.slug)+'">'
-        + '<div class="author-news-card-top"><span>'+escapeHtml(item.tag)+'</span><small>'+escapeHtml(item.date)+'</small></div>'
-        + '<div class="author-news-card-main"><div><em>'+escapeHtml(item.eyebrow)+'</em><strong>'+escapeHtml(item.person)+'</strong><h3>'+escapeHtml(item.headline)+'</h3><p>'+escapeHtml(item.deck)+'</p></div>'
-        + '<div class="author-news-card-metric"><b>'+escapeHtml(item.cardMetric)+'</b><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
-        + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
-        + '</button>').join('');
+    function authorCollectionNewsCardsHtml(section) {
+      return authorCollectionNewsItems()
+        .filter(item => !section || item.collectionSection === section)
+        .map(item => '<button class="author-news-card tone-'+escapeHtml(item.tone)+'" type="button" data-author-news="'+escapeHtml(item.slug)+'">'
+          + '<div class="author-news-card-top"><span>'+escapeHtml(item.tag)+'</span><small>'+escapeHtml(item.date)+'</small></div>'
+          + '<div class="author-news-card-main"><div><em>'+escapeHtml(item.eyebrow)+'</em><strong>'+escapeHtml(item.person)+'</strong><h3>'+escapeHtml(item.headline)+'</h3><p>'+escapeHtml(item.deck)+'</p></div>'
+          + '<div class="author-news-card-metric"><b>'+escapeHtml(item.cardMetric)+'</b><span>'+escapeHtml(item.cardMetricLabel)+'</span></div></div>'
+          + '<div class="author-news-card-foot"><span>'+escapeHtml(item.category)+'</span><b>閱讀專題 →</b></div>'
+          + '</button>').join('');
     }
 
     function authorNewsInternationalHtml(item) {
@@ -1160,24 +1166,109 @@
       overlay.scrollTop=0;
     }
 
+    function authorCollectionLandingHtml() {
+      const newsCount=authorCollectionNewsItems().filter(item => item.collectionSection === 'league-news').length;
+      const peopleCount=1 + authorCollectionNewsItems().filter(item => item.collectionSection === 'people-records').length;
+      const gameCount=Array.isArray(homeSpecialGames) ? homeSpecialGames.length : 0;
+      const tiles=[
+        {
+          key:'league-news',
+          kicker:'LEAGUE NEWS',
+          title:'聯盟新聞',
+          desc:'引退、轉隊、球季故事與值得留下的聯盟事件。',
+          count:newsCount,
+          visual:'NEWS',
+          detail:'林哲瑄・林岱安'
+        },
+        {
+          key:'people-records',
+          kicker:'PLAYER ARCHIVE',
+          title:'人物紀錄',
+          desc:'紀錄球員生涯、歷史里程碑，以及值得被完整保存的棒球故事。',
+          count:peopleCount,
+          visual:'9 / 137',
+          detail:'劉俊豪・陳鏞基'
+        },
+        {
+          key:'saved-games',
+          kicker:'GAME ARCHIVE',
+          title:'收藏比賽',
+          desc:'把特殊比賽與經典戰役留下來，隨時重新打開完整重播。',
+          count:gameCount,
+          visual:'REPLAY',
+          detail:gameCount ? '已收藏 '+gameCount+' 場' : '等待收藏比賽'
+        }
+      ];
+      return '<div class="author-hub">'
+        + tiles.map((tile,index) => '<button class="author-hub-card author-hub-card-'+(index+1)+'" type="button" data-author-section="'+escapeHtml(tile.key)+'">'
+          + '<div class="author-hub-visual"><span>'+escapeHtml(tile.kicker)+'</span><strong>'+escapeHtml(tile.visual)+'</strong><small>'+escapeHtml(tile.detail)+'</small></div>'
+          + '<div class="author-hub-copy"><div><h3>'+escapeHtml(tile.title)+'</h3><p>'+escapeHtml(tile.desc)+'</p></div><div class="author-hub-count"><b>'+escapeHtml(String(tile.count))+'</b><span>項收藏</span></div></div>'
+          + '<div class="author-hub-foot"><span>開啟分類</span><b>→</b></div>'
+          + '</button>').join('')
+        + '</div>';
+    }
+
+    function authorCollectionSectionHeaderHtml(section) {
+      const meta={
+        'league-news':{kicker:'LEAGUE NEWS',title:'聯盟新聞',desc:'引退、轉隊與球季裡值得被留下的故事。'},
+        'people-records':{kicker:'PLAYER ARCHIVE',title:'人物紀錄',desc:'歷史紀錄與完整人物生涯特刊。'},
+        'saved-games':{kicker:'GAME ARCHIVE',title:'收藏比賽',desc:'經典戰役與特殊比賽重播。'}
+      }[section] || {kicker:'AUTHOR ARCHIVE',title:'作者收藏',desc:''};
+      return '<div class="author-section-head">'
+        + '<button type="button" data-author-section-back>← 作者收藏</button>'
+        + '<div><span>'+escapeHtml(meta.kicker)+'</span><h3>'+escapeHtml(meta.title)+'</h3><p>'+escapeHtml(meta.desc)+'</p></div>'
+        + '</div>';
+    }
+
+    function authorCollectionReplayCardsHtml() {
+      if(!Array.isArray(homeSpecialGames) || !homeSpecialGames.length){
+        return '<div class="author-section-empty"><strong>目前沒有收藏比賽</strong><span>之後加入的特殊比賽會出現在這裡。</span></div>';
+      }
+      return homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('');
+    }
+
+    function authorCollectionSectionBodyHtml(section) {
+      if(section === 'league-news') return authorCollectionNewsCardsHtml('league-news');
+      if(section === 'people-records') return authorCollectionFeatureCardHtml() + authorCollectionNewsCardsHtml('people-records');
+      if(section === 'saved-games') return authorCollectionReplayCardsHtml();
+      return '';
+    }
+
     function renderSpecialGamesExplorer() {
       if (!els.homeSpecialGamesExplorer || homeRootSection !== 'special') return;
       ensureSpecialReplayStyles();
-      const recordCard=authorCollectionFeatureCardHtml();
-      const newsCards=authorCollectionNewsCardsHtml();
-      const replayCards=Array.isArray(homeSpecialGames) && homeSpecialGames.length
-        ? '<div class="author-collection-subhead"><span>GAME ARCHIVE</span><strong>比賽收藏</strong></div>' + homeSpecialGames.map(game => '<button class="special-game-card" type="button" data-special-replay-slug="' + escapeHtml(game.slug || '') + '"><div class="special-game-card-top"><strong>' + escapeHtml(game.title || '特殊比賽') + '</strong><span>' + escapeHtml(game.status || '') + '</span></div><div class="special-game-matchup">' + escapeHtml(game.away_team || '') + '<b>VS</b>' + escapeHtml(game.home_team || '') + '</div><div class="special-game-meta">' + escapeHtml([game.game_date, game.game_time, game.venue].filter(Boolean).join('｜')) + '</div><div class="special-game-card-foot"><span>' + escapeHtml(game.league || 'SPECIAL') + '</span><span>▶ 橫向重播</span></div></button>').join('')
-        : '';
-      els.homeSpecialGamesExplorer.innerHTML =
-        '<div class="author-collection-rail" data-author-collection-rail>'
-        + recordCard + newsCards + replayCards
-        + '</div>';
+
+      if(!authorCollectionSection){
+        els.homeSpecialGamesExplorer.innerHTML=authorCollectionLandingHtml();
+      }else{
+        els.homeSpecialGamesExplorer.innerHTML =
+          authorCollectionSectionHeaderHtml(authorCollectionSection)
+          + '<div class="author-collection-rail" data-author-collection-rail>'
+          + authorCollectionSectionBodyHtml(authorCollectionSection)
+          + '</div>';
+      }
+
+      els.homeSpecialGamesExplorer.querySelectorAll('[data-author-section]').forEach(button => button.addEventListener('click',() => {
+        authorCollectionSection=String(button.dataset.authorSection || '');
+        els.homeSpecialGamesExplorer.scrollTop=0;
+        document.querySelector('#homePage.special-home-mode .home-main-panel')?.scrollTo?.({top:0,behavior:'auto'});
+        renderSpecialGamesExplorer();
+      }));
+
+      els.homeSpecialGamesExplorer.querySelector('[data-author-section-back]')?.addEventListener('click',() => {
+        authorCollectionSection='';
+        els.homeSpecialGamesExplorer.scrollTop=0;
+        document.querySelector('#homePage.special-home-mode .home-main-panel')?.scrollTo?.({top:0,behavior:'auto'});
+        renderSpecialGamesExplorer();
+      });
+
       els.homeSpecialGamesExplorer.querySelector('[data-author-collection]')?.addEventListener('click',event => openAuthorCollectionRecord(event.currentTarget.dataset.authorCollection));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-author-news]').forEach(button => button.addEventListener('click',() => openAuthorCollectionNews(button.dataset.authorNews)));
       els.homeSpecialGamesExplorer.querySelectorAll('[data-special-replay-slug]').forEach(button => button.addEventListener('click', () => {
         const game = homeSpecialGames.find(item => String(item && item.slug || '') === String(button.dataset.specialReplaySlug || ''));
         if (game) void openSpecialGameReplay(game);
       }));
+
       if (!specialGamesLoadedOnce) {
         void loadSpecialGames().then(() => { if (homeRootSection === 'special') renderSpecialGamesExplorer(); });
       }
