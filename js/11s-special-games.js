@@ -643,75 +643,154 @@
         {
           slug:'cpbl-2026-season-review',
           tone:'league',
-          tag:'SEASON REVIEW',
+          tag:'SEASON YEARBOOK',
           date:'2026/10/07',
           category:'聯盟年度回顧',
           collectionSection:'league-news',
           person:'中華職棒',
-          eyebrow:'CPBL 37・2026',
-          title:'這一年，中職走到哪裡',
-          headline:'2026 中職大事紀：新球場、兩個季冠軍，與打到最後才定案的十月',
-          deck:'從 3 月 28 日大巨蛋開幕，到亞太主球場加入一軍版圖；味全先拿上半季、中信兄弟在十月封王，360 場例行賽走完後，季後賽故事才正要開始。',
+          eyebrow:'CPBL 37・2026 YEARBOOK',
+          title:'2026 中職年鑑',
+          headline:'從 3 月到 10 月：第 37 年中職，是一個投手接管、球場擴張、戰局翻面的球季',
+          deck:'360 場例行賽不是六個段落就能說完。新制上路、大巨蛋進入常態賽程、亞太主球場啟用、味全上半季強勢封王、兄弟從墊底翻成下半季冠軍，還有史上罕見的投高打低、近 400 萬人次票房與打到補賽週才真正定案的季後賽版圖。',
           cardMetric:'360',
           cardMetricLabel:'REGULAR SEASON GAMES',
           stats:[
             {value:'360',label:'一軍例行賽'},
-            {value:'58',label:'大巨蛋例行賽'},
-            {value:'11',label:'本季使用球場'},
-            {value:'6',label:'一軍球隊'}
+            {value:'58',label:'大巨蛋場次'},
+            {value:'1.23M',label:'大巨蛋進場'},
+            {value:'50',label:'選秀獲選'}
           ],
           sections:[
             {
-              kicker:'OPENING DAY',
-              title:'3 月 28 日，大巨蛋把第 37 年球季打開',
-              body:'2026 年中華職棒一軍例行賽維持六隊、每隊 120 場，全年共 360 場。3 月 28 日開幕戰在台北大巨蛋登場，由 2025 年台灣大賽對戰組合樂天桃猿與中信兄弟揭幕；大巨蛋全年安排 58 場例行賽，已不再只是少數焦點戰的舞台，而是正式成為聯盟賽程的一部分。',
-              accent:'03.28'
+              kicker:'NEW RULES',
+              title:'球季還沒開打，節奏就先被重新定義',
+              body:'2026 年從規則開始就有變化。聯盟將投球計時再縮短：壘上無人由 20 秒改為 18 秒，壘上有人由 25 秒改為 23 秒；同一打席牽制與退板合計上限也從 3 次降為 2 次。換投熱身時間縮到 90 秒，教練與野手暫停統一為 40 秒，同時配合加大壘包重新調整一壘跑壘與妨礙守備認定。這些看似細節的修改，實際上改變了投捕節奏、跑壘風險與比賽管理方式。',
+              accent:'18 / 23'
             },
             {
-              kicker:'NEW BALLPARK',
-              title:'亞太主球場加入，一軍版圖再往南擴',
-              body:'台南亞太國際棒球訓練中心主球場在 2026 年正式加入中華職棒一軍例行賽場地，成為本季最具象徵性的場地變化之一。整個例行賽共使用 11 座球場，台北大巨蛋與亞太主球場同時大量承接賽程，也讓聯盟進入新舊球場並存的下一階段。',
-              accent:'11 PARKS'
-            },
-            {
-              kicker:'FIRST HALF',
-              title:'味全龍先拋彩帶，拿下上半季',
-              body:'6 月 20 日，味全龍在澄清湖以 4：0 擊敗台鋼雄鷹，提前拿下 2026 年上半季冠軍。這是味全復出後第二座季冠軍，也讓龍隊先取得季後賽資格；到例行賽尾聲，味全又靠年度勝率第一，直接取得台灣大賽門票與主場優勢。',
-              accent:'DRAGONS'
-            },
-            {
-              kicker:'ALL-STAR',
-              title:'明星賽不只比球，也把不同世代放進同一座大巨蛋',
-              body:'7 月 18、19 日明星賽連續第三年在台北大巨蛋舉行，由 TEAM STAR 對上以年底亞冠賽為雛形的 TEAM TAIWAN。首戰還安排多位退役傳奇球星重新上場，第二戰則由 43 歲的陳鏞基開轟、成為史上最年長明星賽全壘打者。明星週末持續把競技、國家隊培訓與娛樂活動混在同一個舞台。',
+              kicker:'OPENING WEEK',
+              title:'3 月 28 日，4 萬人把第 37 年球季打開',
+              body:'開幕戰回到台北大巨蛋，由 2025 台灣大賽組合樂天桃猿與中信兄弟再次交手，4 萬席滿場。隔天賽程全面展開，也正式讓六隊進入每隊 120 場、全年 360 場的漫長賽季。大巨蛋這一年不再只是「特別場地」，而是真正進入例行賽日常。',
               accent:'40,000'
             },
             {
-              kicker:'SECOND HALF',
-              title:'兄弟十月封王，季後賽門票一路拖到收官週',
-              body:'中信兄弟上半季表現不理想，但下半季一路追趕，10 月 4 日在洲際滿場 2 萬名球迷面前，以 36 勝 24 敗拿下隊史第 21 座季冠軍。味全已直進台灣大賽後，剩餘季後賽席次仍到例行賽最後階段才完全明朗，最後由中信兄弟與統一獅在 10 月 9 日起的季後挑戰賽爭奪台灣大賽門票。',
-              accent:'10.09'
+              kicker:'BALLPARK ERA',
+              title:'大巨蛋常態化，亞太主球場正式加入聯盟地圖',
+              body:'2026 年最直觀的聯盟變化，是「在哪裡打球」這件事。台北大巨蛋全年安排 58 場例行賽，最終吸引 1,231,778 人次、場均 21,237 人，場均再創大巨蛋中職賽事新高；台南亞太主球場也正式成為一軍賽事主場。傳統地方球場、大型室內場館與新世代主場同時存在，聯盟的商業與觀賽版圖已經和幾年前完全不同。',
+              accent:'1.23M'
             },
             {
-              kicker:'AWARDS',
-              title:'例行賽收官，年度獎項也把這一季留下來',
-              body:'10 月 7 日聯盟公布年度個人獎項。陳傑憲以 .322 拿下打擊王；台鋼魔鷹拿下全壘打王、打點王與安打王；張政禹以 33 盜奪盜壘王。投手方面，味全蔣銲包辦防禦率王與三振王，中信羅戈拿下勝投王，統一高塩將樹完成中繼王二連霸，鍾允華以 33 次救援成功拿下救援王。',
-              accent:'2026'
+              kicker:'APRIL–MAY',
+              title:'開季不是全壘打煙火，而是投手先掌握比賽',
+              body:'前 80 場比賽，全聯盟打擊率一度只有 .241，是六隊時期前 80 場最低。去年台灣大賽對戰的樂天與中信都曾陷入長時間低得分，中信更出現單週 5 戰僅 16 安的低潮。球季一路打完，這個趨勢並沒有消失：全聯盟最終打擊率 .253、上壘率 .319、長打率 .336，其中長打率寫下中職史上單季新低，平均每場僅 0.77 支全壘打。',
+              accent:'.336'
+            },
+            {
+              kicker:'FIRST HALF',
+              title:'味全 39 勝拿走上半季，富邦則打出久違的競爭感',
+              body:'上半季的主旋律是味全龍。龍隊 60 場打出 39 勝 21 敗、勝率 .650，6 月 20 日就在澄清湖提前封王。富邦悍將則以 34 勝 26 敗排名第二，是近年少見能一路咬住季冠軍戰線的半季；反差最大的是中信兄弟，20 勝 38 敗 2 和墊底，與第一名整整差了 18 場。這個巨大落差，後來反而成為下半季最大伏筆。',
+              accent:'39–21'
+            },
+            {
+              kicker:'DRAFT DAY',
+              title:'200 人參選、50 人被選中，新一代正式進場',
+              body:'6 月 29 日新人選秀會共有 200 人參與，寫下新高，最終 50 人獲得六隊指名。握有狀元籤的富邦選進大溪高中游擊手陳柏凱；味全選進二刀流廖永詮，台鋼選進邱文佑，統一挑黃靖哲，中信選許書誠，樂天則指名陳趙羿勳。這屆還因「永田條款」出現多名日籍、台日背景球員以本土資格投入選秀，讓聯盟人才來源又往外拓了一步。',
+              accent:'200 → 50'
+            },
+            {
+              kicker:'ALL-STAR WEEKEND',
+              title:'明星賽變成一個把現在、未來與過去放在一起的舞台',
+              body:'7 月 18、19 日明星賽連續第三年在大巨蛋舉行，TEAM STAR 對 TEAM TAIWAN，後者也肩負年底亞冠賽培訓概念。退役球星重返球場、現役明星同場，43 歲的陳鏞基更在第二戰敲出全壘打，成為明星賽史上最年長開轟者。明星週末的角色已不只是表演賽，而是聯盟品牌、國家隊與世代傳承的交會點。',
+              accent:'43'
+            },
+            {
+              kicker:'SECOND HALF RESET',
+              title:'兄弟從上半季墊底，直接翻成下半季冠軍',
+              body:'7 月重新開表後，戰局完全翻面。中信兄弟從上半季 20 勝 38 敗 2 和的最後一名，打出下半季 36 勝 24 敗、勝率 .600，10 月 4 日在洲際 2 萬人滿場前拋下黃色彩帶。統一 34 勝 26 敗一路追到最後，樂天 33 勝 27 敗也沒有提前退出，季冠軍與季後賽資格因此一路拖到補賽週才完全定案。',
+              accent:'20 → 36'
+            },
+            {
+              kicker:'STANDS & BUSINESS',
+              title:'票房不只靠大巨蛋，地方主場也開始長出新的基準',
+              body:'大巨蛋 58 場共吸引超過 123 萬人、3 場 4 萬人滿場，是最醒目的票房引擎；但地方主場也有新的成長訊號。富邦主場全年 68 萬 4434 人寫隊史新高，新莊 50 場場均接近 9 千；統一在大巨蛋的「傳統一戰」也多次突破 2 萬。2026 的票房故事已不是「有沒有巨蛋」這麼單純，而是各隊如何把大型場館與固定主場各自經營成不同產品。',
+              accent:'684K'
+            },
+            {
+              kicker:'DEFENSE YEAR',
+              title:'打者低迷的另一面，是守備品質升到歷史新高',
+              body:'2026 不只是投高打低，也是聯盟守備品質非常突出的一年。全聯盟 26,550 次守備機會只出現 476 次失誤，整體守備率 .9821，創 37 年單季最佳；一壘手整體 .993、游擊手 .974 也都寫下該守位歷史新高。江坤宇個人游擊守備率 .991，再度把這個位置的標準往上推。',
+              accent:'.9821'
+            },
+            {
+              kicker:'FAREWELLS & RECORDS',
+              title:'這一季也有告別，有人把生涯收尾，有人把紀錄寫到最後一天',
+              body:'林哲瑄在 4 月完成最後一舞；陳鏞基把整季變成引退巡迴，9 月引退儀式後甚至首度登板、又敲出生涯第 137 轟；10 月 6 日例行賽最後一天，劉俊豪又完成單季九個守備位置、成為中職史上第一人。這些事件不一定決定季冠軍，卻會是球迷多年後回想 2026 時最先浮現的畫面。',
+              accent:'9 / 137'
+            },
+            {
+              kicker:'FINAL WEEK',
+              title:'補賽週還在改變順位，例行賽真的打到最後一場',
+              body:'9 月底之後聯盟仍受延賽與保留比賽影響，部分賽程一路補到 10 月。兄弟直到 10 月 4 日才正式封王，統一與兄弟的季後挑戰賽對戰也在最後階段確定；10 月 6 日富邦 6：1 擊敗樂天，才真正替 360 場例行賽畫下句點。對 2026 而言，「補賽週」不是例行公事，而是決定順位、選秀順位與季後賽命運的一部分。',
+              accent:'10.06'
+            },
+            {
+              kicker:'AWARD BOARD',
+              title:'陳傑憲用 .322 拿打擊王，蔣銲把投手年推到極致',
+              body:'年度個人獎項也很能代表這個球季。陳傑憲以 .322 拿下打擊王，甚至成為聯盟史上最低打擊率的打擊王；台鋼魔鷹拿下全壘打王、打點王與安打王，張政禹以 33 盜拿盜壘王。投手端味全蔣銲包辦防禦率王與三振王，中信羅戈拿勝投王，統一高塩將樹完成中繼王二連霸，鍾允華以 33 次救援成功拿下救援王。這份獎項名單，幾乎就是「投手年」的縮影。',
+              accent:'AWARDS'
+            },
+            {
+              kicker:'POSTSEASON',
+              title:'例行賽結束了，但 2026 還沒有',
+              body:'味全憑上半季冠軍與年度最佳戰績直接取得台灣大賽席次；下半季冠軍中信兄弟則與年度戰績居前的統一獅從 10 月 9 日起打季後挑戰賽，爭另一張台灣大賽門票。也因此，這篇年度回顧在 10 月 7 日只能先寫到「例行賽篇」——真正的 2026 結局，還要等季後賽打完。',
+              accent:'TO BE CONT.'
             }
           ],
-          quote:'一個球季真正的輪廓，往往要到最後一場打完，才看得清楚。',
-          timelineTitle:'2026 聯盟時間線',
-          timelineIntro:'從春天開幕到十月季後賽前夕，把第 37 年球季最重要的聯盟節點按時間排回去。',
-          timeline:[
-            {year:'03/28',title:'台北大巨蛋開幕戰',detail:'樂天桃猿對中信兄弟揭開第 37 年球季；全年 360 場例行賽正式啟動。'},
-            {year:'2026',title:'亞太主球場正式加入一軍賽程',detail:'台南新的棒球主場成為一軍例行賽場地，本季聯盟共使用 11 座球場。'},
-            {year:'06/20',title:'味全龍上半季封王',detail:'客場 4：0 擊敗台鋼，拿下復出後第二座季冠軍，率先取得季後賽資格。'},
-            {year:'07/18–19',title:'明星賽連三年進大巨蛋',detail:'TEAM STAR 對 TEAM TAIWAN，退役傳奇球星重返球場，陳鏞基也在最後一次明星賽寫下最年長開轟紀錄。'},
-            {year:'10/04',title:'中信兄弟下半季封王',detail:'洲際 2 萬人滿場見證兄弟以 36 勝 24 敗拿下下半季與隊史第 21 座季冠軍。'},
-            {year:'10/06',title:'360 場例行賽收官',detail:'最後補賽完成後，第 37 年例行賽正式結束，季後賽對戰組合底定。'},
-            {year:'10/07',title:'年度個人獎項公布',detail:'打擊、投手主要個人獎項正式揭曉，為例行賽留下完整數據註腳。'},
-            {year:'10/09',title:'季後挑戰賽開打',detail:'中信兄弟與統一獅爭奪另一張台灣大賽門票，勝方將挑戰已直接晉級的味全龍。'}
+          leagueNumbersTitle:'一季看懂 2026',
+          leagueNumbersIntro:'把 360 場比賽濃縮成幾個能代表這個球季的數字。',
+          leagueNumbers:[
+            {value:'18 / 23',label:'投球時鐘',detail:'壘上無人 18 秒、有跑者 23 秒，2026 起正式縮短。'},
+            {value:'58',label:'大巨蛋例行賽',detail:'全年 58 場，共 1,231,778 人進場。'},
+            {value:'21,237',label:'大巨蛋場均',detail:'較 2025 再成長，創大巨蛋中職賽事新高。'},
+            {value:'200',label:'選秀參與者',detail:'2026 新人選秀參與人數創新高。'},
+            {value:'50',label:'獲指名新秀',detail:'六隊合計選進 50 人，中信 11 人最多。'},
+            {value:'.253',label:'聯盟打擊率',detail:'中職史上第 2 低，僅高於 2004。'},
+            {value:'.336',label:'聯盟長打率',detail:'中職 37 年史上單季最低。'},
+            {value:'0.77',label:'場均全壘打',detail:'史上第 2 低，僅高於 2010。'},
+            {value:'3.24',label:'聯盟防禦率',detail:'史上第 2 低，投手端全面壓制。'},
+            {value:'.9821',label:'聯盟守備率',detail:'中職 37 年單季最高紀錄。'}
           ],
-          source:'資料整理：中華職棒、中央社；截至 2026/10/07。'
+          leagueTeamsTitle:'六隊球季縮影',
+          leagueTeamsIntro:'同一個球季，六隊其實走了六條完全不同的路。上下半季切開來看，2026 的反差尤其巨大。',
+          leagueTeams:[
+            {team:'味全龍',record:'67–53',halves:'上 39–21｜下 28–32',tag:'上半季冠軍・年度第一',story:'上半季就是聯盟最穩定的球隊，39 勝直接拉開差距；下半季雖跌到 28 勝 32 敗，靠全年累積仍守住年度第一，直接取得台灣大賽門票。'},
+            {team:'統一7-ELEVEn獅',record:'64–55–1',halves:'上 30–29–1｜下 34–26',tag:'下半季第二・季後挑戰賽',story:'上半季接近五成，下半季明顯升速，34 勝一路追著兄弟跑。雖沒有拿到季冠軍，但完整年度表現讓獅隊拿到季後挑戰賽席次。'},
+            {team:'富邦悍將',record:'59–61',halves:'上 34–26｜下 25–35',tag:'上半年驚喜・全年近五成',story:'上半季 34 勝一度讓球迷重新看到季冠軍競爭感，也是近年最佳半季之一；可惜下半季掉到 25 勝 35 敗，最終 59 勝 61 敗，仍寫下自 2019 後較具競爭力的完整球季。'},
+            {team:'樂天桃猿',record:'57–61–2',halves:'上 24–34–2｜下 33–27',tag:'衛冕軍後追未果',story:'上半季只有 24 勝，但下半季反彈到 33 勝，一度逼近季冠軍。最後仍差一步無緣季後賽，例行賽最後一戰落敗後也確定隔年取得較前面的選秀順位。'},
+            {team:'中信兄弟',record:'56–62–2',halves:'上 20–38–2｜下 36–24',tag:'從墊底到封王',story:'2026 最戲劇化的球隊。上半季勝率僅 .345、排名墊底，下半季卻直接打出 36 勝聯盟第一。半年之間從道歉到拋彩帶，是整季最強烈的反差。'},
+            {team:'台鋼雄鷹',record:'54–65–1',halves:'上 30–29–1｜下 24–36',tag:'上半季五成・下半季失速',story:'上半季還能維持五成附近，甚至參與前段競爭；下半季掉到 24 勝 36 敗。魔鷹的個人獎項成為亮點，但團隊整體沒有把上半季的競爭力延續到最後。'}
+          ],
+          quote:'如果只用兩個季冠軍記住 2026，就會漏掉這一季真正有意思的地方：規則在變、球場在變、攻守環境在變，六隊的命運也在半年之間完全翻面。',
+          timelineTitle:'2026 聯盟時間線',
+          timelineIntro:'從季前新制到季後挑戰賽，把第 37 年球季重新按時間走一遍。',
+          timeline:[
+            {year:'01/26',title:'季前總教練會議通過新制',detail:'投球計時縮短、牽制次數降為 2 次、換投與暫停時間重新規範。'},
+            {year:'03/28',title:'大巨蛋 4 萬人開幕',detail:'樂天桃猿對中信兄弟揭開第 37 年球季，360 場例行賽正式啟動。'},
+            {year:'03/29',title:'亞太主球場進入一軍賽程',detail:'台南新主場加入聯盟版圖，統一獅的主場世代正式轉換。'},
+            {year:'04–05',title:'歷史級投高打低開始成形',detail:'前 80 場聯盟打擊率僅 .241，投手端與守備端全面壓制打者。'},
+            {year:'05/30–31',title:'大巨蛋連兩場 4 萬滿場',detail:'富邦主場對中信兄弟連續兩天滿場，顯示大型主題賽事票房仍具強大吸引力。'},
+            {year:'06/20',title:'味全龍上半季封王',detail:'39 勝 21 敗完成上半季，成為第一支拿到季後賽資格的球隊。'},
+            {year:'06/29',title:'200 人選秀、50 人獲選',detail:'富邦以狀元籤選進陳柏凱，新世代正式進入職棒體系。'},
+            {year:'07/03',title:'下半季重新開表',detail:'上半季最後的中信，從這一天開始走上完全不同的軌跡。'},
+            {year:'07/18–19',title:'明星賽第三度進大巨蛋',detail:'TEAM STAR 對 TEAM TAIWAN，陳鏞基寫下最年長明星賽全壘打紀錄。'},
+            {year:'08–09',title:'票房與季後賽戰線同步升溫',detail:'傳統一戰、大巨蛋主題賽持續吸引大量觀眾；兄弟、統一、樂天則一路纏鬥下半季排名。'},
+            {year:'09/20',title:'陳鏞基完成引退儀式',detail:'老將告別成為季末重要情感主線，但他在儀式後仍繼續出賽並開轟。'},
+            {year:'10/04',title:'中信兄弟下半季封王',detail:'洲際 2 萬人滿場，兄弟以 36 勝 24 敗完成從墊底到季冠軍的大翻身。'},
+            {year:'10/06',title:'例行賽最後一場完成',detail:'富邦 6：1 擊敗樂天，360 場例行賽全部結束；同日劉俊豪完成單季九守位。'},
+            {year:'10/07',title:'年度個人獎項出爐',detail:'陳傑憲、魔鷹、蔣銲、羅戈、張政禹等人正式寫進 2026 個人獎項名單。'},
+            {year:'10/09',title:'象獅季後挑戰賽開打',detail:'中信兄弟與統一獅爭奪另一張台灣大賽門票，勝方將挑戰味全龍。'}
+          ],
+          source:'資料整理：中華職棒、中央社、自由體育；截至 2026/10/07。本篇為例行賽年度回顧，季後賽結果將另行更新。'
         },
         {
           slug:'lin-che-hsuan-retirement-2026',
@@ -1050,6 +1129,31 @@
           + '</button>').join('');
     }
 
+    function authorNewsLeagueNumbersHtml(item) {
+      if(!Array.isArray(item.leagueNumbers) || !item.leagueNumbers.length) return '';
+      return '<section class="author-news-league-numbers">'
+        + '<div class="author-news-league-head"><span>BY THE NUMBERS</span><h3>'+escapeHtml(item.leagueNumbersTitle || '年度數字')+'</h3><p>'+escapeHtml(item.leagueNumbersIntro || '')+'</p></div>'
+        + '<div class="author-news-league-number-grid">'
+        + item.leagueNumbers.map(stat => '<article><strong>'+escapeHtml(stat.value)+'</strong><h4>'+escapeHtml(stat.label)+'</h4><p>'+escapeHtml(stat.detail)+'</p></article>').join('')
+        + '</div>'
+        + '</section>';
+    }
+
+    function authorNewsLeagueTeamsHtml(item) {
+      if(!Array.isArray(item.leagueTeams) || !item.leagueTeams.length) return '';
+      return '<section class="author-news-league-teams">'
+        + '<div class="author-news-league-head"><span>SIX TEAMS</span><h3>'+escapeHtml(item.leagueTeamsTitle || '六隊球季縮影')+'</h3><p>'+escapeHtml(item.leagueTeamsIntro || '')+'</p></div>'
+        + '<div class="author-news-league-team-list">'
+        + item.leagueTeams.map((team,index) => '<article class="author-news-league-team">'
+          + '<div class="author-news-league-team-rank">'+String(index+1).padStart(2,'0')+'</div>'
+          + '<div class="author-news-league-team-name"><strong>'+escapeHtml(team.team)+'</strong><span>'+escapeHtml(team.tag)+'</span></div>'
+          + '<div class="author-news-league-team-record"><b>'+escapeHtml(team.record)+'</b><small>'+escapeHtml(team.halves)+'</small></div>'
+          + '<p>'+escapeHtml(team.story)+'</p>'
+          + '</article>').join('')
+        + '</div>'
+        + '</section>';
+    }
+
     function authorNewsInternationalHtml(item) {
       if(!Array.isArray(item.international) || !item.international.length) return '';
       return '<section class="author-news-international">'
@@ -1158,6 +1262,8 @@
         + '<div class="author-news-stats">'+stats+'</div>'
         + '</section>'
         + '<div class="author-news-story">'+sections+'</div>'
+        + authorNewsLeagueNumbersHtml(item)
+        + authorNewsLeagueTeamsHtml(item)
         + authorNewsTimelineHtml(item)
         + authorNewsInternationalHtml(item)
         + authorNewsUsCareerHtml(item)
