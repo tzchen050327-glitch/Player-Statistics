@@ -16653,3 +16653,13 @@ select,
     min-height:360px!important;
   }
 }
+
+
+/* ===== LEAGUE NEWS TONE ===== */
+.author-news-card.tone-league{--news-accent:#78c5f6}
+.author-news-overlay.tone-league{--news-accent:#78c5f6}
+.author-news-card.tone-league{
+  background:
+    radial-gradient(circle at 90% 8%,rgba(86,173,232,.20),transparent 34%),
+    linear-gradient(145deg,#0b2942,#081827 66%,#06131e);
+}
