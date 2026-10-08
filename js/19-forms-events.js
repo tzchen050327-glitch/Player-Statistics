@@ -116,11 +116,23 @@
       });
     });
 
+    els.homeContinentSwitch?.querySelectorAll('[data-pro-continent]').forEach(button => {
+      button.addEventListener('click', () => {
+        homeProContinent = button.dataset.proContinent === 'AMERICA' ? 'AMERICA' : 'ASIA';
+        if (homeProContinent === 'AMERICA') homeProCountry = 'US';
+        else if (homeProCountry === 'US') homeProCountry = 'TW';
+        homeTeamFilter = '';
+        applyHomeProSelection();
+        renderRecentPlayers();
+      });
+    });
+
     els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
       button.addEventListener('click', () => {
         const country = button.dataset.proCountry;
-        homeProCountry = ['TW','US','JP','KR'].includes(country) ? country : 'TW';
+        homeProCountry = ['TW','US','JP','KR','AWB'].includes(country) ? country : 'TW';
         homeRootSection = 'pro';
+        homeProContinent = homeProCountry === 'US' ? 'AMERICA' : 'ASIA';
         homeTeamFilter = '';
         applyHomeProSelection();
         renderRecentPlayers();
