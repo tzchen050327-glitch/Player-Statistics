@@ -153,9 +153,13 @@
       // 未連結 CPBL 或不屬於六隊的球員，歸到「其他」。
       if (!player?.cpblAcnt || !recognized) return 'OTHER';
 
+      // The Advanced Statistics club label can already say "二軍" while a
+      // pre-migration cached cpblCurrentLevel still says A. Respect the
+      // explicit farm-team label over the stale level cache.
+      if (/二軍\s*$/.test(String(player?.cpblTeam || ''))) return 'D';
       if (player?.cpblCurrentLevel === 'D') return 'D';
       if (player?.cpblCurrentLevel === 'A') return 'A';
-      return /二軍/.test(String(player?.cpblTeam || '')) ? 'D' : 'A';
+      return 'A';
     }
 
     function currentProLeague() {
