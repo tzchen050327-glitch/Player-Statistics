@@ -81,7 +81,11 @@
 .awb-game-score>span{font-size:13px;font-weight:700;text-align:center}
 .awb-game-score strong{font-size:24px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .awb-game-score small{font-size:14px;opacity:.6}
-.awb-compact-heading{border-top:1px solid rgba(127,145,169,.2)}
+.awb-schedule-shell{margin:0;border:0;border-bottom:1px solid rgba(127,145,169,.2);border-radius:0;background:transparent}
+.awb-schedule-track{display:flex;gap:8px;overflow-x:auto;padding:0 10px 12px;scroll-snap-type:x proximity}
+.awb-schedule-track .home-game-card{flex:0 0 245px;scroll-snap-align:start}
+.awb-schedule-date{font-size:12px;opacity:.72;white-space:nowrap}
+.awb-compact-heading{border-top:0}
 @media(max-width:580px){.awb-games-head{padding:8px 9px 6px}.awb-games-list{padding:0 8px 8px}.awb-game-card{flex-basis:100%}}
 </style>
 </head>
@@ -246,19 +250,26 @@
           <div id="homeDailyGames" class="home-daily-games" aria-live="polite"></div>
 
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
-            <div class="awb-games-head"><strong>2025 冬盟賽事</strong><span>12/07 冠軍賽日 · 已結束</span></div>
-            <div class="awb-games-list" aria-label="2025 年冬盟冠軍賽日比分">
-              <a class="awb-game-card" href="https://awb.cpbl.com.tw/" target="_blank" rel="noopener noreferrer" aria-label="冠軍戰，日本社會人 5 比 2 日職聯隊，查看冬盟官方網站">
-                <span class="awb-game-meta"><b>冠軍戰</b><span>12/07 · 終場</span></span>
-                <span class="awb-game-score"><span>日本社會人</span><strong>5 <small>:</small> 2</strong><span>日職聯隊</span></span>
-                <span class="awb-game-foot">日本社會人奪冠 <span>官方賽事 ↗</span></span>
-              </a>
-              <a class="awb-game-card" href="https://awb.cpbl.com.tw/" target="_blank" rel="noopener noreferrer" aria-label="季軍戰，台灣山林 5 比 4 台灣海洋，查看冬盟官方網站">
-                <span class="awb-game-meta"><b>季軍戰</b><span>12/07 · 終場</span></span>
-                <span class="awb-game-score"><span>台灣山林</span><strong>5 <small>:</small> 4</strong><span>台灣海洋</span></span>
-                <span class="awb-game-foot">台灣山林獲季軍 <span>官方賽事 ↗</span></span>
-              </a>
-            </div>
+            <section class="home-daily-games-shell awb-schedule-shell" aria-label="2025 冬盟賽事">
+              <div class="home-daily-games-head">
+                <div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟</span></div>
+                <span class="awb-schedule-date">2025/12/07　2 場</span>
+              </div>
+              <div class="home-daily-games-track awb-schedule-track">
+                <article class="home-game-card status-final">
+                  <div class="home-game-card-top"><span class="home-game-status status-final">已結束</span></div>
+                  <div class="home-game-team"><span class="home-game-team-name">日本社會人</span><strong class="home-game-score">5</strong></div>
+                  <div class="home-game-team"><span class="home-game-team-name">日職聯隊</span><strong class="home-game-score">2</strong></div>
+                  <div class="home-game-venue"><span class="home-game-venue-name">2025 冠軍戰</span><em class="home-game-competition">冠軍戰</em></div>
+                </article>
+                <article class="home-game-card status-final">
+                  <div class="home-game-card-top"><span class="home-game-status status-final">已結束</span></div>
+                  <div class="home-game-team"><span class="home-game-team-name">台灣山林</span><strong class="home-game-score">5</strong></div>
+                  <div class="home-game-team"><span class="home-game-team-name">台灣海洋</span><strong class="home-game-score">4</strong></div>
+                  <div class="home-game-venue"><span class="home-game-venue-name">2025 季軍戰</span><em class="home-game-competition">季軍戰</em></div>
+                </article>
+              </div>
+            </section>
             <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2025</span></div><span class="awb-compact-season">冬盟</span></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
