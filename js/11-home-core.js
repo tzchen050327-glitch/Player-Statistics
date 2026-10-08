@@ -163,6 +163,7 @@
       if (homeProCountry === 'US') return '美國職棒';
       if (homeProCountry === 'JP') return 'NPB';
       if (homeProCountry === 'KR') return 'KBO';
+      if (homeProCountry === 'AWB') return 'AWB';
       return 'CPBL';
     }
 
@@ -194,6 +195,7 @@
           return true;
         });
       }
+      if (homeProCountry === 'AWB') return [];
       const league = currentProLeague();
       return players.filter(player =>
         playerScope(player) === 'overseas'
@@ -208,5 +210,6 @@
       if (homeProCountry === 'US') return '首頁｜各國職棒｜美國';
       if (homeProCountry === 'JP') return '首頁｜各國職棒｜日本｜NPB';
       if (homeProCountry === 'KR') return '首頁｜各國職棒｜韓國｜KBO';
+      if (homeProCountry === 'AWB') return '首頁｜亞洲職棒｜冬盟';
       return '首頁｜各國職棒';
     }
