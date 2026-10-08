@@ -390,10 +390,10 @@
   }
 }
 
-/* mobile cloud sync + two-tab width override */
+/* v8.88: root navigation is four equal tabs, not the legacy two-tab shell */
 #homePage #homeZoneSwitch.home-root-switch {
   display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   width: 100% !important;
 }
 #homePage #homeZoneSwitch.home-root-switch > .home-zone-btn {
