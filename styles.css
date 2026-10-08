@@ -16859,12 +16859,3 @@ select,
   #homePage #homeContinentSwitch{gap:4px}
   #homePage #homeContinentSwitch .home-hierarchy-btn{font-size:11px}
 }
-
-/* v8.85 CPBL 1st/2nd-team player catalog is opened from the sidebar */
-#homePage.cpbl-roster-closed .home-player-head,
-#homePage.cpbl-roster-closed .home-player-actions,
-#homePage.cpbl-roster-closed #recentPlayers{display:none !important}
-#homePage .home-cpbl-roster-entry.active{
-  border-color:#c89a34;
-  box-shadow:0 0 0 2px rgba(200,154,52,.17);
-}
