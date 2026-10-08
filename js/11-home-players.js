@@ -9,9 +9,15 @@
         button.classList.toggle('active', button.dataset.homeRoot === homeRootSection);
       });
 
+      els.homeContinentSwitch?.classList.toggle('hidden', international || special);
+      els.homeContinentSwitch?.querySelectorAll('[data-pro-continent]').forEach(button => {
+        button.classList.toggle('active', button.dataset.proContinent === homeProContinent);
+      });
       els.homeProCountrySwitch?.classList.toggle('hidden', international || special);
       els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
-        button.classList.toggle('active', button.dataset.proCountry === homeProCountry);
+        const country = button.dataset.proCountry;
+        button.classList.toggle('hidden', homeProContinent === 'AMERICA' ? country !== 'US' : country === 'US');
+        button.classList.toggle('active', country === homeProCountry);
       });
 
       els.homeUsLeagueSwitch?.classList.add('hidden');
@@ -35,6 +41,7 @@
         else if (homeProCountry === 'US') els.homePlayerTitle.textContent = '美國｜MLB / MiLB';
         else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
         else if (homeProCountry === 'KR') els.homePlayerTitle.textContent = '韓國｜KBO';
+        else if (homeProCountry === 'AWB') els.homePlayerTitle.textContent = '亞洲冬季棒球聯盟｜AWB';
         else els.homePlayerTitle.textContent = '各國職棒';
       }
 
@@ -45,6 +52,9 @@
         } else if (special) {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = '作者整理收錄的特殊紀錄與比賽。';
+        } else if (homeProCountry === 'AWB') {
+          els.homeZoneNote.classList.remove('hidden');
+          els.homeZoneNote.textContent = '冬盟入口已建立；即時比分、逐打席及球員資料尚待官方來源串接。';
         } else {
           els.homeZoneNote.classList.add('hidden');
           els.homeZoneNote.textContent = '';
