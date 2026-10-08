@@ -97,7 +97,13 @@
 
     els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
       button.addEventListener('click', () => {
-        homeRootSection = ['international','special'].includes(button.dataset.homeRoot) ? button.dataset.homeRoot : 'pro';
+        const chosenRoot = button.dataset.homeRoot;
+        homeRootSection = ['international','special'].includes(chosenRoot) ? chosenRoot : 'pro';
+        if (chosenRoot === 'asia' || chosenRoot === 'america') {
+          homeProContinent = chosenRoot === 'america' ? 'AMERICA' : 'ASIA';
+          if (homeProContinent === 'AMERICA') homeProCountry = 'US';
+          else if (homeProCountry === 'US') homeProCountry = 'TW';
+        }
         if (homeRootSection === 'international') {
           homeZone = 'international';
           homeSpecialFilter = '';
@@ -112,17 +118,6 @@
           applyHomeProSelection();
         }
         homeTeamFilter = '';
-        renderRecentPlayers();
-      });
-    });
-
-    els.homeContinentSwitch?.querySelectorAll('[data-pro-continent]').forEach(button => {
-      button.addEventListener('click', () => {
-        homeProContinent = button.dataset.proContinent === 'AMERICA' ? 'AMERICA' : 'ASIA';
-        if (homeProContinent === 'AMERICA') homeProCountry = 'US';
-        else if (homeProCountry === 'US') homeProCountry = 'TW';
-        homeTeamFilter = '';
-        applyHomeProSelection();
         renderRecentPlayers();
       });
     });
