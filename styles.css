@@ -16949,3 +16949,22 @@ html[data-theme="dark"] #homePage .home-time-continent-btn.active{
   background:linear-gradient(145deg,#30240e,#1b1a17);
   color:#f0ca69;
 }
+
+/* Keep all clock choices reachable in short mobile viewports. */
+#homePage .home-time-zone-panel{
+  display:flex;
+  flex-direction:column;
+  flex:0 1 auto;
+  min-height:0;
+  max-height:min(300px,46dvh);
+  overflow:hidden;
+}
+#homePage .home-time-zone-head,
+#homePage #homeTimeContinentSwitch{flex:0 0 auto}
+#homePage .home-time-zone-list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
