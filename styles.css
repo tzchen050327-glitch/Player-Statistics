@@ -16831,31 +16831,48 @@ select,
   }
 }
 
-/* v8.84: continent selector between top navigation and league selector */
-#homePage #homeContinentSwitch.home-continent-switch{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:6px;
-  margin:0 0 10px;
-  width:100%;
+
+/* v8.87: four root tabs replace the intermediate continent switch */
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch,
+#homePage.special-home-mode #homeZoneSwitch.home-zone-switch.home-root-switch{
+  box-sizing:border-box !important;
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-template-rows:42px !important;
+  grid-auto-flow:row !important;
+  gap:4px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  padding:4px !important;
+  overflow:hidden !important;
 }
-#homePage #homeContinentSwitch .home-hierarchy-btn{min-width:0;width:100%}
+#homePage #homeZoneSwitch.home-root-switch > button.home-zone-btn[data-home-root],
+#homePage.special-home-mode #homeZoneSwitch.home-root-switch > button.home-zone-btn[data-home-root]{
+  position:static !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex:none !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  grid-row:1 !important;
+  margin:0 !important;
+  padding:0 2px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  white-space:nowrap !important;
+  font-size:clamp(9px,2.5vw,13px) !important;
+}
+#homePage #homeZoneSwitch [data-home-root="asia"]{grid-column:1 !important}
+#homePage #homeZoneSwitch [data-home-root="america"]{grid-column:2 !important}
+#homePage #homeZoneSwitch [data-home-root="international"]{grid-column:3 !important}
+#homePage #homeZoneSwitch [data-home-root="special"]{grid-column:4 !important}
 #homePage #homeProCountrySwitch{
   grid-template-columns:repeat(4,minmax(0,1fr)) !important;
 }
 #homePage #homeProCountrySwitch > .home-hierarchy-btn.hidden{display:none !important}
 #homePage #homeProCountrySwitch:has(> [data-pro-country="US"]:not(.hidden)){
   grid-template-columns:minmax(0,1fr) !important;
-}
-#homePage.special-home-mode #homeContinentSwitch,
-#homePage.international-home-mode #homeContinentSwitch{
-  display:none !important;
-}
-#homePage.special-home-mode #homeContinentSwitch{
-  flex:0 0 0 !important;height:0 !important;margin:0 !important;
-  padding:0 !important;overflow:hidden !important;
-}
-@media(max-width:640px){
-  #homePage #homeContinentSwitch{gap:4px}
-  #homePage #homeContinentSwitch .home-hierarchy-btn{font-size:11px}
 }
