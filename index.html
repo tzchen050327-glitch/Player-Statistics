@@ -33,6 +33,24 @@
   <link rel="stylesheet" href="./landscape-state.css?v=v8.96" />
   <link rel="stylesheet" href="./postseason-history.css?v=v8.96" />
   <link rel="stylesheet" href="./dark-theme-overrides.css?v=v8.96" />
+<style id="awbCompactStyles">
+.home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers{display:none!important}
+.awb-compact{min-width:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;margin-top:8px;border:1px solid var(--line,#394653);border-radius:12px;background:var(--surface,#121a24);color:var(--text,#e9eff5)}
+.awb-compact.hidden{display:none!important}
+.awb-compact-heading{padding:11px 12px 9px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.awb-compact-heading>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.awb-compact-heading strong{font-size:15px;line-height:1.3}
+.awb-compact-heading span:not(.awb-compact-season){font-size:9px;letter-spacing:.06em;opacity:.65}
+.awb-compact-season{border:1px solid currentColor;border-radius:6px;padding:3px 7px;font-size:11px;opacity:.7;white-space:nowrap}
+.awb-compact-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:0 9px 9px}
+.awb-compact-tabs button{min-width:0;min-height:36px;border:1px solid transparent;border-radius:7px;background:rgba(127,145,169,.10);color:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.awb-compact-tabs button[aria-selected="true"]{border-color:rgba(99,167,239,.5);background:rgba(75,142,216,.18);color:var(--accent,#6bb5ff)}
+.awb-compact-body{min-height:126px;max-height:min(34dvh,260px);overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--line,#394653);padding:12px}
+.awb-compact-empty{min-height:100px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;color:inherit}
+.awb-compact-empty strong{font-size:14px}
+.awb-compact-empty span{max-width:25em;font-size:12px;line-height:1.5;opacity:.64}
+@media(max-width:580px){.awb-compact-heading{padding:9px 10px}.awb-compact-tabs{padding:0 7px 7px}.awb-compact-body{max-height:29dvh;min-height:110px;padding:9px}}
+</style>
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
@@ -193,6 +211,19 @@
           </div>
           <div id="homeZoneNote" class="home-zone-note hidden"></div>
           <div id="homeDailyGames" class="home-daily-games" aria-live="polite"></div>
+
+          <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
+            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2026</span></div><span class="awb-compact-season">冬盟</span></div>
+            <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
+              <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
+              <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
+              <button type="button" role="tab" data-awb-tab="teams" aria-selected="false" aria-controls="awbCompactBody">球隊</button>
+              <button type="button" role="tab" data-awb-tab="watch" aria-selected="false" aria-controls="awbCompactBody">觀察</button>
+            </div>
+            <div id="awbCompactBody" class="awb-compact-body" role="tabpanel" aria-labelledby="awbTabStandings" tabindex="0">
+              <div class="awb-compact-empty"><strong>戰績資料尚未同步</strong><span>待冬盟官方賽事資料確認後顯示排名、勝敗及勝率。</span></div>
+            </div>
+          </section>
           <div class="home-player-head">
             <h2 id="homePlayerTitle">球員</h2>
             <span id="homePlayerCount"></span>
@@ -621,6 +652,41 @@
       </div>
     </div>
   </dialog>
+<script id="awbCompactController">
+(() => {
+  const descriptions={
+    standings:['戰績資料尚未同步','待冬盟官方賽事資料確認後顯示排名、勝敗及勝率。'],
+    stats:['數據排行尚未同步','此處預留打者、投手排行；不使用未經驗證的示範數字。'],
+    teams:['參賽球隊名單尚未同步','後續依當年度官方名單列出球隊及球員母隊。'],
+    watch:['球員觀察尚未同步','後續顯示近五場表現與母隊例行賽對照。']
+  };
+  const panel=document.querySelector('.home-main-panel'), section=document.getElementById('awbCompact');
+  if(!panel||!section)return;
+  const buttons=[...section.querySelectorAll('[data-awb-tab]')],body=document.getElementById('awbCompactBody');
+  function select(tab){
+    if(!descriptions[tab])return;
+    buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));
+    const active=buttons.find(b=>b.dataset.awbTab===tab);
+    if(active?.id)body.setAttribute('aria-labelledby',active.id);
+    else {buttons.forEach(b=>{if(!b.id)b.id='awbTab'+b.dataset.awbTab});body.setAttribute('aria-labelledby',active.id)}
+    body.replaceChildren();
+    const inner=document.createElement('div');inner.className='awb-compact-empty';
+    const title=document.createElement('strong');title.textContent=descriptions[tab][0];
+    const detail=document.createElement('span');detail.textContent=descriptions[tab][1];
+    inner.append(title,detail);body.append(inner);
+  }
+  buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
+  function sync(){
+    const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active');
+    const asia=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');
+    const show=!!active&&!!asia;
+    section.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);
+  }
+  const observer=new MutationObserver(sync);
+  for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
+  select('standings');sync();
+})();
+</script>
   <script src="./js/module-loader.js?v=v8.96"></script>
 </body>
 </html>
