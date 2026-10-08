@@ -206,10 +206,10 @@
     function homePageBreadcrumb() {
       if (homeRootSection === 'international') return '首頁｜國際賽';
       if (homeRootSection === 'special') return '首頁｜作者收藏';
-      if (homeProCountry === 'TW') return '首頁｜各國職棒｜台灣';
-      if (homeProCountry === 'US') return '首頁｜各國職棒｜美國';
-      if (homeProCountry === 'JP') return '首頁｜各國職棒｜日本｜NPB';
-      if (homeProCountry === 'KR') return '首頁｜各國職棒｜韓國｜KBO';
+      if (homeProCountry === 'TW') return '首頁｜亞洲職棒｜台灣';
+      if (homeProCountry === 'US') return '首頁｜美洲職棒｜美國';
+      if (homeProCountry === 'JP') return '首頁｜亞洲職棒｜日本｜NPB';
+      if (homeProCountry === 'KR') return '首頁｜亞洲職棒｜韓國｜KBO';
       if (homeProCountry === 'AWB') return '首頁｜亞洲職棒｜冬盟';
-      return '首頁｜各國職棒';
+      return '首頁｜亞洲職棒';
     }
