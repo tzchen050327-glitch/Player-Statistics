@@ -121,12 +121,7 @@ jobs:
               # If another release already advanced the version, avoid an older bump.
               remote_version=$(git show origin/main:version.json | python -c 'import json,sys; print(json.load(sys.stdin)["version"])')
               local_version=$(python -c 'import json; print(json.load(open("version.json"))["version"])')
-              if [ "$remote_version" = "$local_version" ] || python - "$remote_version" "$local_version" <<'PY'
-import sys
-def parts(v): return tuple(map(int, v.lstrip('v').split('.')))
-sys.exit(0 if parts(sys.argv[1]) >= parts(sys.argv[2]) else 1)
-PY
-              then
+              if python -c 'import sys; parse=lambda v: tuple(map(int,v.lstrip("v").split("."))); sys.exit(0 if parse(sys.argv[1]) >= parse(sys.argv[2]) else 1)' "$remote_version" "$local_version";
                 echo "Remote version $remote_version already covers $local_version; skipping stale release."
                 exit 0
               fi
