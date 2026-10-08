@@ -70,6 +70,19 @@
 .awb-mini-title{font-size:12px;font-weight:700;margin:0 0 7px}
 .awb-section-break{margin-top:12px}
 .awb-compact-body{max-height:min(44dvh,340px)}
+
+.awb-games-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 7px}
+.awb-games-head strong{font-size:14px}.awb-games-head>span{font-size:11px;opacity:.66}
+.awb-games-list{display:flex;gap:9px;padding:0 11px 11px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory}
+.awb-game-card{box-sizing:border-box;display:flex;flex:0 0 min(100%,370px);flex-direction:column;gap:9px;min-width:0;padding:11px 12px;border:1px solid rgba(127,145,169,.24);border-radius:10px;background:rgba(127,145,169,.075);color:inherit;text-decoration:none;scroll-snap-align:start}
+.awb-game-meta,.awb-game-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px}
+.awb-game-meta b{font-size:12px;color:#e5bc68}.awb-game-meta span,.awb-game-foot{opacity:.7}
+.awb-game-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px}
+.awb-game-score>span{font-size:13px;font-weight:700;text-align:center}
+.awb-game-score strong{font-size:24px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.awb-game-score small{font-size:14px;opacity:.6}
+.awb-compact-heading{border-top:1px solid rgba(127,145,169,.2)}
+@media(max-width:580px){.awb-games-head{padding:8px 9px 6px}.awb-games-list{padding:0 8px 8px}.awb-game-card{flex-basis:100%}}
 </style>
 </head>
 <body>
@@ -233,6 +246,19 @@
           <div id="homeDailyGames" class="home-daily-games" aria-live="polite"></div>
 
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
+            <div class="awb-games-head"><strong>2025 冬盟賽事</strong><span>12/07 冠軍賽日 · 已結束</span></div>
+            <div class="awb-games-list" aria-label="2025 年冬盟冠軍賽日比分">
+              <a class="awb-game-card" href="https://awb.cpbl.com.tw/" target="_blank" rel="noopener noreferrer" aria-label="冠軍戰，日本社會人 5 比 2 日職聯隊，查看冬盟官方網站">
+                <span class="awb-game-meta"><b>冠軍戰</b><span>12/07 · 終場</span></span>
+                <span class="awb-game-score"><span>日本社會人</span><strong>5 <small>:</small> 2</strong><span>日職聯隊</span></span>
+                <span class="awb-game-foot">日本社會人奪冠 <span>官方賽事 ↗</span></span>
+              </a>
+              <a class="awb-game-card" href="https://awb.cpbl.com.tw/" target="_blank" rel="noopener noreferrer" aria-label="季軍戰，台灣山林 5 比 4 台灣海洋，查看冬盟官方網站">
+                <span class="awb-game-meta"><b>季軍戰</b><span>12/07 · 終場</span></span>
+                <span class="awb-game-score"><span>台灣山林</span><strong>5 <small>:</small> 4</strong><span>台灣海洋</span></span>
+                <span class="awb-game-foot">台灣山林獲季軍 <span>官方賽事 ↗</span></span>
+              </a>
+            </div>
             <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2025</span></div><span class="awb-compact-season">冬盟</span></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
