@@ -6,13 +6,13 @@
       else applyHomeProSelection();
 
       els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
-        button.classList.toggle('active', button.dataset.homeRoot === homeRootSection);
+        const tab = button.dataset.homeRoot;
+        const active = homeRootSection === 'pro'
+          ? (homeProContinent === 'AMERICA' ? tab === 'america' : tab === 'asia')
+          : tab === homeRootSection;
+        button.classList.toggle('active', active);
       });
 
-      els.homeContinentSwitch?.classList.toggle('hidden', international || special);
-      els.homeContinentSwitch?.querySelectorAll('[data-pro-continent]').forEach(button => {
-        button.classList.toggle('active', button.dataset.proContinent === homeProContinent);
-      });
       els.homeProCountrySwitch?.classList.toggle('hidden', international || special);
       els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
         const country = button.dataset.proCountry;
