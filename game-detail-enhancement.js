@@ -1333,8 +1333,8 @@
     if(/觸身|死球|hit by pitch/i.test(text)) return '觸身';
     if(/三振|strikeout/i.test(text)) {
       const kind = window.ballScopeCpblStrikeoutLabel?.(play, latestDetail?.league || window.__latestHomeGameDetail?.league || '');
-      if (kind === '拿香三振') return '見K';
-      if (kind === '揮空三振') return '空K';
+      if (kind === '見逃三振') return '見逃三振';
+      if (kind === '空振三振') return '空振三振';
       if (kind === '擦棒三振') return '擦K';
       if (kind === '觸擊三振') return '觸K';
       if (kind.startsWith('不死三振')) return '不死K';

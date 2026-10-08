@@ -324,8 +324,8 @@
         if (lastPitch === '揮棒落空') return '不死三振（揮空）';
         return '不死三振';
       }
-      if (lastPitch === '好球沒揮棒') return '拿香三振';
-      if (lastPitch === '揮棒落空') return '揮空三振';
+      if (lastPitch === '好球沒揮棒') return '見逃三振';
+      if (lastPitch === '揮棒落空') return '空振三振';
       if (lastPitch === '擦棒被捕球') return '擦棒三振';
       return '觸擊三振';
     }
