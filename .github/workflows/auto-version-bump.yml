@@ -1,22 +1,15 @@
 name: Auto bump app version
 
+# Manual release only. Regular source commits deploy once via GitHub Pages.
+# Version bumps are intentionally not committed by an automatic push workflow.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '*.js'
-      - '*.css'
-      - '*.html'
-      - 'js/**'
-      - 'scripts/build-app.py'
-      - 'manifest.webmanifest'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   bump-version:
-    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version bump]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
