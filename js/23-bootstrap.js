@@ -46,7 +46,17 @@
             const fixedTeam = applyStoredPreferredExternalTeam(player);
             const fixedExternalRole = repairStoredExternalPlayerType(player);
             const fixedCpblRole = repairStoredCpblPlayerType(player);
-            if (fixedName || fixedTeam || fixedExternalRole || fixedCpblRole) await idbPut(STORES.players, player);
+            // Repair stale A-level flags only when the stored official team
+            // label explicitly identifies a farm club. Do not infer D from
+            // season statistics or last appearance.
+            const fixedCpblLevel = !!player?.cpblAcnt
+              && /二軍\s*$/.test(String(player.cpblTeam || ''))
+              && player.cpblCurrentLevel !== 'D';
+            if (fixedCpblLevel) player.cpblCurrentLevel = 'D';
+            if (fixedName || fixedTeam || fixedExternalRole || fixedCpblRole || fixedCpblLevel) {
+              player.updatedAt = Date.now();
+              await idbPut(STORES.players, player);
+            }
           } catch (error) {
             reportStartupError(error, `修復球員資料：${player?.name || player?.id || 'unknown'}`);
           }
