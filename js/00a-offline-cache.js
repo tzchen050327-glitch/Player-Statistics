@@ -144,10 +144,10 @@
     const daily = rule.kind === 'daily' ? dailyGamesTerminalState(text) : null;
     const final = daily
       ? daily.allTerminal
-      : /"(?:status|gameStatus|state)"\\s*:\\s*"(?:final|finished|completed|complete|game[_ -]?over|ended|closed|比賽結束|結束)"/i.test(text);
+      : /"(?:status|gameStatus|state)"\s*:\s*"(?:final|finished|completed|complete|game[_ -]?over|ended|closed|比賽結束|結束)"/i.test(text);
     const live = daily
       ? daily.hasLive
-      : !final && /"(?:status|gameStatus|state)"\\s*:\\s*"(?:live|in[_ -]?progress|playing|game[_ -]?in[_ -]?progress|delay|delayed|suspended|比賽中|進行中)"/i.test(text);
+      : !final && /"(?:status|gameStatus|state)"\s*:\s*"(?:live|in[_ -]?progress|playing|game[_ -]?in[_ -]?progress|delay|delayed|suspended|比賽中|進行中)"/i.test(text);
     const date = requestedDate(requestText);
     const historical = Boolean(date && date < today());
     let fresh = rule.fresh;
