@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v8.86" />
+  <meta name="app-version" content="v8.87" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v8.86" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v8.86" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v8.86" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v8.86" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v8.87" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v8.87" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v8.87" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v8.87" />
   <script>
     (() => {
       try {
@@ -26,19 +26,19 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v8.86"></script>
-  <link rel="stylesheet" href="./styles.css?v=v8.86" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v8.86" />
-  <link rel="stylesheet" href="./report-layout.css?v=v8.86" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v8.86" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v8.86" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v8.86" />
+    <script src="./diagnostic-runtime.js?v=v8.87"></script>
+  <link rel="stylesheet" href="./styles.css?v=v8.87" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v8.87" />
+  <link rel="stylesheet" href="./report-layout.css?v=v8.87" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v8.87" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v8.87" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v8.87" />
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v8.86" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v8.87" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -175,13 +175,10 @@
 
         <section class="panel home-main-panel">
           <div id="homeZoneSwitch" class="home-zone-switch home-root-switch" aria-label="資料分類">
-            <button class="home-zone-btn active" type="button" data-home-root="pro">各國職棒</button>
+            <button class="home-zone-btn active" type="button" data-home-root="asia">亞洲職棒</button>
+            <button class="home-zone-btn" type="button" data-home-root="america">美洲職棒</button>
             <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
             <button class="home-zone-btn" type="button" data-home-root="special">作者收藏</button>
-          </div>
-          <div id="homeContinentSwitch" class="home-continent-switch" aria-label="職棒洲別">
-            <button class="home-hierarchy-btn active" type="button" data-pro-continent="ASIA">亞洲職棒</button>
-            <button class="home-hierarchy-btn" type="button" data-pro-continent="AMERICA">美洲職棒</button>
           </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
@@ -384,7 +381,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v8.86</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v8.87</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -624,6 +621,6 @@
       </div>
     </div>
   </dialog>
-  <script src="./js/module-loader.js?v=v8.86"></script>
+  <script src="./js/module-loader.js?v=v8.87"></script>
 </body>
 </html>
