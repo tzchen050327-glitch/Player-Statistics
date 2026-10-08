@@ -2043,10 +2043,33 @@
       requestAnimationFrame(() => go(initial, false, false));
     }
 
+    function syncHomePitcherSplitHeight() {
+      const overlay = document.getElementById('homeGameDetailOverlay');
+      if (!overlay || overlay.classList.contains('hidden')) return;
+      const panel = overlay.querySelector('.match-center-panel.active.game-pitcher-panel');
+      if (!panel) return;
+      // The header can wrap on narrow phones; use its real rendered height.
+      const visual = window.visualViewport;
+      const viewportHeight = visual?.height || window.innerHeight || document.documentElement.clientHeight;
+      const viewportTop = visual?.offsetTop || 0;
+      const contentBottomPadding = parseFloat(window.getComputedStyle(panel.parentElement).paddingBottom) || 0;
+      const panelTop = panel.getBoundingClientRect().top - viewportTop;
+      const availableHeight = Math.max(180, Math.floor(viewportHeight - panelTop - contentBottomPadding));
+      panel.style.height = `${availableHeight}px`;
+    }
+    window.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
+    window.visualViewport?.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
+
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
       if (!body) return;
+      // A live data refresh must not jump either team's independently scrolled list.
+      const pitcherScrollPositions = Object.create(null);
+      body.querySelectorAll('.game-pitcher-team').forEach(team => {
+        const side = team.classList.contains('game-pitcher-team-away') ? 'away' : 'home';
+        pitcherScrollPositions[side] = team.querySelector('.game-pitcher-scroll')?.scrollTop || 0;
+      });
       if (detail?.game) {
         const shouldDispatchDetailState = window.__latestHomeGameDetail !== detail;
         window.__latestHomeGameDetail = detail;
@@ -2165,6 +2188,14 @@
         </main>`;
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
+      syncHomePitcherSplitHeight();
+      body.querySelectorAll('.game-pitcher-team').forEach(team => {
+        const side = team.classList.contains('game-pitcher-team-away') ? 'away' : 'home';
+        const scroll = team.querySelector('.game-pitcher-scroll');
+        if (scroll && Object.prototype.hasOwnProperty.call(pitcherScrollPositions, side)) {
+          scroll.scrollTop = pitcherScrollPositions[side];
+        }
+      });
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
       body.querySelector('#homeGameDetailDisplayMode')?.addEventListener('click', () => {
         try {
