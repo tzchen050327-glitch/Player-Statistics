@@ -1,7 +1,7 @@
     // Homepage roster refresh must not fail as one large all-or-nothing 4.5s batch.
     // Keep the startup roster decision authoritative for homepage A/D grouping.
     const refreshCurrentRosterStatusBeforeHomeBatchFix = refreshCurrentRosterStatus;
-    const CPBL_ROSTER_REFRESH_TTL_MS = 2 * 60 * 60 * 1000;
+    const CPBL_ROSTER_REFRESH_TTL_MS = 30 * 60 * 1000;
 
     function cpblRosterStatusCacheFresh(linked) {
       const now = Date.now();
@@ -9,7 +9,7 @@
         const level = String(player.cpblCurrentLevel || '').toUpperCase();
         const updatedAt = Number(player.cpblRosterUpdatedAt || 0);
         return ['A', 'D'].includes(level)
-          && player.cpblRosterSource === 'cpbl-advanced-current-profile-v2'
+          && player.cpblRosterSource === 'advanced-player-page-live-v3'
           && updatedAt > 0
           && now - updatedAt < CPBL_ROSTER_REFRESH_TTL_MS;
       });
@@ -33,7 +33,7 @@
 
         for (const player of linked) {
           const current = byAcnt.get(String(player.cpblAcnt));
-          if (!current) continue;
+          if (!current || current.rosterSource !== 'advanced-player-page-live-v3') continue;
 
           if (current.team) player.cpblTeam = normalizeTeamName(current.team);
           if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
@@ -42,7 +42,7 @@
           if (level === 'A' || level === 'D') player.cpblCurrentLevel = level;
 
           const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
-          player.cpblRosterSource = 'cpbl-advanced-current-profile-v2';
+          player.cpblRosterSource = 'advanced-player-page-live-v3';
           player.cpblRosterUpdatedAt = Date.now();
 
           if (roleChanged && player.id === selectedPlayerId) {
