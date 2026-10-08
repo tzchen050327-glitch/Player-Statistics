@@ -1331,7 +1331,15 @@
     if(!text) return '—';
     if(/四壞|保送|walk/i.test(text)) return '四壞';
     if(/觸身|死球|hit by pitch/i.test(text)) return '觸身';
-    if(/三振|strikeout/i.test(text)) return '三振';
+    if(/三振|strikeout/i.test(text)) {
+      const kind = window.ballScopeCpblStrikeoutLabel?.(play, latestDetail?.league || window.__latestHomeGameDetail?.league || '');
+      if (kind === '拿香三振') return '見K';
+      if (kind === '揮空三振') return '空K';
+      if (kind === '擦棒三振') return '擦K';
+      if (kind === '觸擊三振') return '觸K';
+      if (kind.startsWith('不死三振')) return '不死K';
+      return '三振';
+    }
     if(/全壘打|全塁打|home run/i.test(text)) return '全壘打';
     if(/三壘安打|三塁打|triple/i.test(text)) return '三安';
     if(/二壘安打|二塁打|double/i.test(text)) return '二安';
@@ -1444,7 +1452,7 @@
     const outs=inferredOutsAfterPlay(play), meta=[outs>=3?'3出局':`${Math.max(0,outs)}出局`];
     if (Number(play.rbi)||0) meta.push(`${Number(play.rbi)}打點`);
     const title=String(detail?.status||'').toLowerCase()==='final'?'最後一個打席':'上一個打席';
-    return `<section class="gdx-last-play game-detail-enhanced-marker" data-gdx="last-play"><div class="gdx-last-play-head"><strong>${title}</strong><span>${inning?`${inning}局${half}`:''}</span></div><div class="gdx-last-play-main"><strong>${esc(play.batter||play.hitter||'—')}</strong><span>${esc(play.result||play.raw||'—')}</span></div><div class="gdx-last-play-meta">${meta.map(esc).join('<i>｜</i>')}</div></section>`;
+    return `<section class="gdx-last-play game-detail-enhanced-marker" data-gdx="last-play"><div class="gdx-last-play-head"><strong>${title}</strong><span>${inning?`${inning}局${half}`:''}</span></div><div class="gdx-last-play-main"><strong>${esc(play.batter||play.hitter||'—')}</strong><span>${esc(window.ballScopeCpblStrikeoutLabel?.(play,detail?.league||latestDetail?.league||window.__latestHomeGameDetail?.league||'')||play.result||play.raw||'—')}</span></div><div class="gdx-last-play-meta">${meta.map(esc).join('<i>｜</i>')}</div></section>`;
   }
 
   function patchMainScore(scoreCard,board) {

@@ -302,6 +302,35 @@
       return Number.isFinite(n) && n > 0 ? `${Math.floor(n)}打點` : '';
     }
 
+    // Derive CPBL's third-strike type from the existing LiveLog description.
+    // Never modify play.result: other panels use it for official statistics.
+    function homeCpblStrikeoutLabel(play, league) {
+      if (String(league || '').toUpperCase() !== 'CPBL') return '';
+      if (!/三振/.test(String(play?.result || play?.raw || ''))) return '';
+      const description = String(play?.description || '');
+      if (/第三好球觸擊失敗出局/.test(description)) return '觸擊三振';
+      const end = description.search(/打者出局[-－]三振|不死三振/);
+      if (end < 0) return '';
+      // Runner steals, replay calls or substitutions may appear between the
+      // last recorded pitch and the strikeout. Find the last pitch token.
+      const pitchTokens = /好球沒揮棒|揮棒落空|擦棒被捕球|觸擊落空|界外球[（(]觸擊[）)]/g;
+      let lastPitch = '';
+      for (const match of description.slice(0, end).matchAll(pitchTokens)) {
+        lastPitch = match[0];
+      }
+      if (!lastPitch) return '';
+      if (description.slice(end).startsWith('不死三振')) {
+        if (lastPitch === '好球沒揮棒') return '不死三振（看著）';
+        if (lastPitch === '揮棒落空') return '不死三振（揮空）';
+        return '不死三振';
+      }
+      if (lastPitch === '好球沒揮棒') return '拿香三振';
+      if (lastPitch === '揮棒落空') return '揮空三振';
+      if (lastPitch === '擦棒被捕球') return '擦棒三振';
+      return '觸擊三振';
+    }
+    window.ballScopeCpblStrikeoutLabel = homeCpblStrikeoutLabel;
+
     function homeGameDetailResultTone(value) {
       const text = String(value || '').trim();
       if (/全壘打|全塁打|home\s*run/i.test(text)) return 'is-homer';
@@ -2206,7 +2235,7 @@
             <div class="game-detail-pa-list">
               ${group.plays.map(play => `
                 <div class="game-detail-pa-row">
-                  <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(seasonResultLabels.get(play) || play?.result || '—'))}</span></div>
+                  <div class="game-detail-pa-main"><strong>${escapeHtml(String(play?.batter || '未辨識打者'))}</strong><span class="game-detail-pa-result ${homeGameDetailResultTone(play?.result)}">${escapeHtml(String(homeCpblStrikeoutLabel(play, activeHomeGameDetail?.league || detail?.league) || seasonResultLabels.get(play) || play?.result || '—'))}</span></div>
                   <div class="game-detail-pa-meta">${escapeHtml(homeGameDetailMeta(play))}</div>
                 </div>`).join('')}
             </div>
