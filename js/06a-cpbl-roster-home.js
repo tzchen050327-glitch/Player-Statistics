@@ -9,6 +9,7 @@
         const level = String(player.cpblCurrentLevel || '').toUpperCase();
         const updatedAt = Number(player.cpblRosterUpdatedAt || 0);
         return ['A', 'D'].includes(level)
+          && player.cpblRosterSource === 'cpbl-advanced-current-profile-v2'
           && updatedAt > 0
           && now - updatedAt < CPBL_ROSTER_REFRESH_TTL_MS;
       });
@@ -24,7 +25,7 @@
           cpblRequest('current-rosters', {
             acnts: linked.map(player => player.cpblAcnt)
           }),
-          12000,
+          35000,
           '目前一二軍狀態查詢逾時'
         );
         const rows = Array.isArray(data.players) ? data.players : [];
@@ -41,6 +42,7 @@
           if (level === 'A' || level === 'D') player.cpblCurrentLevel = level;
 
           const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
+          player.cpblRosterSource = 'cpbl-advanced-current-profile-v2';
           player.cpblRosterUpdatedAt = Date.now();
 
           if (roleChanged && player.id === selectedPlayerId) {
