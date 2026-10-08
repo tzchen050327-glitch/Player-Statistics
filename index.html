@@ -42,7 +42,7 @@
 .awb-compact-heading strong{font-size:15px;line-height:1.3}
 .awb-compact-heading span:not(.awb-compact-season){font-size:9px;letter-spacing:.06em;opacity:.65}
 .awb-compact-season{border:1px solid currentColor;border-radius:6px;padding:3px 7px;font-size:11px;opacity:.7;white-space:nowrap}
-.awb-compact-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:0 9px 9px}
+.awb-compact-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:0 9px 9px}
 .awb-compact-tabs button{min-width:0;min-height:36px;border:1px solid transparent;border-radius:7px;background:rgba(127,145,169,.10);color:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .awb-compact-tabs button[aria-selected="true"]{border-color:rgba(99,167,239,.5);background:rgba(75,142,216,.18);color:var(--accent,#6bb5ff)}
 .awb-compact-body{min-height:126px;max-height:min(34dvh,260px);overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--line,#394653);padding:12px}
@@ -91,6 +91,20 @@
 .awb-schedule-date{font-size:12px;opacity:.72;white-space:nowrap}
 .awb-compact-heading{border-top:0}
 @media(max-width:580px){.awb-games-head{padding:8px 9px 6px}.awb-games-list{padding:0 8px 8px}.awb-game-card{flex-basis:100%}}
+.awb-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.awb-category{display:flex;flex-direction:column;align-items:flex-start;position:relative;gap:5px;min-width:0;padding:11px 25px 11px 12px;border:1px solid rgba(127,145,169,.24);border-radius:9px;background:rgba(127,145,169,.08);color:inherit;text-align:left;cursor:pointer}
+.awb-category>span:first-child{font-size:14px;font-weight:700}
+.awb-category strong{font-size:11px;font-weight:500;opacity:.74;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.awb-category small{font-size:10px;opacity:.65}
+.awb-chevron{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:23px;opacity:.6}
+.awb-back{padding:6px 10px;margin-bottom:10px;background:transparent;border:1px solid rgba(127,145,169,.3);border-radius:6px;color:inherit;cursor:pointer}
+.awb-detail-title{font-size:16px;margin:3px 0 12px}
+.awb-muted{font-size:11px;opacity:.7;margin:10px 0}
+.awb-official-link{display:inline-block;margin-top:10px;font-size:12px;color:#78b9ff}
+.awb-roster-group{margin-top:12px}.awb-roster-group>b{display:block;font-size:12px;margin-bottom:7px}
+.awb-roster-group>div{display:flex;flex-wrap:wrap;gap:6px}
+.awb-roster-group span{padding:5px 9px;font-size:12px;border-radius:6px;background:rgba(127,145,169,.12)}
+@media(max-width:480px){.awb-categories{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -279,7 +293,7 @@
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
               <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
               <button type="button" role="tab" data-awb-tab="teams" aria-selected="false" aria-controls="awbCompactBody">球隊</button>
-              <button type="button" role="tab" data-awb-tab="watch" aria-selected="false" aria-controls="awbCompactBody">觀察</button>
+              <button type="button" role="tab" data-awb-tab="watch" aria-selected="false" aria-controls="awbCompactBody" hidden>觀察</button>
             </div>
             <div id="awbCompactBody" class="awb-compact-body" role="tabpanel" aria-labelledby="awbTabStandings" tabindex="0">
               <div class="awb-compact-empty"><strong>戰績資料尚未同步</strong><span>待冬盟官方賽事資料確認後顯示排名、勝敗及勝率。</span></div>
@@ -715,37 +729,54 @@
   </dialog>
 <script id="awbCompactController">
 (() => {
-  const standings=[
-    ['日本社會人','14-4-1','.778'],['日職聯隊','11-8-0','.579'],
-    ['台灣海洋','9-10-0','.474'],['韓職聯隊','4-7-1','.364'],['台灣山林','5-14-0','.263']
+  const standings=[['日本社會人','14-4-1','.778'],['日職聯隊','11-8-0','.579'],['台灣海洋','9-10-0','.474'],['韓職聯隊','4-7-1','.364'],['台灣山林','5-14-0','.263']];
+  const teams=[['日本社會人','例行賽第一／年度冠軍','ZZZ380'],['日職聯隊','例行賽第二／年度亞軍','ZZZ381'],['台灣海洋','例行賽第三／年度第四','ZZZ389'],['韓職聯隊','例行賽第四／年度第五','ZZZ382'],['台灣山林','例行賽第五／年度季軍','ZZZ379']];
+  // Verified 2025 official leaderboard entries; this snapshot is deliberately limited to top five.
+  const categories=[
+    {id:'avg',name:'打擊率',unit:'AVG',rows:[['田子杰','台灣海洋','.417'],['金賢晙','韓職聯隊','.350'],['林培緯','台灣海洋','.345'],['張士綸','台灣山林','.341'],['山中稜真','日職聯隊','.340']]},
+    {id:'hits',name:'安打',unit:'H',rows:[['田子杰','台灣海洋','25'],['柴崎聖人','日本社會人','23'],['曾昱磬','台灣海洋','20'],['張仁瑋','台灣山林','20'],['林培緯','台灣海洋','19']]},
+    {id:'hr',name:'全壘打',unit:'HR',rows:[['青野拓海','日職聯隊','2'],['柳承旼','韓職聯隊','1'],['仲俣慎之輔','日本社會人','1'],['楊祥禾','台灣山林','1'],['下山悠介','日本社會人','1']]},
+    {id:'rbi',name:'打點',unit:'RBI',rows:[['藤澤涼介','日本社會人','13'],['王念好','台灣海洋','11'],['相羽寛太','日本社會人','11'],['曾昱磬','台灣海洋','10'],['外山優希','日本社會人','9']]},
+    {id:'era',name:'防禦率',unit:'ERA',rows:[['冨士大和','日職聯隊','0.59'],['朴埈佑','韓職聯隊','0.82'],['中島隼也','日本社會人','1.20'],['安德駿','日職聯隊','1.20'],['梅田健太郎','日本社會人','1.64']]},
+    {id:'wins',name:'勝投',unit:'W',rows:[['長野健大','日本社會人','5'],['邱立璿','台灣海洋','3'],['生井惇己','日本社會人','3'],['安德駿','日職聯隊','2'],['鄭㥥寯','韓職聯隊','2']]},
+    {id:'saves',name:'救援成功',unit:'SV',rows:[['中島隼也','日本社會人','7'],['廣澤優','日職聯隊','7'],['韋宏亮','台灣海洋','4'],['権田琉成','日職聯隊','2'],['川合慎磨','日本社會人','1']]},
+    {id:'strikeouts',name:'奪三振',unit:'SO',rows:[['長野健大','日本社會人','19'],['冨士大和','日職聯隊','18'],['曾家輝','台灣山林','17'],['宮國凌空','日職聯隊','17'],['中島隼也','日本社會人','16']]}
   ];
-  const teams=[['日本社會人','例行賽第一／年度冠軍'],['日職聯隊','例行賽第二／年度亞軍'],['台灣海洋','例行賽第三／年度第四'],['韓職聯隊','例行賽第四／年度第五'],['台灣山林','例行賽第五／年度季軍']];
-  const batting=[['田子杰','台灣海洋','打擊率 .417'],['金賢晙','韓職聯隊','打擊率 .350'],['林培緯','台灣海洋','打擊率 .345']];
-  const pitching=[['冨士大和','日職聯隊','ERA 0.59'],['朴埈佑','韓職聯隊','ERA 0.82'],['中島隼也','日本社會人','ERA 1.20']];
-  const tabs=['standings','stats','teams','watch'];
+  const knownPlayers={
+    '日本社會人':[['投手','長野健大、梅田健太郎、中島隼也、生井惇己'],['野手','柴崎聖人、藤澤涼介、相羽寛太']],
+    '日職聯隊':[['投手','冨士大和、安德駿、宮國凌空、廣澤優'],['野手','青野拓海、山中稜真、庄子雄大']],
+    '台灣海洋':[['投手','邱立璿、韋宏亮、林原裕、李承鴻'],['野手','田子杰、林培緯、王念好、曾昱磬']],
+    '韓職聯隊':[['投手','朴埈佑、鄭㥥寯'],['野手','金賢晙、柳承旼']],
+    '台灣山林':[['投手','曾家輝'],['野手','張士綸、張仁瑋、楊祥禾']]
+  };
   const panel=document.querySelector('.home-main-panel'),section=document.getElementById('awbCompact');
   if(!panel||!section)return;
-  const body=document.getElementById('awbCompactBody'),buttons=[...section.querySelectorAll('[data-awb-tab]')];
+  const body=document.getElementById('awbCompactBody'),buttons=[...section.querySelectorAll('[data-awb-tab]')].filter(b=>b.dataset.awbTab!=='watch');
+  section.querySelector('[data-awb-tab="watch"]')?.remove();
   buttons.forEach(b=>{if(!b.id)b.id='awbTab'+b.dataset.awbTab});
-  const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const rows=entries=>'<div class="awb-data-list">'+entries.map(([name,team,value])=>'<div class="awb-data-row"><div><strong>'+esc(name)+'</strong><span>'+esc(team)+'</span></div><b>'+esc(value)+'</b></div>').join('')+'</div>';
-  const views={
-    standings:()=>'<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p style="font-size:11px;opacity:.6;margin:10px 0 0">2025 官方例行賽戰績 · 含官方統計場次</p>',
-    stats:()=>'<div class="awb-mini-title">打擊率 TOP 3</div>'+rows(batting)+'<div class="awb-mini-title awb-section-break">防禦率 TOP 3</div>'+rows(pitching),
-    teams:()=>rows(teams.map(([name,detail])=>[name,detail,'2025'])),
-    watch:()=>'<div class="awb-mini-title">2025 冬盟焦點</div>'+rows([['田子杰','台灣海洋 · 打擊王／安打王','AVG .417'],['王念好','台灣海洋 · 打點表現','11 RBI'],['曾家輝','台灣山林 · 三振表現','17 K']])+'<p style="font-size:11px;opacity:.6;margin:10px 0 0">母隊例行賽對照待資料來源確認後加入。</p>'
-  };
-  function select(tab){if(!tabs.includes(tab))return;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);body.innerHTML=views[tab]();}
-  buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
-  function sync(){
-    const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active');
-    const root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');
-    const show=!!active&&!!root;
-    section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);
-    if(show){document.getElementById('homeZoneNote')?.classList.add('hidden');}
+  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+  const official=(url,label)=>'<a class="awb-official-link" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>';
+  const ranking=entries=>'<div class="awb-data-list">'+entries.map((row,i)=>'<div class="awb-data-row"><div><strong>'+(i+1)+'. '+esc(row[0])+'</strong><span>'+esc(row[1])+'</span></div><b>'+esc(row[2])+'</b></div>').join('')+'</div>';
+  let current='standings',detail=null;
+  function render(){
+    if(current==='standings'){body.innerHTML='<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p class="awb-muted">2025 例行賽戰績</p>';return;}
+    if(current==='stats'){
+      const cat=categories.find(c=>c.id===detail);
+      if(cat){body.innerHTML='<button class="awb-back" type="button" data-awb-back>← 全部數據</button><h3 class="awb-detail-title">'+esc(cat.name)+' '+esc(cat.unit)+'</h3>'+ranking(cat.rows)+'<p class="awb-muted">此處顯示官方前五名，完整排名請開啟官方紀錄。</p>'+official('https://awb.cpbl.com.tw/stats/recordall','查看全部球員成績');}
+      else body.innerHTML='<div class="awb-categories">'+categories.map(c=>'<button class="awb-category" type="button" data-awb-category="'+c.id+'"><span>'+esc(c.name)+' <small>'+esc(c.unit)+'</small></span><strong>'+esc(c.rows[0][0])+'　'+esc(c.rows[0][2])+'</strong><span class="awb-chevron">›</span></button>').join('')+'</div>';
+      return;
+    }
+    const team=teams.find(t=>t[0]===detail);
+    if(team){
+      let partial=knownPlayers[team[0]]||[];
+      body.innerHTML='<button class="awb-back" type="button" data-awb-back>← 所有球隊</button><h3 class="awb-detail-title">'+esc(team[0])+'</h3><p class="awb-muted">'+esc(team[1])+'</p>'+partial.map(([position,names])=>'<div class="awb-roster-group"><b>'+esc(position)+'</b><div>'+names.split('、').map(n=>'<span>'+esc(n)+'</span>').join('')+'</div></div>').join('')+'<p class="awb-muted">以上為已核對的部分球員，並非完整登錄名單。</p>'+official('https://awb.cpbl.com.tw/team?TeamNo='+team[2],'查看官方完整球員名單');
+    } else body.innerHTML='<div class="awb-categories">'+teams.map(t=>'<button class="awb-category" type="button" data-awb-team="'+esc(t[0])+'"><span>'+esc(t[0])+'</span><strong>'+esc(t[1])+'</strong><span class="awb-chevron">›</span></button>').join('')+'</div>';
   }
-  const observer=new MutationObserver(sync);
-  for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
+  function select(tab){if(!['standings','stats','teams'].includes(tab))return;current=tab;detail=null;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);render();}
+  buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
+  body.addEventListener('click',event=>{const cat=event.target.closest('[data-awb-category]'),team=event.target.closest('[data-awb-team]'),back=event.target.closest('[data-awb-back]');if(cat)detail=cat.dataset.awbCategory;else if(team)detail=team.dataset.awbTeam;else if(back)detail=null;else return;render();body.scrollTop=0;});
+  function sync(){const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active'),root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');const show=!!active&&!!root;section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
+  const observer=new MutationObserver(sync);for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
   select('standings');sync();
 })();
 </script>
