@@ -30,8 +30,8 @@
       }
     }
 
-    leagueDailyGamesRequest = async function leagueDailyGamesRequestWithLiveInning(league, date) {
-      const games = await leagueDailyGamesRequestBeforeLiveInning(league, date);
+    leagueDailyGamesRequest = async function leagueDailyGamesRequestWithLiveInning(league, date, force = false) {
+      const games = await leagueDailyGamesRequestBeforeLiveInning(league, date, force);
       if (league !== 'NPB' || !Array.isArray(games) || !games.some(game => String(game?.status || '').toLowerCase() === 'live')) {
         return games;
       }
