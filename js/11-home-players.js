@@ -22,6 +22,10 @@
 
       els.homeUsLeagueSwitch?.classList.add('hidden');
 
+      const cpblRosterClosed = !international && !special && homeProCountry === 'TW' && !homeCpblRosterOpen;
+      els.homePage?.classList.toggle('cpbl-roster-closed', cpblRosterClosed);
+      els.homeCpblRosterBtn?.classList.toggle('active', !cpblRosterClosed && !international && !special && homeProCountry === 'TW' && homeCpblRosterOpen);
+      els.homeCpblRosterBtn?.setAttribute('aria-pressed', String(!cpblRosterClosed && !international && !special && homeProCountry === 'TW' && homeCpblRosterOpen));
       const cpbl = !international && !special && homeProCountry === 'TW';
       els.homeDailyGames?.classList.toggle('hidden', international || special);
       els.homeSpecialFilters?.classList.add('hidden');
