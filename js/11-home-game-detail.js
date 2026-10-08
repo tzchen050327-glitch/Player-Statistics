@@ -557,6 +557,28 @@
       if (currentPage === 'home') scheduleHomeDailyGamesAutoRefresh();
     }
 
+    function homeStarterHasSeasonStats(starter) {
+      const stats = starter?.stats || {};
+      // { year: 2026 } means the official starter was identified but no
+      // regular-season pitching record was resolved. Never treat it as data.
+      return ['games','starts','wins','losses','era','ip','so','whip']
+        .some(key => stats[key] !== null && stats[key] !== undefined && String(stats[key]).trim() !== '');
+    }
+
+    function homeStarterIdentity(starter) {
+      return String(starter?.fullName || starter?.name || '')
+        .normalize('NFKC').replace(/[・·.．\s-]/g, '').toLowerCase();
+    }
+
+    function homePreferStarter(primary, fallback) {
+      const name = homeStarterIdentity(primary);
+      if (!name) return fallback || null;
+      if (homeStarterIdentity(fallback) === name
+        && !homeStarterHasSeasonStats(primary)
+        && homeStarterHasSeasonStats(fallback)) return fallback;
+      return primary;
+    }
+
     function homeStarterStatItems(starter) {
       const stats = starter?.stats || {};
       const out = [];
@@ -582,7 +604,7 @@
       const meta = [
         starter?.number ? `#${starter.number}` : '',
         starter?.throws || '',
-        starter?.stats?.year ? `${starter.stats.year} 球季` : ''
+        starter?.stats?.year ? `${starter.stats.year} 例行賽` : ''
       ].filter(Boolean).join('｜');
       return `<article class="game-detail-starter-card">
         <div class="game-detail-starter-team">${escapeHtml(teamName || starter?.team || sideLabel)}</div>
@@ -660,8 +682,8 @@
       // The single-game detail is the same source used by landscape mode.
       // Prefer it so portrait overview can never disagree with landscape.
       return {
-        away: pregame?.awayStarter || apiStarters?.away || lineupPitcher('away') || null,
-        home: pregame?.homeStarter || apiStarters?.home || lineupPitcher('home') || null,
+        away: homePreferStarter(pregame?.awayStarter, apiStarters?.away) || lineupPitcher('away') || null,
+        home: homePreferStarter(pregame?.homeStarter, apiStarters?.home) || lineupPitcher('home') || null,
         source: pregame?.source || apiStarters?.source || ''
       };
     }
@@ -1608,8 +1630,8 @@
         activeHomeGameDetail.pregameCenter = {
           ...data,
           starters:{
-            away:detailPregame?.awayStarter || existing?.away || null,
-            home:detailPregame?.homeStarter || existing?.home || null,
+            away:homePreferStarter(detailPregame?.awayStarter, existing?.away),
+            home:homePreferStarter(detailPregame?.homeStarter, existing?.home),
             source:detailPregame?.source || existing?.source || ''
           }
         };
@@ -2100,8 +2122,8 @@
       if (pregame && activeHomeGameDetail?.pregameCenter) {
         const existing = activeHomeGameDetail.pregameCenter.starters || {};
         activeHomeGameDetail.pregameCenter.starters = {
-          away:existing?.away || pregame?.awayStarter || null,
-          home:existing?.home || pregame?.homeStarter || null,
+          away:homePreferStarter(pregame?.awayStarter, existing?.away),
+          home:homePreferStarter(pregame?.homeStarter, existing?.home),
           source:existing?.source || pregame?.source || ''
         };
       }
@@ -2398,7 +2420,7 @@
         }
         const detailStatus = String(detail?.status || '').toLowerCase();
         const supportsPregameStarters = league === 'CPBL' || league === 'NPB';
-        const starterHasStats = (starter) => Boolean(starter?.stats && Object.keys(starter.stats).some(key => String(starter.stats[key] ?? '').trim()));
+        const starterHasStats = homeStarterHasSeasonStats;
         const existingPregame = detail?.pregame || null;
         const npbNeedsStarterSnapshot = league === 'NPB' && (
           !starterHasStats(existingPregame?.awayStarter) ||
@@ -2415,7 +2437,13 @@
         );
         if (shouldLoadPregameStarters) {
           try {
-            detail.pregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
+            const freshPregame = await pregameStarterRequest(league, date, { ...game, ...(detail?.game || {}) });
+            detail.pregame = {
+              ...(existingPregame || {}),
+              ...freshPregame,
+              awayStarter:homePreferStarter(freshPregame?.awayStarter, existingPregame?.awayStarter),
+              homeStarter:homePreferStarter(freshPregame?.homeStarter, existingPregame?.homeStarter)
+            };
           } catch (pregameError) {
             if (!detail?.pregame) {
               detail.pregame = { awayStarter:null, homeStarter:null, error:pregameError?.message || '先發投手資料讀取失敗。' };
