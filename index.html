@@ -151,36 +151,22 @@
 
 
 
-          <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各聯盟時間">
+          <section id="homeTimeZonePanel" class="panel home-time-zone-panel" aria-label="各地時間">
             <div class="home-time-zone-head">
               <h2>各地時間</h2>
-              <span>點擊切換洲別／聯盟</span>
+              <span>點擊切換聯盟</span>
             </div>
-            <div id="homeTimeContinentSwitch" class="home-time-continent-switch" role="group" aria-label="職棒洲別">
-              <button class="home-time-continent-btn active" type="button" data-time-continent="ASIA" aria-pressed="true">亞洲職棒</button>
-              <button class="home-time-continent-btn" type="button" data-time-continent="AMERICA" aria-pressed="false">美洲職棒</button>
-            </div>
-            <div id="homeTimeAsiaList" class="home-time-zone-list" aria-label="亞洲職棒各聯盟時間">
+            <div class="home-time-zone-list">
               <button class="home-time-zone-card" type="button" data-time-zone-key="TW" aria-label="切換亞洲職棒、台灣中職">
-                <span class="home-time-zone-meta"><strong>台灣・中職</strong><span id="homeTimeDateTW"></span></span>
+                <span class="home-time-zone-meta"><strong>台灣</strong><span id="homeTimeDateTW"></span></span>
                 <time id="homeTimeTW">--:--</time>
               </button>
-              <button class="home-time-zone-card" type="button" data-time-zone-key="JP" aria-label="切換亞洲職棒、日本職棒">
-                <span class="home-time-zone-meta"><strong>日本・日職</strong><span id="homeTimeDateJP"></span></span>
-                <time id="homeTimeJP">--:--</time>
+              <button class="home-time-zone-card" type="button" data-time-zone-key="JP" aria-label="切換亞洲職棒、日本日職">
+                <span class="home-time-zone-meta"><strong>日本</strong><span id="homeTimeDateJPKR"></span></span>
+                <time id="homeTimeJPKR">--:--</time>
               </button>
-              <button class="home-time-zone-card" type="button" data-time-zone-key="KR" aria-label="切換亞洲職棒、韓國職棒">
-                <span class="home-time-zone-meta"><strong>韓國・韓職</strong><span id="homeTimeDateKR"></span></span>
-                <time id="homeTimeKR">--:--</time>
-              </button>
-              <button class="home-time-zone-card" type="button" data-time-zone-key="AWB" aria-label="切換亞洲職棒、亞洲冬季棒球聯盟">
-                <span class="home-time-zone-meta"><strong>台灣・冬盟</strong><span id="homeTimeDateAWB"></span></span>
-                <time id="homeTimeAWB">--:--</time>
-              </button>
-            </div>
-            <div id="homeTimeAmericaList" class="home-time-zone-list hidden" aria-label="美洲職棒各聯盟時間">
               <button class="home-time-zone-card" type="button" data-time-zone-key="US" aria-label="切換美洲職棒、美國職棒">
-                <span class="home-time-zone-meta"><strong>美國・美職</strong><span id="homeTimeDateUS"></span></span>
+                <span class="home-time-zone-meta"><strong>紐約</strong><span id="homeTimeDateUS"></span></span>
                 <time id="homeTimeUS">--:--</time>
               </button>
             </div>
