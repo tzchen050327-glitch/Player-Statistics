@@ -109,6 +109,7 @@
       advancedStatsPage: document.getElementById('advancedStatsPage'),
       advancedStatsPageContent: document.getElementById('advancedStatsPageContent'),
       homeAdvancedStatsBtn: document.getElementById('homeAdvancedStatsBtn'),
+      homeCpblRosterBtn: document.getElementById('homeCpblRosterBtn'),
       advancedStatsBackHomeBtn: document.getElementById('advancedStatsBackHomeBtn'),
       playerPage: document.getElementById('playerPage'),
       homeTemplateGrid: document.getElementById('homeTemplateGrid'),
@@ -230,6 +231,7 @@
     let homeSpecialGames = [];
     let homeProCountry = 'TW';
     let homeProContinent = 'ASIA';
+    let homeCpblRosterOpen = false;
     let homeUsLeague = 'MLB';
     let homeSpecialFilter = '';
     let homeInternationalEditionFilter = '';
