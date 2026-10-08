@@ -115,6 +115,7 @@
       homePlayerCount: document.getElementById('homePlayerCount'),
       homePlayerTitle: document.getElementById('homePlayerTitle'),
       homeZoneSwitch: document.getElementById('homeZoneSwitch'),
+      homeContinentSwitch: document.getElementById('homeContinentSwitch'),
       homeProCountrySwitch: document.getElementById('homeProCountrySwitch'),
       homeUsLeagueSwitch: document.getElementById('homeUsLeagueSwitch'),
       homeZoneNote: document.getElementById('homeZoneNote'),
@@ -228,6 +229,7 @@
     let homeRootSection = 'pro';
     let homeSpecialGames = [];
     let homeProCountry = 'TW';
+    let homeProContinent = 'ASIA';
     let homeUsLeague = 'MLB';
     let homeSpecialFilter = '';
     let homeInternationalEditionFilter = '';
