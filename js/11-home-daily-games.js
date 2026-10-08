@@ -79,6 +79,7 @@
           league:normalizedLeague,
           date:String(date||''),
           gameId:String(game?.id||''),
+          ...(normalizedLeague === 'CPBL' ? { kindCode:String(game?.kindCode||'A').toUpperCase() } : {}),
           away:String(game?.away||''),
           home:String(game?.home||'')
         })
