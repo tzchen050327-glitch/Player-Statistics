@@ -1,4 +1,6 @@
     const homePitcherRecordsCache = new Map();
+    const homePostseasonStarterCache = new Map();
+    const homePostseasonStarterLoading = new Set();
     const homeBullpenSessionCache = new Map();
     const homeUmpireReportCache = new Map();
     const homeUmpireReportFetchedAt = new Map();
@@ -220,6 +222,41 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.ok) throw new Error(data?.error || `先發投手資料讀取失敗（${response.status}）`);
       return data;
+    }
+
+    async function refreshHomePostseasonConfirmedStarters(league, date, game, key) {
+      if (league !== 'CPBL' || !['E','C'].includes(String(game?.kindCode || '').toUpperCase())) return;
+      if (!key || homePostseasonStarterLoading.has(key)) return;
+      if (homePostseasonStarterCache.has(key)) {
+        if (activeHomeGameDetail?.key === key) {
+          const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+          renderHomeGameDetail(detail, activeHomeGameDetail.game || game);
+        }
+        return;
+      }
+      homePostseasonStarterLoading.add(key);
+      try {
+        // Matchup overview may come from a separate, older cached response.
+        // Ask the same confirmed-starter API used by the game detail, with E/C
+        // explicitly supplied. Its pitcher stats refer to the regular season.
+        const pregame = await pregameStarterRequest(league, date, game);
+        if (!(pregame?.awayStarter?.name || pregame?.awayStarter?.fullName
+          || pregame?.homeStarter?.name || pregame?.homeStarter?.fullName)) return;
+        homePostseasonStarterCache.set(key, {
+          away:pregame.awayStarter || null,
+          home:pregame.homeStarter || null,
+          source:pregame.source || '',
+          updatedAt:Date.now()
+        });
+        if (activeHomeGameDetail?.key === key) {
+          const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
+          renderHomeGameDetail(detail, activeHomeGameDetail.game || game);
+        }
+      } catch (error) {
+        console.warn('[match-overview] postseason confirmed starters unavailable', error);
+      } finally {
+        homePostseasonStarterLoading.delete(key);
+      }
     }
 
     function homeGameDetailStatusLabel(detail) {
@@ -641,6 +678,7 @@
         league,
         date,
         gameId:String(game?.id || ''),
+        ...(league === 'CPBL' ? { kindCode:String(game?.kindCode || 'A').toUpperCase() } : {}),
         away:String(game?.away || ''),
         home:String(game?.home || ''),
         force:Boolean(force)
@@ -672,6 +710,9 @@
       const pregame = cachedDetail?.pregame || null;
       const lineups = cachedDetail?.lineups || null;
       const apiStarters = center?.starters || {};
+      const confirmedPostseason = activeHomeGameDetail
+        ? homePostseasonStarterCache.get(activeHomeGameDetail.key) || null
+        : null;
 
       const lineupPitcher = side => {
         const raw = lineups?.[side]?.pitcher || null;
@@ -682,9 +723,9 @@
       // The single-game detail is the same source used by landscape mode.
       // Prefer it so portrait overview can never disagree with landscape.
       return {
-        away: homePreferStarter(pregame?.awayStarter, apiStarters?.away) || lineupPitcher('away') || null,
-        home: homePreferStarter(pregame?.homeStarter, apiStarters?.home) || lineupPitcher('home') || null,
-        source: pregame?.source || apiStarters?.source || ''
+        away: homePreferStarter(confirmedPostseason?.away, homePreferStarter(pregame?.awayStarter, apiStarters?.away)) || lineupPitcher('away') || null,
+        home: homePreferStarter(confirmedPostseason?.home, homePreferStarter(pregame?.homeStarter, apiStarters?.home)) || lineupPitcher('home') || null,
+        source: confirmedPostseason?.source || pregame?.source || apiStarters?.source || ''
       };
     }
 
@@ -2534,6 +2575,7 @@
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
       void refreshHomeGameOverviewFromDaily(game, league, date, key);
+      void refreshHomePostseasonConfirmedStarters(league, date, game, key);
       refreshActiveHomeGameDetail();
     }
 
