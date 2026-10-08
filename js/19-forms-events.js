@@ -121,6 +121,7 @@
         homeProContinent = button.dataset.proContinent === 'AMERICA' ? 'AMERICA' : 'ASIA';
         if (homeProContinent === 'AMERICA') homeProCountry = 'US';
         else if (homeProCountry === 'US') homeProCountry = 'TW';
+        homeCpblRosterOpen = false;
         homeTeamFilter = '';
         applyHomeProSelection();
         renderRecentPlayers();
@@ -133,6 +134,7 @@
         homeProCountry = ['TW','US','JP','KR','AWB'].includes(country) ? country : 'TW';
         homeRootSection = 'pro';
         homeProContinent = homeProCountry === 'US' ? 'AMERICA' : 'ASIA';
+        homeCpblRosterOpen = false;
         homeTeamFilter = '';
         applyHomeProSelection();
         renderRecentPlayers();
@@ -1060,6 +1062,18 @@
       currentPage = 'home';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
+    });
+
+    els.homeCpblRosterBtn?.addEventListener('click', () => {
+      homeRootSection = 'pro';
+      homeProContinent = 'ASIA';
+      homeProCountry = 'TW';
+      homeCpblRosterOpen = true;
+      homeTeamFilter = '';
+      applyHomeProSelection();
+      currentPage = 'home';
+      renderAll();
+      els.recent?.scrollTo?.({ top:0, behavior:'instant' });
     });
 
     els.homeAdvancedStatsBtn?.addEventListener('click', () => {
