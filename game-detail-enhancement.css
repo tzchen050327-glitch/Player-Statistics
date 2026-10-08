@@ -906,3 +906,33 @@ html[data-theme="dark"] .game-batter-total{color:#cbd4dd;}
     letter-spacing:-.07em;
   }
 }
+
+/* ===== PITCHER RECORDS: TWO INDEPENDENT VERTICAL SCROLL AREAS =====
+   The active panel height is measured against the visible viewport in JS,
+   rather than subtracting a hard-coded header height from 100dvh.
+*/
+.match-center-panel.game-pitcher-panel{
+  box-sizing:border-box;
+  min-height:0;
+}
+.game-pitcher-panel .game-pitcher-page{
+  height:100%;
+  min-height:0;
+  box-sizing:border-box;
+}
+.game-pitcher-panel .pitcher-combined-page,
+.game-pitcher-panel .pitcher-combined-viewport,
+.game-pitcher-panel .pitcher-combined-track,
+.game-pitcher-panel .pitcher-combined-slide{
+  height:100%;
+  min-height:0;
+}
+.game-pitcher-panel .pitcher-combined-slide > .game-bullpen-panel{
+  height:100%;
+  min-height:0;
+  box-sizing:border-box;
+}
+.game-pitcher-panel .game-pitcher-scroll{
+  -webkit-overflow-scrolling:touch;
+}
+/* ===== END PITCHER RECORDS SPLIT VIEW ===== */
