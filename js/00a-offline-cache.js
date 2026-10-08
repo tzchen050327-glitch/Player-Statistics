@@ -125,9 +125,29 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
+  function dailyGamesTerminalState(text) {
+    try {
+      const games = JSON.parse(text || '{}')?.games;
+      if (!Array.isArray(games) || !games.length) return null;
+      const status = game => String(game?.status || '').toLowerCase();
+      const terminal = new Set(['final', 'cancelled', 'postponed']);
+      return {
+        allTerminal:games.every(game => terminal.has(status(game))),
+        hasLive:games.some(game => ['live', 'suspended', 'delayed'].includes(status(game)))
+      };
+    } catch { return null; }
+  }
+
   function classify(rule, text, requestText) {
-    const final = /"(?:status|gameStatus|state)"\s*:\s*"(?:final|finished|completed|complete|game[_ -]?over|ended|closed|比賽結束|結束)"/i.test(text);
-    const live = !final && /"(?:status|gameStatus|state)"\s*:\s*"(?:live|in[_ -]?progress|playing|game[_ -]?in[_ -]?progress|delay|delayed|suspended|比賽中|進行中)"/i.test(text);
+    // A completed game does not make an entire MLB/KBO/NPB/CPBL date final.
+    // Treat mixed FINAL + LIVE payloads as live, not seven-day history.
+    const daily = rule.kind === 'daily' ? dailyGamesTerminalState(text) : null;
+    const final = daily
+      ? daily.allTerminal
+      : /"(?:status|gameStatus|state)"\\s*:\\s*"(?:final|finished|completed|complete|game[_ -]?over|ended|closed|比賽結束|結束)"/i.test(text);
+    const live = daily
+      ? daily.hasLive
+      : !final && /"(?:status|gameStatus|state)"\\s*:\\s*"(?:live|in[_ -]?progress|playing|game[_ -]?in[_ -]?progress|delay|delayed|suspended|比賽中|進行中)"/i.test(text);
     const date = requestedDate(requestText);
     const historical = Boolean(date && date < today());
     let fresh = rule.fresh;
@@ -136,7 +156,7 @@
       else if (final) fresh = historical ? 30 * DAY : 5 * 60 * 1000;
       else fresh = 120000;
     }
-    if (rule.kind === 'daily') fresh = live ? 0 : (historical ? 7 * DAY : rule.fresh);
+    if (rule.kind === 'daily') fresh = live ? 0 : (historical && final ? 7 * DAY : rule.fresh);
     return { final, live, historical, fresh };
   }
 
@@ -207,9 +227,15 @@
   }
 
   function fresh(entry) {
+    // Repair old IndexedDB entries created by the mixed-game classification bug.
+    // Those entries incorrectly had live:false and a seven-day freshUntil.
+    const daily = entry?.kind === 'daily' ? dailyGamesTerminalState(entry.body || '') : null;
+    const unfinishedHistoric = Boolean(entry?.historical && daily && !daily.allTerminal);
     return Boolean(
       entry
       && !entry.live
+      && !daily?.hasLive
+      && !unfinishedHistoric
       && !cpblFinalDecisionCacheIncomplete(entry)
       && Date.now() <= Number(entry.freshUntil || 0)
     );
