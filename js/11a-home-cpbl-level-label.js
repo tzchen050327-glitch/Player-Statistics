@@ -6,7 +6,7 @@
     function homeCpblDisplayTeam(player) {
       const team = homePlayerTeam(player) || normalizeTeamName(player?.cpblTeam || '').replace(/二軍\s*$/, '').trim();
       if (!team) return '';
-      return homePlayerLevel(player) === 'D' ? `${team}二軍` : team;
+      return /二軍\s*$/.test(String(player?.cpblTeam || '')) || homePlayerLevel(player) === 'D' ? `${team}二軍` : team;
     }
 
     playerDisplayTeam = function playerDisplayTeamWithCpblLevel(player) {
