@@ -50,6 +50,26 @@
 .awb-compact-empty strong{font-size:14px}
 .awb-compact-empty span{max-width:25em;font-size:12px;line-height:1.5;opacity:.64}
 @media(max-width:580px){.awb-compact-heading{padding:9px 10px}.awb-compact-tabs{padding:0 7px 7px}.awb-compact-body{max-height:29dvh;min-height:110px;padding:9px}}
+
+.home-main-panel:has(#awbCompact:not(.hidden)) .home-player-head,
+.home-main-panel:has(#awbCompact:not(.hidden)) .home-player-actions,
+.home-main-panel:has(#awbCompact:not(.hidden)) #homeSpecialFilters,
+.home-main-panel:has(#awbCompact:not(.hidden)) #homeInternationalExplorer,
+.home-main-panel:has(#awbCompact:not(.hidden)) #homeSpecialGamesExplorer,
+.home-main-panel:has(#awbCompact:not(.hidden)) #recentPlayers,
+.home-main-panel:has(#awbCompact:not(.hidden)) #homeZoneNote{display:none!important}
+.awb-rank-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.awb-rank-table th,.awb-rank-table td{padding:8px 5px;text-align:right;border-bottom:1px solid rgba(127,145,169,.16)}
+.awb-rank-table th:nth-child(2),.awb-rank-table td:nth-child(2){text-align:left}
+.awb-rank-table th{opacity:.65;font-size:11px;font-weight:600}
+.awb-rank-table tr:first-child td{color:#e5bc68}
+.awb-data-list{display:grid;gap:7px}
+.awb-data-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid rgba(127,145,169,.2);border-radius:7px}
+.awb-data-row strong{font-size:13px}.awb-data-row span{font-size:11px;opacity:.68;display:block;margin-top:3px}
+.awb-data-row b{font-size:15px;font-variant-numeric:tabular-nums}
+.awb-mini-title{font-size:12px;font-weight:700;margin:0 0 7px}
+.awb-section-break{margin-top:12px}
+.awb-compact-body{max-height:min(44dvh,340px)}
 </style>
 </head>
 <body>
@@ -213,7 +233,7 @@
           <div id="homeDailyGames" class="home-daily-games" aria-live="polite"></div>
 
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
-            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2026</span></div><span class="awb-compact-season">冬盟</span></div>
+            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2025</span></div><span class="awb-compact-season">冬盟</span></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
               <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
@@ -654,33 +674,34 @@
   </dialog>
 <script id="awbCompactController">
 (() => {
-  const descriptions={
-    standings:['戰績資料尚未同步','待冬盟官方賽事資料確認後顯示排名、勝敗及勝率。'],
-    stats:['數據排行尚未同步','此處預留打者、投手排行；不使用未經驗證的示範數字。'],
-    teams:['參賽球隊名單尚未同步','後續依當年度官方名單列出球隊及球員母隊。'],
-    watch:['球員觀察尚未同步','後續顯示近五場表現與母隊例行賽對照。']
-  };
-  const panel=document.querySelector('.home-main-panel'), section=document.getElementById('awbCompact');
+  const standings=[
+    ['日本社會人','14-4-1','.778'],['日職聯隊','11-8-0','.579'],
+    ['台灣海洋','9-10-0','.474'],['韓職聯隊','4-7-1','.364'],['台灣山林','5-14-0','.263']
+  ];
+  const teams=[['日本社會人','例行賽第一／年度冠軍'],['日職聯隊','例行賽第二／年度亞軍'],['台灣海洋','例行賽第三／年度第四'],['韓職聯隊','例行賽第四／年度第五'],['台灣山林','例行賽第五／年度季軍']];
+  const batting=[['田子杰','台灣海洋','打擊率 .417'],['金賢晙','韓職聯隊','打擊率 .350'],['林培緯','台灣海洋','打擊率 .345']];
+  const pitching=[['冨士大和','日職聯隊','ERA 0.59'],['朴埈佑','韓職聯隊','ERA 0.82'],['中島隼也','日本社會人','ERA 1.20']];
+  const tabs=['standings','stats','teams','watch'];
+  const panel=document.querySelector('.home-main-panel'),section=document.getElementById('awbCompact');
   if(!panel||!section)return;
-  const buttons=[...section.querySelectorAll('[data-awb-tab]')],body=document.getElementById('awbCompactBody');
-  function select(tab){
-    if(!descriptions[tab])return;
-    buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));
-    const active=buttons.find(b=>b.dataset.awbTab===tab);
-    if(active?.id)body.setAttribute('aria-labelledby',active.id);
-    else {buttons.forEach(b=>{if(!b.id)b.id='awbTab'+b.dataset.awbTab});body.setAttribute('aria-labelledby',active.id)}
-    body.replaceChildren();
-    const inner=document.createElement('div');inner.className='awb-compact-empty';
-    const title=document.createElement('strong');title.textContent=descriptions[tab][0];
-    const detail=document.createElement('span');detail.textContent=descriptions[tab][1];
-    inner.append(title,detail);body.append(inner);
-  }
+  const body=document.getElementById('awbCompactBody'),buttons=[...section.querySelectorAll('[data-awb-tab]')];
+  buttons.forEach(b=>{if(!b.id)b.id='awbTab'+b.dataset.awbTab});
+  const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rows=entries=>'<div class="awb-data-list">'+entries.map(([name,team,value])=>'<div class="awb-data-row"><div><strong>'+esc(name)+'</strong><span>'+esc(team)+'</span></div><b>'+esc(value)+'</b></div>').join('')+'</div>';
+  const views={
+    standings:()=>'<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p style="font-size:11px;opacity:.6;margin:10px 0 0">2025 官方例行賽戰績 · 含官方統計場次</p>',
+    stats:()=>'<div class="awb-mini-title">打擊率 TOP 3</div>'+rows(batting)+'<div class="awb-mini-title awb-section-break">防禦率 TOP 3</div>'+rows(pitching),
+    teams:()=>rows(teams.map(([name,detail])=>[name,detail,'2025'])),
+    watch:()=>'<div class="awb-mini-title">2025 冬盟焦點</div>'+rows([['田子杰','台灣海洋 · 打擊王／安打王','AVG .417'],['王念好','台灣海洋 · 打點表現','11 RBI'],['曾家輝','台灣山林 · 三振表現','17 K']])+'<p style="font-size:11px;opacity:.6;margin:10px 0 0">母隊例行賽對照待資料來源確認後加入。</p>'
+  };
+  function select(tab){if(!tabs.includes(tab))return;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);body.innerHTML=views[tab]();}
   buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
   function sync(){
     const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active');
-    const asia=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');
-    const show=!!active&&!!asia;
+    const root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');
+    const show=!!active&&!!root;
     section.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);
+    if(show){document.getElementById('homeZoneNote')?.classList.add('hidden');}
   }
   const observer=new MutationObserver(sync);
   for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
