@@ -12955,9 +12955,11 @@ html[data-theme="dark"] .pregame-lineup-empty{color:#676f78}
   align-items:center;
   justify-content:center;
 }
-#homePage #homeZoneSwitch > button[data-home-root="pro"]{grid-column:1 !important}
-#homePage #homeZoneSwitch > button[data-home-root="international"]{grid-column:2 !important}
-#homePage #homeZoneSwitch > button[data-home-root="special"]{grid-column:3 !important}
+/* v8.89: eliminate stale three-column placement and anchor all four root tabs */
+#homePage #homeZoneSwitch > button[data-home-root="asia"]{grid-column:1 !important}
+#homePage #homeZoneSwitch > button[data-home-root="america"]{grid-column:2 !important}
+#homePage #homeZoneSwitch > button[data-home-root="international"]{grid-column:3 !important}
+#homePage #homeZoneSwitch > button[data-home-root="special"]{grid-column:4 !important}
 
 
 /* ===== PITCHER BATTER MATCHUP ===== */
@@ -16876,3 +16878,16 @@ select,
 #homePage #homeProCountrySwitch:has(> [data-pro-country="US"]:not(.hidden)){
   grid-template-columns:minmax(0,1fr) !important;
 }
+
+/* v8.89 enforce equal root tab tracks and unique grid cells in every view */
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch,
+#homePage.special-home-mode #homeZoneSwitch.home-zone-switch.home-root-switch{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-template-rows:42px !important;
+  grid-auto-flow:row !important;
+}
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="asia"]{grid-column:1 !important}
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="america"]{grid-column:2 !important}
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="international"]{grid-column:3 !important}
+#homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="special"]{grid-column:4 !important}
