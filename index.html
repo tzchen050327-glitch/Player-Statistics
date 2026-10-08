@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.00" />
+  <meta name="app-version" content="v9.01" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.00" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.00" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.00" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.00" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.01" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.01" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.01" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.01" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.00"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.00" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.00" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.00" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.00" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.00" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.00" />
+    <script src="./diagnostic-runtime.js?v=v9.01"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.01" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.01" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.01" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.01" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.01" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.01" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers{display:none!important}
 .awb-compact{min-width:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;margin-top:8px;border:1px solid var(--line,#394653);border-radius:12px;background:var(--surface,#121a24);color:var(--text,#e9eff5)}
@@ -105,13 +105,14 @@
 .awb-roster-group>div{display:flex;flex-wrap:wrap;gap:6px}
 .awb-roster-group span{padding:5px 9px;font-size:12px;border-radius:6px;background:rgba(127,145,169,.12)}
 @media(max-width:480px){.awb-categories{grid-template-columns:1fr}}
+.awb-season-select{background:transparent;color:inherit;border:1px solid rgba(127,145,169,.35);border-radius:7px;padding:5px 9px;font-weight:700}
 </style>
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.00" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.01" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -288,7 +289,7 @@
               </div>
             </section>
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
-            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · 2025</span></div><span class="awb-compact-season">冬盟</span></div>
+            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · <span id="awbSeasonLabel">2025</span></span></div><select id="awbSeasonSelect" class="awb-season-select" aria-label="選擇冬盟賽季"><option value="2025">2025</option><option value="2026">2026</option></select></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
               <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
@@ -487,7 +488,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.00</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.01</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -729,10 +730,10 @@
   </dialog>
 <script id="awbCompactController">
 (() => {
-  const standings=[['日本社會人','14-4-1','.778'],['日職聯隊','11-8-0','.579'],['台灣海洋','9-10-0','.474'],['韓職聯隊','4-7-1','.364'],['台灣山林','5-14-0','.263']];
-  const teams=[['日本社會人','例行賽第一／年度冠軍','ZZZ083'],['日職聯隊','例行賽第二／年度亞軍','ZZZ040'],['台灣海洋','例行賽第三／年度第四','ZZZ389'],['韓職聯隊','例行賽第四／年度第五','ZZZ041'],['台灣山林','例行賽第五／年度季軍','ZZZ379']];
+  let standings=[['日本社會人','14-4-1','.778'],['日職聯隊','11-8-0','.579'],['台灣海洋','9-10-0','.474'],['韓職聯隊','4-7-1','.364'],['台灣山林','5-14-0','.263']];
+  let teams=[['日本社會人','例行賽第一／年度冠軍','ZZZ083'],['日職聯隊','例行賽第二／年度亞軍','ZZZ040'],['台灣海洋','例行賽第三／年度第四','ZZZ389'],['韓職聯隊','例行賽第四／年度第五','ZZZ041'],['台灣山林','例行賽第五／年度季軍','ZZZ379']];
   // Verified 2025 official leaderboard entries; this snapshot is deliberately limited to top five.
-  const categories=[
+  let categories=[
     {id:'avg',name:'打擊率',unit:'AVG',rows:[['田子杰','台灣海洋','.417'],['金賢晙','韓職聯隊','.350'],['林培緯','台灣海洋','.345'],['張士綸','台灣山林','.341'],['山中稜真','日職聯隊','.340']]},
     {id:'hits',name:'安打',unit:'H',rows:[['田子杰','台灣海洋','25'],['柴崎聖人','日本社會人','23'],['曾昱磬','台灣海洋','20'],['張仁瑋','台灣山林','20'],['林培緯','台灣海洋','19']]},
     {id:'hr',name:'全壘打',unit:'HR',rows:[['青野拓海','日職聯隊','2'],['柳承旼','韓職聯隊','1'],['仲俣慎之輔','日本社會人','1'],['楊祥禾','台灣山林','1'],['下山悠介','日本社會人','1']]},
@@ -742,7 +743,7 @@
     {id:'saves',name:'救援成功',unit:'SV',rows:[['中島隼也','日本社會人','7'],['廣澤優','日職聯隊','7'],['韋宏亮','台灣海洋','4'],['権田琉成','日職聯隊','2'],['川合慎磨','日本社會人','1']]},
     {id:'strikeouts',name:'奪三振',unit:'SO',rows:[['長野健大','日本社會人','19'],['冨士大和','日職聯隊','18'],['曾家輝','台灣山林','17'],['宮國凌空','日職聯隊','17'],['中島隼也','日本社會人','16']]}
   ];
-  const knownPlayers={
+  let knownPlayers={
     '日本社會人':[['投手','長野健大、梅田健太郎、中島隼也、生井惇己'],['野手','柴崎聖人、藤澤涼介、相羽寛太']],
     '日職聯隊':[['投手','冨士大和、安德駿、宮國凌空、廣澤優'],['野手','青野拓海、山中稜真、庄子雄大']],
     '台灣海洋':[['投手','邱立璿、韋宏亮、林原裕、李承鴻'],['野手','田子杰、林培緯、王念好、曾昱磬']],
@@ -758,8 +759,37 @@
   const official=(url,label)=>'<a class="awb-official-link" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>';
   const ranking=entries=>'<div class="awb-data-list">'+entries.map((row,i)=>'<div class="awb-data-row"><div><strong>'+(i+1)+'. '+esc(row[0])+'</strong><span>'+esc(row[1])+'</span></div><b>'+esc(row[2])+'</b></div>').join('')+'</div>';
   let current='standings',detail=null;
+  const archive={standings,teams,categories,knownPlayers};
+  const picker=document.getElementById('awbSeasonSelect'),schedule=document.getElementById('awbSchedule'),oldSchedule=schedule?.innerHTML||'';
+  let year=2025,ready=true,error='';
+  const pending=()=>'<div class="awb-compact-empty"><strong>2026 冬盟資料待公布</strong><span>等待官方賽程、戰績、排行榜及完整登錄名單。不會套用 2025 資料。</span></div>'+(error?'<p class="awb-muted">'+esc(error)+'</p>':'');
+  async function setSeason(next){
+    year=Number(next)===2026?2026:2025;detail=null;error='';ready=year===2025;
+    standings=archive.standings;teams=archive.teams;categories=archive.categories;knownPlayers=archive.knownPlayers;
+    document.getElementById('awbSeasonLabel').textContent=String(year);
+    if(year===2025){if(schedule)schedule.innerHTML=oldSchedule;render();return;}
+    if(schedule)schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟 · 2026</span></div></div><div class="home-games-state">賽程尚未公布</div>';
+    render();
+    try {
+      const res=await fetch('./data/awb-2026.json',{cache:'no-store'});
+      if(!res.ok)throw Error('HTTP '+res.status);
+      const data=await res.json();
+      if(year!==2026)return;
+      if(data.season!==2026||!Array.isArray(data.games)||!Array.isArray(data.standings)||!Array.isArray(data.teams)||!Array.isArray(data.categories)||!data.knownPlayers||typeof data.knownPlayers!=='object')throw Error('新賽季資料格式不符');
+      if(!data.published)return;
+      standings=data.standings;teams=data.teams;categories=data.categories;knownPlayers=data.knownPlayers;ready=true;
+      if(schedule){
+        const cards=data.games.map(g=>'<article class="home-game-card status-'+esc(g.status||'scheduled')+'"><div class="home-game-card-top"><span class="home-game-status">'+esc(g.statusLabel||'未開打')+'</span></div><div class="home-game-team"><span class="home-game-team-name">'+esc(g.away||'客隊')+'</span><strong class="home-game-score">'+esc(g.awayScore??'—')+'</strong></div><div class="home-game-team"><span class="home-game-team-name">'+esc(g.home||'主隊')+'</span><strong class="home-game-score">'+esc(g.homeScore??'—')+'</strong></div><div class="home-game-venue"><span class="home-game-venue-name">'+esc(g.venue||'場地待公布')+'</span></div></article>').join('');
+        schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟</span></div><span class="awb-schedule-date">'+esc(data.displayDate||'2026')+'　'+data.games.length+' 場</span></div>'+(cards?'<div class="home-games-scroller awb-schedule-track">'+cards+'</div>':'<div class="home-games-state">所選日期無賽事</div>');
+      }
+    }catch(e){if(year===2026)error='資料讀取失敗：'+(e?.message||'未知錯誤');}
+    if(year===2026)render();
+  }
+  picker?.addEventListener('change',()=>setSeason(picker.value));
+
   function render(){
-    if(current==='standings'){body.innerHTML='<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p class="awb-muted">2025 例行賽戰績</p>';return;}
+    if(!ready){body.innerHTML=pending();return;}
+    if(current==='standings'){body.innerHTML='<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p class="awb-muted">'+year+' 例行賽戰績</p>';return;}
     if(current==='stats'){
       const cat=categories.find(c=>c.id===detail);
       if(cat){body.innerHTML='<button class="awb-back" type="button" data-awb-back>← 全部數據</button><h3 class="awb-detail-title">'+esc(cat.name)+' '+esc(cat.unit)+'</h3>'+ranking(cat.rows)+'<p class="awb-muted">此處顯示官方前五名，完整排名請開啟官方紀錄。</p>'+official('https://awb.cpbl.com.tw/stats/recordall','查看全部球員成績');}
@@ -780,6 +810,6 @@
   select('standings');sync();
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.00"></script>
+  <script src="./js/module-loader.js?v=v9.01"></script>
 </body>
 </html>
