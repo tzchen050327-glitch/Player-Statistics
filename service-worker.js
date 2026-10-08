@@ -149,6 +149,15 @@ self.addEventListener('fetch', event => {
 
   const request = event.request;
   const url = new URL(request.url);
+
+  // Bypass offline Cache Storage for live API responses and revision signals.
+  // They change during games and must not be replayed as static assets.
+  if (request.cache === 'no-store'
+      || url.hostname === 'statsapi.mlb.com'
+      || url.hostname.endsWith('.supabase.co')) {
+    event.respondWith(fetch(request, { cache:'no-store' }));
+    return;
+  }
   const isDocument = request.mode === 'navigate'
     || request.destination === 'document'
     || url.pathname.endsWith('/index.html');
