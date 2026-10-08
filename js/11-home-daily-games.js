@@ -188,6 +188,8 @@
     }
 
     function homeDailyGamesRefreshDelay(league, date, games = []) {
+      // An ongoing MLB game remains live even if its New York calendar date has rolled over.
+      if (league === 'MLB' && homeDailyGamesHasLive(games)) return 2 * 60 * 1000;
       if (String(date || '') !== homeDailyGamesLeagueToday(league)) return 0;
       if (homeDailyGamesHasLive(games)) {
         if (league === 'CPBL') return cpblAlignedRefreshDelay();
