@@ -34,21 +34,45 @@
         for (const player of linked) {
           const current = byAcnt.get(String(player.cpblAcnt));
           if (!current || current.rosterSource !== 'advanced-player-page-live-v3') continue;
-
-          if (current.team) player.cpblTeam = normalizeTeamName(current.team);
-          if (current.teamCode) player.cpblTeamCode = String(current.teamCode);
-          if (current.number) player.number = String(current.number);
           const level = String(current.level || '').toUpperCase();
-          if (level === 'A' || level === 'D') player.cpblCurrentLevel = level;
+          if (level !== 'A' && level !== 'D') continue;
 
-          const roleChanged = repairStoredCpblPlayerType(player, current.position || '');
+          // Store the current club and farm label together; keeping only the
+          // parent club loses an important recovery signal when cloud sync
+          // subsequently delivers an older cpblCurrentLevel.
+          const parentTeam = normalizeTeamName(
+            String(current.team || current.teamLabel || '').replace(/二軍\s*$/, '').trim()
+          );
+          if (!parentTeam) continue;
+          const teamLabel = level === 'D' ? parentTeam + '二軍' : parentTeam;
+          const teamCode = String(current.teamCode || player.cpblTeamCode || '').trim();
+          const uniform = String(current.number || player.number || '').trim();
+          const changed = player.cpblTeam !== teamLabel
+            || player.cpblCurrentLevel !== level
+            || String(player.cpblTeamCode || '') !== teamCode
+            || String(player.number || '') !== uniform
+            || player.cpblRosterSource !== 'advanced-player-page-live-v3';
+
+          player.cpblTeam = teamLabel;
+          if (teamCode) player.cpblTeamCode = teamCode;
+          if (uniform) player.number = uniform;
+          player.cpblCurrentLevel = level;
+          const roleChanged = current.position
+            ? repairStoredCpblPlayerType(player, current.position)
+            : false;
           player.cpblRosterSource = 'advanced-player-page-live-v3';
           player.cpblRosterUpdatedAt = Date.now();
 
           if (roleChanged && player.id === selectedPlayerId) {
             activatePlayerStatsProfile(player, selectedSeason, selectedLevel);
           }
-          await idbPut(STORES.players, player);
+          // Cloud sync uses updatedAt (not cpblRosterUpdatedAt) to resolve
+          // concurrent copies. Advance it for actual roster changes only.
+          // Skip unnecessary cloud writes when just refreshing the TTL.
+          if (changed || roleChanged) {
+            player.updatedAt = Date.now();
+            await idbPut(STORES.players, player);
+          }
         }
       } catch (error) {
         console.warn('目前一二軍名單更新失敗，沿用最近一次成功判定', error);
