@@ -1,4 +1,4 @@
-# JavaScript architecture — canonical modular source
+ # JavaScript architecture — canonical modular source
 
 `js/` is the maintainable source. Files are intentionally ordered and must be concatenated in `module-order.txt` order.
 
