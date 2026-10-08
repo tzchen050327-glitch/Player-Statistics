@@ -170,8 +170,25 @@
       return Math.max(250, 60 * 1000 - withinMinute + 25 * 1000);
     }
 
+    function homeDailyGamesLeagueToday(league) {
+      if (league === 'MLB') {
+        // MLB's official game date is America/New_York, which can still be
+        // yesterday in Taiwan while a postseason game is actively playing.
+        // Using Taiwan's local date here stops the live refresh after midnight.
+        try {
+          const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit'
+          }).formatToParts(new Date());
+          const value = type => parts.find(part => part.type === type)?.value || '';
+          const nyDate = `${value('year')}-${value('month')}-${value('day')}`;
+          if (/^\d{4}-\d{2}-\d{2}$/.test(nyDate)) return nyDate;
+        } catch {}
+      }
+      return localISODate();
+    }
+
     function homeDailyGamesRefreshDelay(league, date, games = []) {
-      if (String(date || '') !== localISODate()) return 0;
+      if (String(date || '') !== homeDailyGamesLeagueToday(league)) return 0;
       if (homeDailyGamesHasLive(games)) {
         if (league === 'CPBL') return cpblAlignedRefreshDelay();
         // MLB games span much more of the day, so poll it less aggressively.
