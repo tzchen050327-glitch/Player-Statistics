@@ -24,8 +24,8 @@
   }
 
   const previousRequest = leagueDailyGamesRequest;
-  leagueDailyGamesRequest = async function leagueDailyGamesRequestWithCpblInning(league, date) {
-    const games = await previousRequest(league, date);
+  leagueDailyGamesRequest = async function leagueDailyGamesRequestWithCpblInning(league, date, force = false) {
+    const games = await previousRequest(league, date, force);
     if (String(league || '').toUpperCase() !== 'CPBL' || !Array.isArray(games) || !games.length) return games;
     const labels = await liveLabels(date);
     if (!labels.size) return games;
