@@ -238,6 +238,71 @@
       }
     }
 
+    // CPBL one-team player-page split cache. Stored only on this device.
+    const playerSplitInflight = new Map();
+    let playerSplitGroup = '10';
+    function playerSplitKey(player, year) {
+      return 'advanced:cpbl:' + player.cpblAcnt + ':' + year + ':' + (player.type === 'pitcher' ? '02' : '01');
+    }
+    async function preloadPlayerSplits(player, year = CURRENT_YEAR) {
+      if (!player?.cpblAcnt || playerScope(player) !== 'cpbl') return [];
+      const key = playerSplitKey(player, year);
+      if (playerSplitInflight.has(key)) return playerSplitInflight.get(key);
+      const task = (async () => {
+        let old = null;
+        try { old = await idbGet(STORES.games, key); } catch {}
+        // The official advanced-splits endpoint is regular-season-only:
+        // preserve finalized regular-season rows locally, including playoff clubs.
+        const closed = Number(year) < CURRENT_YEAR ||
+          (Number(year) === 2026 && localISODate() >= '2026-10-09');
+        const ttl = closed ? 30 * 24 * 60 * 60 * 1000 : 30 * 60 * 1000;
+        if (Array.isArray(old?.rows) && Date.now() - Number(old.fetchedAt || 0) < ttl) return old.rows;
+        try {
+          const result = await cpblRequest('advanced-splits', {
+            acnt:player.cpblAcnt, year, kindCode:'A',
+            position:player.type === 'pitcher' ? '02' : '01'
+          });
+          const rows = Array.isArray(result?.splits?.rows) ? result.splits.rows : [];
+          if (rows.length) {
+            try { await idbPut(STORES.games, {key, rows, fetchedAt:Date.now()}); }
+            catch (e) { console.warn('進階數據本機儲存失敗', e); }
+          }
+          return rows.length ? rows : (old?.rows || []);
+        } catch(e) {
+          if (Array.isArray(old?.rows)) return old.rows;
+          throw e;
+        }
+      })();
+      playerSplitInflight.set(key, task);
+      try { return await task; } finally { playerSplitInflight.delete(key); }
+    }
+    async function renderPlayerSplits(player) {
+      const host = els.content;
+      const id = player.id, year = Number(selectedSeason) || CURRENT_YEAR;
+      host.innerHTML = '<h2>' + escapeHtml(player.name) + '｜進階數據</h2><div class="player-tools-empty">正在讀取分項成績…</div>';
+      try {
+        const rows = await preloadPlayerSplits(player, year);
+        if (currentPage !== 'player' || selectedPlayerId !== id || selectedTab !== 'advanced' || Number(selectedSeason) !== year) return;
+        const groups = ADVANCED_STATS_GROUPS.filter(([code]) => rows.some(row => String(row.ItemGroupCode) === code));
+        if (!groups.some(([code]) => code === playerSplitGroup)) playerSplitGroup = groups[0]?.[0] || '10';
+        const selected = rows.filter(row => String(row.ItemGroupCode) === playerSplitGroup);
+        host.innerHTML = '<h2>' + escapeHtml(player.name) + '｜' + year + ' 一軍進階數據</h2>' +
+          '<div class="advanced-stats-group-tabs">' + groups.map(([code,label]) =>
+            '<button type="button" data-player-split="' + code + '" class="' + (playerSplitGroup === code ? 'active' : '') + '">' + escapeHtml(label) + '</button>'
+          ).join('') + '</div>' +
+          (selected.length ? (player.type === 'pitcher' ? advancedStatsPitcherTable(selected) : advancedStatsHitterTable(selected))
+            : '<div class="player-tools-empty">目前沒有此球員的官方分項成績。</div>') +
+          '<div class="advanced-stats-source">CPBL 官方一軍例行賽分項成績</div>';
+        host.querySelectorAll('[data-player-split]').forEach(btn => btn.addEventListener('click', () => {
+          playerSplitGroup = btn.dataset.playerSplit;
+          void renderPlayerSplits(player);
+        }));
+      } catch(e) {
+        if (currentPage === 'player' && selectedPlayerId === id && selectedTab === 'advanced')
+          host.innerHTML = '<div class="player-tools-error">進階數據讀取失敗：' + escapeHtml(e?.message || '請稍後重試') + '</div>';
+      }
+    }
+
     function advancedStatsHitterTable(rows) {
       return `
         <div class="advanced-stats-table-wrap">
