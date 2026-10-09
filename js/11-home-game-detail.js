@@ -535,10 +535,24 @@
       return true;
     }
 
+    function homeProtectLiveFromScheduled(detail, game, league = 'CPBL') {
+      if (!detail || league !== 'CPBL') return detail;
+      const incoming = String(detail.status || '').toLowerCase();
+      const known = String(game?.status || '').toLowerCase();
+      if (!['scheduled','pregame',''].includes(incoming) || !['live','final','suspended'].includes(known)) return detail;
+      const sourceGame = detail.game || {};
+      const nextGame = {...sourceGame, status:known,
+        awayScore:Number.isFinite(Number(game.awayScore)) ? Number(game.awayScore) : sourceGame.awayScore,
+        homeScore:Number.isFinite(Number(game.homeScore)) ? Number(game.homeScore) : sourceGame.homeScore,
+        inningLabel:game.inningLabel || sourceGame.inningLabel || ''};
+      return {...detail, status:known, game:nextGame};
+    }
+
     function syncHomeDailyGameFromDetail(league, date, game, detail) {
       const info = detail?.game || {};
       const awayRuns = detailRunsFromScoreboard(detail, 'away');
       const homeRuns = detailRunsFromScoreboard(detail, 'home');
+      detail = homeProtectLiveFromScheduled(detail, game, league);
       const normalizedStatus = String(detail?.status || '').toLowerCase();
       const apply = target => {
         if (!target) return;
@@ -2154,6 +2168,7 @@
     window.visualViewport?.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
 
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
+      detail = homeProtectLiveFromScheduled(detail, game, activeHomeGameDetail?.league);
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
       if (!body) return;
@@ -2631,6 +2646,10 @@
       if (expectedId && incomingId && expectedId !== incomingId) return;
       if (expectedKind !== incomingKind) return;
       const key = homeGameDetailKey('CPBL', date, game);
+      const normalized = homeProtectLiveFromScheduled(detail, game, 'CPBL');
+      const previous = homeGameDetailCache.get(key)?.detail;
+      if (previous && JSON.stringify(previous) === JSON.stringify(normalized)) return;
+      detail = normalized;
       homeGameDetailCache.set(key, { at:Date.now(), detail });
       homeGameDetailErrorStreak = 0;
       syncHomeDailyGameFromDetail('CPBL', date, game, detail);
