@@ -194,8 +194,17 @@
         return today >= start;
       }
       if (leagueHubLeague === 'npb') {
-        const start = ({ 2026:'2026-10-10' })[CURRENT_YEAR] || `${CURRENT_YEAR}-10-08`;
-        return today >= start;
+        // NPB regular season is 143 games per club. Switch as soon as both
+        // leagues have completed their schedules, not on the CS opening date.
+        const central = postseasonSectionRows(standingsOfficialCache?.npb?.central, 99);
+        const pacific = postseasonSectionRows(standingsOfficialCache?.npb?.pacific, 99);
+        const completed = rows => rows.length >= 6 &&
+          rows.every(row => Number(row?.games) >= 143);
+        if (completed(central) && completed(pacific)) return true;
+        // The official 2026 regular-season finale was on 10/08. This fallback
+        // only covers temporarily unavailable standings data after the finale.
+        if (String(CURRENT_YEAR) === '2026' && today >= '2026-10-09') return true;
+        return false;
       }
       if (leagueHubLeague === 'kbo') {
         const rows = postseasonSectionRows(standingsOfficialCache?.kbo?.regular,5);
