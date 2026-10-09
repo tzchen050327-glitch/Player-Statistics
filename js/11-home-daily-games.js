@@ -429,7 +429,26 @@
           games = (Array.isArray(games) ? games : []).filter(game => String(game?.kindCode || 'A').toUpperCase() !== 'D');
         }
 
-        // Outer cards use only the daily schedule feed. Single-game detail is fetched only after the user opens a game.
+        // Keep the more precise half-inning from an already opened live game.
+        // The daily feed can report "3局" while the published detail says "3局下".
+        if (league === 'CPBL') {
+          for (const game of games) {
+            const previous = (cached?.games || []).find(old =>
+              String(old?.id || '') === String(game?.id || '')
+              && String(old?.kindCode || 'A') === String(game?.kindCode || 'A'));
+            const detailKey = typeof homeGameDetailKey === 'function'
+              ? homeGameDetailKey(league, date, game) : '';
+            const detailed = detailKey ? homeGameDetailCache?.get(detailKey)?.detail?.game : null;
+            const candidates = [previous?.inningLabel, detailed?.inningLabel].map(v => String(v || '').trim());
+            const current = String(game?.inningLabel || '').trim();
+            const currentNumber = Number(current.match(/^(\\d+)局/)?.[1] || 0);
+            const precise = candidates.find(v => {
+              const match = v.match(/^(\\d+)局[上下]$/);
+              return match && Number(match[1]) === currentNumber;
+            });
+            if (precise && !/局[上下]$/.test(current)) game.inningLabel = precise;
+          }
+        }
 
         homeDailyGamesCache.set(key, { at:Date.now(), games, error:'' });
         return games;
