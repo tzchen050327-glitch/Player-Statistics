@@ -1299,7 +1299,7 @@
       const inningsToOuts = (value) => {
         const text = String(value ?? '').trim();
         if (!text) return 0;
-        const match = text.match(/^(\d+)(?:\.([12]))?$/);
+        const match = text.match(/^(\d+)(?:\.([012]))?$/);
         if (!match) return 0;
         return Number(match[1]) * 3 + Number(match[2] || 0);
       };
@@ -1361,7 +1361,7 @@
         const awayScore = Number(gameInfo?.awayScore ?? detail?.game?.awayScore);
         const homeScore = Number(gameInfo?.homeScore ?? detail?.game?.homeScore);
         const finalStatus = String(detail?.status || gameInfo?.status || '').toLowerCase() === 'final';
-        const fractionalIp = totals && /\\.[12]$/.test(String(totals[0] || ''));
+        const fractionalIp = totals && /\.[12]$/.test(String(totals[0] || ''));
         const walkoffNote = side === 'away' && finalStatus && fractionalIp
           && Number.isFinite(awayScore) && Number.isFinite(homeScore) && homeScore > awayScore
           ? '<em class="game-pitcher-total-note">再見結束</em>'
