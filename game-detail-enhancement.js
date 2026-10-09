@@ -1306,7 +1306,13 @@
     };
     return {
       name:name||'投手資料讀取中',
-      pitches:stat(currentStats.pitches,currentStats.pitchCount,directStats.pitches,directStats.pitchCount,starterStats.pitches,starterStats.pitchCount),
+      pitches:(()=>{
+        const same=(player)=>{const n=compactName(player?.fullName||player?.name||'');return !!n&&!!name&&samePlayerName(n,name);};
+        if(same(current))return stat(currentStats.pitches,currentStats.pitchCount,currentStats.pitchCnt,current.pitches,current.pitchCount,current.pitchCnt);
+        if(same(direct))return stat(directStats.pitches,directStats.pitchCount,directStats.pitchCnt);
+        if(same(starter))return stat(starterStats.pitches,starterStats.pitchCount,starterStats.pitchCnt);
+        return '';
+      })(),
       ip:stat(currentStats.ip,currentStats.innings,directStats.ip,directStats.innings,starterStats.ip,starterStats.innings),
       hits:stat(currentStats.hits,currentStats.h,directStats.hits,directStats.h,starterStats.hits,starterStats.h),
       homeRuns:stat(currentStats.homeRuns,currentStats.hr,directStats.homeRuns,directStats.hr,starterStats.homeRuns,starterStats.hr),
@@ -1398,7 +1404,7 @@
     const stats=current.stats||current;
     return {
       name:compactName(current.fullName||current.name||current.playerName||fallback.name||'')||'投手資料讀取中',
-      pitches:safeCell(stats.pitches??stats.pitchCount??stats.pitchCnt??fallback.pitches??'')
+      pitches:(()=>{const raw=safeCell(stats.pitches??stats.pitchCount??stats.pitchCnt??'');return raw&&raw!=='—'?raw:(samePlayerName(compactName(current.fullName||current.name||''),fallback.name)?fallback.pitches:'');})()
     };
   }
 
