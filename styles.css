@@ -17086,22 +17086,3 @@ html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
   pointer-events:none !important;
 }
 
-/* Mobile homepage: use full-width content instead of a 26% / 74% squeezed split. */
-@media(max-width:640px){
-#homePage{overflow:visible!important}
-#homePage .home-layout{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;height:auto!important;min-height:0!important;overflow:visible!important;gap:9px!important}
-#homePage .home-sidebar{display:flex!important;flex-direction:row!important;gap:7px!important;align-items:stretch!important;width:100%!important;height:auto!important;min-height:0!important;overflow-x:auto!important;overflow-y:hidden!important;padding-bottom:4px!important}
-#homePage .home-sidebar>*{flex-shrink:0!important}
-#homePage .home-sidebar .home-background-panel{flex:0 0 125px!important;width:125px!important;height:80px!important;min-height:80px!important;overflow:hidden!important;padding:8px!important}
-#homePage .home-sidebar .home-background-panel .home-template-grid,#homePage .home-sidebar .home-background-panel .home-template-dots{display:none!important}
-#homePage .home-sidebar .home-background-panel .home-card-title h2{font-size:12px!important}
-#homePage .home-sidebar .home-standings-entry{flex:0 0 112px!important;width:112px!important;min-width:112px!important;height:80px!important;min-height:80px!important;margin:0!important;padding:7px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;text-align:center!important}
-#homePage .home-sidebar .home-standings-entry strong{font-size:11px!important;white-space:nowrap!important}
-#homePage .home-sidebar .home-time-zone-panel{flex:0 0 160px!important;width:160px!important;max-height:80px!important;overflow-y:auto!important;margin:0!important;padding:5px!important}
-#homePage .home-main-panel{box-sizing:border-box!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;height:auto!important;max-height:none!important;overflow:visible!important;display:flex!important;flex-direction:column!important;padding:12px!important;scrollbar-gutter:auto!important}
-#homePage #recentPlayers{flex:0 0 auto!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}
-}
-@media(min-width:641px){
-#homePage .home-main-panel.awb-mode #homeZoneSwitch{position:sticky;top:0;z-index:12;background:var(--surface,#111820)}
-#homePage .home-main-panel.awb-mode #homeProCountrySwitch{position:sticky;top:48px;z-index:11;background:var(--surface,#111820)}
-}
