@@ -2168,6 +2168,9 @@
     window.visualViewport?.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
 
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
+      // Async responses can arrive after the user has closed the overlay.
+      // Rendering must never reopen a closed matchup center.
+      if (!activeHomeGameDetail) return;
       detail = homeProtectLiveFromScheduled(detail, game, activeHomeGameDetail?.league);
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
