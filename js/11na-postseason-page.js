@@ -410,7 +410,7 @@
           '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF SERIES</div><div class="postseason-round-series">' +
             postseasonMatchCard('季後挑戰賽', playoffA, playoffB,
               playoffA && playoffB ? postseasonEscape(playoffA) + '帶 1 勝優勢' : '待定',
-              { seriesScore: postseasonCpblSeriesScore(playoffA, playoffB), format: '4戰3勝制｜' + playoffA + '先帶1勝' }) +
+              { seriesScore: postseasonCpblSeriesScore(playoffA, playoffB), format: '4戰3勝制｜' + playoffA + '先帶1勝' + (postseasonCpblFetchError ? '｜戰績更新失敗' : (!postseasonCpblOfficialWins && !postseasonCpblResults.length ? '｜戰績同步中' : '')) }) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
             postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '', {format:'7戰4勝制'}) +
