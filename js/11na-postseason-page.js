@@ -296,7 +296,7 @@
       // Read finalized playoff games from one shared backend database query.
       // Do not fetch each day's schedule or request game details per viewer.
       postseasonCpblResultsPromise = (async () => {
-        const response = await fetch(LEAGUE_GAMES_A_API_URL, {
+        const response = await fetch('https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-playoff-series-results', {
           method:'POST',
           headers:{'content-type':'application/json'},
           body:JSON.stringify({appKey:CPBL_APP_KEY,action:'cpbl-playoff-series',year:String(CURRENT_YEAR)})
