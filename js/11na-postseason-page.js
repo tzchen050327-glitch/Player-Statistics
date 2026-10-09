@@ -286,6 +286,8 @@
     }
 
     let postseasonCpblResults = [];
+    let postseasonCpblOfficialWins = null;
+    let postseasonCpblFetchError = '';
     let postseasonCpblResultsAt = 0;
     let postseasonCpblResultsPromise = null;
     const POSTSEASON_CPBL_RESULT_TTL = 90 * 1000;
@@ -305,11 +307,17 @@
         if (!response.ok || data?.ok !== true) throw new Error(data?.error || '季後賽系列戰績讀取失敗');
         const next = Array.isArray(data.games) ? data.games : [];
         postseasonCpblResults = next;
+        postseasonCpblOfficialWins = data.wins && typeof data.wins === 'object' ? data.wins : null;
+        postseasonCpblFetchError = '';
         postseasonCpblResultsAt = Date.now();
         if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') { renderPostseasonPage(); updateCpblSeriesScoreDom(); }
         return next;
       })().catch(error => {
+        postseasonCpblFetchError = String(error?.message || error);
         console.warn('CPBL playoff series results', error);
+        if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') {
+          updateCpblSeriesScoreDom();
+        }
         return postseasonCpblResults;
       }).finally(() => { postseasonCpblResultsPromise = null; });
       return postseasonCpblResultsPromise;
@@ -330,34 +338,39 @@
       const a = teams[0].querySelector('strong')?.textContent || '';
       const b = teams[1].querySelector('strong')?.textContent || '';
       const score = postseasonCpblSeriesScore(a,b);
+      if (postseasonCpblFetchError) round.setAttribute('data-series-fetch-error',postseasonCpblFetchError);
+      else round.removeAttribute('data-series-fetch-error');
       teams[0].querySelector('b')?.replaceChildren(document.createTextNode(String(score[0])));
       teams[1].querySelector('b')?.replaceChildren(document.createTextNode(String(score[1])));
     }
     function postseasonCpblSeriesScore(a,b) {
-      const score = [1,0];
-      const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\s/g,'').trim();
-      // The homepage already keeps the final CPBL score in its shared daily cache.
-      // Use it immediately while the series endpoint request completes.
-      const cachedGames = [];
-      if (typeof homeDailyGamesCache !== 'undefined') {
+      const normalize = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\\s/g, '').trim();
+      const fromApi = postseasonCpblOfficialWins;
+      if (fromApi) {
+        const countFor = name => Object.entries(fromApi).reduce((sum,[team,count]) => sum + (normalize(team) === normalize(name) ? (Number(count) || 0) : 0),0);
+        return [1 + countFor(a), countFor(b)];
+      }
+      // While loading, do not mistake the pre-series advantage for a current score.
+      const merged = new Map();
+      if (typeof homeDailyGamesCache !== 'undefined' && homeDailyGamesCache?.values) {
         for (const entry of homeDailyGamesCache.values()) {
-          if (!Array.isArray(entry?.games)) continue;
-          cachedGames.push(...entry.games.filter(g => String(g?.kindCode || '').toUpperCase() === 'E'));
+          for (const game of (Array.isArray(entry?.games) ? entry.games : [])) {
+            if (String(game?.kindCode || '').toUpperCase() === 'E' && game.status === 'final')
+              merged.set(String(game.date || '') + '|' + String(game.id || ''), game);
+          }
         }
       }
-      const uniqueGames = new Map();
-      for (const g of [...cachedGames, ...postseasonCpblResults]) {
-        if (String(g?.status || '').toLowerCase() !== 'final') continue;
-        uniqueGames.set(String(g?.date || '') + '|' + String(g?.id || ''), g);
+      for (const game of postseasonCpblResults) {
+        if (game.status === 'final') merged.set(String(game.date || '') + '|' + String(game.id || ''),game);
       }
-      for (const g of uniqueGames.values()) {
-        if (String(g?.status || '').toLowerCase() !== 'final') continue;
-        const away = cleanName(g.away), home = cleanName(g.home);
-        if (!((away === cleanName(a) && home === cleanName(b)) || (away === cleanName(b) && home === cleanName(a)))) continue;
-        const ar = Number(g.awayScore), hr = Number(g.homeScore);
-        if (!Number.isFinite(ar) || !Number.isFinite(hr) || ar === hr || g.awayScore == null || g.homeScore == null) continue;
-        if (ar > hr) score[away === cleanName(a) ? 0 : 1]++;
-        else score[home === cleanName(a) ? 0 : 1]++;
+      const score=[1,0];
+      for(const game of merged.values()) {
+        const away=normalize(game.away),home=normalize(game.home);
+        if(!((away===normalize(a)&&home===normalize(b))||(away===normalize(b)&&home===normalize(a))))continue;
+        const aw=Number(game.awayScore),hw=Number(game.homeScore);
+        if(!Number.isFinite(aw)||!Number.isFinite(hw)||aw===hw)continue;
+        if(aw>hw)score[away===normalize(a)?0:1]++;
+        else score[home===normalize(a)?0:1]++;
       }
       return score;
     }
