@@ -272,23 +272,6 @@
 
     async function syncPlayerCpblHistory(player, onProgress = null) {
       if (!player?.cpblAcnt) return;
-      // Reuse completed local CPBL season snapshots when their TTL remains
-      // valid. Teams still potentially in the playoffs retain short TTLs.
-      const ttl = typeof playerAdvancedCacheTtl === 'function'
-        ? playerAdvancedCacheTtl(player, CURRENT_YEAR) : 15 * 60 * 1000;
-      const offlineReady = player.cpblHistorySynced?.A === true &&
-        player.cpblHistorySynced?.D === true &&
-        availableSeasonYears(player, 'A').length > 0 &&
-        Number(player.cpblLocalHistorySnapshotAt || 0) > 0 &&
-        Date.now() - Number(player.cpblLocalHistorySnapshotAt) < ttl;
-      if (offlineReady) {
-        onProgress?.(93, '已載入手機端例行賽數據');
-        return {
-          partialErrors: [],
-          majorYears: availableSeasonYears(player, 'A'),
-          minorYears: availableSeasonYears(player, 'D')
-        };
-      }
 
       const report = (percent, status) => {
         try { onProgress?.(percent, status); } catch {}
@@ -324,7 +307,6 @@
       }
 
       report(92, '正在儲存球員資料…');
-      if (!errors.length) player.cpblLocalHistorySnapshotAt = Date.now();
       await savePlayer(player);
       report(97, `一軍 ${majorYears.length} 季／二軍 ${minorYears.length} 季`);
 
