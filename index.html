@@ -888,7 +888,7 @@
           '<div class="awb-history-section-head"><strong>參賽隊伍</strong><span>'+count+' TEAMS</span></div>'+
           '<div class="awb-history-team-pills">'+record.teams.map(t=>'<span class="'+(t===record.champion?'is-champion':'')+'">'+esc(t)+(t===record.champion?' · 冠軍':'')+'</span>').join('')+'</div>'+
           '<div class="awb-history-notice"><strong>歷史資料整理中</strong><p>目前收錄冠軍及參賽隊伍。逐場比分、完整戰績與球員數據尚未匯入。</p>'+link+'</div>';
-      }else if(current==='teams'){
+      }else if(current==='stats'){
         body.innerHTML='<div class="awb-history-section-head"><strong>'+year+' 參賽隊伍</strong><span>'+count+' TEAMS</span></div><div class="awb-history-team-grid">'+record.teams.map(t=>'<div class="awb-history-team-card '+(t===record.champion?'is-champion':'')+'"><span class="awb-history-team-monogram">'+esc(t.slice(0,1))+'</span><div><strong>'+esc(t)+'</strong><small>'+(t===record.champion?'年度冠軍':'參賽隊伍')+'</small></div>'+(t===record.champion?'<span class="awb-history-crown">冠軍</span>':'')+'</div>').join('')+'</div><p class="awb-muted">本頁為參賽隊伍概覽；個別球員名單尚未匯入。</p>'+link;
       }else{
         const rows=[['年度冠軍',true],['參賽隊伍',true],['逐場比分',false],['逐隊戰績',false],['球員名單',false],['完整排行榜',false]];
