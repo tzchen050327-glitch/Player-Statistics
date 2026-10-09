@@ -16908,7 +16908,7 @@ select,
 #homePage #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="special"]{grid-column:4 !important}
 
 
-/* v9.09 splash-only presentation. This does not affect the application loader. */
+/* v9.10 splash-only presentation. This does not affect the application loader. */
 #appUpdateOverlay.app-update-overlay{
   box-sizing:border-box!important;
   position:fixed!important;
@@ -17076,4 +17076,12 @@ html.skip-startup-splash-frame #appUpdateOverlay .app-splash-progress{margin:0!i
   #appUpdateOverlay .sync-progress-card.app-splash{padding:25px 21px 20px!important;border-radius:15px!important}
   #appUpdateOverlay .app-splash-subtitle{margin-bottom:21px!important;font-size:9px!important}
   #appUpdateOverlay .app-splash-mark{height:59px!important;width:59px!important;min-height:59px!important;min-width:59px!important}
+}
+
+/* v9.10: hidden must win over the v9.10 centered splash display rule. */
+#appUpdateOverlay.app-update-overlay.hidden,
+html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
 }
