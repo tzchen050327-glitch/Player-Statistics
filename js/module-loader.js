@@ -102,13 +102,33 @@
   }
 
   function loadClassicScript(path) {
-    return new Promise((resolve, reject) => {
+    // Never wait indefinitely for a stalled CDN / browser script request.
+    // A failed module must stop the boot and show its name rather than
+    // leaving the progress screen stuck at a numeric module count.
+    const attempt = (url, timeoutMs) => new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = versioned(path);
+      let settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(watchdog);
+        script.onload = script.onerror = null;
+        if (error) {
+          script.remove();
+          reject(error);
+        } else resolve();
+      };
+      const watchdog = window.setTimeout(() =>
+        finish(new Error(`模組載入逾時：${path}`)), timeoutMs);
+      script.src = url;
       script.async = false;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`載入失敗：${path}`));
+      script.onload = () => finish();
+      script.onerror = () => finish(new Error(`模組載入失敗：${path}`));
       document.body.appendChild(script);
+    });
+    return attempt(versioned(path), 12000).catch(async () => {
+      setStartupStatus(`重新載入 ${path}…`);
+      return attempt(versioned(path) + '&retry=' + Date.now(), 15000);
     });
   }
 
@@ -140,7 +160,7 @@
 
       const order = await orderPromise;
       const modulePaths = order.map((name) => `./js/${name}`);
-      preloadScripts([...modulePaths, ...afterModules]);
+      // Avoid 66 simultaneous preload requests competing with the active module.\n      // Modules are loaded sequentially below; eager preloading the whole app\n      // can starve late scripts (e.g. module 56) on slower desktop browsers.
 
       for (let i = 0; i < modulePaths.length; i += 1) {
         const name = order[i];
