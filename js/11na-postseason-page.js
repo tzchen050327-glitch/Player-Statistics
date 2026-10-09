@@ -322,7 +322,21 @@
     function postseasonCpblSeriesScore(a,b) {
       const score = [1,0];
       const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\s/g,'').trim();
-      for (const g of postseasonCpblResults) {
+      // The homepage already keeps the final CPBL score in its shared daily cache.
+      // Use it immediately while the series endpoint request completes.
+      const cachedGames = [];
+      if (typeof homeDailyGamesCache !== 'undefined') {
+        for (const entry of homeDailyGamesCache.values()) {
+          if (!Array.isArray(entry?.games)) continue;
+          cachedGames.push(...entry.games.filter(g => String(g?.kindCode || '').toUpperCase() === 'E'));
+        }
+      }
+      const uniqueGames = new Map();
+      for (const g of [...cachedGames, ...postseasonCpblResults]) {
+        if (String(g?.status || '').toLowerCase() !== 'final') continue;
+        uniqueGames.set(String(g?.date || '') + '|' + String(g?.id || ''), g);
+      }
+      for (const g of uniqueGames.values()) {
         if (String(g?.status || '').toLowerCase() !== 'final') continue;
         const away = cleanName(g.away), home = cleanName(g.home);
         if (!((away === cleanName(a) && home === cleanName(b)) || (away === cleanName(b) && home === cleanName(a)))) continue;
