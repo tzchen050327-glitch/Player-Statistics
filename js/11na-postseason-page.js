@@ -4,7 +4,37 @@
     let postseasonMlbBracketAt = 0;
     let postseasonMlbBracketPromise = null;
     let postseasonMlbBracketError = '';
+    let postseasonMlbRefreshTimer = null;
     const POSTSEASON_MLB_BROWSER_CACHE_MS = 5 * 60 * 1000;
+    const POSTSEASON_MLB_LIVE_CACHE_MS = 60 * 1000;
+
+    function postseasonMlbHasLiveGame(data = postseasonMlbBracket) {
+      return (data?.series || []).some(series =>
+        (series?.games || []).some(game => String(game?.status || '') === 'live')
+      );
+    }
+
+    function postseasonMlbBrowserCacheMs(data = postseasonMlbBracket) {
+      return postseasonMlbHasLiveGame(data) ? POSTSEASON_MLB_LIVE_CACHE_MS : POSTSEASON_MLB_BROWSER_CACHE_MS;
+    }
+
+    function postseasonMlbStopRefreshTimer() {
+      if (!postseasonMlbRefreshTimer) return;
+      clearTimeout(postseasonMlbRefreshTimer);
+      postseasonMlbRefreshTimer = null;
+    }
+
+    function postseasonMlbEnsureRefreshTimer() {
+      if (postseasonMlbRefreshTimer) return;
+      if (currentPage !== 'postseason' || leagueHubLeague !== 'mlb' || !postseasonSeasonActive()) return;
+      const delay = postseasonMlbBrowserCacheMs(postseasonMlbBracket);
+      postseasonMlbRefreshTimer = setTimeout(async () => {
+        postseasonMlbRefreshTimer = null;
+        if (currentPage !== 'postseason' || leagueHubLeague !== 'mlb' || !postseasonSeasonActive()) return;
+        if (document.visibilityState !== 'hidden') await loadPostseasonMlbBracket();
+        postseasonMlbEnsureRefreshTimer();
+      }, delay);
+    }
 
     function postseasonEscape(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -420,15 +450,17 @@
 
     async function loadPostseasonMlbBracket({ force = false } = {}) {
       const now = Date.now();
-      if (!force && postseasonMlbBracket && now - postseasonMlbBracketAt < POSTSEASON_MLB_BROWSER_CACHE_MS) return postseasonMlbBracket;
+      if (!force && postseasonMlbBracket && now - postseasonMlbBracketAt < postseasonMlbBrowserCacheMs(postseasonMlbBracket)) return postseasonMlbBracket;
       if (postseasonMlbBracketPromise) return postseasonMlbBracketPromise;
 
       try {
         const saved = JSON.parse(localStorage.getItem('postseasonMlbBracketCache') || 'null');
-        if (!force && saved?.data && Number(saved?.at) > 0 && now - Number(saved.at) < POSTSEASON_MLB_BROWSER_CACHE_MS) {
+        if (!force && saved?.data && Number(saved?.at) > 0 && now - Number(saved.at) < postseasonMlbBrowserCacheMs(saved.data)) {
           postseasonMlbBracket = saved.data;
           postseasonMlbBracketAt = Number(saved.at);
           postseasonMlbBracketError = '';
+          postseasonMlbStopRefreshTimer();
+          if (currentPage === 'postseason' && leagueHubLeague === 'mlb') setTimeout(renderPostseasonPage, 0);
           return postseasonMlbBracket;
         }
       } catch {}
@@ -445,6 +477,7 @@
         if (!response.ok || data?.ok !== true) throw new Error(data?.error || ('季後賽對戰圖讀取失敗（' + response.status + '）'));
         postseasonMlbBracket = data;
         postseasonMlbBracketAt = Date.now();
+        postseasonMlbStopRefreshTimer();
         postseasonMlbBracketError = '';
         try { localStorage.setItem('postseasonMlbBracketCache', JSON.stringify({ at:postseasonMlbBracketAt, data })); } catch {}
         return data;
@@ -462,6 +495,8 @@
       if (!els.postseasonPageContent) return;
 
       const active = postseasonSeasonActive();
+      if (leagueHubLeague === 'mlb' && active) postseasonMlbEnsureRefreshTimer();
+      else postseasonMlbStopRefreshTimer();
 
       if (!active && !postseasonHasSelectedLeagueData()) {
         const key = String(leagueHubLeague || 'cpbl');
@@ -481,7 +516,7 @@
 
       if (leagueHubLeague === 'mlb' && active && !postseasonMlbBracket) {
         els.postseasonPageContent.innerHTML = '<div class="postseason-overview">' +
-          '<div class="postseason-intro"><div><span>POSTSEASON</span><strong>美國大聯盟｜季後賽對戰圖</strong></div><p>實際系列賽結果 · 無背景輪詢</p></div>' +
+          '<div class="postseason-intro"><div><span>POSTSEASON</span><strong>美國大聯盟｜季後賽對戰圖</strong></div><p>實際系列賽結果 · 進行中自動更新</p></div>' +
           postseasonMlbContent() + '</div>';
         if (!postseasonMlbBracketPromise) void loadPostseasonMlbBracket();
         return;
