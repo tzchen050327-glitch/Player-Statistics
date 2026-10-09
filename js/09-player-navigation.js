@@ -168,6 +168,9 @@
         console.warn('中職官方守位確認失敗，沿用目前分類', error);
       }
 
+      const splitPrefetch = preloadPlayerSplits(player, CURRENT_YEAR).catch(error => {
+        console.warn('進階數據預載失敗', error);
+      });
       setSyncProgress(0, `準備同步 #${player.number} ${player.name}…`);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
@@ -193,6 +196,8 @@
 
         const partialCount = result?.partialErrors?.length || 0;
         const summary = `一軍 ${majorYears.length} 季／二軍 ${minorYears.length} 季`;
+        setSyncProgress(97, '同步進階數據…');
+        await splitPrefetch;
         await finishSyncProgress(partialCount ? `同步完成（部分失敗）｜${summary}` : `同步完成｜${summary}`);
       } catch (error) {
         console.warn('進入球員頁自動同步失敗', error);
