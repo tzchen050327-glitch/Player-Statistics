@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.13" />
+  <meta name="app-version" content="v9.14" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.13" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.13" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.13" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.13" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.14" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.14" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.14" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.14" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.13"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.13" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.13" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.13" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.13" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.13" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.13" />
+    <script src="./diagnostic-runtime.js?v=v9.14"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.14" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.14" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.14" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.14" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.14" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.14" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -93,38 +93,65 @@
 @media(max-width:600px){.awb-schedule-track .home-game-card{flex-basis:205px!important;min-width:200px!important}.awb-schedule-shell .home-daily-games-head{padding:9px 9px 6px}.awb-schedule-track{padding:3px 9px 11px!important}.awb-compact-heading{padding:11px}.awb-year-control label{display:none}.awb-compact-body{padding:11px}.awb-metrics{gap:5px}.awb-metric{padding:9px 7px}.awb-metric strong{font-size:16px}.awb-categories{gap:7px}.awb-category{padding:10px 21px 10px 10px}}
 @media(max-width:350px){.awb-metric strong{font-size:14px}.awb-categories{grid-template-columns:1fr}}
 
-/* AWB: fixed-height flex children used to shrink the root switch to a thin line. */
+/* AWB shares the same fixed-height frame as the other leagues.
+   Root/league tabs and game cards stay fixed; only the detail body scrolls. */
 #homePage .home-main-panel.awb-mode{
   display:flex!important;
   flex-direction:column!important;
   height:100%!important;
+  max-height:100%!important;
   min-height:0!important;
-  overflow-x:hidden!important;
-  overflow-y:auto!important;
-  overscroll-behavior-y:contain;
+  overflow:hidden!important;
+  scrollbar-gutter:auto!important;
 }
 #homePage .home-main-panel.awb-mode #homeZoneSwitch.home-zone-switch.home-root-switch{
-  flex:0 0 42px!important;
-  height:42px!important;
-  min-height:42px!important;
-  max-height:42px!important;
-  grid-template-rows:34px!important;
-  overflow:visible!important;
+  flex:0 0 50px!important;
+  height:50px!important;
+  min-height:50px!important;
+  max-height:50px!important;
+  grid-template-rows:42px!important;
+  overflow:hidden!important;
 }
 #homePage .home-main-panel.awb-mode #homeProCountrySwitch{
   flex:0 0 auto!important;
-  min-height:38px!important;
   height:auto!important;
+  min-height:40px!important;
 }
-#homePage .home-main-panel.awb-mode #awbSchedule,
-#homePage .home-main-panel.awb-mode #awbCompact{
+#homePage .home-main-panel.awb-mode #awbSchedule{
   flex:0 0 auto!important;
+  height:auto!important;
   min-height:0!important;
+  max-height:none!important;
+  overflow:hidden!important;
+}
+#homePage .home-main-panel.awb-mode #awbCompact{
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  margin-bottom:0!important;
+}
+#homePage .home-main-panel.awb-mode #awbCompact .awb-compact-heading,
+#homePage .home-main-panel.awb-mode #awbCompact .awb-compact-tabs{
+  flex:0 0 auto!important;
+}
+#homePage .home-main-panel.awb-mode #awbCompactBody{
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain;
+  scrollbar-gutter:stable;
 }
 @media(max-width:640px){
   #homePage .home-main-panel.awb-mode{
     height:100%!important;
-    overflow-y:auto!important;
+    overflow:hidden!important;
   }
 }
 </style>
@@ -133,7 +160,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.13" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.14" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -509,7 +536,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.13</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.14</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -840,6 +867,6 @@
   select('standings');sync();
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.13"></script>
+  <script src="./js/module-loader.js?v=v9.14"></script>
 </body>
 </html>
