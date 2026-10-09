@@ -318,9 +318,14 @@
       }).finally(() => { postseasonCpblResultsPromise = null; });
       return postseasonCpblResultsPromise;
     }
+    window.addEventListener('cpbl-live-day-update', () => {
+      if (currentPage !== 'postseason' || leagueHubLeague !== 'cpbl') return;
+      if (Date.now() - postseasonCpblResultsAt < POSTSEASON_CPBL_RESULT_TTL) return;
+      void refreshPostseasonCpblResults();
+    });
     function postseasonCpblSeriesScore(a,b) {
       const score = [1,0];
-      const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\\s/g,'').trim();
+      const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\s/g,'').trim();
       for (const g of postseasonCpblResults) {
         if (String(g?.status || '').toLowerCase() !== 'final') continue;
         const away = cleanName(g.away), home = cleanName(g.home);
