@@ -32,7 +32,7 @@
       if (date) date.textContent = value.date;
     }
     document.querySelectorAll('#homeTimeZonePanel [data-time-zone-key]').forEach(card => {
-      const active = homeRootSection === 'pro' && card.dataset.timeZoneKey === homeProCountry;
+      const active = homeRootSection === 'pro' && card.dataset.timeZoneKey === (homeProCountry === 'KR' ? 'JP' : homeProCountry);
       card.classList.toggle('active', active);
       card.setAttribute('aria-pressed', String(active));
     });
