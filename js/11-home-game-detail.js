@@ -1,7 +1,6 @@
     const homePitcherRecordsCache = new Map();
     const homePostseasonStarterCache = new Map();
     const homePostseasonStarterLoading = new Set();
-    const homeBullpenSessionCache = new Map();
     const homeUmpireReportCache = new Map();
     const homeUmpireReportFetchedAt = new Map();
     const HOME_UMPIRE_REPORT_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-umpire-report-sync';
@@ -119,12 +118,15 @@
       if (league === 'NPB') return true;
       if (league !== 'CPBL') return false;
       const kindCode = String(game?.kindCode || 'A').trim().toUpperCase();
-      return !kindCode || kindCode === 'A';
+      return ['A','E','C'].includes(kindCode);
     }
 
     async function homePitcherRecordsRequest(league, date, game = {}) {
       if (!homePitcherRecordsSupported(league, game)) throw new Error('此賽事目前不支援投手紀錄。');
-      const url = league === 'CPBL' ? CPBL_GAME_DETAIL_API_URL : NPB_GAME_DETAIL_API_URL;
+      const kindCode = String(game?.kindCode || 'A').trim().toUpperCase();
+      const url = league === 'CPBL'
+        ? (kindCode === 'E' || kindCode === 'C' ? CPBL_POSTSEASON_DETAIL_API_URL : CPBL_GAME_DETAIL_API_URL)
+        : NPB_GAME_DETAIL_API_URL;
       const response = await fetch(url, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
@@ -133,6 +135,7 @@
           action:'pitcher-records',
           league,
           date,
+          ...(league === 'CPBL' ? { kindCode } : {}),
           gameId:String(game?.id || ''),
           away:String(game?.away || ''),
           home:String(game?.home || ''),
@@ -730,19 +733,6 @@
       }, '對戰總覽', 9000);
     }
 
-    async function homeBullpenStatusRequest(league, date, game, force = false) {
-      if (league !== 'CPBL') throw new Error('投手狀態目前只支援中華職棒。');
-      return homeMatchCenterPost(LEAGUE_BULLPEN_STATUS_API_URL, {
-        appKey:CPBL_APP_KEY,
-        league,
-        date,
-        gameId:String(game?.id || ''),
-        away:String(game?.away || ''),
-        home:String(game?.home || ''),
-        force:Boolean(force)
-      }, '牛棚資料', 30000);
-    }
-
     function homePregameRecordText(record) {
       if (!record) return '—';
       return `${Number(record.wins || 0)}勝 ${Number(record.losses || 0)}敗${Number(record.ties || 0) ? ` ${Number(record.ties)}和` : ''}`;
@@ -817,143 +807,6 @@
         </div>
 
       `;
-    }
-
-    function homeBullpenStatusClass(level) {
-      const v = String(level || '').toLowerCase();
-      if (v === 'rest') return 'is-rest';
-      if (v === 'caution') return 'is-caution';
-      return 'is-ready';
-    }
-
-    function homeBullpenTeamCard(side, fallbackTeam) {
-      if (!side) {
-        return `<article class="bullpen-roster-card is-empty"><strong>${escapeHtml(fallbackTeam || '球隊')}</strong><span>目前沒有可用的一軍投手資料</span></article>`;
-      }
-      const members = Array.isArray(side?.members) ? side.members : [];
-      const team = String(side?.team || fallbackTeam || '球隊');
-      return `
-        <article class="bullpen-roster-card">
-          <div class="bullpen-roster-head">
-            <div>
-              <span>一軍投手</span>
-              <strong>${escapeHtml(team)}</strong>
-            </div>
-            <b>${members.length} 人</b>
-          </div>
-          <div class="bullpen-roster-table">
-            <div class="bullpen-roster-row bullpen-roster-header">
-              <span>投手</span>
-              <span>昨日用球</span>
-              <span>前日用球</span>
-              <span>預估狀態</span>
-            </div>
-            <div class="bullpen-roster-scroll">
-            ${members.length ? members.map(member => {
-              const yesterday = Math.max(0, Number(member?.yesterdayPitches) || 0);
-              const twoDaysAgo = Math.max(0, Number(member?.twoDaysAgoPitches) || 0);
-              const status = String(member?.status || '可用');
-              const reason = String(member?.statusReason || '');
-              return `
-                <div class="bullpen-roster-row">
-                  <strong>${escapeHtml(String(member?.name || '未辨識投手'))}${member?.isStarter ? '<small class="pitcher-status-starter">先發</small>' : ''}</strong>
-                  <span class="${yesterday > 0 ? 'has-work' : ''}">${yesterday} 球</span>
-                  <span class="${twoDaysAgo > 0 ? 'has-work' : ''}">${twoDaysAgo} 球</span>
-                  <span class="bullpen-status-pill ${homeBullpenStatusClass(member?.statusLevel)}" title="${escapeAttr(reason)}">
-                    <b>${escapeHtml(status)}</b>
-                    ${reason ? `<small>${escapeHtml(reason)}</small>` : ''}
-                  </span>
-                </div>`;
-            }).join('') : `
-              <div class="bullpen-roster-empty">目前沒有可確認的一軍投手。</div>
-            `}
-            </div>
-          </div>
-        </article>
-      `;
-    }
-
-    function homeBullpenPanel(bullpen, gameInfo, game) {
-      if (!bullpen) return '<div class="pregame-center-loading">正在整理牛棚狀況…</div>';
-      return `
-        <div class="bullpen-status-grid">
-          ${homeBullpenTeamCard(bullpen?.awayBullpen || null, String(gameInfo?.away || game?.away || '客隊'))}
-          ${homeBullpenTeamCard(bullpen?.homeBullpen || null, String(gameInfo?.home || game?.home || '主隊'))}
-        </div>
-      `;
-    }
-
-    function homeBullpenDataUsable(data) {
-      const away = Array.isArray(data?.awayBullpen?.members) ? data.awayBullpen.members.length : 0;
-      const home = Array.isArray(data?.homeBullpen?.members) ? data.homeBullpen.members.length : 0;
-      return Number(data?.pitcherStatusVersion || 0) >= 10 && away > 0 && home > 0;
-    }
-
-    async function refreshHomeBullpenStatus({ force = false } = {}) {
-      if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
-      if (activeHomeGameDetail.centerTab !== 'pitchers') return;
-      if (activeHomeGameDetail.bullpenLoading) return;
-      const { league, date, game, key } = activeHomeGameDetail;
-      if (!game?.id || !game?.away || !game?.home) return;
-
-      const cached = homeBullpenSessionCache.get(key) || null;
-      if (!force && cached?.data && homeBullpenDataUsable(cached.data)) {
-        const changed = activeHomeGameDetail.bullpenData !== cached.data;
-        activeHomeGameDetail.bullpenData = cached.data;
-        activeHomeGameDetail.bullpenError = '';
-        if (changed) {
-          const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
-          renderHomeGameDetail(detail, game);
-        }
-        return;
-      }
-
-      activeHomeGameDetail.bullpenLoading = true;
-      activeHomeGameDetail.bullpenError = '';
-      const detail = homeGameDetailCache.get(key)?.detail || { status:game?.status, game, plays:[] };
-      renderHomeGameDetail(detail, game);
-      try {
-        const data = await homeBullpenStatusRequest(league, date, game, false);
-        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        if (!homeBullpenDataUsable(data)) throw new Error('一軍投手名單尚未建立完成，請稍後再試。');
-        homeBullpenSessionCache.set(key, { at:Date.now(), data });
-        activeHomeGameDetail.bullpenData = data;
-      } catch (error) {
-        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        activeHomeGameDetail.bullpenError = error?.message || '牛棚資料讀取失敗。';
-      } finally {
-        if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
-        activeHomeGameDetail.bullpenLoading = false;
-        const latest = homeGameDetailCache.get(key)?.detail || detail;
-        if (activeHomeGameDetail.centerTab === 'pitchers') {
-          renderHomeGameDetail(latest, game);
-        }
-      }
-    }
-
-    function homeBullpenDetailPanel(detail, gameInfo, game) {
-      const data = activeHomeGameDetail?.bullpenData || null;
-      const loading = Boolean(activeHomeGameDetail?.bullpenLoading);
-      const error = String(activeHomeGameDetail?.bullpenError || '');
-      if (loading && !data) {
-        return '<div class="pregame-center-loading">正在整理兩隊投手使用狀況…</div>';
-      }
-      if (error && !data) {
-        return `<div class="game-detail-error">${escapeHtml(error)}</div>`;
-      }
-      if (!data) {
-        return '<div class="pregame-center-loading">正在讀取已鎖定的投手資料…</div>';
-      }
-      return `
-        <section class="match-center-data-panel game-bullpen-panel">
-          <div class="match-center-data-tools">
-            <span>投手狀態<small class="match-center-update-time">目前一軍 · 官方用球數</small></span>
-          </div>
-          <div class="pregame-center-body">
-            ${homeBullpenPanel(data, gameInfo, game)}
-            <div class="bullpen-estimate-note">預估狀態只依最近兩日官方用球量與連續登板判定，不代表球隊實際調度決策。</div>
-          </div>
-        </section>`;
     }
 
     function homeSnapshotTeamForBatter(detail, name) {
@@ -1471,7 +1324,11 @@
         return [totalPitchingInnings(list), totals.p, totals.h, totals.hr, totals.bb, totals.hbp, totals.k, totals.r, totals.er];
       };
       const teamSection = ([side, teamName]) => {
-        const list = Array.isArray(records?.[side]) ? records[side] : [];
+        const list = (Array.isArray(records?.[side]) ? records[side] : []).filter(row => {
+          // The page lists game participants only, not registered or available bullpen arms.
+          return (Number(rowValue(row,3,'0')) || 0) > 0
+            || (Number(rowValue(row,2,'0')) || 0) > 0;
+        });
         let rows = '';
         if (list.length) {
           rows = list.map(row => `
@@ -1492,7 +1349,7 @@
         } else if (error) {
           rows = `<div class="game-pitcher-empty">${escapeHtml(error)}</div>`;
         } else {
-          rows = '<div class="game-pitcher-empty">點開投手紀錄後才載入資料。</div>';
+          rows = '<div class="game-pitcher-empty">本場尚無已登板的投手紀錄。</div>';
         }
         const backendTotal = Array.isArray(records?.[`${side}Total`]) ? records[`${side}Total`] : null;
         const totals = list.length ? (backendTotal?.length === 9 ? backendTotal : totalsFor(list)) : null;
@@ -2084,74 +1941,6 @@
         </section>`;
     }
 
-    function homePitchingDefaultView(detail = null, game = null) {
-      const status = String(detail?.status || detail?.game?.status || game?.status || '').toLowerCase();
-      return ['live','final','suspended'].includes(status) ? 'records' : 'status';
-    }
-
-    function homePitchingCombinedPanel(detail, gameInfo = {}, game = {}) {
-      if (!activeHomeGameDetail) return '';
-      const canRecords = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
-      if (!canRecords) return homeBullpenDetailPanel(detail, gameInfo, game);
-      const requested = String(activeHomeGameDetail.pitcherView || '');
-      const defaultView = requested === 'status' || requested === 'records'
-        ? requested
-        : homePitchingDefaultView(detail, gameInfo);
-      activeHomeGameDetail.pitcherView = defaultView;
-      return `
-        <div class="pitcher-combined-page" data-pitcher-view="${defaultView}">
-          <div class="pitcher-combined-viewport" data-pitcher-pager>
-            <div class="pitcher-combined-track">
-              <section class="pitcher-combined-slide" data-pitcher-slide="status">${homeBullpenDetailPanel(detail, gameInfo, game)}</section>
-              <section class="pitcher-combined-slide" data-pitcher-slide="records">${homeGamePitcherPanel(detail, gameInfo)}</section>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function bindHomePitchingPager(root) {
-      const viewport = root?.querySelector?.('[data-pitcher-pager]');
-      if (!viewport || !activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
-      let settleTimer = 0;
-      let programmatic = false;
-      const initial = String(activeHomeGameDetail.pitcherView || homePitchingDefaultView(
-        homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null,
-        activeHomeGameDetail.game || null
-      ));
-      let lastView = initial === 'records' ? 'records' : 'status';
-
-      const setActive = (view, { fetchData = true } = {}) => {
-        const next = view === 'records' ? 'records' : 'status';
-        const changed = next !== lastView;
-        lastView = next;
-        if (activeHomeGameDetail) activeHomeGameDetail.pitcherView = next;
-        if (!fetchData || !changed || !activeHomeGameDetail) return;
-        if (next === 'records') void refreshHomePitcherRecords({ force:false });
-        else void refreshHomeBullpenStatus({ force:false });
-      };
-
-      const go = (view, smooth = true, fetchData = true) => {
-        const next = view === 'records' ? 'records' : 'status';
-        const left = next === 'records' ? viewport.clientWidth : 0;
-        programmatic = true;
-        viewport.scrollTo({ left, behavior:smooth ? 'smooth' : 'auto' });
-        setActive(next, { fetchData });
-        requestAnimationFrame(() => { programmatic = false; });
-      };
-
-      viewport.addEventListener('scroll', () => {
-        if (programmatic) return;
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(() => {
-          const view = viewport.scrollLeft >= viewport.clientWidth * 0.5 ? 'records' : 'status';
-          setActive(view, { fetchData:true });
-        }, 120);
-      }, { passive:true });
-
-      requestAnimationFrame(() => go(initial, false, false));
-    }
-
     function syncHomePitcherSplitHeight() {
       const overlay = document.getElementById('homeGameDetailOverlay');
       if (!overlay || overlay.classList.contains('hidden')) return;
@@ -2223,9 +2012,8 @@
       }
       const requestedCenterTab = String(activeHomeGameDetail?.centerTab || '');
       const supportsPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, gameInfo);
-      const supportsBullpen = activeHomeGameDetail?.league === 'CPBL';
       const supportsUmpire = activeHomeGameDetail?.league === 'CPBL';
-      const allowedCenterTabs = supportsPitchers || supportsBullpen
+      const allowedCenterTabs = supportsPitchers
         ? ['play','batters','pitchers','snapshot', ...(supportsUmpire ? ['umpire'] : []), 'overview']
         : ['play','batters','snapshot', ...(supportsUmpire ? ['umpire'] : []), 'overview'];
       const centerTab = allowedCenterTabs.includes(requestedCenterTab) ? requestedCenterTab : 'play';
@@ -2235,7 +2023,7 @@
         : centerTab === 'batters'
           ? homeGameBatterPanel(detail, gameInfo)
           : centerTab === 'pitchers'
-            ? (supportsBullpen ? homePitchingCombinedPanel(detail, gameInfo, game) : homeGamePitcherPanel(detail, gameInfo))
+            ? homeGamePitcherPanel(detail, gameInfo)
             : centerTab === 'snapshot'
               ? homeSnapshotPanel(detail, gameInfo, game)
               : centerTab === 'umpire'
@@ -2275,10 +2063,10 @@
           <div class="game-detail-head-copy"><strong>對戰中心</strong><span>${escapeHtml(leagueLabel)}｜${escapeHtml(dateLabel)}${gameInfo?.venue ? `｜${escapeHtml(String(gameInfo.venue))}` : ''}${detailUpdateTime ? `｜更新 ${escapeHtml(detailUpdateTime)}` : ''}</span></div>
           ${status === 'live' ? `<span class="game-detail-live-dot ${loading ? 'is-refreshing' : ''}"><i></i>LIVE<span id="homeGameDetailRefreshCountdown" style="margin-left:6px;font-size:11px;font-weight:700;opacity:.72;white-space:nowrap">${loading ? '更新中…' : ''}</span></span>` : ''}
         </header>
-        <nav class="match-center-tabs ${supportsUmpire ? 'is-six' : ((supportsPitchers || supportsBullpen) ? 'is-five' : 'is-four')}" aria-label="對戰中心分類">
+        <nav class="match-center-tabs ${supportsUmpire ? 'is-six' : (supportsPitchers ? 'is-five' : 'is-four')}" aria-label="對戰中心分類">
           <button type="button" data-match-center-tab="play" class="${centerTab === 'play' ? 'active' : ''}">逐打席</button>
           <button type="button" data-match-center-tab="batters" class="${centerTab === 'batters' ? 'active' : ''}">打者紀錄</button>
-          ${(supportsPitchers || supportsBullpen) ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">${supportsBullpen ? '投手狀態' : '投手紀錄'}</button>` : ''}
+          ${supportsPitchers ? `<button type="button" data-match-center-tab="pitchers" class="${centerTab === 'pitchers' ? 'active' : ''}">投手紀錄</button>` : ''}
           <button type="button" data-match-center-tab="snapshot" class="${centerTab === 'snapshot' ? 'active' : ''}">比賽快照</button>
           ${supportsUmpire ? `<button type="button" data-match-center-tab="umpire" class="${centerTab === 'umpire' ? 'active' : ''}">裁判報告</button>` : ''}
           <button type="button" data-match-center-tab="overview" class="${centerTab === 'overview' ? 'active' : ''}">對戰總覽</button>
@@ -2336,28 +2124,22 @@
           if (!activeHomeGameDetail) return;
           const tab = String(btn.dataset.matchCenterTab || 'play');
           const hasPitchers = homePitcherRecordsSupported(activeHomeGameDetail?.league, activeHomeGameDetail?.game);
-          const hasBullpen = activeHomeGameDetail?.league === 'CPBL';
           const hasUmpire = activeHomeGameDetail?.league === 'CPBL';
-          const allowedTabs = hasPitchers || hasBullpen
+          const allowedTabs = hasPitchers
             ? ['play','batters','pitchers','snapshot', ...(hasUmpire ? ['umpire'] : []), 'overview']
             : ['play','batters','snapshot', ...(hasUmpire ? ['umpire'] : []), 'overview'];
           if (!allowedTabs.includes(tab)) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
-          if (tab === 'pitchers' && hasBullpen && !['status','records'].includes(String(activeHomeGameDetail.pitcherView || ''))) {
-            activeHomeGameDetail.pitcherView = homePitchingDefaultView(current, activeHomeGameDetail.game);
-          }
           renderHomeGameDetail(current, game);
           if (tab === 'pitchers') {
-            if (hasBullpen && activeHomeGameDetail.pitcherView === 'status') void refreshHomeBullpenStatus({ force:false });
-            else if (hasPitchers) void refreshHomePitcherRecords({ force:false });
+            if (hasPitchers) void refreshHomePitcherRecords({ force:false });
           } else if (tab === 'umpire') {
             void refreshHomeUmpireReport({ force:false });
           }
         });
       });
       bindHomeOverviewPager(body);
-      bindHomePitchingPager(body);
       updateHomeGameDetailRefreshCountdown();
     }
 
@@ -2557,8 +2339,7 @@
         if (detailChanged || force) renderHomeGameDetail(detail, game);
         scheduleHomeGameDetailRefresh(detail);
         if (activeHomeGameDetail?.centerTab === 'pitchers') {
-          if (activeHomeGameDetail?.league === 'CPBL' && activeHomeGameDetail?.pitcherView === 'status') void refreshHomeBullpenStatus({ force:false });
-          else void refreshHomePitcherRecords({ force:false });
+          void refreshHomePitcherRecords({ force:false });
         }
       } catch (error) {
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
@@ -2616,8 +2397,7 @@
       const requestedTab = openAllowedTabs.includes(rawRequestedTab) ? rawRequestedTab : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
       const cachedPitchers = homePitcherRecordsCache.get(key) || null;
-      const cachedBullpen = homeBullpenSessionCache.get(key) || null;
-      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pitcherView:homePitchingDefaultView(null, game), pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'', bullpenData:cachedBullpen?.data || null, bullpenLoading:false, bullpenError:'' };
+      activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
       } else {
