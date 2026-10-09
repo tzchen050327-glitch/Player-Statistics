@@ -285,6 +285,54 @@
       '</div>';
     }
 
+    let postseasonCpblResults = [];
+    let postseasonCpblResultsAt = 0;
+    let postseasonCpblResultsPromise = null;
+    const POSTSEASON_CPBL_RESULT_TTL = 90 * 1000;
+    async function refreshPostseasonCpblResults(force = false) {
+      if (postseasonCpblResultsPromise) return postseasonCpblResultsPromise;
+      if (!force && Date.now() - postseasonCpblResultsAt < POSTSEASON_CPBL_RESULT_TTL) return postseasonCpblResults;
+      if (String(CURRENT_YEAR) !== '2026') return postseasonCpblResults;
+      // One lightweight daily-cache request per played date; never request game detail.
+      const today = typeof localISODate === 'function' ? localISODate() : '';
+      const first = '2026-10-09';
+      if (today < first) return postseasonCpblResults;
+      const days = [];
+      for (let d = new Date(first + 'T12:00:00Z'), n = 0; n < 12 && d.toISOString().slice(0,10) <= today; n++, d.setUTCDate(d.getUTCDate()+1)) days.push(d.toISOString().slice(0,10));
+      postseasonCpblResultsPromise = (async () => {
+        const next = [];
+        for (const day of days) {
+          const cached = homeDailyGamesCache?.get('CPBL|' + day);
+          const games = Array.isArray(cached?.games) && Date.now() - Number(cached?.at || 0) < POSTSEASON_CPBL_RESULT_TTL
+            ? cached.games
+            : await leagueDailyGamesRequest('CPBL', day);
+          next.push(...(games || []).filter(g => String(g?.kindCode || '').toUpperCase() === 'E'));
+        }
+        postseasonCpblResults = next;
+        postseasonCpblResultsAt = Date.now();
+        if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') renderPostseasonPage();
+        return next;
+      })().catch(error => {
+        console.warn('CPBL playoff series results', error);
+        return postseasonCpblResults;
+      }).finally(() => { postseasonCpblResultsPromise = null; });
+      return postseasonCpblResultsPromise;
+    }
+    function postseasonCpblSeriesScore(a,b) {
+      const score = [1,0];
+      const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\\s/g,'').trim();
+      for (const g of postseasonCpblResults) {
+        if (String(g?.status || '').toLowerCase() !== 'final') continue;
+        const away = cleanName(g.away), home = cleanName(g.home);
+        if (!((away === cleanName(a) && home === cleanName(b)) || (away === cleanName(b) && home === cleanName(a)))) continue;
+        const ar = Number(g.awayScore), hr = Number(g.homeScore);
+        if (!Number.isFinite(ar) || !Number.isFinite(hr) || ar === hr || g.awayScore == null || g.homeScore == null) continue;
+        if (ar > hr) score[away === cleanName(a) ? 0 : 1]++;
+        else score[home === cleanName(a) ? 0 : 1]++;
+      }
+      return score;
+    }
+
     function postseasonCpblBracketContent() {
       const cpbl = standingsOfficialCache?.cpbl || {};
       const first = postseasonSectionRows(cpbl.first,1)[0] || null;
@@ -320,7 +368,7 @@
           '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF SERIES</div><div class="postseason-round-series">' +
             postseasonMatchCard('季後挑戰賽', playoffA, playoffB,
               playoffA && playoffB ? postseasonEscape(playoffA) + '帶 1 勝優勢' : '待定',
-              { seriesScore: [1, 0], format: '4戰3勝制｜' + playoffA + '先帶1勝' }) +
+              { seriesScore: postseasonCpblSeriesScore(playoffA, playoffB), format: '4戰3勝制｜' + playoffA + '先帶1勝' }) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
             postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '', {format:'7戰4勝制'}) +
@@ -514,6 +562,7 @@
 
       const active = postseasonSeasonActive();
       if (leagueHubLeague === 'mlb' && active) postseasonMlbEnsureRefreshTimer();
+      if (leagueHubLeague === 'cpbl' && active && !postseasonCpblResultsPromise && Date.now() - postseasonCpblResultsAt >= POSTSEASON_CPBL_RESULT_TTL) void refreshPostseasonCpblResults();
       else postseasonMlbStopRefreshTimer();
 
       if (!active && !postseasonHasSelectedLeagueData()) {
