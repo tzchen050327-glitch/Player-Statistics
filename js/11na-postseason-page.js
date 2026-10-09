@@ -217,15 +217,21 @@
       return false;
     }
 
-    function postseasonMatchCard(title, teamA, teamB, note = '') {
+    function postseasonMatchCard(title, teamA, teamB, note = '', options = {}) {
       const a = postseasonEscape(teamA || '待定');
       const b = postseasonEscape(teamB || '待定');
+      const hasSeriesScore = Array.isArray(options.seriesScore);
+      const aScore = hasSeriesScore ? String(options.seriesScore[0]) : '—';
+      const bScore = hasSeriesScore ? String(options.seriesScore[1]) : '—';
+      const footer = options.format
+        ? '<div class="postseason-series-foot" style="text-align:right">' + postseasonEscape(options.format) + '</div>'
+        : '';
       return '<div class="postseason-series-card">' +
         '<div class="postseason-series-meta"><span>' + postseasonEscape(title) + '</span><em>' + postseasonEscape(note) + '</em></div>' +
         '<div class="postseason-bracket-teams">' +
-          '<div class="postseason-bracket-team"><strong>' + a + '</strong><b>—</b></div>' +
-          '<div class="postseason-bracket-team"><strong>' + b + '</strong><b>—</b></div>' +
-        '</div></div>';
+          '<div class="postseason-bracket-team"><strong>' + a + '</strong><b>' + aScore + '</b></div>' +
+          '<div class="postseason-bracket-team"><strong>' + b + '</strong><b>' + bScore + '</b></div>' +
+        '</div>' + footer + '</div>';
     }
 
     function postseasonNpbBracketContent() {
@@ -312,7 +318,9 @@
         '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">CPBL POSTSEASON</div>' +
         '<div class="postseason-bracket">' +
           '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF SERIES</div><div class="postseason-round-series">' +
-            postseasonMatchCard('季後挑戰賽', playoffA, playoffB, sameChampion ? '' : '半季冠軍規則適用') +
+            postseasonMatchCard('季後挑戰賽', playoffA, playoffB,
+              playoffA && playoffB ? postseasonEscape(playoffA) + '帶 1 勝優勢' : '待定',
+              { seriesScore: [1, 0], format: '5戰3勝制' }) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
             postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '') +
