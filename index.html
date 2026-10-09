@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.15" />
+  <meta name="app-version" content="v9.16" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.15" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.15" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.15" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.15" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.16" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.16" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.16" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.16" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.15"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.15" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.15" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.15" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.15" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.15" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.15" />
+    <script src="./diagnostic-runtime.js?v=v9.16"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.16" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.16" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.16" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.16" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.16" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.16" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -160,13 +160,42 @@
 #homePage .home-main-panel.awb-mode > .home-player-actions,
 #homePage .home-main-panel:has(#awbCompact:not(.hidden)) > .home-player-head,
 #homePage .home-main-panel:has(#awbCompact:not(.hidden)) > .home-player-actions{display:none!important}
+
+/* AWB historical seasons: mobile-first compact archive, no fake standings. */
+.awb-history-champion{position:relative;padding:14px 15px;border:1px solid rgba(201,158,67,.33);border-radius:11px;background:linear-gradient(120deg,rgba(197,148,54,.14),rgba(127,145,169,.035));overflow:hidden}
+.awb-history-kicker{font-size:10px;font-weight:800;letter-spacing:.13em;color:#d5a84d}
+.awb-history-champion-name{font-size:clamp(18px,2.5vw,25px);font-weight:850;margin:7px 0 5px;line-height:1.3;overflow-wrap:anywhere}
+.awb-history-champion-meta{font-size:11px;opacity:.7}
+.awb-history-champion-meta span{padding:0 4px}
+.awb-history-section-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:15px 1px 9px}
+.awb-history-section-head strong{font-size:13px}.awb-history-section-head>span{font-size:10px;letter-spacing:.08em;opacity:.55}
+.awb-history-team-pills{display:flex;flex-wrap:wrap;gap:7px}
+.awb-history-team-pills span{padding:7px 10px;border-radius:7px;background:rgba(127,145,169,.10);border:1px solid rgba(127,145,169,.12);font-size:12px;font-weight:650}
+.awb-history-team-pills span.is-champion{border-color:rgba(213,168,77,.5);color:#e0b55e;background:rgba(213,168,77,.09)}
+.awb-history-notice{margin-top:16px;padding:12px 14px;border-top:1px solid rgba(127,145,169,.17);background:rgba(127,145,169,.035);border-radius:8px}
+.awb-history-notice strong{font-size:12px}.awb-history-notice p{font-size:11px;line-height:1.6;opacity:.7;margin:5px 0}
+.awb-history-notice .awb-official-link{margin-top:7px}
+.awb-history-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.awb-history-team-card{display:flex;align-items:center;gap:10px;min-width:0;padding:11px;border:1px solid rgba(127,145,169,.17);border-radius:9px;background:rgba(127,145,169,.045)}
+.awb-history-team-card.is-champion{border-color:rgba(213,168,77,.5);background:rgba(213,168,77,.07)}
+.awb-history-team-monogram{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:rgba(127,145,169,.12);font-size:14px;font-weight:800}
+.awb-history-team-card>div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.awb-history-team-card strong{font-size:12px;overflow-wrap:anywhere}
+.awb-history-team-card small{font-size:10px;opacity:.62}
+.awb-history-crown{font-size:10px;white-space:nowrap;color:#e0b55e;font-weight:800}
+.awb-history-status-list{border:1px solid rgba(127,145,169,.15);border-radius:9px;overflow:hidden}
+.awb-history-status-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;font-size:12px;border-bottom:1px solid rgba(127,145,169,.12)}
+.awb-history-status-row:last-child{border-bottom:0}
+.awb-history-status-row .is-ready{color:#77ba9a;font-weight:750}
+.awb-history-status-row .is-pending{opacity:.52}
+@media(max-width:700px){.awb-history-team-grid{grid-template-columns:1fr}.awb-history-champion{padding:12px}.awb-history-champion-name{font-size:18px}.awb-history-team-pills{gap:5px}.awb-history-team-pills span{font-size:11px;padding:6px 8px}.awb-history-section-head{margin-top:12px}}
 </style>
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.15" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.16" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -542,7 +571,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.15</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.16</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -822,7 +851,7 @@
   async function setSeason(next){
     year=seasons.includes(Number(next))?Number(next):2025;detail=null;error='';ready=year===2025;
     standings=archive.standings;teams=archive.teams;categories=archive.categories;knownPlayers=archive.knownPlayers;
-    document.getElementById('awbSeasonLabel').textContent=String(year);
+    document.getElementById('awbSeasonLabel').textContent=String(year);current='standings';updateAwbTabLabels();buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===current)));
     if(year===2025){if(schedule)schedule.innerHTML=oldSchedule;render();return;}
     if(year!==2025&&year!==2026){
       const record=historicalSeasons[year];
@@ -850,7 +879,23 @@
   picker?.addEventListener('change',()=>setSeason(picker.value));
 
   function render(){
-    if(year!==2025&&year!==2026){const record=historicalSeasons[year];body.innerHTML='<div class="awb-metrics"><div class="awb-metric"><small>賽季</small><strong>'+year+'</strong><span>歷史賽季</span></div><div class="awb-metric"><small>參賽球隊</small><strong>'+record.teams.length+'</strong><span>已確認隊伍</span></div><div class="awb-metric"><small>年度冠軍</small><strong style="font-size:13px;white-space:normal">'+esc(record.champion)+'</strong></div></div><div class="awb-category-heading">'+(current==='teams'?'參賽球隊':'歷屆資料')+'</div><div class="awb-roster-group"><div>'+record.teams.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div></div><p class="awb-muted">'+year+' 年逐隊戰績、球員名單及完整排行榜尚未匯入，避免顯示其他年度數據。</p>'+official('https://awb.cpbl.com.tw/teamhistory','冬盟官方球隊沿革');return;}
+    if(year!==2025&&year!==2026){
+      const record=historicalSeasons[year];
+      const champion=esc(record.champion), count=record.teams.length;
+      const link=official('https://awb.cpbl.com.tw/teamhistory','查看官方歷年資料');
+      if(current==='standings'){
+        body.innerHTML='<div class="awb-history-champion"><div class="awb-history-kicker">CHAMPION · '+year+'</div><div class="awb-history-champion-name">'+champion+'</div><div class="awb-history-champion-meta">年度冠軍 <span>·</span> '+count+' 支參賽隊伍</div></div>'+
+          '<div class="awb-history-section-head"><strong>參賽隊伍</strong><span>'+count+' TEAMS</span></div>'+
+          '<div class="awb-history-team-pills">'+record.teams.map(t=>'<span class="'+(t===record.champion?'is-champion':'')+'">'+esc(t)+(t===record.champion?' · 冠軍':'')+'</span>').join('')+'</div>'+
+          '<div class="awb-history-notice"><strong>歷史資料整理中</strong><p>目前收錄冠軍及參賽隊伍。逐場比分、完整戰績與球員數據尚未匯入。</p>'+link+'</div>';
+      }else if(current==='teams'){
+        body.innerHTML='<div class="awb-history-section-head"><strong>'+year+' 參賽隊伍</strong><span>'+count+' TEAMS</span></div><div class="awb-history-team-grid">'+record.teams.map(t=>'<div class="awb-history-team-card '+(t===record.champion?'is-champion':'')+'"><span class="awb-history-team-monogram">'+esc(t.slice(0,1))+'</span><div><strong>'+esc(t)+'</strong><small>'+(t===record.champion?'年度冠軍':'參賽隊伍')+'</small></div>'+(t===record.champion?'<span class="awb-history-crown">冠軍</span>':'')+'</div>').join('')+'</div><p class="awb-muted">本頁為參賽隊伍概覽；個別球員名單尚未匯入。</p>'+link;
+      }else{
+        const rows=[['年度冠軍',true],['參賽隊伍',true],['逐場比分',false],['逐隊戰績',false],['球員名單',false],['完整排行榜',false]];
+        body.innerHTML='<div class="awb-history-section-head"><strong>資料收錄狀態</strong><span>'+year+' SEASON</span></div><div class="awb-history-status-list">'+rows.map(([label,yes])=>'<div class="awb-history-status-row"><span>'+label+'</span><span class="'+(yes?'is-ready':'is-pending')+'">'+(yes?'已收錄':'待匯入')+'</span></div>').join('')+'</div><p class="awb-muted">未匯入的項目不會使用其他年度資料代替。</p>'+link;
+      }
+      return;
+    }
     if(!ready){body.innerHTML=pending();return;}
     if(current==='standings'){const counted=standings.reduce((acc,row)=>{const n=String(row[1]||'').split('-').map(Number);if(n.length===3&&n.every(Number.isFinite)){acc.w+=n[0];acc.l+=n[1];acc.t+=n[2];}return acc;},{w:0,l:0,t:0});const metrics='<div class="awb-metrics"><div class="awb-metric"><small>參賽球隊</small><strong>'+standings.length+'</strong><span>聯盟隊伍</span></div><div class="awb-metric"><small>已記錄場次</small><strong>'+Math.floor((counted.w+counted.l+counted.t)/2)+'</strong><span>依戰績加總估算</span></div><div class="awb-metric"><small>排名第一</small><strong style="font-size:14px">'+esc(standings[0]?.[0]||'—')+'</strong><span>勝率 '+esc(standings[0]?.[2]||'—')+'</span></div></div>';body.innerHTML=metrics+'<table class="awb-rank-table"><thead><tr><th>排名</th><th>球隊</th><th>勝-敗-和</th><th>勝率</th></tr></thead><tbody>'+standings.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody></table><p class="awb-muted">'+year+' 例行賽戰績</p>';return;}
     if(current==='stats'){
@@ -865,6 +910,7 @@
       body.innerHTML='<button class="awb-back" type="button" data-awb-back>← 所有球隊</button><h3 class="awb-detail-title">'+esc(team[0])+'</h3><p class="awb-muted">'+esc(team[1])+'</p>'+partial.map(([position,names])=>'<div class="awb-roster-group"><b>'+esc(position)+'</b><div>'+names.split('、').map(n=>'<span>'+esc(n)+'</span>').join('')+'</div></div>').join('')+'<p class="awb-muted">以上為已核對的部分球員，並非完整登錄名單。</p>'+official('https://awb.cpbl.com.tw/team?TeamNo='+team[2],'查看官方完整球員名單');
     } else body.innerHTML='<div class="awb-categories">'+teams.map(t=>'<button class="awb-category" type="button" data-awb-team="'+esc(t[0])+'"><span>'+esc(t[0])+'</span><strong>'+esc(t[1])+'</strong><span class="awb-chevron">›</span></button>').join('')+'</div>';
   }
+  function updateAwbTabLabels(){const history=year!==2025&&year!==2026;const labels=history?['概覽','隊伍','資料狀態']:['戰績','數據','球隊'];buttons.forEach((b,i)=>{b.textContent=labels[i]||'';});}
   function select(tab){if(!['standings','stats','teams'].includes(tab))return;current=tab;detail=null;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);render();}
   buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
   body.addEventListener('click',event=>{const cat=event.target.closest('[data-awb-category]'),team=event.target.closest('[data-awb-team]'),back=event.target.closest('[data-awb-back]');if(cat)detail=cat.dataset.awbCategory;else if(team)detail=team.dataset.awbTeam;else if(back)detail=null;else return;render();body.scrollTop=0;});
@@ -873,6 +919,6 @@
   select('standings');sync();
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.15"></script>
+  <script src="./js/module-loader.js?v=v9.16"></script>
 </body>
 </html>
