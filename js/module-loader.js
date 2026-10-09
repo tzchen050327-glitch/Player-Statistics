@@ -175,7 +175,14 @@
       for (let i = 0; i < afterModules.length; i += 1) {
         const name = afterModules[i].split('/').pop();
         setStartupStatus(`載入介面擴充 ${i + 1}/${afterModules.length} · ${name}`);
-        await loadClassicScript(afterModules[i]);
+        try {
+          await loadClassicScript(afterModules[i]);
+        } catch (error) {
+          // UI enhancements are optional. A failed cache-router or styling
+          // module must not prevent the core app from becoming usable.
+          console.warn('[module-loader] optional enhancement skipped:', name, error);
+          setStartupStatus(`略過未載入擴充：${name}`);
+        }
         setStartupProgress(
           phasePercent(76, 80, i, afterModules.length),
           `介面擴充 ${i + 1}/${afterModules.length} · ${name}`
