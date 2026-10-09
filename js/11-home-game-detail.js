@@ -2211,6 +2211,7 @@
       const desktopDisplayControl = window.matchMedia('(min-width: 981px) and (pointer: fine)').matches;
       let largeDisplayEnabled = false;
       try { largeDisplayEnabled = localStorage.getItem('baseball-game-detail-large-screen-v1') === '1'; } catch {}
+      overlay.classList.toggle('game-detail-wide-mode', desktopDisplayControl && largeDisplayEnabled);
       const pregame = detail?.pregame || null;
       if (pregame && activeHomeGameDetail?.pregameCenter) {
         const existing = activeHomeGameDetail.pregameCenter.starters || {};
