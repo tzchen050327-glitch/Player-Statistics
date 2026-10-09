@@ -1308,7 +1308,7 @@
       name:name||'投手資料讀取中',
       pitches:(()=>{
         const same=(player)=>{const n=compactName(player?.fullName||player?.name||'');return !!n&&!!name&&samePlayerName(n,name);};
-        if(same(current))return stat(currentStats.pitches,currentStats.pitchCount,currentStats.pitchCnt,current.pitches,current.pitchCount,current.pitchCnt);
+        if(same(current)){const value=stat(currentStats.pitches,currentStats.pitchCount,currentStats.pitchCnt,current.pitches,current.pitchCount,current.pitchCnt);if(value)return value;}
         if(same(direct))return stat(directStats.pitches,directStats.pitchCount,directStats.pitchCnt);
         if(same(starter))return stat(starterStats.pitches,starterStats.pitchCount,starterStats.pitchCnt);
         return '';
