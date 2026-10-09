@@ -238,7 +238,7 @@
       const npb = standingsOfficialCache?.npb || {};
       const central = postseasonSectionRows(npb.central,3);
       const pacific = postseasonSectionRows(npb.pacific,3);
-      const leagueBlock = (label, rows) => {
+      const leagueBlock = (label, rows, isPacific = false) => {
         const first = postseasonTeamName(rows[0]);
         const second = postseasonTeamName(rows[1]);
         const third = postseasonTeamName(rows[2]);
@@ -246,10 +246,10 @@
           '<div class="postseason-bracket-league-label">' + postseasonEscape(label) + '</div>' +
           '<div class="postseason-bracket">' +
             '<section class="postseason-round"><div class="postseason-round-title">FIRST STAGE</div><div class="postseason-round-series">' +
-              postseasonMatchCard('第一階段', second, third, '勝者晉級 Final Stage') +
+              postseasonMatchCard('第一階段', second, third, '勝者晉級 Final Stage', { format:'3戰2勝制', seriesScore:[0,0] }) +
             '</div></section>' +
             '<section class="postseason-round"><div class="postseason-round-title">FINAL STAGE</div><div class="postseason-round-series">' +
-              postseasonMatchCard('決勝階段', first, '第一階段勝者', '勝者晉級日本大賽') +
+              postseasonMatchCard('決勝階段', first, '第一階段勝者', first + (isPacific && String(CURRENT_YEAR) === '2026' ? '帶 2 勝優勢' : '帶 1 勝優勢'), { seriesScore:[isPacific && String(CURRENT_YEAR) === '2026' ? 2 : 1,0], format:isPacific && String(CURRENT_YEAR) === '2026' ? '7戰5勝制' : '6戰4勝制' }) +
             '</div></section>' +
           '</div></div>';
       };
@@ -257,9 +257,9 @@
         leagueBlock('CENTRAL LEAGUE', central) +
         '<div class="postseason-world-series">' +
           '<section class="postseason-round"><div class="postseason-round-title">JAPAN SERIES</div><div class="postseason-round-series">' +
-            postseasonMatchCard('日本大賽', '央聯 CS 勝者', '洋聯 CS 勝者', '') +
+            postseasonMatchCard('日本大賽', '央聯 CS 勝者', '洋聯 CS 勝者', '', {format:'7戰4勝制'}) +
           '</div></section></div>' +
-        leagueBlock('PACIFIC LEAGUE', pacific) +
+        leagueBlock('PACIFIC LEAGUE', pacific, true) +
       '</div>';
     }
 
@@ -270,17 +270,17 @@
         '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">KBO POSTSEASON</div>' +
         '<div class="postseason-bracket">' +
           '<section class="postseason-round"><div class="postseason-round-title">WILD CARD</div><div class="postseason-round-series">' +
-            postseasonMatchCard('外卡決定戰', t(3), t(4), '4 號種子帶 1 勝優勢') +
+            postseasonMatchCard('外卡決定戰', t(3), t(4), '4 號種子帶 1 勝優勢', {seriesScore:[1,0],format:'最多2戰，4號種子1勝或1和即晉級'}) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">SEMI-PLAYOFF</div><div class="postseason-round-series">' +
-            postseasonMatchCard('準季後賽', t(2), '外卡勝者', '') +
+            postseasonMatchCard('準季後賽', t(2), '外卡勝者', '', {format:'5戰3勝制'}) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF</div><div class="postseason-round-series">' +
-            postseasonMatchCard('季後賽', t(1), '準季後賽勝者', '') +
+            postseasonMatchCard('季後賽', t(1), '準季後賽勝者', '', {format:'5戰3勝制'}) +
           '</div></section>' +
         '</div></div>' +
         '<div class="postseason-world-series"><section class="postseason-round"><div class="postseason-round-title">KOREAN SERIES</div><div class="postseason-round-series">' +
-          postseasonMatchCard('韓國大賽', t(0), '季後賽勝者', '') +
+          postseasonMatchCard('韓國大賽', t(0), '季後賽勝者', '', {format:'7戰4勝制'}) +
         '</div></section></div>' +
       '</div>';
     }
@@ -323,7 +323,7 @@
               { seriesScore: [1, 0], format: '5戰3勝制' }) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
-            postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '') +
+            postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '', {format:'7戰4勝制'}) +
           '</div></section>' +
         '</div></div></div>';
     }
@@ -423,11 +423,12 @@
         ? postseasonEscape(nextGame?.time || '') + ' ' + (String(nextGame?.status || '') === 'live' ? '進行中' : '下一戰')
         : (completedGames ? postseasonMlbSeriesStatus(series) : '尚未開打');
 
+      const format = ({wildcard:'3戰2勝制',division:'5戰3勝制',league:'7戰4勝制',world:'7戰4勝制'})[String(series?.round || '')] || '';
       return '<div class="postseason-series-card ' + (winner ? 'is-complete' : '') + '">' +
         '<div class="postseason-series-meta"><span>' + postseasonEscape(series?.description || series?.roundLabel || '') + '</span>' +
         '<em>' + postseasonEscape(postseasonMlbSeriesStatus(series)) + '</em></div>' +
         '<div class="postseason-bracket-teams">' + rows + '</div>' +
-        '<div class="postseason-series-foot">' + detail + '</div></div>';
+        '<div class="postseason-series-foot" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>' + detail + '</span><span style="margin-left:auto">' + postseasonEscape(format) + '</span></div></div>';
     }
 
     function postseasonMlbRound(title, code, league = '') {
