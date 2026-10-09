@@ -125,7 +125,7 @@
       if (!homePitcherRecordsSupported(league, game)) throw new Error('此賽事目前不支援投手紀錄。');
       const kindCode = String(game?.kindCode || 'A').trim().toUpperCase();
       const url = league === 'CPBL'
-        ? (kindCode === 'E' || kindCode === 'C' ? CPBL_POSTSEASON_DETAIL_API_URL : CPBL_GAME_DETAIL_API_URL)
+        ? (kindCode === 'E' || kindCode === 'C' ? CPBL_POSTSEASON_PITCHER_RECORDS_API_URL : CPBL_GAME_DETAIL_API_URL)
         : NPB_GAME_DETAIL_API_URL;
       const response = await fetch(url, {
         method:'POST',
@@ -144,6 +144,11 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.ok) throw new Error(data?.error || `投手紀錄讀取失敗（${response.status}）`);
+      // Postseason data must include both team arrays; do not silently cache an invalid response as empty forever.
+      if (league === 'CPBL' && ['E','C'].includes(kindCode)
+          && (!Array.isArray(data?.away) || !Array.isArray(data?.home))) {
+        throw new Error('季後賽投手紀錄回傳格式異常，請重新讀取。');
+      }
       return {
         away:Array.isArray(data?.away) ? data.away : [],
         home:Array.isArray(data?.home) ? data.home : [],
