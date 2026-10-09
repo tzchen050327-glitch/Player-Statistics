@@ -126,6 +126,23 @@
     }
 
 
+    // All update paths use one navigation gate: version marker, worker takeover, and fallback.
+    let startupReloadScheduled = false;
+    function scheduleAppReload({ url = null, delay = 250 } = {}) {
+      if (startupReloadScheduled) return false;
+      startupReloadScheduled = true;
+      appRefreshing = true;
+      try {
+        sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
+        sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
+      } catch {}
+      setTimeout(() => {
+        if (url) location.replace(url);
+        else location.reload();
+      }, delay);
+      return true;
+    }
+
     let serviceWorkerRegistration = null;
     let appRefreshing = false;
     let appUpdateProgressVisible = false;
@@ -379,13 +396,11 @@
             if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
-              appRefreshing = true;
-              sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
-              sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
+
               const reloadUrl = new URL('./index.html', location.href);
               reloadUrl.searchParams.set('v', remoteVersion);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
-              setTimeout(() => location.replace(reloadUrl.href), showProgress ? 900 : 120);
+              scheduleAppReload({ url:reloadUrl.href, delay:showProgress ? 400 : 120 });
               return { activated:true, remoteVersion };
             }
           }
@@ -406,9 +421,7 @@
             if (remoteVersion && isRemoteVersionNewer(remoteVersion)) {
               if (showProgress) setAppUpdateProgress(82, `找到新版 ${remoteVersion}，正在重新載入…`);
               if (manual) setStatus(`找到新版 ${remoteVersion}，正在重新載入…`);
-              appRefreshing = true;
-              sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
-              sessionStorage.setItem('baseballSkipControllerReloadOnce', '1');
+
               const reloadUrl = new URL(location.href);
               reloadUrl.searchParams.set('__app_version', remoteVersion);
               setTimeout(() => location.replace(reloadUrl.href), showProgress ? 900 : 120);
@@ -514,16 +527,9 @@
             suppressNextControllerReload = false;
             return;
           }
-          if (appRefreshing) return;
-          appRefreshing = true;
-          sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
-
-          if (appUpdateProgressVisible) {
-            setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
-            setTimeout(() => location.reload(), 900);
-          } else {
-            location.reload();
-          }
+          if (appRefreshing || startupReloadScheduled) return;
+          if (appUpdateProgressVisible) setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
+          scheduleAppReload({ delay:appUpdateProgressVisible ? 400 : 120 });
         });
 
         reg.addEventListener('updatefound', () => {
@@ -554,10 +560,8 @@
         if (updateResult?.activated) {
           // controllerchange 正常會立刻重新載入；留一個 fallback 避免瀏覽器漏事件。
           setTimeout(() => {
-            if (appRefreshing) return;
-            appRefreshing = true;
-            sessionStorage.setItem('baseballSkipStartupSplashOnce', '1');
-            location.reload();
+            if (appRefreshing || startupReloadScheduled) return;
+            scheduleAppReload({ delay:120 });
           }, 1300);
           return true;
         }
