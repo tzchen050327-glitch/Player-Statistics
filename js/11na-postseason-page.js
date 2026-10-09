@@ -306,7 +306,7 @@
         const next = Array.isArray(data.games) ? data.games : [];
         postseasonCpblResults = next;
         postseasonCpblResultsAt = Date.now();
-        if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') renderPostseasonPage();
+        if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') { renderPostseasonPage(); updateCpblSeriesScoreDom(); }
         return next;
       })().catch(error => {
         console.warn('CPBL playoff series results', error);
@@ -319,6 +319,20 @@
       if (Date.now() - postseasonCpblResultsAt < POSTSEASON_CPBL_RESULT_TTL) return;
       void refreshPostseasonCpblResults();
     });
+    function updateCpblSeriesScoreDom() {
+      const root = els.postseasonPageContent;
+      if (!root || currentPage !== 'postseason' || leagueHubLeague !== 'cpbl') return;
+      const rounds = [...root.querySelectorAll('.postseason-round')];
+      const round = rounds.find(node => node.querySelector('.postseason-round-title')?.textContent?.trim() === 'PLAYOFF SERIES');
+      if (!round) return;
+      const teams = [...round.querySelectorAll('.postseason-bracket-team')];
+      if (teams.length !== 2) return;
+      const a = teams[0].querySelector('strong')?.textContent || '';
+      const b = teams[1].querySelector('strong')?.textContent || '';
+      const score = postseasonCpblSeriesScore(a,b);
+      teams[0].querySelector('b')?.replaceChildren(document.createTextNode(String(score[0])));
+      teams[1].querySelector('b')?.replaceChildren(document.createTextNode(String(score[1])));
+    }
     function postseasonCpblSeriesScore(a,b) {
       const score = [1,0];
       const cleanName = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\s/g,'').trim();
@@ -634,4 +648,5 @@
           </div>
           ${body}
         </div>`;
+      if (leagueHubLeague === 'cpbl' && active) updateCpblSeriesScoreDom();
     }
