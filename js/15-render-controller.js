@@ -18,6 +18,7 @@
           renderToday(player);
         }
       }
+      if (selectedTab === 'advanced' && playerScope(player) === 'cpbl') void renderPlayerAdvancedTab(player);
       if (selectedTab === 'photos') renderPhotos(player);
       if (selectedTab === 'errors' && playerScope(player) === 'cpbl') renderCpblErrorsPage(player);
     }
@@ -181,6 +182,7 @@
               : (usDualTabs ? (player.type === 'pitcher' ? '投球成績' : '打擊成績') : '球員基礎設定'));
       }
       minorTab?.classList.toggle('hidden', !levelTabs);
+      document.querySelector('.tab-btn[data-tab="advanced"]')?.classList.toggle('hidden', playerScopeCode !== 'cpbl');
       if (minorTab) minorTab.textContent = '二軍';
       secondaryTab?.classList.toggle('hidden', !usDualTabs);
       if (secondaryTab && usDualTabs) secondaryTab.textContent = player.type === 'pitcher' ? '打擊成績' : '投球成績';
