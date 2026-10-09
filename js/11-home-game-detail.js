@@ -561,6 +561,8 @@
         if (Number.isFinite(awayScore)) target.awayScore = awayScore;
         if (Number.isFinite(homeScore)) target.homeScore = homeScore;
         if (normalizedStatus) target.status = normalizedStatus;
+        // Keep the home game card inning in sync with the live matchup center.
+        if (String(info?.inningLabel || '').trim()) target.inningLabel = String(info.inningLabel).trim();
         if (info?.id && !target.id) target.id = info.id;
         if (homeDetailLineupReady(detail, target, league)) target.lineupReady = true;
       };
