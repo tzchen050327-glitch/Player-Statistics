@@ -102,8 +102,15 @@ self.addEventListener('install', event => {
     await assertNoNewerInstalledCache();
 
     const cache = await caches.open(CACHE_NAME);
-    const moduleShell = await getModuleShell();
-    const shell = [...APP_SHELL, ...moduleShell];
+    // Keep installation small: only core entry files are required upfront.
+    // The 62 feature modules and optional enhancements are fetched/cached when
+    // actually used, rather than forcing ~90 simultaneous requests per update.
+    const shell = APP_SHELL.filter(url =>
+      url === './' || url === './index.html' ||
+      url.startsWith('./js/module-loader.js?') ||
+      url === MODULE_ORDER_URL ||
+      url === VERSIONED_MODULE_ORDER_URL
+    );
     // Do not activate a half-populated or mixed-version shell. If GitHub Pages
     // is between deployments, keep the currently working worker instead.
     await Promise.all(shell.map(async url => {
