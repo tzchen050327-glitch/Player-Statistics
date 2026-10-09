@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.01" />
+  <meta name="app-version" content="v9.02" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.01" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.01" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.01" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.01" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.02" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.02" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.02" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.02" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.01"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.01" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.01" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.01" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.01" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.01" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.01" />
+    <script src="./diagnostic-runtime.js?v=v9.02"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.02" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.02" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.02" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.02" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.02" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.02" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers{display:none!important}
 .awb-compact{min-width:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;margin-top:8px;border:1px solid var(--line,#394653);border-radius:12px;background:var(--surface,#121a24);color:var(--text,#e9eff5)}
@@ -106,13 +106,68 @@
 .awb-roster-group span{padding:5px 9px;font-size:12px;border-radius:6px;background:rgba(127,145,169,.12)}
 @media(max-width:480px){.awb-categories{grid-template-columns:1fr}}
 .awb-season-select{background:transparent;color:inherit;border:1px solid rgba(127,145,169,.35);border-radius:7px;padding:5px 9px;font-weight:700}
+
+/* AWB 2026-ready visual refresh — scoped to the existing winter league surfaces. */
+.awb-schedule-shell{margin:10px 0 12px;box-shadow:0 6px 20px rgba(0,0,0,.09);overflow:hidden}
+.awb-schedule-shell .home-daily-games-head{padding:12px 15px 10px}
+.awb-schedule-shell .home-daily-games-title strong{font-size:15px;letter-spacing:.01em}
+.awb-schedule-shell .home-daily-games-title>span{font-size:11px;font-weight:650;opacity:.62}
+.awb-schedule-date{font-size:11px!important;font-weight:650;opacity:.7}
+.awb-schedule-track{padding-bottom:13px}
+.awb-compact{margin:0;border-radius:14px;border:1px solid rgba(127,145,169,.22);background:var(--surface,#121a24);box-shadow:0 8px 24px rgba(0,0,0,.07);overflow:hidden}
+.awb-compact-heading{padding:17px 17px 13px;align-items:center;gap:14px}
+.awb-compact-heading .awb-heading-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.awb-compact-heading .awb-eyebrow{font-size:10px;letter-spacing:.16em;font-weight:800;opacity:.68}
+.awb-compact-heading .awb-heading-copy>strong{font-size:19px;letter-spacing:.01em;line-height:1.25}
+.awb-compact-heading .awb-heading-caption{font-size:11px;opacity:.65;letter-spacing:0}
+.awb-year-control{display:flex;align-items:center;gap:7px;padding:5px 6px 5px 11px;border:1px solid rgba(127,145,169,.24);border-radius:10px;background:rgba(127,145,169,.07);flex-shrink:0}
+.awb-year-control>span{font-size:11px;opacity:.6;font-weight:600}
+.awb-season-select{appearance:auto;min-width:76px;border:0;border-radius:7px;background:rgba(127,145,169,.13);color:inherit;padding:7px 8px;font-size:13px;font-weight:800;cursor:pointer;outline-offset:3px}
+.awb-season-select option{color:#17212c;background:#fff}
+.awb-compact-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:0 15px;border-bottom:1px solid rgba(127,145,169,.21)}
+.awb-compact-tabs button{position:relative;min-height:46px;border:0;border-radius:0;background:transparent;color:inherit;opacity:.58;font-size:13px;font-weight:750;transition:opacity .16s,background .16s}
+.awb-compact-tabs button[aria-selected="true"]{opacity:1;border:0;background:transparent;color:var(--accent,#6bb5ff)}
+.awb-compact-tabs button[aria-selected="true"]:after{content:"";position:absolute;bottom:0;left:13%;right:13%;height:3px;border-radius:3px 3px 0 0;background:currentColor}
+.awb-compact-tabs button:hover{background:rgba(127,145,169,.06);opacity:1}
+.awb-compact-body{border-top:0;padding:14px 16px 18px;max-height:min(49dvh,415px);min-height:155px}
+.awb-rank-table{font-size:13px}
+.awb-rank-table th{font-size:11px;letter-spacing:.02em;padding:10px 7px}
+.awb-rank-table td{padding:12px 7px}
+.awb-rank-table tr:last-child td{border-bottom:0}
+.awb-data-row{padding:12px 13px;border-radius:10px;background:rgba(127,145,169,.04)}
+.awb-data-row strong{font-size:13px}.awb-data-row b{font-size:16px}
+.awb-categories{gap:9px}
+.awb-category{min-height:75px;padding:13px 28px 13px 14px;background:rgba(127,145,169,.055);border-color:rgba(127,145,169,.18);border-radius:11px;gap:8px}
+.awb-category:hover{border-color:var(--accent,#6bb5ff);background:rgba(127,145,169,.11)}
+.awb-category>span:first-child{font-size:14px}
+.awb-category strong{font-size:12px}
+.awb-detail-title{font-size:18px}
+.awb-back{border-radius:9px;padding:8px 11px}
+.awb-compact-empty{min-height:132px;padding:10px;gap:9px}
+.awb-compact-empty strong{font-size:15px}
+@media(max-width:580px){
+ .awb-schedule-shell{margin:8px 0 10px}
+ .awb-compact-heading{padding:13px 12px 10px;gap:8px}
+ .awb-compact-heading .awb-heading-copy>strong{font-size:16px}
+ .awb-year-control{gap:5px;padding:4px}
+ .awb-year-control>span{display:none}
+ .awb-season-select{min-width:72px;font-size:12px}
+ .awb-compact-tabs{padding:0 9px}
+ .awb-compact-tabs button{min-height:43px}
+ .awb-compact-body{padding:11px 11px 14px;min-height:148px;max-height:min(47dvh,360px)}
+ .awb-categories{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .awb-category{min-height:77px;padding:10px 21px 10px 10px}
+ .awb-category strong{white-space:normal;line-height:1.3}
+ .awb-chevron{right:7px}
+}
+@media(max-width:350px){.awb-categories{grid-template-columns:1fr}.awb-heading-caption{display:none}}
 </style>
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.01" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.02" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -289,7 +344,7 @@
               </div>
             </section>
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
-            <div class="awb-compact-heading"><div><strong>亞洲冬季棒球聯盟</strong><span>ASIA WINTER BASEBALL LEAGUE · <span id="awbSeasonLabel">2025</span></span></div><select id="awbSeasonSelect" class="awb-season-select" aria-label="選擇冬盟賽季"><option value="2025">2025</option><option value="2026">2026</option></select></div>
+            <div class="awb-compact-heading"><div class="awb-heading-copy"><span class="awb-eyebrow">AWB · WINTER LEAGUE</span><strong>亞洲冬季棒球聯盟</strong><span class="awb-heading-caption">賽季紀錄 · <span id="awbSeasonLabel">2025</span></span></div><div class="awb-year-control"><span>賽季</span><select id="awbSeasonSelect" class="awb-season-select" aria-label="選擇冬盟賽季"><option value="2025">2025</option><option value="2026">2026</option></select></div></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
               <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
@@ -488,7 +543,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.01</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.02</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -810,6 +865,6 @@
   select('standings');sync();
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.01"></script>
+  <script src="./js/module-loader.js?v=v9.02"></script>
 </body>
 </html>
