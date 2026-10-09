@@ -2158,6 +2158,9 @@
       const body = overlay.querySelector('#homeGameDetailBody');
       if (!body) return;
       // A live data refresh must not jump either team's independently scrolled list.
+      const preservedBodyScroll = body.scrollTop;
+      const preservedWindowScroll = window.scrollY;
+      const preservedPanelScroll = body.querySelector('[data-match-center-panel]')?.scrollTop || 0;
       const pitcherScrollPositions = Object.create(null);
       body.querySelectorAll('.game-pitcher-team').forEach(team => {
         const side = team.classList.contains('game-pitcher-team-away') ? 'away' : 'home';
@@ -2279,6 +2282,11 @@
           </div>` : `
           <div class="match-center-panel active ${centerTab === 'pitchers' ? 'game-pitcher-panel' : centerTab === 'batters' ? 'game-batter-panel' : ''}" data-match-center-panel="${centerTab}">${centerDataPanel}</div>`}
         </main>`;
+      // Preserve the active panel position across realtime full-body redraws.
+      body.scrollTop = preservedBodyScroll;
+      const rebuiltPanel = body.querySelector('[data-match-center-panel]');
+      if (rebuiltPanel) rebuiltPanel.scrollTop = preservedPanelScroll;
+      if (Math.abs(window.scrollY - preservedWindowScroll) > 2) window.scrollTo({top:preservedWindowScroll, behavior:'instant'});
       overlay.classList.remove('hidden');
       document.body.classList.add('home-game-detail-open');
       syncHomePitcherSplitHeight();
