@@ -134,7 +134,7 @@
         // Country changes replace the main content. Do not inherit a previous
         // league's scroll position and clip the root navigation tabs.
         const mainPanel = els.homeProCountrySwitch?.closest('.home-main-panel');
-        if (mainPanel) mainPanel.scrollTop = 0;
+        if (mainPanel) { mainPanel.scrollTop = 0; requestAnimationFrame(() => { mainPanel.scrollTop = 0; }); }
       });
     });
 
