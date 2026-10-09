@@ -258,7 +258,7 @@
         const leader = postseasonSectionRows(section, 1)[0];
         if (leader) contenderNames.add(String(leader.team || leader.sourceTeam || '').trim());
       }
-      postseasonSectionRows(official?.annual, 3).forEach(row =>
+      postseasonSectionRows(official?.annual, 4).forEach(row =>
         contenderNames.add(String(row.team || row.sourceTeam || '').trim())
       );
       const name = String(player.cpblTeam || player.team || '').trim();
