@@ -293,21 +293,17 @@
       if (postseasonCpblResultsPromise) return postseasonCpblResultsPromise;
       if (!force && Date.now() - postseasonCpblResultsAt < POSTSEASON_CPBL_RESULT_TTL) return postseasonCpblResults;
       if (String(CURRENT_YEAR) !== '2026') return postseasonCpblResults;
-      // One lightweight daily-cache request per played date; never request game detail.
-      const today = typeof localISODate === 'function' ? localISODate() : '';
-      const first = '2026-10-09';
-      if (today < first) return postseasonCpblResults;
-      const days = [];
-      for (let d = new Date(first + 'T12:00:00Z'), n = 0; n < 12 && d.toISOString().slice(0,10) <= today; n++, d.setUTCDate(d.getUTCDate()+1)) days.push(d.toISOString().slice(0,10));
+      // Read finalized playoff games from one shared backend database query.
+      // Do not fetch each day's schedule or request game details per viewer.
       postseasonCpblResultsPromise = (async () => {
-        const next = [];
-        for (const day of days) {
-          const cached = homeDailyGamesCache?.get('CPBL|' + day);
-          const games = Array.isArray(cached?.games) && Date.now() - Number(cached?.at || 0) < POSTSEASON_CPBL_RESULT_TTL
-            ? cached.games
-            : await leagueDailyGamesRequest('CPBL', day);
-          next.push(...(games || []).filter(g => String(g?.kindCode || '').toUpperCase() === 'E'));
-        }
+        const response = await fetch(LEAGUE_GAMES_A_API_URL, {
+          method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({appKey:CPBL_APP_KEY,action:'cpbl-playoff-series',year:String(CURRENT_YEAR)})
+        });
+        const data = await response.json();
+        if (!response.ok || data?.ok !== true) throw new Error(data?.error || '季後賽系列戰績讀取失敗');
+        const next = Array.isArray(data.games) ? data.games : [];
         postseasonCpblResults = next;
         postseasonCpblResultsAt = Date.now();
         if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') renderPostseasonPage();
