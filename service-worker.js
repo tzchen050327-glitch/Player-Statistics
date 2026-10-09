@@ -1,5 +1,5 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v927-loader';
-const CACHE_VERSION = 'v9.27';
+const CACHE_NAME = 'baseball-player-card-pwa-v928-light';
+const CACHE_VERSION = 'v9.28';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
@@ -57,29 +57,29 @@ const APP_SHELL = [
   './',
   './index.html',
   './diagnostics.html',
-  './styles.css?v=v9.27',
-  './dark-theme-overrides.css?v=v9.27',
-  './diagnostic-runtime.js?v=v9.27',
-  './live-static-update.js?v=v9.27',
-  './cpbl-realtime.js?v=v9.27',
-  './npb-realtime.js?v=v9.27',
-  './postseason-history.css?v=v9.27',
-  './js/module-loader.js?v=v9.27',
+  './styles.css?v=v9.28',
+  './dark-theme-overrides.css?v=v9.28',
+  './diagnostic-runtime.js?v=v9.28',
+  './live-static-update.js?v=v9.28',
+  './cpbl-realtime.js?v=v9.28',
+  './npb-realtime.js?v=v9.28',
+  './postseason-history.css?v=v9.28',
+  './js/module-loader.js?v=v9.28',
   MODULE_ORDER_URL,
   VERSIONED_MODULE_ORDER_URL,
-  './postseason-history.js?v=v9.27',
-  './cpbl-cache-router.js?v=v9.27',
-  './game-detail-enhancement.css?v=v9.27',
-  './report-layout.css?v=v9.27',
-  './landscape-state.css?v=v9.27',
-  './game-detail-enhancement.js?v=v9.27',
-  './report-layout.js?v=v9.27',
-  './manifest.webmanifest?v=v9.27',
-  './icon-192.png?v=v9.27',
-  './icon-512.png?v=v9.27',
-  './favicon-32.png?v=v9.27',
-  './favicon-16.png?v=v9.27',
-  './notification-badge.png?v=v9.27'
+  './postseason-history.js?v=v9.28',
+  './cpbl-cache-router.js?v=v9.28',
+  './game-detail-enhancement.css?v=v9.28',
+  './report-layout.css?v=v9.28',
+  './landscape-state.css?v=v9.28',
+  './game-detail-enhancement.js?v=v9.28',
+  './report-layout.js?v=v9.28',
+  './manifest.webmanifest?v=v9.28',
+  './icon-192.png?v=v9.28',
+  './icon-512.png?v=v9.28',
+  './favicon-32.png?v=v9.28',
+  './favicon-16.png?v=v9.28',
+  './notification-badge.png?v=v9.28'
 ];
 
 async function getModuleShell() {
