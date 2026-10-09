@@ -497,7 +497,8 @@
       suppressNextControllerReload = skipControllerReload;
       if (skipStartupSplash) {
         sessionStorage.removeItem('baseballSkipStartupSplashOnce');
-        hideAppUpdateProgress();
+        // Keep the lightweight update overlay until init() has rendered the home page.
+        setAppUpdateProgress(84, '正在載入資料…');
       }
       if (skipControllerReload) {
         sessionStorage.removeItem('baseballSkipControllerReloadOnce');
@@ -506,8 +507,6 @@
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (!skipStartupSplash) {
           await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
-        } else {
-          hideAppUpdateProgress();
         }
         return false;
       }
@@ -548,7 +547,7 @@
         if (!skipStartupSplash) {
           updateResult = await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
         } else {
-          hideAppUpdateProgress();
+          setAppUpdateProgress(88, '正在整理本機資料…');
         }
 
         setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
@@ -588,7 +587,9 @@
 
       if (suppressStartupSplash) {
         await initPromise;
-        hideAppUpdateProgress();
+        setAppUpdateProgress(100, '資料已準備完成');
+        // Remove the compact-overlay mode only after it is hidden.
+        hideAppUpdateProgress({ force:true });
         document.documentElement.classList.remove('skip-startup-splash-frame');
       } else {
         setAppUpdateProgress(88, '正在準備球員資料…');

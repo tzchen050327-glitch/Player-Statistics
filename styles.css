@@ -10867,8 +10867,23 @@ html[data-theme="dark"] .game-snapshot-play-meta>i{
 
 
 /* ===== POST-UPDATE SPLASH SUPPRESSION ===== */
+/* Keep the uninitialized page concealed during the second load after a PWA update.
+   Show a quiet loading surface rather than a second full branded splash. */
 html.skip-startup-splash-frame #appUpdateOverlay{
+  display:flex !important;
+}
+html.skip-startup-splash-frame #appUpdateOverlay.hidden{
   display:none !important;
+}
+html.skip-startup-splash-frame #appUpdateCard .app-splash-mark,
+html.skip-startup-splash-frame #appUpdateCard .app-splash-kicker,
+html.skip-startup-splash-frame #appUpdateCard .app-splash-title,
+html.skip-startup-splash-frame #appUpdateCard .app-splash-subtitle,
+html.skip-startup-splash-frame #appUpdateCard .app-splash-version{
+  display:none !important;
+}
+html.skip-startup-splash-frame #appUpdateCard{
+  padding:24px 28px;
 }
 /* ===== POST-UPDATE SPLASH SUPPRESSION END ===== */
 
