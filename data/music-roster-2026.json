@@ -1,0 +1,2175 @@
+{
+  "season": 2026,
+  "source": "CPBL 2026 season player snapshots (recorded appearances; not certified complete active roster)",
+  "generatedAt": "2026-10-10",
+  "teams": {
+    "中信兄弟": [
+      {
+        "id": "0000006224",
+        "name": "林吳晉瑋",
+        "number": "0",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005656",
+        "name": "李聖裕",
+        "number": "2",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007086",
+        "name": "楊祥禾",
+        "number": "6",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007049",
+        "name": "林暉盛",
+        "number": "12",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007278",
+        "name": "許庭綸",
+        "number": "13",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005572",
+        "name": "魏碩成",
+        "number": "14",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007277",
+        "name": "黃霆杉",
+        "number": "17",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003334",
+        "name": "鄭凱文",
+        "number": "19",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000001232",
+        "name": "江忠城",
+        "number": "20",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003609",
+        "name": "陳俊秀",
+        "number": "29",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005604",
+        "name": "勝騎士",
+        "number": "30",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005151",
+        "name": "羅戈",
+        "number": "32",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002345",
+        "name": "鄭浩均",
+        "number": "33",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007560",
+        "name": "菲力士",
+        "number": "34",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007279",
+        "name": "鄧朝駿",
+        "number": "35",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007621",
+        "name": "蔡琞傑",
+        "number": "38",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002297",
+        "name": "詹子賢",
+        "number": "39",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006815",
+        "name": "大瀧幸治",
+        "number": "43",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006006",
+        "name": "德保拉",
+        "number": "46",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005342",
+        "name": "林志綱",
+        "number": "47",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006732",
+        "name": "陳統恩",
+        "number": "48",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006176",
+        "name": "余謙",
+        "number": "49",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000000778",
+        "name": "蔡齊哲",
+        "number": "50",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007087",
+        "name": "胡孟智",
+        "number": "52",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006923",
+        "name": "曾品洋",
+        "number": "55",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003639",
+        "name": "呂彥青",
+        "number": "58",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006734",
+        "name": "黃鈞麟",
+        "number": "60",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000771",
+        "name": "陳琥",
+        "number": "62",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007284",
+        "name": "徐紹予",
+        "number": "69",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006874",
+        "name": "盧孟揚",
+        "number": "71",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007282",
+        "name": "陳九登",
+        "number": "72",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005567",
+        "name": "林瑞鈞",
+        "number": "75",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003506",
+        "name": "謝榮豪",
+        "number": "79",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007283",
+        "name": "陳冠穎",
+        "number": "81",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007276",
+        "name": "伍立辰",
+        "number": "83",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006221",
+        "name": "劉貴元",
+        "number": "85",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007792",
+        "name": "施季定華",
+        "number": "89",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006876",
+        "name": "張祖恩",
+        "number": "91",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000004625",
+        "name": "吳俊偉",
+        "number": "94",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007088",
+        "name": "徐博瑋",
+        "number": "97",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007586",
+        "name": "◎吳瑞璁",
+        "number": "115",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007027",
+        "name": "◎簡子寬",
+        "number": "120",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007319",
+        "name": "◎黃冠倫",
+        "number": "121",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006963",
+        "name": "◎盧彥祖",
+        "number": "122",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000000929",
+        "name": "王威晨",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002307",
+        "name": "王政順",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004636",
+        "name": "江坤宇",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006225",
+        "name": "宋晟睿",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002291",
+        "name": "岳東華",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005571",
+        "name": "岳政華",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002285",
+        "name": "高宇杰",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007085",
+        "name": "張士綸",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006730",
+        "name": "張仁瑋",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001119",
+        "name": "許基宏",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005569",
+        "name": "曾頌恩",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005298",
+        "name": "黃韋盛",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ],
+    "統一7-ELEVEn獅": [
+      {
+        "id": "0000006716",
+        "name": "張翔",
+        "number": "4",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004641",
+        "name": "李丞齡",
+        "number": "6",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007009",
+        "name": "陳維祥",
+        "number": "9",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006818",
+        "name": "髙塩將樹",
+        "number": "28",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007293",
+        "name": "鍾允華",
+        "number": "29",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006127",
+        "name": "李其峰",
+        "number": "30",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007044",
+        "name": "鄭澔",
+        "number": "33",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003645",
+        "name": "柯育民",
+        "number": "36",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000998",
+        "name": "邱浩鈞",
+        "number": "37",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007037",
+        "name": "張皓崴",
+        "number": "38",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001339",
+        "name": "林祖傑",
+        "number": "39",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003393",
+        "name": "王鏡銘",
+        "number": "41",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007597",
+        "name": "獅帝芬",
+        "number": "42",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007063",
+        "name": "周彥農",
+        "number": "45",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006847",
+        "name": "田子杰",
+        "number": "49",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005731",
+        "name": "布雷克",
+        "number": "50",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000004627",
+        "name": "張偉聖",
+        "number": "52",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005482",
+        "name": "吳承諭",
+        "number": "57",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007292",
+        "name": "李軍",
+        "number": "62",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005315",
+        "name": "高偉強",
+        "number": "63",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007061",
+        "name": "辛俊昇",
+        "number": "69",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006848",
+        "name": "林詔恩",
+        "number": "74",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000001260",
+        "name": "郭俊麟",
+        "number": "75",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000001412",
+        "name": "江少慶",
+        "number": "76",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007778",
+        "name": "喬登",
+        "number": "87",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007605",
+        "name": "王翾祐",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005522",
+        "name": "朱迦恩",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006213",
+        "name": "何恆佑",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006223",
+        "name": "林子豪",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007070",
+        "name": "林佳緯",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007071",
+        "name": "林泓弦",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006851",
+        "name": "林培緯",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005531",
+        "name": "邱智呈",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005306",
+        "name": "許哲晏",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002298",
+        "name": "陳重羽",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002289",
+        "name": "陳重廷",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001804",
+        "name": "陳傑憲",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007268",
+        "name": "陳聖平",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002661",
+        "name": "陳鏞基",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002707",
+        "name": "潘傑楷",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001474",
+        "name": "蘇智傑",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ],
+    "樂天桃猿": [
+      {
+        "id": "0000005558",
+        "name": "蘇俊璋",
+        "number": "00",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006857",
+        "name": "舒治浩",
+        "number": "1",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006854",
+        "name": "宋嘉翔",
+        "number": "2",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000132",
+        "name": "梁家榮",
+        "number": "5",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006858",
+        "name": "陳佳樂",
+        "number": "8",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003467",
+        "name": "林泓育",
+        "number": "11",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006234",
+        "name": "邱勝宥",
+        "number": "14",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001618",
+        "name": "林子偉",
+        "number": "15",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000941",
+        "name": "陳冠宇",
+        "number": "17",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006860",
+        "name": "劉家翔",
+        "number": "18",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000004624",
+        "name": "陳克羿",
+        "number": "19",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006906",
+        "name": "艾菩樂",
+        "number": "23",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007315",
+        "name": "游承勳",
+        "number": "24",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002282",
+        "name": "張閔勛",
+        "number": "28",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007078",
+        "name": "杜禹鋒",
+        "number": "31",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007312",
+        "name": "張趙紘",
+        "number": "33",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000159",
+        "name": "成晉",
+        "number": "35",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003563",
+        "name": "余德龍",
+        "number": "36",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006856",
+        "name": "董順傑",
+        "number": "38",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007074",
+        "name": "曾家輝",
+        "number": "44",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006720",
+        "name": "邱駿威",
+        "number": "46",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005372",
+        "name": "呂詠臻",
+        "number": "48",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007062",
+        "name": "威能帝",
+        "number": "49",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006237",
+        "name": "林子崴",
+        "number": "54",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007313",
+        "name": "曾冠傑",
+        "number": "55",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007018",
+        "name": "劉子杰",
+        "number": "56",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004629",
+        "name": "楊彬",
+        "number": "57",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000000158",
+        "name": "廖健富",
+        "number": "58",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004032",
+        "name": "嚴宏鈞",
+        "number": "62",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007073",
+        "name": "賴胤豪",
+        "number": "63",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006228",
+        "name": "王志煊",
+        "number": "64",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006235",
+        "name": "林政華",
+        "number": "65",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007288",
+        "name": "何品室融",
+        "number": "66",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006855",
+        "name": "邱緯綸",
+        "number": "69",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007822",
+        "name": "威克",
+        "number": "74",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006853",
+        "name": "林禹叡",
+        "number": "76",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005509",
+        "name": "莊昕諺",
+        "number": "77",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003345",
+        "name": "林智平",
+        "number": "79",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007316",
+        "name": "賴威誠",
+        "number": "83",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007589",
+        "name": "許賀捷",
+        "number": "85",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006240",
+        "name": "馬傑森",
+        "number": "94",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007076",
+        "name": "李勛傑",
+        "number": "95",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006714",
+        "name": "鍾玉成",
+        "number": "97",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004633",
+        "name": "陳晨威",
+        "number": "98",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002286",
+        "name": "林立",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000153",
+        "name": "林承飛",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ],
+    "富邦悍將": [
+      {
+        "id": "0000006810",
+        "name": "潘瑋祥",
+        "number": "0",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000005336",
+        "name": "童堉誠",
+        "number": "00",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005510",
+        "name": "林澤彬",
+        "number": "2",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003211",
+        "name": "王勝偉",
+        "number": "3",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007091",
+        "name": "高捷",
+        "number": "4",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007089",
+        "name": "王念好",
+        "number": "5",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006229",
+        "name": "葉子霆",
+        "number": "6",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005310",
+        "name": "陳真",
+        "number": "7",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005479",
+        "name": "江國豪",
+        "number": "12",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007592",
+        "name": "劉承佑",
+        "number": "013",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000002280",
+        "name": "廖任磊",
+        "number": "13",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006736",
+        "name": "王苡丞",
+        "number": "14",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005790",
+        "name": "張奕",
+        "number": "19",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005284",
+        "name": "藍愷青",
+        "number": "21",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000001473",
+        "name": "李宗賢",
+        "number": "22",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000001754",
+        "name": "林書逸",
+        "number": "25",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000362",
+        "name": "申皓瑋",
+        "number": "29",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001606",
+        "name": "林岱安",
+        "number": "31",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003292",
+        "name": "賴鴻誠",
+        "number": "32",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000000361",
+        "name": "張洺瑀",
+        "number": "33",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002305",
+        "name": "王正棠",
+        "number": "35",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007568",
+        "name": "王偉軒",
+        "number": "37",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000000773",
+        "name": "李吳永勤",
+        "number": "38",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006749",
+        "name": "魔力藍",
+        "number": "44",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002352",
+        "name": "范國宸",
+        "number": "46",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007832",
+        "name": "悍里歐",
+        "number": "54",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007804",
+        "name": "瑪帝斯",
+        "number": "55",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006227",
+        "name": "曾峻岳",
+        "number": "60",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006872",
+        "name": "林岳谷",
+        "number": "62",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007297",
+        "name": "楊泯貽",
+        "number": "63",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006861",
+        "name": "蔡佳諺",
+        "number": "65",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006739",
+        "name": "李東洺",
+        "number": "66",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005496",
+        "name": "辛元旭",
+        "number": "67",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007228",
+        "name": "鈴木駿輔",
+        "number": "69",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006220",
+        "name": "馬鋼",
+        "number": "71",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000000938",
+        "name": "張瑞麟",
+        "number": "72",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007090",
+        "name": "林家勝",
+        "number": "73",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007591",
+        "name": "張育豪",
+        "number": "74",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007093",
+        "name": "李祐賢",
+        "number": "076",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006737",
+        "name": "董子恩",
+        "number": "78",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000363",
+        "name": "陳仕朋",
+        "number": "81",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006738",
+        "name": "孔念恩",
+        "number": "82",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007802",
+        "name": "黃宇昇",
+        "number": "84",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006743",
+        "name": "劉俊豪",
+        "number": "85",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004645",
+        "name": "戴培峰",
+        "number": "95",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006864",
+        "name": "郭泰呈",
+        "number": "96",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006806",
+        "name": "池恩齊",
+        "number": "97",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006888",
+        "name": "張育成",
+        "number": "99",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006909",
+        "name": "豊暐",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007578",
+        "name": "蔡袁華辰",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ],
+    "味全龍": [
+      {
+        "id": "0000006160",
+        "name": "李超",
+        "number": "0",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000004646",
+        "name": "翁瑋均",
+        "number": "00",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000000743",
+        "name": "陳子豪",
+        "number": "1",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005549",
+        "name": "郭天信",
+        "number": "2",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000003625",
+        "name": "吉力吉撈．鞏冠",
+        "number": "4",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000135",
+        "name": "陳禹勳",
+        "number": "5",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007610",
+        "name": "吳承皓",
+        "number": "6",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006217",
+        "name": "林辰勳",
+        "number": "9",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007264",
+        "name": "魔神龍",
+        "number": "10",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007083",
+        "name": "林柏佑",
+        "number": "13",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007581",
+        "name": "黃暐傑",
+        "number": "14",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005538",
+        "name": "黃柏豪",
+        "number": "16",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005540",
+        "name": "李凱威",
+        "number": "21",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005532",
+        "name": "全浩瑋",
+        "number": "22",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007079",
+        "name": "劉俊緯",
+        "number": "23",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006216",
+        "name": "王順和",
+        "number": "24",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005542",
+        "name": "張政禹",
+        "number": "25",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007082",
+        "name": "陽念祖",
+        "number": "26",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007779",
+        "name": "蔣銲",
+        "number": "33",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005553",
+        "name": "張祐銘",
+        "number": "34",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006726",
+        "name": "李展毅",
+        "number": "36",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006497",
+        "name": "鋼龍",
+        "number": "37",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005552",
+        "name": "呂偉晟",
+        "number": "39",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006215",
+        "name": "趙璟榮",
+        "number": "42",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006728",
+        "name": "陳思仲",
+        "number": "44",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005545",
+        "name": "劉基鴻",
+        "number": "46",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006159",
+        "name": "林逸達",
+        "number": "48",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007304",
+        "name": "曾聖安",
+        "number": "50",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000762",
+        "name": "伍鐸",
+        "number": "52",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006910",
+        "name": "王伯洋",
+        "number": "54",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006750",
+        "name": "陳暐皓",
+        "number": "56",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000005546",
+        "name": "拿莫．伊漾",
+        "number": "57",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007308",
+        "name": "許博閎",
+        "number": "58",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000005555",
+        "name": "陳冠偉",
+        "number": "59",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000001409",
+        "name": "吳東融",
+        "number": "61",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000005291",
+        "name": "蔣少宏",
+        "number": "63",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005563",
+        "name": "姚冠瑋",
+        "number": "65",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006724",
+        "name": "曹祐齊",
+        "number": "67",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000001821",
+        "name": "林子昱",
+        "number": "71",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000000356",
+        "name": "石翔宇",
+        "number": "72",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007311",
+        "name": "吳承翰",
+        "number": "73",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006723",
+        "name": "張鈞守",
+        "number": "74",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000005789",
+        "name": "林鋅杰",
+        "number": "77",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006725",
+        "name": "張祐嘉",
+        "number": "81",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006879",
+        "name": "冉皓燐",
+        "number": "82",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006731",
+        "name": "周委宏",
+        "number": "88",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000002278",
+        "name": "王定穎",
+        "number": "90",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006555",
+        "name": "梅賽鍶",
+        "number": "95",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005788",
+        "name": "林凱威",
+        "number": "99",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007309",
+        "name": "劉曜豪",
+        "number": "125",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007310",
+        "name": "許子謙",
+        "number": "127",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007609",
+        "name": "崔聖允",
+        "number": "133",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007613",
+        "name": "林軒宇",
+        "number": "134",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007587",
+        "name": "潘信安",
+        "number": "137",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007582",
+        "name": "吳東霖",
+        "number": "139",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000001318",
+        "name": "朱育賢",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ],
+    "台鋼雄鷹": [
+      {
+        "id": "0000005296",
+        "name": "董秉軒",
+        "number": "0",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007631",
+        "name": "朱盟",
+        "number": "00",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006939",
+        "name": "顏郁軒",
+        "number": "5",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005340",
+        "name": "王博玄",
+        "number": "6",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006933",
+        "name": "林威漢",
+        "number": "8",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000000935",
+        "name": "王柏融",
+        "number": "9",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006917",
+        "name": "謝葆錡",
+        "number": "10",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006771",
+        "name": "陳正毅",
+        "number": "11",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007065",
+        "name": "王柏傑",
+        "number": "12",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007064",
+        "name": "陳世嘉",
+        "number": "13",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006949",
+        "name": "#林詩翔",
+        "number": "14",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006938",
+        "name": "吳柏萱",
+        "number": "15",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006928",
+        "name": "林家鋐",
+        "number": "16",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006833",
+        "name": "陳宇宏",
+        "number": "17",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006918",
+        "name": "李欣穎",
+        "number": "18",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002348",
+        "name": "施子謙",
+        "number": "19",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002679",
+        "name": "江承諺",
+        "number": "20",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007066",
+        "name": "巫柏葳",
+        "number": "22",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006929",
+        "name": "紀慶然",
+        "number": "24",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006930",
+        "name": "黃秉揚",
+        "number": "25",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000002272",
+        "name": "賴智垣",
+        "number": "26",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006211",
+        "name": "張肇元",
+        "number": "29",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007053",
+        "name": "艾速特",
+        "number": "30",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002304",
+        "name": "吳明鴻",
+        "number": "31",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006926",
+        "name": "陳致嘉",
+        "number": "33",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000005333",
+        "name": "湯家豪",
+        "number": "36",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006835",
+        "name": "顏清浤",
+        "number": "37",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000001390",
+        "name": "王躍霖",
+        "number": "41",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000006931",
+        "name": "黃劼希",
+        "number": "42",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000004643",
+        "name": "胡冠俞",
+        "number": "43",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007301",
+        "name": "曾昱磬",
+        "number": "44",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006982",
+        "name": "黃群",
+        "number": "46",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007628",
+        "name": "許承恩",
+        "number": "47",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007630",
+        "name": "邱立璿",
+        "number": "48",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007045",
+        "name": "張豈豪",
+        "number": "49",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000006936",
+        "name": "高聖恩",
+        "number": "50",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007580",
+        "name": "韋宏亮",
+        "number": "52",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006921",
+        "name": "伍祐城",
+        "number": "55",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000006922",
+        "name": "黃紹睿",
+        "number": "56",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000001291",
+        "name": "郭阜林",
+        "number": "59",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007302",
+        "name": "宋柏翰",
+        "number": "64",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006832",
+        "name": "陳柏清",
+        "number": "66",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002281",
+        "name": "廖乙忠",
+        "number": "67",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000002274",
+        "name": "黃子鵬",
+        "number": "69",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007629",
+        "name": "顏采丞",
+        "number": "70",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000000753",
+        "name": "杜家明",
+        "number": "71",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007013",
+        "name": "陳飛霖",
+        "number": "79",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
+        "id": "0000007836",
+        "name": "威鳳山",
+        "number": "80",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000005285",
+        "name": "許峻暘",
+        "number": "84",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007303",
+        "name": "黃子豪",
+        "number": "85",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003533",
+        "name": "藍寅倫",
+        "number": "88",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007032",
+        "name": "陳重光",
+        "number": "90",
+        "role": "pitcher",
+        "level": "D"
+      },
+      {
+        "id": "0000007069",
+        "name": "張誠恩",
+        "number": "93",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000007239",
+        "name": "魔鷹",
+        "number": "94",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007833",
+        "name": "永田颯太郎",
+        "number": "95",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000007570",
+        "name": "坎南",
+        "number": "98",
+        "role": "pitcher",
+        "level": "A"
+      },
+      {
+        "id": "0000003649",
+        "name": "吳念庭",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000000772",
+        "name": "陳文杰",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      },
+      {
+        "id": "0000006927",
+        "name": "曾子祐",
+        "number": "",
+        "role": "unknown",
+        "level": "A"
+      }
+    ]
+  }
+}
