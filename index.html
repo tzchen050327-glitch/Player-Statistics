@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.62" />
+  <meta name="app-version" content="v9.63" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.62" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.62" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.62" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.62" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.63" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.63" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.63" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.63" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.62"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.62" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.62" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.62" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.62" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.62" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.62" />
+    <script src="./diagnostic-runtime.js?v=v9.63"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.63" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.63" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.63" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.63" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.63" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.63" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -195,7 +195,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.62" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.63" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -603,7 +603,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.62</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.63</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1129,11 +1129,14 @@
   // Official standalone video IDs previously matched to player titles; unresolved players retain compilation fallback.
   const officialPlayerVideos={"1":"ghD6LxRZyp0","2":"ALGOXywvFdg","5":"Q8DgGgi0_nA","7":"P9vIBxkvbfA","22":"Iqa1-myBLVk","29":"JPtvrSibDHU","31":"Pub8_I98Fm8","35":"pJrAcunoZBM","46":"Y6XhJJXCQVU","47":"rQvGpyBtplk","78":"8F_IRBAdgYI","82":"i6RZVPtxaEo","85":"06fOT3zboIY","98":"24Y6uS1juio","99":"ZdAvmv8cXvg"};
   const playerTracks=times.map(([number,name,start])=>({id:'p'+number,title:'#'+number+' '+name,number,name,year:2026,video:officialPlayerVideos[number]||COMP,start:officialPlayerVideos[number]?0:start,source:officialPlayerVideos[number]?'富邦悍將官方獨立應援影片':'2026 應援曲合輯'}));
+  const officialPlaylist='PL00lpBplNeswwB--koUUufMjVboDO8yFI';
+  // 2018 player-video IDs cross-checked against a contemporaneous fan index referencing this exact official playlist.
+  const historicalTracks=[["1","林哲瑄","TMcaSw_ayBg"],["2","方克偉","BQdq4ozcX_g"],["3","申皓瑋","IEkneGY1PO0"],["6","林威廷","suFvtXzUmVY"],["8","張正偉","f2ts4HKihaE"],["9","林益全","OjpUByTuKj0"],["15","胡金龍","myz73MVaH6c"],["20","林宥穎","gJlyHrn2zWk"],["22","李宗賢","LsWjEJyfr7c"],["24","陳凱倫","6soqd4bmSw8"],["28","高國輝","W7Ebkx1NRgw"],["32","高孝儀","RtNa33hJOwc"],["42","蔣智賢","rCb619sDcR8"],["54","林瑋恩","7bjxEJ_5_5U"],["66","張建銘","h7-5Goh2uUI"],["93","陳品捷","VlzDQvsnono"]].map(([number,name,video])=>({id:'h2018-'+number,title:'#'+number+' '+name,number,name,year:2018,video,start:0,source:'富邦官方歷年球員應援曲'}));
   const chanceNames=[['藍色風暴',1175,2026],['Fight For All',1234,2026],['絕對無敵',1316,2026],['Go Stronger',1376,2026],['悍將強襲',1422,2026],['藍色狂潮',1472,2026],['藍色旋風',1517,2026],['一擊稱霸',1576,2026],['強悍出擊',1624,2026],['Strive 衝鋒曲',1671,2026],['超強一擊',1733,2026],['GO 富邦悍將',1807,2017]];
   const chance=chanceNames.map(([name,start,year],i)=>({id:'c'+i,title:name,year,video:year===2017?'NZZgudRB7bE':COMP,start:year===2017?0:start,source:year===2017?'球團官方影片':'2026 應援曲合輯'}));
   const themeTracks=[{id:'t-fire',title:'Fire Up',year:2017,video:'',source:'球團歷年主題曲（待指定影片）'},{id:'t-power',title:'藍色力量',year:2026,video:'',source:'球團應援曲頁（待指定影片）'},{id:'t-strong',title:'我們最強',year:2026,video:COMP,start:1847,source:'2026 應援曲合輯'},{id:'t-fight',title:'戰到底',year:2026,video:COMP,start:2082,source:'2026 應援曲合輯'}];
   const statusTracks=[{id:'s-k',title:'三振｜KKK',year:2026,video:COMP,start:3367},{id:'s-bb',title:'保送｜謝謝你的保送',year:2026,video:COMP,start:3384},{id:'s-out',title:'挑戰｜相信悍將 Out',year:2026,video:COMP,start:3433},{id:'s-safe',title:'挑戰｜相信悍將 Safe',year:2026,video:COMP,start:3473}];
-  const categories={'球員曲':playerTracks,'Chance':chance,'主題曲':themeTracks,'狀態曲':statusTracks};
+  const categories={'球員曲':playerTracks,'歷年球員曲':historicalTracks,'Chance':chance,'主題曲':themeTracks,'狀態曲':statusTracks};
   const storageKey='dsMusicOverridesV1';
   let overrides={};try{overrides=JSON.parse(localStorage.getItem(storageKey)||'{}')||{}}catch{}
   let selectedTeam='',selectedType='球員曲',selectedIndex=-1,admin=false,holdTimer=0;
@@ -1153,7 +1156,15 @@
     for(const type of Object.keys(categories)){const b=button(type,()=>{selectedType=type;selectedIndex=-1;renderCategory()});b.classList.toggle('active',type===selectedType);b.setAttribute('aria-pressed',String(type===selectedType));tabs.append(b)}
     content.append(tabs);
     if(selectedTeam!==FUBON){content.append(text('p','此隊歌曲尚未建檔。','music-song-note'));return}
-    const list=tracks();content.append(text('p',selectedType==='球員曲'?'2026 球員應援曲・依背號排序':'已核對的歌曲先行收錄；其他年份持續補齊。','music-song-note'));
+    const list=tracks();content.append(text('p',selectedType==='球員曲'?'2026 球員應援曲・依背號排序':selectedType==='歷年球員曲'?'富邦官方歷史播放清單及已核實球員':'已核對的歌曲先行收錄；其他年份持續補齊。','music-song-note'));
+    if(selectedType==='歷年球員曲'){
+      const caption=text('p','官方完整播放清單：可直接在站內瀏覽播放全部影片。下方球員卡僅列出已核實對應姓名的 2018 年歷史影片。','music-song-note');content.append(caption);
+      const playlistWrap=document.createElement('div');playlistWrap.className='music-song-player';
+      const playlistFrame=document.createElement('iframe');playlistFrame.src='https://www.youtube-nocookie.com/embed/videoseries?list='+encodeURIComponent(officialPlaylist);
+      playlistFrame.title='富邦悍將球員應援曲官方完整播放清單';playlistFrame.loading='lazy';playlistFrame.referrerPolicy='strict-origin-when-cross-origin';playlistFrame.allow='accelerometer;autoplay;encrypted-media;gyroscope;picture-in-picture;web-share';playlistFrame.allowFullscreen=true;
+      playlistWrap.append(playlistFrame);content.append(playlistWrap);
+      content.append(text('h3','已核對球員影片（2018）','music-song-heading'));
+    }
     const grid=document.createElement('div');grid.className='music-song-grid';
     list.forEach((song,i)=>{const b=button(song.title,()=>showSong(i),'music-song-item');const sub=text('small',String(song.year||2026));b.append(sub);grid.append(b)});content.append(grid)
   }
@@ -1184,6 +1195,6 @@
   page.querySelectorAll('[data-music-team]').forEach(b=>b.addEventListener('click',()=>showTeam(b.dataset.musicTeam)));
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.62"></script>
+  <script src="./js/module-loader.js?v=v9.63"></script>
 </body>
 </html>
