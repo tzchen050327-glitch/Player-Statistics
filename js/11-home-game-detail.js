@@ -381,10 +381,16 @@
         const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
         const key = normalizeName(name);
         if (!key) continue;
-        const score = [
+        const populated = [
           'pregameHits','pregameHomeRuns','hits','h','homeRuns','hr',
           'gameHits','gameHomeRuns','pregameAb','ab','atBats','gameAb'
         ].reduce((sum, field) => sum + (row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== '' ? 1 : 0), 0);
+        // A gameBatters entry can be an all-zero placeholder and contains
+        // no competition career-to-date totals. Prefer lineup rows carrying
+        // official competition scope over those placeholders.
+        const competitionRow = String(row?.statsScope || '').toLowerCase() === 'competition';
+        const hasRealTotal = Number(row?.hits || 0) > 0 || Number(row?.ab || 0) > 0 || Number(row?.homeRuns || 0) > 0;
+        const score = populated + (competitionRow ? 100 : 0) + (hasRealTotal ? 20 : 0);
         const existing = byName.get(key);
         if (!existing || score > existing.score) byName.set(key, { row, score });
       }
