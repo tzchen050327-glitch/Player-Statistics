@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.80 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.81 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -303,31 +303,8 @@
   function renderCategory(){
     selected=null;content.replaceChildren();syncAdminBanner();
     const tabs=$('div','','music-center-subnav');
-    for(const t of (team==='台鋼雄鷹'?['球員曲','歷年球員曲','Chance','團隊應援','主題曲','狀態曲','官方清單']:TYPES)){const btnTab=btn(t,()=>{type=t;query='';renderCategory()});tabs.append(btnTab);navItem(btnTab)}
+    for(const t of (team==='台鋼雄鷹'?['球員曲','歷年球員曲','Chance','團隊應援','主題曲','狀態曲']:TYPES)){const btnTab=btn(t,()=>{type=t;query='';renderCategory()});tabs.append(btnTab);navItem(btnTab)}
     content.append(tabs);
-    if(team==='台鋼雄鷹'&&type==='官方清單'){
-      const section=$('section','','music-playlist-section');
-      section.append($('h3','台鋼雄鷹｜YouTube 鷹援曲播放清單'));
-      const classified=Object.values(tsgImportedCategories).reduce((n,a)=>n+a.length,0)+Object.keys(tsgImportTracks).length;
-      section.append($('p',tsgCache?.importedAt?'已同步：'+tsgCache.importedAt+'｜已分類 '+classified+' 首，待核對 '+tsgUnmatched.length+' 首':'尚未執行後端匯入；播放清單仍可直接播放。','music-song-note'));
-      if(tsgUnmatched.length){const review=$('details','','music-import-review');const summary=$('summary','待核對影片（'+tsgUnmatched.length+'）');review.append(summary);for(const v of tsgUnmatched)review.append($('p',v.title+' — '+v.reason,'music-song-note'));section.append(review)}
-      section.append($('p','直接播放完整清單；未能核對影片的球員暫不自動配對，以免播放錯誤歌曲。','music-song-note'));
-      const frame=document.createElement('iframe');
-      frame.src='https://www.youtube-nocookie.com/embed/videoseries?list='+TSG_PLAYLIST;
-      frame.title='台鋼雄鷹 鷹援曲 官方播放清單';
-      frame.loading='lazy';
-      frame.referrerPolicy='strict-origin-when-cross-origin';
-      frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
-      frame.allowFullscreen=true;
-      section.append(frame);
-      const link=document.createElement('a');
-      link.href='https://www.youtube.com/playlist?list='+TSG_PLAYLIST;
-      link.target='_blank';link.rel='noopener noreferrer';
-      link.textContent='在 YouTube 開啟完整播放清單 ↗';
-      section.append(link);
-      content.append(section);
-      return;
-    }
     if(!roster && type==='球員曲')content.append($('p',loadError||'正在載入 2026 球員名單…','music-song-note'));
     if(admin){
       const management=$('div','','music-admin-status');
@@ -497,7 +474,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.80',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.81',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
