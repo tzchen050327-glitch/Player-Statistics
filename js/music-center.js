@@ -69,7 +69,7 @@
   }
   function effectivePlayer(raw){
     const edit=draft.playerEdits?.[entryKey(team,'player',raw.id)]||{};
-    return {...raw,name:edit.name??raw.name,number:edit.number??raw.number,hidden:!!edit.hidden,custom:!!raw.custom};
+    return {...raw,name:edit.name??raw.name,number:edit.number??raw.number,cpblId:edit.cpblId??raw.id,hidden:!!edit.hidden,custom:!!raw.custom};
   }
   function playersForTeam(){
     const baseline=rosterTeam(team),extras=draft.extraPlayers?.[team]||[],byId=new Map();
@@ -166,17 +166,13 @@
       try{
         let official=null;
         if(typeof cpblRequest==='function'){
-          if(known){
-            const response=await cpblRequest('player-profile',{acnt:known.id});
-            official=response?.player;
-          }else{
-            const response=await cpblRequest('search-player',{name:nm,number});
-            official=response?.player;
-          }
-        }else if(known)official={acnt:known.id,name:nm,number:known.number,team};
+          const response=await cpblRequest('search-player',{name:nm,number});
+          official=response?.player;
+        }
         if(!official?.acnt)throw Error('中職尚未找到這位球員，請確認姓名或背號後重試。');
         const id=String(official.acnt),resolvedName=String(official.name||nm),resolvedNumber=String(official.number||number);
         if(!/^\d{4,12}$/.test(id))throw Error('中職球員 ID 格式錯誤。');
+        if(String(official.name||'').trim()!==nm||(number&&String(official.number||'').trim()!==number))throw Error('官方回傳的姓名／背號不同，請核對後重試。');
         const parent=normalizeTeam(official.team||team);
         if(parent!==team)throw Error('中職球員目前所屬球隊為 '+parent+'，請先確認球隊。');
         if(playersForTeam().some(p=>p.id===id||p.name===resolvedName)){
@@ -258,11 +254,11 @@
       const hint=$('p','2026 球員資料','music-song-note');content.append(hint);
       try {
         const local=typeof players!=='undefined'?players:[];
-        const match=local.find(p=>String(p.cpblAcnt||'')===String(item.id))||
+        const match=local.find(p=>String(p.cpblAcnt||'')===String(item.cpblId||item.id))||
           local.find(p=>p.name===item.name&&normalizeTeam(p.cpblTeam)===team);
         if(match&&typeof selectPlayer==='function') content.append(btn('查看本站球員頁 ↗',()=>{void selectPlayer(match.id)},'music-player-link'));
         else content.append(btn('＋ 新增這位球員',()=>{
-          const acnt=String(item.id||'').trim();
+          const acnt=String(item.cpblId||item.id||'').trim();
           if(!/^\d{4,12}$/.test(acnt)){
             alert('這位球員尚未有可核對的中職 ID，無法自動連結。請使用首頁新增球員搜尋官方資料。');
             return;
@@ -312,11 +308,26 @@
       panel.append($('strong','球員名單修正'));
       const n=input('背號',item.number||''),nm=input('球員姓名',item.name);
       panel.append(n.wrap,nm.wrap);
-      panel.append(btn('儲存姓名與背號',()=>{
+      panel.append(btn('重新比對中職並儲存',async()=>{
         const newName=nm.field.value.trim(),newNumber=n.field.value.trim();
-        if(!newName||newNumber&&!/^\d{1,3}$/.test(newNumber)){notify('請確認姓名與背號',panel);return}
-        draft.playerEdits[entryKey(team,'player',item.id)]={...draft.playerEdits[entryKey(team,'player',item.id)],name:newName,number:newNumber};
-        if(write())renderCategory();
+        if(!newName||!/^\d{1,3}$/.test(newNumber)){notify('請填寫姓名與數字背號才能重新比對中職',panel);return}
+        const control=panel.querySelector('.music-admin-secondary');
+        control.disabled=true;control.textContent='正在以姓名＋背號核對中職…';
+        try{
+          if(typeof cpblRequest!=='function')throw Error('中職資料服務尚未準備完成，無法修改連結');
+          const response=await cpblRequest('search-player',{name:newName,number:newNumber});
+          const official=response?.player;
+          if(!official?.acnt)throw Error('找不到符合姓名與背號的中職球員，原連結未更動');
+          const officialName=String(official.name||'').trim(),officialNumber=String(official.number||'').trim();
+          if(officialName!==newName||officialNumber!==newNumber)throw Error('中職回傳的姓名或背號不一致，原連結未更動');
+          if(normalizeTeam(official.team)!==team)throw Error('中職回傳的球隊不符，原連結未更動');
+          if(!/^\d{4,12}$/.test(String(official.acnt)))throw Error('中職回傳 ID 格式有誤');
+          const nextId=String(official.acnt);
+          if(playersForTeam().some(p=>p.id!==item.id&&String(p.cpblId||p.id)===nextId))throw Error('此中職球員已在名單內，請勿重複連結');
+          draft.playerEdits[entryKey(team,'player',item.id)]={...draft.playerEdits[entryKey(team,'player',item.id)],name:officialName,number:officialNumber,cpblId:nextId};
+          if(write())renderCategory();
+        }catch(e){notify(e.message||'查詢失敗，未修改原資料',panel)}
+        finally{control.disabled=false;control.textContent='重新比對中職並儲存'}
       },'music-admin-secondary'));
       panel.append(btn('從音樂名單隱藏此球員',()=>{
         if(!confirm('確定隱藏 '+item.name+'？不會刪除既有球員資料。'))return;
