@@ -909,14 +909,25 @@
       const { name, number, selectedType } = newPlayerFormValues();
       if (!validateNewPlayer(name, number, 'cpbl', '', true)) return;
       const btn = document.getElementById('createCpblPlayerBtn');
+      const directAcnt = String(btn.dataset.musicCpblAcnt || '').trim();
+      // The music roster stores the official CPBL player ID; use it directly.
+      // Manual additions continue through the existing name/number search.
+      delete btn.dataset.musicCpblAcnt;
+      if (directAcnt && !/^\\d{4,12}$/.test(directAcnt)) {
+        setStatus('中職球員 ID 格式不正確，無法自動連結。', true);
+        return;
+      }
       const originalText = btn.textContent;
       btn.disabled = true;
-      btn.textContent = '搜尋中職官網…';
+      btn.textContent = directAcnt ? '依中職 ID 讀取球員…' : '搜尋中職官網…';
       try {
         const searchName = String(name || '').trim();
-        const found = await cpblRequest('search-player', { name: searchName, number });
+        const found = directAcnt
+          ? await cpblRequest('player-profile', { acnt: directAcnt })
+          : await cpblRequest('search-player', { name: searchName, number });
         const official = found.player;
-        if (!official) throw new Error(`中職官網找不到「${searchName} #${number}」。`);
+        if (!official) throw new Error(directAcnt ? '中職官網找不到指定 ID 的球員。' : `中職官網找不到「${searchName} #${number}」。`);
+        if (directAcnt && String(official.acnt || directAcnt) !== directAcnt) throw new Error('中職回傳球員 ID 不一致，已取消新增。');
 
         let type = cpblOfficialTypeFromPosition(official.position) || selectedType;
 
