@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.51" />
+  <meta name="app-version" content="v9.52" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.51" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.51" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.51" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.51" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.52" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.52" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.52" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.52" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.51"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.51" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.51" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.51" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.51" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.51" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.51" />
+    <script src="./diagnostic-runtime.js?v=v9.52"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.52" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.52" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.52" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.52" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.52" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.52" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -195,7 +195,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.51" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.52" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -604,7 +604,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.51</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.52</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1066,6 +1066,11 @@
 .music-center-team-grid button{flex:0 0 auto;min-width:125px;white-space:nowrap;scroll-snap-align:start;padding:14px 18px;border:1px solid rgba(120,135,155,.32);border-radius:12px;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}
 .music-center-team-grid button.active{border-color:#4386bc;background:rgba(67,134,188,.13)}
 .music-center-team-content{min-height:30vh}
+.music-center-subnav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 18px}
+.music-center-subnav button{padding:15px 10px;border-radius:12px;border:1px solid rgba(120,135,155,.35);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.music-center-subnav button.active{border-color:#4386bc;background:rgba(67,134,188,.13)}
+.music-center-selection-title{font-weight:700;margin:12px 0}
+.music-center-list-placeholder{min-height:25vh}
 @media(max-width:550px){.music-center-team-grid button{min-width:112px;padding:13px 15px}}
 </style>
 <script id="musicCenterEntryNavigation">
@@ -1087,16 +1092,50 @@
   }
   open.addEventListener('click', () => navigate('music-center'));
   back.addEventListener('click', () => navigate('home'));
-  page.querySelectorAll('[data-music-team]').forEach(button => button.addEventListener('click', () => {
-    page.querySelectorAll('[data-music-team]').forEach(other => {
-      other.classList.toggle('active',other === button);
-      other.setAttribute('aria-pressed',String(other === button));
+  let selectedTeam = '';
+  let selectedType = '';
+  const content = document.getElementById('musicCenterTeamContent');
+  function showTeam(team) {
+    selectedTeam = team;
+    selectedType = '';
+    page.querySelectorAll('[data-music-team]').forEach(button => {
+      const selected = button.dataset.musicTeam === team;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
     });
-    const target=document.getElementById('musicCenterTeamContent');
-    if(target)target.textContent='';
-  }));
+    if (!content) return;
+    content.replaceChildren();
+    const heading = document.createElement('div');
+    heading.className = 'music-center-selection-title';
+    heading.textContent = team;
+    const tabs = document.createElement('div');
+    tabs.className = 'music-center-subnav';
+    tabs.setAttribute('aria-label', '歌曲分類');
+    const space = document.createElement('div');
+    space.className = 'music-center-list-placeholder';
+    for (const type of ['球員曲','嗆斯曲']) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = type;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => {
+        selectedType = type;
+        tabs.querySelectorAll('button').forEach(item => {
+          const active = item === button;
+          item.classList.toggle('active',active);
+          item.setAttribute('aria-pressed',String(active));
+        });
+        space.replaceChildren();
+      });
+      tabs.append(button);
+    }
+    content.append(heading,tabs,space);
+  }
+  page.querySelectorAll('[data-music-team]').forEach(button =>
+    button.addEventListener('click', () => showTeam(button.dataset.musicTeam))
+  );
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.51"></script>
+  <script src="./js/module-loader.js?v=v9.52"></script>
 </body>
 </html>
