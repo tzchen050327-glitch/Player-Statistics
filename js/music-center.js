@@ -465,6 +465,9 @@
         draft.playerEdits[entryKey(team,'player',item.id)]={...draft.playerEdits[entryKey(team,'player',item.id)],hidden:true};
         if(write())renderCategory();
       },'music-admin-danger'));
+    }else if(item.importedTrack){
+      panel.append($('p','此曲目由台鋼 YouTube 清單匯入；可覆寫影片或從這台裝置的分類中隱藏。','music-song-note'));
+      panel.append(btn('從分類移除這首歌曲',()=>deleteSongItem(item),'music-admin-danger'));
     }else if(!SPECIAL.some(p=>p.id===item.id)){
       const name=input('曲目名稱',item.title),year=input('年份',item.year||'','number');panel.append(name.wrap,year.wrap);
       panel.append(btn('儲存曲目名稱',()=>{
