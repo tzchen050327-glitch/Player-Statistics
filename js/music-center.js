@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.84 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.85 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -92,7 +92,7 @@
         const data=await res.json();
         if(data.ok&&Array.isArray(data.videos)){
           tsgCache=data;
-          rebuildTsgMatches();rebuildDragonMusic();
+          rebuildTsgMatches();rebuildDragonMusic();rebuildLions();
           if(team==='台鋼雄鷹'&&!selected)renderCategory();
         }
       }catch(e){console.warn('Music playlist cache unavailable:',e)}
@@ -166,6 +166,55 @@
     })();
     return dragonLoading;
   }
+  const LIONS_LIST_URLS=[
+    'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/uni-lions-chance-cache',
+    'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/uni-lions-songs-cache'
+  ];
+  let lionsTracks={},lionsSongs={'Chance':[],'主題曲':[],'狀態曲':[]},lionsLoading=null;
+  const LIONS_CONFIRMED_EXTRA={'潘磊':{id:'0000000000-lions-panlei',name:'潘磊',number:'54',musicOnly:true}};
+  function rebuildLions(){
+    lionsTracks={};lionsSongs={'Chance':[],'主題曲':[],'狀態曲':[]};
+    if(!roster||!Array.isArray(lionsPlaylistVideos))return;
+    const players=rosterTeam('統一7-ELEVEn獅').filter(p=>p.role!=='pitcher');
+    const seenPeople=new Set(),seenSongs=new Set();
+    const matchingName=(name)=>players.find(p=>normalizeSongName(p.name)===normalizeSongName(name))||LIONS_CONFIRMED_EXTRA[name];
+    for(const v of lionsPlaylistVideos){
+      const title=String(v.title||''),id=String(v.id||'');
+      if(!/^[\w-]{11}$/.test(id)||/^(Private|Deleted) video$/.test(title))continue;
+      const playerMatch=title.match(/【\s*#\s*\d+\s*([\u3400-\u9fff]{2,5})\s*】\s*應援曲/);
+      const track={videoId:id,start:0,source:'統一獅官方播放清單',title};
+      if(playerMatch){
+        const name=playerMatch[1],p=matchingName(name);
+        if(!p||seenPeople.has(p.id))continue;
+        seenPeople.add(p.id);
+        lionsTracks[p.id]=track;
+        continue;
+      }
+      let category='Chance';
+      if(/三振|出局|上壘|安打歌/.test(title))category='狀態曲';
+      else if(/主題曲|獅王尚勇/.test(title))category='主題曲';
+      const clean=title.replace(/^#統一獅\s*/,'').replace(/^統一獅應援歌曲[：:]\s*/,'').replace(/^(?:公版應援|公版|嗆司曲)\s*/,'').replace(/^[【\s]+|[】\s]+$/g,'').trim();
+      const key=clean.replace(/[\s！!。．.、（）()【】]/g,'').toLowerCase();
+      if(!key||seenSongs.has(key))continue;
+      seenSongs.add(key);
+      lionsSongs[category].push({id:'lion-'+id,title:clean,category,importedTrack:track});
+    }
+  }
+  let lionsPlaylistVideos=null;
+  async function loadLionsPlaylists(){
+    if(lionsLoading)return lionsLoading;
+    lionsLoading=(async()=>{
+      try{
+        const responses=await Promise.all(LIONS_LIST_URLS.map(url=>fetch(url,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()})));
+        if(responses.some(r=>r.ok!==true||!Array.isArray(r.videos)))throw Error('Invalid Lions cache');
+        // Second list is newer player content; first list supplements Chance songs.
+        lionsPlaylistVideos=[...responses[1].videos,...responses[0].videos];
+        rebuildLions();
+        if(team==='統一7-ELEVEn獅'&&!selected)renderCategory();
+      }catch(error){console.warn('Lions song cache unavailable',error)}
+    })();
+    return lionsLoading;
+  }
   const SPECIAL=[{id:'strikeout',title:'三振'},{id:'walk',title:'保送'},{id:'challenge',title:'挑戰'}];
   const STORAGE='diamondscope-music-catalog-draft-v2';
   const ROSTER_CACHE='diamondscope-music-roster-2026-cache-v1';
@@ -237,12 +286,12 @@
   function categoryItems(){
     if(type==='球員曲'){
       const known=playersForTeam().map(p=>({...p,title:'#'+(p.number||'—')+' '+p.name,category:'player'}));
-      const imported=team==='台鋼雄鷹'?(tsgImportedCategories['球員曲']||[]):[];
+      const imported=team==='台鋼雄鷹'?(tsgImportedCategories['球員曲']||[]):team==='統一7-ELEVEn獅'?Object.values(LIONS_CONFIRMED_EXTRA).filter(p=>lionsTracks[p.id]).map(p=>({...p,title:'#'+p.number+' '+p.name,category:'player',importedTrack:lionsTracks[p.id]})):[];
       return [...known,...imported].filter(i=>!draft.hiddenItems?.[entryKey(team,'player',i.id)]).sort((a,b)=>
         (Number(a.number)||0)-(Number(b.number)||0)||String(a.name).localeCompare(String(b.name),'zh-Hant'));
     }
     const extras=(draft.items?.[arrKey(team,type)]||[]).filter(p=>p?.id&&p?.title);
-    const imported=team==='台鋼雄鷹'?(tsgImportedCategories[type]||[]):team==='味全龍'?(dragonCategories[type]||[]):[];
+    const imported=team==='台鋼雄鷹'?(tsgImportedCategories[type]||[]):team==='味全龍'?(dragonCategories[type]||[]):team==='統一7-ELEVEn獅'?(lionsSongs[type]||[]):[];
     return [...(type==='狀態曲'?SPECIAL.map(i=>({...i,category:type})):[]),...imported,...extras].filter(i=>!draft.hiddenItems?.[entryKey(team,type,i.id)]);
   }
   function deleteSongItem(item){
@@ -267,6 +316,7 @@
     if(Object.prototype.hasOwnProperty.call(draft.tracks||{},key))return draft.tracks[key];
     if(item.importedTrack)return item.importedTrack;
     if(team==='味全龍'&&(item.category||type)==='player'&&dragonTracks[item.id])return dragonTracks[item.id];
+    if(team==='統一7-ELEVEn獅'&&(item.category||type)==='player'&&lionsTracks[item.id])return lionsTracks[item.id];
     if(team==='台鋼雄鷹'&&(item.category||type)==='player'){
       if(tsgImportTracks[item.id])return tsgImportTracks[item.id];
       if(OFFICIAL_TSG_PLAYER_VIDEOS[item.id])return {videoId:OFFICIAL_TSG_PLAYER_VIDEOS[item.id],start:0,source:'台鋼雄鷹官方影片'};
@@ -341,6 +391,7 @@
     header.textContent=name;renderCategory();syncAdminBanner();
     if(name==='台鋼雄鷹')void loadTsgPlaylistCache();
     if(name==='味全龍')void loadDragonCache();
+    if(name==='統一7-ELEVEn獅')void loadLionsPlaylists();
   }
   function addPlayerForm(anchor){
     const panel=$('div','','music-edit-panel');panel.append($('strong','新增球員（自動連結中職 ID）'));
@@ -505,7 +556,7 @@
       const raw=url.field.value.trim(),id=raw?parseId(raw):'';
       if(raw&&!id){notify('請貼上有效的 YouTube 單支影片網址',panel);return}
       if(id)draft.tracks[entryKey(team,item.category||type,item.id)]={videoId:id,start:Math.max(0,Math.floor(Number(start.field.value)||0))};
-      else if(item.importedTrack||team==='味全龍'&&dragonTracks[item.id]||team==='台鋼雄鷹'&&(tsgImportTracks[item.id]||OFFICIAL_TSG_PLAYER_VIDEOS[item.id]))draft.tracks[entryKey(team,item.category||type,item.id)]=null;
+      else if(item.importedTrack||team==='統一7-ELEVEn獅'&&lionsTracks[item.id]||team==='味全龍'&&dragonTracks[item.id]||team==='台鋼雄鷹'&&(tsgImportTracks[item.id]||OFFICIAL_TSG_PLAYER_VIDEOS[item.id]))draft.tracks[entryKey(team,item.category||type,item.id)]=null;
       else delete draft.tracks[entryKey(team,item.category||type,item.id)];
       if(write())showSong(item.id);
     },'music-admin-btn'));
@@ -559,7 +610,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.84',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.85',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
