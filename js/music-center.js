@@ -26,6 +26,24 @@
   const arrKey=(t,k)=>t+'|'+k;
   const entryKey=(t,k,id)=>t+'|'+k+'|'+id;
   const normalizeTeam=t=>String(t||'').replace(/二軍$/,'').replace('統一獅','統一7-ELEVEn獅');
+  const KNOWN_CPBL_PLAYERS={'中信兄弟|張志豪':{id:'0000003183',number:'7'}};
+  function migrateLocalPlayerIds(){
+    let changed=false;
+    for(const [club,entries] of Object.entries(draft.extraPlayers||{})){
+      if(!Array.isArray(entries))continue;
+      for(const p of entries){
+        const official=KNOWN_CPBL_PLAYERS[club+'|'+String(p.name||'').trim()];
+        if(!official||/^\d{4,12}$/.test(String(p.id||'')))continue;
+        const oldId=p.id,newId=official.id;
+        const oldKey=entryKey(club,'player',oldId),newKey=entryKey(club,'player',newId);
+        if(draft.tracks?.[oldKey]&&!draft.tracks[newKey])draft.tracks[newKey]=draft.tracks[oldKey];
+        if(draft.playerEdits?.[oldKey]&&!draft.playerEdits[newKey])draft.playerEdits[newKey]=draft.playerEdits[oldKey];
+        delete draft.tracks[oldKey];delete draft.playerEdits[oldKey];
+        p.id=newId;if(!p.number)p.number=official.number;changed=true;
+      }
+    }
+    if(changed)write();
+  }
   const parseId=value=>{
     const v=String(value||'').trim();
     if(/^[a-zA-Z0-9_-]{11}$/.test(v))return v;
@@ -136,18 +154,38 @@
     header.textContent=name;renderCategory();syncAdminBanner();
   }
   function addPlayerForm(anchor){
-    const panel=$('div','','music-edit-panel');panel.append($('strong','手動新增名單球員'));
-    const num=input('背號（可留空）'),name=input('球員姓名'),id=input('中職球員 ID（可留空）');
-    panel.append(num.wrap,name.wrap,id.wrap);
-    panel.append(btn('新增球員',()=>{
-      const nm=name.field.value.trim(),number=num.field.value.trim(),official=id.field.value.trim();
+    const panel=$('div','','music-edit-panel');panel.append($('strong','新增球員（自動連結中職 ID）'));
+    const num=input('背號（可留空）'),name=input('球員姓名');
+    panel.append(num.wrap,name.wrap);
+    panel.append(btn('搜尋中職並新增',async()=>{
+      const nm=name.field.value.trim(),number=num.field.value.trim();
       if(!nm){notify('請輸入球員姓名',panel);return}
       if(number&&!/^\d{1,3}$/.test(number)){notify('背號請使用數字',panel);return}
-      const exists=playersForTeam().some(p=>p.name===nm&&(p.number||'')===number);
-      if(exists){notify('這位球員已在名單內',panel);return}
-      const next={id:official&&/^\d{4,12}$/.test(official)?official:'manual-'+Date.now().toString(36),name:nm,number,custom:true,level:''};
-      (draft.extraPlayers[team]??=[]).push(next);
-      if(write()){query='';renderCategory()}
+      const known=KNOWN_CPBL_PLAYERS[team+'|'+nm];
+      const control=panel.querySelector('.music-admin-btn');control.disabled=true;control.textContent='核對中職球員資料…';
+      try{
+        let official=null;
+        if(typeof cpblRequest==='function'){
+          if(known){
+            const response=await cpblRequest('player-profile',{acnt:known.id});
+            official=response?.player;
+          }else{
+            const response=await cpblRequest('search-player',{name:nm,number});
+            official=response?.player;
+          }
+        }else if(known)official={acnt:known.id,name:nm,number:known.number,team};
+        if(!official?.acnt)throw Error('中職尚未找到這位球員，請確認姓名或背號後重試。');
+        const id=String(official.acnt),resolvedName=String(official.name||nm),resolvedNumber=String(official.number||number);
+        if(!/^\d{4,12}$/.test(id))throw Error('中職球員 ID 格式錯誤。');
+        const parent=normalizeTeam(official.team||team);
+        if(parent!==team)throw Error('中職球員目前所屬球隊為 '+parent+'，請先確認球隊。');
+        if(playersForTeam().some(p=>p.id===id||p.name===resolvedName)){
+          notify('這位球員已存在於名單內',panel);return;
+        }
+        (draft.extraPlayers[team]??=[]).push({id,name:resolvedName,number:resolvedNumber,custom:true,role:'hitter',level:''});
+        if(write()){query='';renderCategory()}
+      }catch(e){notify(e?.message||'中職球員資料查詢失敗',panel)}
+      finally{control.disabled=false;control.textContent='搜尋中職並新增'}
     },'music-admin-btn'));anchor.append(panel);
   }
   function addSongForm(anchor){
@@ -344,6 +382,7 @@
   header.addEventListener('pointerdown',beginHold);
   for(const ev of ['pointerup','pointercancel','pointerleave'])header.addEventListener(ev,stopHold);
   header.addEventListener('contextmenu',e=>e.preventDefault());
+  migrateLocalPlayerIds();
   open.addEventListener('click',()=>{renderPicker();navigate('music-center');void loadRoster()});
   back.addEventListener('click',()=>{if(selected)renderCategory();else if(team)renderPicker();else navigate('home')});
   for(const button of root.querySelectorAll('[data-music-team]')){
