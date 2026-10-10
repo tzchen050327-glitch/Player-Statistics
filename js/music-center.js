@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.77 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.78 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -12,6 +12,41 @@
   const TYPES=['球員曲','Chance','主題曲','狀態曲'];
   const TSG_PLAYLIST='PLa9Ddnv4-UJigF7sotsV1MtykKhdZbKLy';
   const OFFICIAL_TSG_PLAYER_VIDEOS={'0000000935':'_OAH-yqZf5c'};
+  const TSG_CACHE_ENDPOINT='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/music-playlist-cache';
+  let tsgCache=null,tsgImportTracks={},tsgUnmatched=[],tsgLoading=null;
+  function normalizeSongName(value){return String(value||'').replace(/[\s·・.．]/g,'').replace(/^[#*＃＊]+/,'').trim()}
+  function rebuildTsgMatches(){
+    tsgImportTracks={};tsgUnmatched=[];
+    if(!tsgCache?.videos?.length||!roster)return;
+    const rosterPlayers=rosterTeam('台鋼雄鷹').filter(p=>p.role!=='pitcher');
+    for(const video of tsgCache.videos){
+      const title=String(video.title||''),match=title.match(/[#＃]\s*0*(\d{1,3})\s*([\u3400-\u9fff]{2,5})/);
+      if(!match){tsgUnmatched.push({...video,reason:'標題沒有可辨識的背號＋姓名'});continue}
+      const candidates=rosterPlayers.filter(p=>Number(p.number)===Number(match[1])&&normalizeSongName(p.name)===normalizeSongName(match[2]));
+      if(candidates.length!==1){tsgUnmatched.push({...video,reason:'名單裡找不到唯一的背號＋姓名'});continue}
+      const p=candidates[0];
+      if(tsgImportTracks[p.id]){
+        tsgUnmatched.push({...video,reason:'相同球員已有影片，需確認版本'});continue;
+      }
+      tsgImportTracks[p.id]={videoId:video.id,start:0,source:'台鋼播放清單'};
+    }
+  }
+  async function loadTsgPlaylistCache(){
+    if(tsgLoading)return tsgLoading;
+    tsgLoading=(async()=>{
+      try{
+        const res=await fetch(TSG_CACHE_ENDPOINT,{method:'GET',cache:'no-store'});
+        if(!res.ok)throw Error('HTTP '+res.status);
+        const data=await res.json();
+        if(data.ok&&Array.isArray(data.videos)){
+          tsgCache=data;
+          rebuildTsgMatches();
+          if(team==='台鋼雄鷹'&&!selected)renderCategory();
+        }
+      }catch(e){console.warn('Music playlist cache unavailable:',e)}
+    })();
+    return tsgLoading;
+  }
   const SPECIAL=[{id:'strikeout',title:'三振'},{id:'walk',title:'保送'},{id:'challenge',title:'挑戰'}];
   const STORAGE='diamondscope-music-catalog-draft-v2';
   const ROSTER_CACHE='diamondscope-music-roster-2026-cache-v1';
@@ -105,7 +140,10 @@
   function assigned(item){
     const key=entryKey(team,item.category||type,item.id);
     if(Object.prototype.hasOwnProperty.call(draft.tracks||{},key))return draft.tracks[key];
-    if(team==='台鋼雄鷹'&&(item.category||type)==='player'&&OFFICIAL_TSG_PLAYER_VIDEOS[item.id])return {videoId:OFFICIAL_TSG_PLAYER_VIDEOS[item.id],start:0,source:'台鋼雄鷹官方影片'};
+    if(team==='台鋼雄鷹'&&(item.category||type)==='player'){
+      if(tsgImportTracks[item.id])return tsgImportTracks[item.id];
+      if(OFFICIAL_TSG_PLAYER_VIDEOS[item.id])return {videoId:OFFICIAL_TSG_PLAYER_VIDEOS[item.id],start:0,source:'台鋼雄鷹官方影片'};
+    }
     return null;
   }
   function notify(msg,target=content){
@@ -174,6 +212,7 @@
     team=name;type='球員曲';selected=null;query='';
     picker.classList.add('hidden');content.classList.remove('hidden');back.textContent='← 返回音樂中心';
     header.textContent=name;renderCategory();syncAdminBanner();
+    if(name==='台鋼雄鷹')void loadTsgPlaylistCache();
   }
   function addPlayerForm(anchor){
     const panel=$('div','','music-edit-panel');panel.append($('strong','新增球員（自動連結中職 ID）'));
@@ -226,6 +265,8 @@
     if(team==='台鋼雄鷹'&&type==='官方清單'){
       const section=$('section','','music-playlist-section');
       section.append($('h3','台鋼雄鷹｜YouTube 鷹援曲播放清單'));
+      section.append($('p',tsgCache?.importedAt?'已同步：'+tsgCache.importedAt+'｜自動配對 '+Object.keys(tsgImportTracks).length+' 首，待核對 '+tsgUnmatched.length+' 首':'尚未執行後端匯入；播放清單仍可直接播放。','music-song-note'));
+      if(tsgUnmatched.length){const review=$('details','','music-import-review');const summary=$('summary','待核對影片（'+tsgUnmatched.length+'）');review.append(summary);for(const v of tsgUnmatched)review.append($('p',v.title+' — '+v.reason,'music-song-note'));section.append(review)}
       section.append($('p','直接播放完整清單；未能核對影片的球員暫不自動配對，以免播放錯誤歌曲。','music-song-note'));
       const frame=document.createElement('iframe');
       frame.src='https://www.youtube-nocookie.com/embed/videoseries?list='+TSG_PLAYLIST;
@@ -409,7 +450,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.77',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.78',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
@@ -419,6 +460,7 @@
       try{roster=JSON.parse(localStorage.getItem(ROSTER_CACHE)||'null')}catch{}
       loadError=roster?'使用上次儲存的球員名單':'球員名單載入失敗：'+e.message;
     }
+    rebuildTsgMatches();
     if(team&&type==='球員曲'&&!selected)renderCategory();
   }
   function exportDraft(){
