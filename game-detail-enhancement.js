@@ -134,6 +134,25 @@
     return false;
   }
 
+  function cpblPendingRunnerAdvance(detail,last){
+    if(String(detail?.league||'').toUpperCase()!=='CPBL'||!last)return null;
+    const plays=Array.isArray(detail?.plays)?detail.plays:[];
+    if(plays.length<2||String(detail?.status||'').toLowerCase()==='final')return null;
+    if(inferredOutsAfterPlay(last)>=3||!playMatchesCurrentHalf(detail,last))return null;
+    // Only a strikeout with no runner movement can inherit an earlier runner
+    // advancement. The official CPBL after-state sometimes clears incorrectly.
+    if(!/三振|strikeout/i.test(String(last?.result||last?.raw||'')))return null;
+    const prev=plays[plays.length-2];
+    if(Number(prev?.inning)!==Number(last.inning)||prev?.half!==last.half)return null;
+    const desc=String(prev?.description||'');
+    const advances=[...desc.matchAll(/([一二三])壘跑者\s*([^\s，。-]+)\s*上([二三])壘/g)];
+    if(!advances.length)return null;
+    const a=advances[advances.length-1],key=a[3]==='二'?'second':'third';
+    const name=compactName(a[2]);
+    if(!name)return null;
+    return {state:{first:false,second:key==='second',third:key==='third'},names:{first:'',second:key==='second'?name:'',third:key==='third'?name:''}};
+  }
+
   function currentBaseState(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
@@ -146,6 +165,8 @@
 
     if (inferredOutsAfterPlay(last) >= 3) return [false,false,false];
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
+    const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
+    if(cpblAdvance)return [cpblAdvance.state.first,cpblAdvance.state.second,cpblAdvance.state.third];
     if (league === 'CPBL' && last) {
       // Use the completed PA snapshot so bases, runner names and outs
       // cannot get ahead of (or fall behind) the play-by-play log.
@@ -1072,6 +1093,8 @@
     if (String(detail?.league||'').toUpperCase()==='CPBL' && last && !playMatchesCurrentHalf(detail,last)) {
       return {first:'',second:'',third:''};
     }
+    const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
+    if(cpblAdvance)return cpblAdvance.names;
     const direct = directRunnerNames(detail), inferred = inferRunnerNames(detail);
     let immediate={first:'',second:'',third:''};
     const useCpblAfter=String(detail?.league||'').toUpperCase()==='CPBL' && last &&
