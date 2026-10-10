@@ -411,6 +411,19 @@
       </div>
     </section>
 
+    <section id="musicCenterPage" class="hidden player-tools-page">
+      <div class="player-tools-page-top">
+        <button id="musicCenterBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
+      </div>
+      <section class="panel player-tools-page-panel">
+        <div class="player-tools-page-head"><div>
+          <span class="player-tools-page-kicker">MUSIC CENTER</span>
+          <h2>音樂中心</h2>
+        </div></div>
+        <div class="player-tools-page-content music-center-empty-space" aria-label="音樂中心預留空間"></div>
+      </section>
+    </section>
+
     <section id="playerRankingPage" class="hidden player-tools-page">
       <div class="player-tools-page-top">
         <button id="playerRankingBackHomeBtn" class="press-btn" type="button">← 返回首頁</button>
@@ -1033,6 +1046,35 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',mount,{once:true});
   else mount();
+})();
+</script>
+<style id="musicCenterEmptyPageStyles">
+#musicCenterPage:not(.hidden){display:block}
+.music-center-empty-space{min-height:55vh}
+</style>
+<script id="musicCenterEntryNavigation">
+(() => {
+  const home = document.getElementById('homePage');
+  const page = document.getElementById('musicCenterPage');
+  const open = document.getElementById('homeMusicCenterBtn');
+  const back = document.getElementById('musicCenterBackHomeBtn');
+  if (!home || !page || !open || !back) return;
+  open.addEventListener('click', () => {
+    home.classList.add('hidden');
+    page.classList.remove('hidden');
+    window.scrollTo(0,0);
+  });
+  back.addEventListener('click', () => {
+    page.classList.add('hidden');
+    home.classList.remove('hidden');
+    window.scrollTo(0,0);
+  });
+  const observer = new MutationObserver(() => {
+    if (!page.classList.contains('hidden') && !home.classList.contains('hidden')) {
+      page.classList.add('hidden');
+    }
+  });
+  observer.observe(home,{attributes:true,attributeFilter:['class']});
 })();
 </script>
   <script src="./js/module-loader.js?v=v9.48"></script>
