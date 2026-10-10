@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.66 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.67 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -223,7 +223,23 @@
         const match=local.find(p=>String(p.cpblAcnt||'')===String(item.id))||
           local.find(p=>p.name===item.name&&normalizeTeam(p.cpblTeam)===team);
         if(match&&typeof selectPlayer==='function') content.append(btn('查看本站球員頁 ↗',()=>{void selectPlayer(match.id)},'music-player-link'));
-        else content.append($('p','本站尚未建立這位球員的個人資料，暫無球員頁連結。','music-song-note'));
+        else content.append(btn('＋ 新增這位球員',()=>{
+          // Reuse the existing CPBL player creation dialog instead of creating a second workflow.
+          const trigger=document.getElementById('addPlayerBtn');
+          const dialog=document.getElementById('addDialog')||document.getElementById('addPlayerDialog');
+          if(!trigger||!dialog){alert('球員新增介面尚未準備完成，請重新整理後再試。');return}
+          if(typeof homeZone!=='undefined')homeZone='cpbl';
+          trigger.click();
+          const name=document.getElementById('newPlayerName');
+          const number=document.getElementById('newPlayerNumber');
+          const role=document.getElementById('newPlayerType');
+          const scope=document.getElementById('newPlayerScope');
+          if(scope)scope.value='cpbl';
+          if(name)name.value=item.name||'';
+          if(number)number.value=item.number||'';
+          if(role)role.value='hitter';
+          name?.focus();
+        },'music-player-link'));
       }catch{}
     }
     if(admin)renderEditor(item);
@@ -281,7 +297,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.66',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.67',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
