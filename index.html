@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.65" />
+  <meta name="app-version" content="v9.66" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.65" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.65" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.65" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.65" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.66" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.66" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.66" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.66" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.65"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.65" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.65" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.65" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.65" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.65" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.65" />
+    <script src="./diagnostic-runtime.js?v=v9.66"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.66" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.66" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.66" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.66" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.66" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.66" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -195,7 +195,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.65" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.66" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -603,7 +603,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.65</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.66</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1140,12 +1140,25 @@
 #musicCenterPage .music-admin-secondary{background:var(--panel);color:var(--text)}
 #musicCenterPage .music-admin-danger{background:var(--panel);border-color:#ce7171;color:#d97777}
 #musicCenterPage .music-alert{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:12px}
+#musicCenterPage .music-admin-mode-banner{
+  border:1px solid color-mix(in srgb,var(--accent,#2378b8) 50%,var(--line));
+  background:var(--panel);border-radius:12px;
+  padding:14px;margin:3px 0 16px;color:var(--text);
+  box-shadow:0 5px 16px rgba(0,0,0,.12);
+  scroll-margin-top:16px;
+}
+#musicCenterPage .music-admin-mode-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#musicCenterPage .music-admin-mode-row strong{font-size:16px;font-weight:900;line-height:1.5}
+#musicCenterPage .music-admin-mode-banner .music-admin-mode-hint{font-size:14px;font-weight:650;line-height:1.65;margin:10px 0 7px}
+#musicCenterPage .music-admin-mode-banner small{display:block;font-size:11px;color:var(--muted);line-height:1.5}
+#musicCenterPage .music-admin-mode-banner .music-admin-exit{color:var(--text);background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:12px}
+#musicCenterPageTitle.music-admin-active-title::after{content:" · 編輯中";font-size:12px;font-weight:700;color:var(--accent,#2378b8);vertical-align:middle}
 #musicCenterPageTitle{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 #musicCenterPage .music-song-item{justify-content:flex-start;gap:6px}
 #musicCenterPage .music-song-player .music-song-note{color:#fff;text-align:center;padding:10px;font-size:14px}
 #musicCenterPage .music-song-player iframe{width:100%;height:100%;border:0}
 </style>
-<script src="./js/music-center.js?v=v9.65" defer></script>
-  <script src="./js/module-loader.js?v=v9.65"></script>
+<script src="./js/music-center.js?v=v9.66" defer></script>
+  <script src="./js/module-loader.js?v=v9.66"></script>
 </body>
 </html>
