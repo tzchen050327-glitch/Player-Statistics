@@ -732,6 +732,13 @@
         "level": "A"
       },
       {
+        "id": "0000004622",
+        "name": "蕭憶銘",
+        "number": "61",
+        "role": "unknown",
+        "level": "D"
+      },
+      {
         "id": "0000006872",
         "name": "林岳谷",
         "number": "62",
@@ -823,15 +830,15 @@
         "level": "A"
       },
       {
-        "id": "0000006909",
-        "name": "豊暐",
+        "id": "0000007578",
+        "name": "蔡袁華辰",
         "number": "",
         "role": "unknown",
         "level": "A"
       },
       {
-        "id": "0000007578",
-        "name": "蔡袁華辰",
+        "id": "0000006909",
+        "name": "豊暐",
         "number": "",
         "role": "unknown",
         "level": "A"
