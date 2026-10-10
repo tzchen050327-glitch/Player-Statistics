@@ -224,12 +224,20 @@
           local.find(p=>p.name===item.name&&normalizeTeam(p.cpblTeam)===team);
         if(match&&typeof selectPlayer==='function') content.append(btn('查看本站球員頁 ↗',()=>{void selectPlayer(match.id)},'music-player-link'));
         else content.append(btn('＋ 新增這位球員',()=>{
-          // Reuse the existing CPBL player creation dialog instead of creating a second workflow.
-          const trigger=document.getElementById('addPlayerBtn');
-          const dialog=document.getElementById('addDialog')||document.getElementById('addPlayerDialog');
-          if(!trigger||!dialog){alert('球員新增介面尚未準備完成，請重新整理後再試。');return}
+          const acnt=String(item.id||'').trim();
+          if(!/^\d{4,12}$/.test(acnt)){
+            alert('這位球員尚未有可核對的中職 ID，無法自動連結。請使用首頁新增球員搜尋官方資料。');
+            return;
+          }
+          const existing=(typeof players!=='undefined'?players:[]).find(p=>String(p.cpblAcnt||'')===acnt);
+          if(existing&&typeof selectPlayer==='function'){void selectPlayer(existing.id);return}
+          const openDialog=document.getElementById('addPlayerBtn');
+          const create=document.getElementById('createCpblPlayerBtn');
+          const dialog=document.getElementById('addPlayerDialog');
+          if(!openDialog||!create||!dialog){alert('中職球員新增功能尚未準備完成，請重新整理再試。');return}
           if(typeof homeZone!=='undefined')homeZone='cpbl';
-          trigger.click();
+          openDialog.click();
+          if(!dialog.open){alert('中職新增視窗開啟失敗，請稍後再試。');return}
           const name=document.getElementById('newPlayerName');
           const number=document.getElementById('newPlayerNumber');
           const role=document.getElementById('newPlayerType');
@@ -238,7 +246,8 @@
           if(name)name.value=item.name||'';
           if(number)number.value=item.number||'';
           if(role)role.value='hitter';
-          name?.focus();
+          create.dataset.musicCpblAcnt=acnt;
+          create.click();
         },'music-player-link'));
       }catch{}
     }
