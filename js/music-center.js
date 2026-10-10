@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.72 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.73 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -14,7 +14,7 @@
   const STORAGE='diamondscope-music-catalog-draft-v2';
   const ROSTER_CACHE='diamondscope-music-roster-2026-cache-v1';
   let team='',type='球員曲',selected=null,admin=false,holdTimer=null,roster=null,loadError='',query='';
-  let draft={version:2,tracks:{},extraPlayers:{},playerEdits:{},items:{}};
+  let draft={version:2,tracks:{},extraPlayers:{},playerEdits:{},items:{},hiddenItems:{}};
   try {
     const old=JSON.parse(localStorage.getItem(STORAGE)||'null');
     if(old&&old.version===2&&typeof old.tracks==='object') draft={...draft,...old};
@@ -81,7 +81,24 @@
   function categoryItems(){
     if(type==='球員曲')return playersForTeam().map(p=>({...p,title:'#'+(p.number||'—')+' '+p.name,category:'player'}));
     const extras=(draft.items?.[arrKey(team,type)]||[]).filter(p=>p?.id&&p?.title);
-    return type==='狀態曲'?[...SPECIAL.map(i=>({...i,category:type})),...extras]:extras;
+    return (type==='狀態曲'?[...SPECIAL.map(i=>({...i,category:type})),...extras]:extras).filter(i=>!draft.hiddenItems?.[entryKey(team,type,i.id)]);
+  }
+  function deleteSongItem(item){
+    if(type==='球員曲')return;
+    if(!confirm('要從「'+team+' / '+type+'」移除「'+item.title+'」嗎？'))return;
+    const key=entryKey(team,type,item.id);
+    const isDefault=type==='狀態曲'&&SPECIAL.some(p=>p.id===item.id);
+    const oldTrack=draft.tracks[key];
+    const oldEntries=draft.items[arrKey(team,type)];
+    if(isDefault)(draft.hiddenItems??={})[key]=true;
+    else draft.items[arrKey(team,type)]=(oldEntries||[]).filter(p=>p.id!==item.id);
+    delete draft.tracks[key];
+    if(write())renderCategory();
+    else{
+      if(isDefault)delete draft.hiddenItems[key];
+      else draft.items[arrKey(team,type)]=oldEntries;
+      if(oldTrack)draft.tracks[key]=oldTrack;
+    }
   }
   function assigned(item){
     return draft.tracks?.[entryKey(team,item.category||type,item.id)]||null;
@@ -140,7 +157,7 @@
           const data=JSON.parse(await chosen.text());
           if(data?.version!==2||typeof data.tracks!=='object'||!data.tracks)throw Error('檔案格式不符');
           if(!confirm('要以匯入檔覆蓋這台裝置的音樂草稿嗎？'))return;
-          draft={version:2,tracks:data.tracks,extraPlayers:data.extraPlayers||{},playerEdits:data.playerEdits||{},items:data.items||{}};
+          draft={version:2,tracks:data.tracks,extraPlayers:data.extraPlayers||{},playerEdits:data.playerEdits||{},items:data.items||{},hiddenItems:data.hiddenItems||{}};
           if(write())renderPicker();
         }catch(e){alert('匯入失敗：'+e.message)}
       });label.append(file);pane.append(label);
@@ -210,6 +227,17 @@
       management.append(btn('離開管理',()=>{admin=false;renderCategory()},'music-admin-secondary'));
       content.append(management);
       if(type==='球員曲')addPlayerForm(content);else addSongForm(content);
+      if(type==='狀態曲'){
+        const hidden=SPECIAL.filter(item=>draft.hiddenItems?.[entryKey(team,type,item.id)]);
+        if(hidden.length){
+          const restore=$('div','','music-edit-panel');restore.append($('strong','已刪除的預設狀態曲'));
+          for(const item of hidden)restore.append(btn('還原「'+item.title+'」',()=>{
+            delete draft.hiddenItems[entryKey(team,type,item.id)];
+            if(write())renderCategory();
+          },'music-admin-secondary'));
+          content.append(restore);
+        }
+      }
     }
     if(type==='球員曲'){
       const find=document.createElement('input');find.className='music-search';find.type='search';find.placeholder='搜尋背號或球員姓名';find.value=query;
@@ -232,7 +260,11 @@
       b.append($('small',source?.videoId?'已設定影片':'尚未設定應援曲'));
       if(item.level)b.append($('small',item.level==='D'?'二軍紀錄':'一軍紀錄'));
       if(item.year)b.append($('small',item.year+' 年'));
-      grid.append(b);
+      if(admin&&type!=='球員曲'){
+        const wrap=$('div','','music-song-admin-card');
+        wrap.append(b,btn('刪除',()=>deleteSongItem(item),'music-song-delete'));
+        grid.append(wrap);
+      }else grid.append(b);
     }
     if(!items.length)grid.append($('p',type==='球員曲'?(roster?'沒有符合條件的球員':'目前無法載入球員資料'):'尚無曲目，長按標題五秒開啟管理後可新增。','music-song-note'));
   }
@@ -343,19 +375,15 @@
         found.year=year.field.value?Number(year.field.value):null;
         if(write())showSong(item.id);
       },'music-admin-secondary'));
-      panel.append(btn('刪除這個曲目',()=>{
-        if(!confirm('確定刪除曲目與其本機影片設定？'))return;
-        draft.items[arrKey(team,type)]=draft.items[arrKey(team,type)].filter(p=>p.id!==item.id);
-        delete draft.tracks[entryKey(team,type,item.id)];
-        if(write())renderCategory();
-      },'music-admin-danger'));
+      panel.append(btn('刪除這個曲目',()=>deleteSongItem(item),'music-admin-danger'));
     }
+    if(type==='狀態曲'&&SPECIAL.some(p=>p.id===item.id))panel.append(btn('刪除這個狀態曲',()=>deleteSongItem(item),'music-admin-danger'));
     content.append(panel);
   }
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.72',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.73',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
