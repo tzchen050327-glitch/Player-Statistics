@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.64 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.65 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -57,7 +57,7 @@
     const baseline=rosterTeam(team),extras=draft.extraPlayers?.[team]||[],byId=new Map();
     for(const p of [...baseline,...extras])if(p?.id&&p?.name)byId.set(String(p.id),effectivePlayer(p));
     const n=p=>/^\d+$/.test(p.number||'')?Number(p.number):999;
-    return [...byId.values()].filter(p=>!p.hidden).sort((a,b)=>
+    return [...byId.values()].filter(p=>!p.hidden&&p.role!=='pitcher').sort((a,b)=>
       n(a)-n(b)||(a.number==='00'?-1:b.number==='00'?1:0)||String(a.number).localeCompare(String(b.number))||String(a.name).localeCompare(String(b.name),'zh-Hant'));
   }
   function categoryItems(){
@@ -161,7 +161,7 @@
     grid.replaceChildren();let items=categoryItems();
     if(type==='球員曲'&&query.trim()){const kw=query.trim().toLowerCase();items=items.filter(p=>(p.name+' '+p.number).toLowerCase().includes(kw))}
     const count=content.querySelector('#musicRosterCount');
-    if(count)count.textContent='2026 球季名單：'+items.length+' 位球員（含一、二軍已留有比賽紀錄者；並非當日登錄公告）';
+    if(count)count.textContent='2026 球季野手：'+items.length+' 位球員（含一、二軍已留有比賽紀錄者；並非當日登錄公告）';
     for(const item of items){
       const b=btn(item.title,()=>showSong(item.id),'music-song-item');
       const source=assigned(item);
@@ -251,7 +251,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.64',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.65',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
