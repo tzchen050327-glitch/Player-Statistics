@@ -1047,18 +1047,6 @@
       const name=compactName(out[base]||'');
       if(name&&substitutes.has(normName(name)))out[base]=substitutes.get(normName(name));
     }
-    for(const base of ['first','second','third']){
-      const current=compactName(out[base]||'');
-      if(!current) continue;
-      const original=roster.find(entry=>samePlayerName(entry?.name||entry?.fullName||'',current));
-      const order=Number(original?.order)||0;
-      if(!(order>=1&&order<=9)) continue;
-      const chain=roster.filter(entry=>Number(entry?.order)===order&&compactName(entry?.name||entry?.fullName||''));
-      if(chain.length<2) continue;
-      const latest=chain.at(-1);
-      const latestName=compactName(latest?.name||latest?.fullName||'');
-      if(latestName&&!samePlayerName(latestName,current)) out[base]=latestName;
-    }
     return out;
   }
 
