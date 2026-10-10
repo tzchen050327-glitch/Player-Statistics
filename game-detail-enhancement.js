@@ -1029,6 +1029,24 @@
     const roster=Array.isArray(detail?.lineups?.[side]?.roster)?detail.lineups[side].roster:[];
     if(!roster.length) return names;
     const out={...names};
+    // CPBL live current.runners may still name the original batter after
+    // a pinch runner is inserted in the same batting-order roster chain.
+    // A PR row immediately following its replaced player is authoritative
+    // for the runner identity, but does not change which base is occupied.
+    const substitutes=new Map();
+    for(let i=1;i<roster.length;i++){
+      const substitute=roster[i];
+      const position=String(substitute?.position||substitute?.pos||'').toUpperCase();
+      if(!/(?:^|[^A-Z])PR(?:$|[^A-Z])/.test(position))continue;
+      const previous=roster[i-1];
+      const from=compactName(previous?.name||previous?.fullName||'');
+      const to=compactName(substitute?.name||substitute?.fullName||'');
+      if(from&&to&&!samePlayerName(from,to))substitutes.set(normName(from),to);
+    }
+    for(const base of ['first','second','third']){
+      const name=compactName(out[base]||'');
+      if(name&&substitutes.has(normName(name)))out[base]=substitutes.get(normName(name));
+    }
     for(const base of ['first','second','third']){
       const current=compactName(out[base]||'');
       if(!current) continue;
