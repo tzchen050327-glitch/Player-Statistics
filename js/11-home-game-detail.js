@@ -416,13 +416,17 @@
         // Prefer the locked pregame snapshot. If it is absent but the season line
         // is clearly postgame/current (AB advanced beyond pregame AB), back out
         // this game's line to recover the pregame baseline.
+        // CPBL competition-scoped lineup totals already include this game's
+        // hits/HR. Recover the series totals BEFORE today's game, otherwise
+        // hit labels start from the postgame count and skip prior-game history.
+        const competitionTotals = String(row?.statsScope || detail?.statsScope || '').toLowerCase() === 'competition';
         if (hits === null && directHits !== null) {
-          hits = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHits !== null
+          hits = gameHits !== null && (competitionTotals || (directAb !== null && pregameAb !== null && directAb > pregameAb))
             ? Math.max(0, directHits - gameHits)
             : directHits;
         }
         if (homeRuns === null && directHomeRuns !== null) {
-          homeRuns = directAb !== null && pregameAb !== null && directAb > pregameAb && gameHomeRuns !== null
+          homeRuns = gameHomeRuns !== null && (competitionTotals || (directAb !== null && pregameAb !== null && directAb > pregameAb))
             ? Math.max(0, directHomeRuns - gameHomeRuns)
             : directHomeRuns;
         }
