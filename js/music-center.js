@@ -258,7 +258,7 @@
       const b=btn(item.title,()=>showSong(item.id),'music-song-item');
       const source=assigned(item);
       b.append($('small',source?.videoId?'已設定影片':'尚未設定應援曲'));
-      if(item.level)b.append($('small',item.level==='D'?'二軍紀錄':'一軍紀錄'));
+
       if(item.year)b.append($('small',item.year+' 年'));
       if(admin&&type!=='球員曲'){
         const wrap=$('div','','music-song-admin-card');
