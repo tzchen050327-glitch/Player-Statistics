@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.85 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.86 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -215,6 +215,78 @@
     })();
     return lionsLoading;
   }
+
+  const BROTHERS_SONG_URL='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/brothers-music-cache';
+  const RAKUTEN_SONG_URL='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/rakuten-music-cache';
+  const cheerLists={};
+  const cheerSongs={};
+  const cheerLoading={};
+  function cheerCategory(teamName,title){
+    const t=String(title||'');
+    if(teamName==='中信兄弟'){
+      if(/嗆司|黃潮再起|兄弟精神|黃色默契|黃潮來襲|CHARGE|黃衫力量|永不放棄|原味兄弟|拿下這一場|冠軍榮耀|OH MY BUDDY/i.test(t))return 'Chance';
+      if(/形象片|形象影片/.test(t))return null;
+      return '主題曲';
+    }
+    if(/嗆司|口號|猿風加油|猿風應援|應猿曲|應援曲《勇敢前行》|應援舞|樂天Disco|樂天客家人|Dance Monkey|我最|我是|轟吧|超級2霸|桃猿男兒|來加油HO|勇敢猛進/i.test(t))return 'Chance';
+    if(/三振|出局|安打|全壘打|得分|上壘|盜壘/.test(t))return '狀態曲';
+    return '主題曲';
+  }
+  function cheerCleanTitle(teamName,title){
+    let t=String(title||'').trim();
+    if(teamName==='中信兄弟'){
+      t=t.replace(/(?:中信兄弟)?20\d{2}年度應援歌曲[「『]([^」』]+)[」』].*$/,'$1')
+        .replace(/^【20\d{2}】/,'').replace(/\s*CTBC Brothers.*$/i,'')
+        .replace(/^【([^】]+)】.*$/,'$1')
+        .replace(/^20\d{2}中信兄弟[^「]*[「]([^」]+)[」].*$/,'$1');
+      if(/CHARGE更強/.test(title))t=String(title).replace(/^.*?(CHARGE更強[^－—-]+[－—-]\s*)/,'').trim();
+    }else{
+      t=t.replace(/^【[^】]*】\s*/,'').replace(/^20\d{2}樂天桃猿(?:全新)?(?:口號)?(?:嗆司曲|應援曲)\s*/,'')
+        .replace(/^【猿風(?:加油|應援曲)[：: ]*】\s*/,'').replace(/^猿風應援曲[：:]\s*/,'')
+        .replace(/^【猿風加油應援曲】[：:]\s*/,'');
+      const bracket=t.match(/[《〈「『]([^》〉」』]+)[》〉」』]/);
+      if(bracket)t=bracket[1];
+      t=t.replace(/^(?:應猿舞教學之|應猿曲)\s*/,'').trim();
+    }
+    return t.trim()||String(title);
+  }
+  function cheerDedupKey(title){
+    return String(title||'').toLowerCase().replace(/(?:20\d{2}|年度|全新|應援曲|嗆司曲|教學|字幕版|歌詞版|official|music video|mv)/gi,'').replace(/[\s\p{P}\p{S}]/gu,'');
+  }
+  function rebuildCheerSongs(teamName){
+    const videos=cheerLists[teamName]||[];
+    const byCat={'Chance':[],'主題曲':[],'狀態曲':[]},seen=new Set();
+    for(const v of videos){
+      const original=String(v.title||'').trim(),id=String(v.id||'');
+      if(!/^[\w-]{11}$/.test(id)||/^(Private|Deleted) video$/.test(original))continue;
+      // Explicit player tracks belong in player music, never in team cheer.
+      if(/球員應援曲|應援曲教學[｜|]\s*\d+\s*[\u3400-\u9fff]{2,5}|《[\u3400-\u9fff]{2,5}應援曲》/.test(original))continue;
+      const category=cheerCategory(teamName,original);
+      if(!category)continue;
+      const title=cheerCleanTitle(teamName,original);
+      const key=cheerDedupKey(title);
+      if(!key||seen.has(key))continue;
+      seen.add(key);
+      byCat[category].push({id:'cheer-'+id,title,category,importedTrack:{videoId:id,start:0,source:teamName+'播放清單',title:original}});
+    }
+    cheerSongs[teamName]=byCat;
+  }
+  async function loadCheerSongs(teamName){
+    if(cheerLoading[teamName])return cheerLoading[teamName];
+    const url=teamName==='中信兄弟'?BROTHERS_SONG_URL:RAKUTEN_SONG_URL;
+    cheerLoading[teamName]=(async()=>{
+      try{
+        const response=await fetch(url,{cache:'no-store'});
+        if(!response.ok)throw Error('HTTP '+response.status);
+        const data=await response.json();
+        if(!data.ok||!Array.isArray(data.videos))throw Error('Invalid playlist data');
+        cheerLists[teamName]=data.videos;
+        rebuildCheerSongs(teamName);
+        if(team===teamName&&!selected)renderCategory();
+      }catch(e){console.warn('Cheer playlist load:',e)}
+    })();
+    return cheerLoading[teamName];
+  }
   const SPECIAL=[{id:'strikeout',title:'三振'},{id:'walk',title:'保送'},{id:'challenge',title:'挑戰'}];
   const STORAGE='diamondscope-music-catalog-draft-v2';
   const ROSTER_CACHE='diamondscope-music-roster-2026-cache-v1';
@@ -291,7 +363,7 @@
         (Number(a.number)||0)-(Number(b.number)||0)||String(a.name).localeCompare(String(b.name),'zh-Hant'));
     }
     const extras=(draft.items?.[arrKey(team,type)]||[]).filter(p=>p?.id&&p?.title);
-    const imported=team==='台鋼雄鷹'?(tsgImportedCategories[type]||[]):team==='味全龍'?(dragonCategories[type]||[]):team==='統一7-ELEVEn獅'?(lionsSongs[type]||[]):[];
+    const imported=team==='台鋼雄鷹'?(tsgImportedCategories[type]||[]):team==='味全龍'?(dragonCategories[type]||[]):team==='統一7-ELEVEn獅'?(lionsSongs[type]||[]):(['中信兄弟','樂天桃猿'].includes(team)?(cheerSongs[team]?.[type]||[]):[]);
     return [...(type==='狀態曲'?SPECIAL.map(i=>({...i,category:type})):[]),...imported,...extras].filter(i=>!draft.hiddenItems?.[entryKey(team,type,i.id)]);
   }
   function deleteSongItem(item){
@@ -392,6 +464,7 @@
     if(name==='台鋼雄鷹')void loadTsgPlaylistCache();
     if(name==='味全龍')void loadDragonCache();
     if(name==='統一7-ELEVEn獅')void loadLionsPlaylists();
+    if(name==='中信兄弟'||name==='樂天桃猿')void loadCheerSongs(name);
   }
   function addPlayerForm(anchor){
     const panel=$('div','','music-edit-panel');panel.append($('strong','新增球員（自動連結中職 ID）'));
@@ -610,7 +683,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.85',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.86',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
