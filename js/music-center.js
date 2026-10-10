@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.75 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.76 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -383,7 +383,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.75',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.76',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
