@@ -252,17 +252,17 @@
             <div id="homeTemplateDots" class="home-template-dots" aria-label="背景輪播位置"></div>
           </section>
 
-          <button id="homePlayerRankingBtn" class="panel home-standings-entry home-player-ranking-entry" type="button" aria-label="開啟數據排行">
+          <button id="homePlayerRankingBtn" class="panel home-standings-entry home-player-ranking-entry" type="button" aria-label="開啟數據中心">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M5 19V11M10 19V6M15 19v-4M20 19V3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
                 <path d="M3.5 19.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
             </span>
-            <strong>數據排行</strong>
+            <strong>數據中心</strong>
           </button>
 
-          <button id="homeAdvancedStatsBtn" class="panel home-standings-entry" type="button" aria-label="開啟中職進階數據">
+          <button id="homeAdvancedStatsBtn" class="panel home-standings-entry data-center-legacy-entry" type="button" aria-label="開啟中職進階數據">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M5 19V12M10 19V8M15 19v-5M20 19V4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
@@ -295,7 +295,7 @@
             <strong>聯盟分析</strong>
           </button>
 
-<button id="homePitcherBatterBtn" class="panel home-standings-entry home-notification-entry" type="button" aria-label="開啟投打對決">
+<button id="homePitcherBatterBtn" class="panel home-standings-entry data-center-legacy-entry" type="button" aria-label="開啟投打對決">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <circle cx="7" cy="7" r="2.4" stroke="currentColor" stroke-width="1.7"/>
@@ -917,6 +917,113 @@
   function sync(){const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active'),root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');const show=!!active&&!!root;section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);for(const el of panel.querySelectorAll('.home-player-head,.home-player-actions'))el.classList.toggle('hidden',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
   const observer=new MutationObserver(sync);for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
   select('standings');sync();
+})();
+</script>
+
+<style id="dataCenterIntegrationStyles">
+.data-center-legacy-entry{display:none!important}
+.data-center-toolbar{display:flex;flex-direction:column;gap:12px;margin:0 0 15px}
+.data-center-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:13px;background:var(--panel-muted,rgba(120,135,155,.12))}
+.data-center-tab{min-width:0;padding:11px 4px;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:clamp(12px,3vw,15px);font-weight:650;cursor:pointer}
+.data-center-tab.active{background:var(--panel-bg,#fff);box-shadow:0 1px 6px rgba(0,0,0,.12)}
+.data-center-search{display:flex;align-items:center;gap:8px;border:1px solid rgba(128,140,155,.35);border-radius:12px;padding:8px 12px}
+.data-center-search input{min-width:0;flex:1;background:transparent;color:inherit;border:0;outline:0;font-size:16px}
+.data-center-search-note{font-size:12px;opacity:.7}
+.data-center-toolbar [hidden]{display:none!important}
+</style>
+<script id="dataCenterIntegration">
+(() => {
+  'use strict';
+  const pages = {ranking:'playerRankingPage',advanced:'advancedStatsPage',matchup:'pitcherBatterPage'};
+  const triggers = {ranking:'homePlayerRankingBtn',advanced:'homeAdvancedStatsBtn',matchup:'homePitcherBatterBtn'};
+  const labels = {ranking:'數據排行',advanced:'進階數據',matchup:'投打對決'};
+  let query = '';
+  let active = 'ranking';
+  const boxes = {};
+  function currentMode() {
+    return Object.keys(pages).find(key => {
+      const element = document.getElementById(pages[key]);
+      return element && !element.classList.contains('hidden');
+    }) || null;
+  }
+  function filterRanking() {
+    const rows = document.querySelectorAll('#playerRankingPageContent .player-ranking-row');
+    const needle = query.trim().toLocaleLowerCase('zh-Hant');
+    rows.forEach(row => { row.hidden = Boolean(needle && !row.textContent.toLocaleLowerCase('zh-Hant').includes(needle)); });
+  }
+  function relaySearch() {
+    if (active === 'ranking') { filterRanking(); return; }
+    const target = document.getElementById(active === 'advanced' ? 'advancedStatsSearchInput' : 'pitcherBatterPlayerSearch');
+    if (!target || target.disabled) return;
+    target.removeAttribute('readonly');
+    if (target.value !== query) {
+      target.value = query;
+      target.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  }
+  function sync() {
+    const mode = currentMode();
+    if (!mode) return;
+    active = mode;
+    Object.entries(boxes).forEach(([key,box]) => {
+      const show = key === mode;
+      box.hidden = !show;
+      box.querySelectorAll('[data-center-mode]').forEach(btn => {
+        const selected = btn.dataset.centerMode === mode;
+        btn.classList.toggle('active',selected);
+        btn.setAttribute('aria-selected',String(selected));
+      });
+      const input = box.querySelector('input');
+      if (input && input.value !== query) input.value = query;
+      const note = box.querySelector('.data-center-search-note');
+      if(note) note.textContent = mode === 'ranking'
+        ? '依球員姓名或球隊篩選目前排行榜'
+        : mode === 'advanced'
+          ? '搜尋結果與選取球員顯示於下方的官方搜尋區'
+          : '請先選擇球隊，搜尋結果與選取球員顯示於下方';
+    });
+    filterRanking();
+  }
+  function mount() {
+    for (const [mode,pageId] of Object.entries(pages)) {
+      const page = document.getElementById(pageId);
+      const panel = page?.querySelector('.player-tools-page-panel');
+      const head = panel?.querySelector('.player-tools-page-head');
+      if (!panel || !head || boxes[mode]) continue;
+      const box = document.createElement('div');
+      box.className = 'data-center-toolbar';
+      box.innerHTML = '<nav class="data-center-tabs" role="tablist" aria-label="數據中心功能">'
+        + Object.keys(pages).map(key => '<button class="data-center-tab" type="button" role="tab" data-center-mode="'+key+'">'+labels[key]+'</button>').join('')
+        + '</nav><label class="data-center-search"><span aria-hidden="true">⌕</span><input type="search" autocomplete="off" aria-label="數據中心共用球員搜尋" placeholder="搜尋球員名稱" /></label><span class="data-center-search-note"></span>';
+      head.after(box);
+      boxes[mode] = box;
+      box.querySelectorAll('[data-center-mode]').forEach(btn => btn.addEventListener('click',() => {
+        if (btn.dataset.centerMode === active) return;
+        document.getElementById(triggers[btn.dataset.centerMode])?.click();
+        sync();
+        relaySearch();
+      }));
+      box.querySelector('input').addEventListener('input',event => {
+        query = event.target.value;
+        Object.values(boxes).forEach(other => {
+          const input = other.querySelector('input');
+          if(input !== event.target) input.value = query;
+        });
+        relaySearch();
+      });
+    }
+    sync();
+    // Ranking and advanced contents can be replaced by their existing renderers.
+    // Reapply the shared filter after those replacements.
+    const ranking = document.getElementById('playerRankingPageContent');
+    if (ranking) new MutationObserver(filterRanking).observe(ranking,{childList:true,subtree:false});
+    Object.values(pages).forEach(id => {
+      const page = document.getElementById(id);
+      if(page) new MutationObserver(sync).observe(page,{attributes:true,attributeFilter:['class']});
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',mount,{once:true});
+  else mount();
 })();
 </script>
   <script src="./js/module-loader.js?v=v9.47"></script>
