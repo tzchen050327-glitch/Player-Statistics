@@ -72,9 +72,47 @@ function crc(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^
 function zip(files){const enc=new TextEncoder(),parts=[],central=[];let offset=0;for(const f of files){const name=enc.encode(f.name),data=f.bytes,head=new Uint8Array(30+name.length),h=new DataView(head.buffer);u32(head,0,0x04034b50);u16(head,4,20);u16(head,6,0x800);u32(head,14,crc(data));u32(head,18,data.length);u32(head,22,data.length);u16(head,26,name.length);head.set(name,30);parts.push(head,data);
 const cen=new Uint8Array(46+name.length);u32(cen,0,0x02014b50);u16(cen,4,20);u16(cen,6,20);u16(cen,8,0x800);u32(cen,16,crc(data));u32(cen,20,data.length);u32(cen,24,data.length);u16(cen,28,name.length);u32(cen,42,offset);cen.set(name,46);central.push(cen);offset+=head.length+data.length;}
 const cdlen=central.reduce((n,c)=>n+c.length,0),end=new Uint8Array(22);u32(end,0,0x06054b50);u16(end,8,files.length);u16(end,10,files.length);u32(end,12,cdlen);u32(end,16,offset);return new Blob([...parts,...central,end],{type:'application/zip'});}
-async function png(c){const blob=await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNG 產生失敗')),'image/png'));return new Uint8Array(await blob.arrayBuffer());}
+async function png(c){return await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNG 產生失敗')),'image/png'));}
 let exporting=false;
-async function download(btn){if(exporting)return;const root=document.querySelector('.umpire-report-preview');if(!root)return;exporting=true;btn.disabled=true;btn.textContent='圖片產生中…';try{const subtitle=text(document.querySelector('.game-detail-sticky-head')?.textContent||document.querySelector('.umpire-report-official')?.textContent||'CPBL');const pts=pointsFromSvg(root),cs=[pageSummary(root,subtitle,pts),...pagesPitches(root,subtitle,pts)];const files=[];for(let i=0;i<cs.length;i++)files.push({name:String(i+1).padStart(2,'0')+(i===0?'_summary':'_pitches')+'.png',bytes:await png(cs[i])});const blob=zip(files),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=escFile('BallScope_裁判報告_'+subtitle)+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){console.error('[umpire-export]',e);alert('裁判報告下載失敗：'+e.message);}finally{exporting=false;btn.disabled=false;btn.textContent='下載圖片 ZIP';}}
-function mount(){const root=document.querySelector('.umpire-report-preview');if(!root||root.querySelector('.umpire-export-button'))return;const b=document.createElement('button');b.className='umpire-export-button';b.type='button';b.textContent='下載圖片 ZIP';b.style.cssText='display:block;margin:12px 0 16px auto;padding:11px 18px;border:1px solid #6989ae;border-radius:10px;background:#17385a;color:#fff;font-weight:700;cursor:pointer;';b.addEventListener('click',()=>download(b));root.insertBefore(b,root.firstChild);}
+const downloadUrls=new Set();
+function clearUrls(){for(const url of downloadUrls)URL.revokeObjectURL(url);downloadUrls.clear();}
+async function download(btn){
+  if(exporting)return;
+  const root=btn.closest('.umpire-report-preview');
+  if(!root)return;
+  exporting=true;btn.disabled=true;btn.textContent='圖片產生中…';
+  try{
+    const subtitle=text(document.querySelector('.game-detail-sticky-head')?.textContent||$(root,'.umpire-report-official')?.textContent||'CPBL');
+    const pts=pointsFromSvg(root);
+    const cs=[pageSummary(root,subtitle,pts),...pagesPitches(root,subtitle,pts)];
+    const output=root.querySelector('.umpire-export-images');
+    clearUrls();
+    if(output)output.replaceChildren();
+    for(let i=0;i<cs.length;i++){
+      const blob=await png(cs[i]),url=URL.createObjectURL(blob);downloadUrls.add(url);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=escFile('BallScope_裁判報告_'+subtitle)+'_'+String(i+1).padStart(2,'0')+(i===0?'_總覽':'_逐球')+'.png';
+      a.textContent=i===0?'下載第 1 張｜整場總覽':'下載第 '+(i+1)+' 張｜逐球判決';
+      a.style.cssText='display:block;padding:11px 14px;margin:8px 0;border:1px solid #6989ae;border-radius:10px;color:#fff;background:#17385a;text-decoration:none;font-weight:700;text-align:center;';
+      output?.appendChild(a);
+    }
+    btn.textContent='重新產生圖片';
+  }catch(e){console.error('[umpire-export]',e);alert('裁判報告圖片產生失敗：'+e.message);btn.textContent='產生下載圖片';}
+  finally{exporting=false;btn.disabled=false;}
+}
+function mount(){
+  const root=document.querySelector('.umpire-report-preview');
+  if(!root||root.querySelector('.umpire-export-button'))return;
+  const wrap=document.createElement('div');wrap.className='umpire-export-controls';
+  wrap.style.cssText='margin:22px 0 12px;padding:16px;border-top:1px solid #344761;';
+  const b=document.createElement('button');b.className='umpire-export-button';b.type='button';
+  b.textContent='產生下載圖片';
+  b.style.cssText='display:block;width:100%;padding:12px 18px;border:1px solid #6989ae;border-radius:10px;background:#17385a;color:#fff;font-weight:700;cursor:pointer;';
+  const tip=document.createElement('div');tip.textContent='每張 PNG 可個別下載，不使用 ZIP。';tip.style.cssText='color:#9eb2ce;font-size:12px;margin-top:10px;text-align:center;';
+  const output=document.createElement('div');output.className='umpire-export-images';
+  b.addEventListener('click',()=>download(b));wrap.append(b,tip,output);
+  root.appendChild(wrap);
+}
 let pending=false;const observer=new MutationObserver(()=>{if(pending)return;pending=true;queueMicrotask(()=>{pending=false;mount();});});function start(){mount();observer.observe(document.body,{childList:true,subtree:true});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
