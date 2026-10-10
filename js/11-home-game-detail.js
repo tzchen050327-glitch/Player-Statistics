@@ -486,6 +486,22 @@
       return [...map.values()].sort((a,b) => a.inning - b.inning || (a.half === 'top' ? -1 : 1));
     }
 
+    let homeGameLargeMode = (() => {
+      try { return localStorage.getItem('baseball-game-detail-large-screen-v1') === '1'; }
+      catch { return false; }
+    })();
+    function toggleHomeGameLargeMode() {
+      homeGameLargeMode = !homeGameLargeMode;
+      try { localStorage.setItem('baseball-game-detail-large-screen-v1',homeGameLargeMode ? '1' : '0'); } catch {}
+      const overlay = document.getElementById('homeGameDetailOverlay');
+      overlay?.classList.toggle('game-detail-wide-mode',homeGameLargeMode);
+      const button = overlay?.querySelector('#homeGameDetailDisplayMode');
+      if(button){
+        button.textContent=homeGameLargeMode?'關閉大螢幕':'大螢幕模式';
+        button.setAttribute('aria-pressed',String(homeGameLargeMode));
+      }
+      window.dispatchEvent(new Event('resize'));
+    }
     function ensureHomeGameDetailOverlay() {
       let overlay = document.getElementById('homeGameDetailOverlay');
       if (overlay) return overlay;
@@ -494,6 +510,20 @@
       overlay.className = 'home-game-detail-overlay hidden';
       overlay.innerHTML = '<div class="home-game-detail-page" role="dialog" aria-modal="true" aria-label="對戰中心"><div id="homeGameDetailBody"></div></div>';
       document.body.appendChild(overlay);
+      // Handle pointerdown on the stable overlay: live re-renders can replace
+      // the button between pointerdown and click and silently drop click.
+      overlay.addEventListener('pointerdown',event=>{
+        if(event.button!==0 || !event.target.closest('#homeGameDetailDisplayMode'))return;
+        event.preventDefault();
+        toggleHomeGameLargeMode();
+      },true);
+      // Keyboard activation does not generate pointerdown.
+      overlay.addEventListener('click',event=>{
+        if(event.detail===0 && event.target.closest('#homeGameDetailDisplayMode')){
+          event.preventDefault();
+          toggleHomeGameLargeMode();
+        }
+      },true);
       return overlay;
     }
 
@@ -2003,8 +2033,7 @@
       const detailCacheAt = activeHomeGameDetail ? Number(homeGameDetailCache.get(activeHomeGameDetail.key)?.at || 0) : 0;
       const detailUpdateTime = homeMatchCenterDisplayTime(detail?.updatedAt || detail?.fetchedAt || detailCacheAt || 0);
       const desktopDisplayControl = window.matchMedia('(min-width: 981px) and (pointer: fine)').matches;
-      let largeDisplayEnabled = false;
-      try { largeDisplayEnabled = localStorage.getItem('baseball-game-detail-large-screen-v1') === '1'; } catch {}
+      const largeDisplayEnabled = homeGameLargeMode;
       overlay.classList.toggle('game-detail-wide-mode', desktopDisplayControl && largeDisplayEnabled);
       const pregame = detail?.pregame || null;
       if (pregame && activeHomeGameDetail?.pregameCenter) {
@@ -2112,17 +2141,6 @@
         }
       });
       body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
-      body.querySelector('#homeGameDetailDisplayMode')?.addEventListener('click', () => {
-        try {
-          const next = localStorage.getItem('baseball-game-detail-large-screen-v1') === '1' ? '0' : '1';
-          localStorage.setItem('baseball-game-detail-large-screen-v1', next);
-        } catch {}
-        const current = activeHomeGameDetail
-          ? (homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail)
-          : detail;
-        renderHomeGameDetail(current, game);
-        window.dispatchEvent(new Event('resize'));
-      });
       body.querySelector('#homeGameDetailRetry')?.addEventListener('click', () => refreshActiveHomeGameDetail({ force:true }));
       body.querySelectorAll('[data-match-center-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
