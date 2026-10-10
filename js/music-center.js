@@ -358,6 +358,7 @@
       const raw=url.field.value.trim(),id=raw?parseId(raw):'';
       if(raw&&!id){notify('請貼上有效的 YouTube 單支影片網址',panel);return}
       if(id)draft.tracks[entryKey(team,item.category||type,item.id)]={videoId:id,start:Math.max(0,Math.floor(Number(start.field.value)||0))};
+      else if(team==='台鋼雄鷹'&&OFFICIAL_TSG_PLAYER_VIDEOS[item.id])draft.tracks[entryKey(team,item.category||type,item.id)]=null;
       else delete draft.tracks[entryKey(team,item.category||type,item.id)];
       if(write())showSong(item.id);
     },'music-admin-btn'));
