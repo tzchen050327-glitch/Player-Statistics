@@ -428,7 +428,12 @@
       teams[1].querySelector('b')?.replaceChildren(document.createTextNode(String(score[1])));
     }
     function postseasonCpblSeriesScore(a,b) {
-      const normalize = value => String(value || '').replace(/7-ELEVEN|7－ELEVEN|7-11|\\s/g, '').trim();
+      const normalize = value => {
+        const name = String(value || '').normalize('NFKC').replace(/\s/g,'').toLowerCase();
+        if (name.includes('統一') && (name.includes('獅') || name.includes('lion'))) return 'uni-lions';
+        if (name.includes('中信') && name.includes('兄弟')) return 'ctbc-brothers';
+        return name.replace(/7-eleven|7-11|7eleven/g,'');
+      };
       const fromApi = postseasonCpblOfficialWins;
       if (fromApi) {
         const countFor = name => Object.entries(fromApi).reduce((sum,[team,count]) => sum + (normalize(team) === normalize(name) ? (Number(count) || 0) : 0),0);
