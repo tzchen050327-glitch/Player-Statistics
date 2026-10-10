@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.61" />
+  <meta name="app-version" content="v9.62" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.61" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.61" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.61" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.61" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.62" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.62" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.62" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.62" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.61"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.61" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.61" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.61" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.61" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.61" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.61" />
+    <script src="./diagnostic-runtime.js?v=v9.62"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.62" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.62" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.62" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.62" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.62" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.62" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -195,7 +195,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.61" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.62" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -603,7 +603,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.61</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.62</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1126,7 +1126,9 @@
   if(!page||!open||!back||!picker||!content)return;
   const FUBON='富邦悍將', COMP='y9QNNL9J9-E';
   const times=[['00','童堉誠',26],['1','林哲瑄',64],['2','林澤彬',111],['3','王勝偉',139],['4','高捷',162],['5','王念好',205],['6','葉子霆',247],['7','陳真',289],['14','王苡丞',351],['22','李宗賢',395],['25','林書逸',430],['29','申皓瑋',461],['31','林岱安',504],['33','張洺瑀',547],['35','王正棠',588],['43','豊暐',623],['46','范國宸',664],['47','張進德',695],['61','蕭憶銘',746],['62','林岳谷',771],['67','辛元旭',821],['77','周佳樂',869],['78','董子恩',903],['82','孔念恩',942],['85','劉俊豪',981],['95','戴培峰',1025],['97','池恩齊',1063],['98','高國麟',1084],['99','張育成',1120]];
-  const playerTracks=times.map(([number,name,start])=>({id:'p'+number,title:'#'+number+' '+name,number,name,year:2026,video:COMP,start,source:'2026 應援曲合輯'}));
+  // Official standalone video IDs previously matched to player titles; unresolved players retain compilation fallback.
+  const officialPlayerVideos={"1":"ghD6LxRZyp0","2":"ALGOXywvFdg","5":"Q8DgGgi0_nA","7":"P9vIBxkvbfA","22":"Iqa1-myBLVk","29":"JPtvrSibDHU","31":"Pub8_I98Fm8","35":"pJrAcunoZBM","46":"Y6XhJJXCQVU","47":"rQvGpyBtplk","78":"8F_IRBAdgYI","82":"i6RZVPtxaEo","85":"06fOT3zboIY","98":"24Y6uS1juio","99":"ZdAvmv8cXvg"};
+  const playerTracks=times.map(([number,name,start])=>({id:'p'+number,title:'#'+number+' '+name,number,name,year:2026,video:officialPlayerVideos[number]||COMP,start:officialPlayerVideos[number]?0:start,source:officialPlayerVideos[number]?'富邦悍將官方獨立應援影片':'2026 應援曲合輯'}));
   const chanceNames=[['藍色風暴',1175,2026],['Fight For All',1234,2026],['絕對無敵',1316,2026],['Go Stronger',1376,2026],['悍將強襲',1422,2026],['藍色狂潮',1472,2026],['藍色旋風',1517,2026],['一擊稱霸',1576,2026],['強悍出擊',1624,2026],['Strive 衝鋒曲',1671,2026],['超強一擊',1733,2026],['GO 富邦悍將',1807,2017]];
   const chance=chanceNames.map(([name,start,year],i)=>({id:'c'+i,title:name,year,video:year===2017?'NZZgudRB7bE':COMP,start:year===2017?0:start,source:year===2017?'球團官方影片':'2026 應援曲合輯'}));
   const themeTracks=[{id:'t-fire',title:'Fire Up',year:2017,video:'',source:'球團歷年主題曲（待指定影片）'},{id:'t-power',title:'藍色力量',year:2026,video:'',source:'球團應援曲頁（待指定影片）'},{id:'t-strong',title:'我們最強',year:2026,video:COMP,start:1847,source:'2026 應援曲合輯'},{id:'t-fight',title:'戰到底',year:2026,video:COMP,start:2082,source:'2026 應援曲合輯'}];
@@ -1182,6 +1184,6 @@
   page.querySelectorAll('[data-music-team]').forEach(b=>b.addEventListener('click',()=>showTeam(b.dataset.musicTeam)));
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.61"></script>
+  <script src="./js/module-loader.js?v=v9.62"></script>
 </body>
 </html>
