@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="v9.60" />
+  <meta name="app-version" content="v9.61" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=v9.60" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.60" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.60" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.60" />
+  <link rel="manifest" href="./manifest.webmanifest?v=v9.61" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=v9.61" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=v9.61" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=v9.61" />
   <script>
     (() => {
       try {
@@ -26,13 +26,13 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=v9.60"></script>
-  <link rel="stylesheet" href="./styles.css?v=v9.60" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.60" />
-  <link rel="stylesheet" href="./report-layout.css?v=v9.60" />
-  <link rel="stylesheet" href="./landscape-state.css?v=v9.60" />
-  <link rel="stylesheet" href="./postseason-history.css?v=v9.60" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.60" />
+    <script src="./diagnostic-runtime.js?v=v9.61"></script>
+  <link rel="stylesheet" href="./styles.css?v=v9.61" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=v9.61" />
+  <link rel="stylesheet" href="./report-layout.css?v=v9.61" />
+  <link rel="stylesheet" href="./landscape-state.css?v=v9.61" />
+  <link rel="stylesheet" href="./postseason-history.css?v=v9.61" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=v9.61" />
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
 .awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
@@ -195,7 +195,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=v9.60" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=v9.61" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -603,7 +603,7 @@
     </section>
   </main>
 
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.60</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">v9.61</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1104,74 +1104,84 @@
 @media(min-width:850px){#musicCenterPage .music-center-team-grid .music-team-card{min-height:178px}}
 @media(max-width:420px){#musicCenterPage .music-center-team-grid .music-team-card{min-height:135px;padding:14px 12px}#musicCenterPage .music-team-card strong{font-size:16px}#musicCenterPage .music-team-card small{font-size:8px}}
 </style>
-<script id="musicCenterEntryNavigation">
+<style id="musicSongStyles">
+.music-song-note{font-size:12px;color:var(--muted);line-height:1.6;margin:8px 0 12px}
+.music-song-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.music-song-item{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;padding:13px;min-height:62px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:11px;font-weight:850}
+.music-song-item small{color:var(--muted);font-size:10px}
+.music-song-back{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:10px;margin-bottom:12px}
+.music-song-heading{font-size:22px;margin:8px 0 15px}
+.music-song-player{width:100%;aspect-ratio:16/9;border-radius:13px;background:#101522;color:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.music-song-player iframe{width:100%;height:100%;border:0}
+.music-song-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:24px}
+.music-song-controls button{border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);padding:13px}
+.music-song-admin{display:grid;gap:9px;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.music-song-admin input{width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text)}
+.music-song-admin button{padding:10px;border:0;border-radius:8px;background:var(--accent);color:#fff}
+@media(min-width:850px){.music-song-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style><script id="musicCenterEntryNavigation">
 (() => {
-  const page = document.getElementById('musicCenterPage');
-  const open = document.getElementById('homeMusicCenterBtn');
-  const back = document.getElementById('musicCenterBackHomeBtn');
-  const title = document.getElementById('musicCenterPageTitle');
-  if (!page || !open || !back) return;
-  function navigate(target) {
-    if (typeof currentPage !== 'undefined' && typeof renderAll === 'function') {
-      currentPage = target;
-      renderAll();
-    } else {
-      document.getElementById('homePage')?.classList.toggle('hidden',target !== 'home');
-      page.classList.toggle('hidden',target !== 'music-center');
-      document.getElementById('homeHeaderDateControl')?.classList.toggle('hidden',target === 'music-center');
-    }
-    window.scrollTo({top:0,behavior:'instant'});
-  }
-  open.addEventListener('click', () => { showPicker(); navigate('music-center'); });
-  const picker = document.getElementById('musicCenterTeamPicker');
-  back.addEventListener('click', () => { if (!content.classList.contains('hidden')) { showPicker(); } else navigate('home'); });
-  let selectedTeam = '';
-  let selectedType = '';
-  const content = document.getElementById('musicCenterTeamContent');
-  function showPicker() { selectedTeam=''; selectedType=''; picker.classList.remove('hidden'); content.classList.add('hidden'); content.replaceChildren(); back.textContent='← 返回首頁'; if(title) title.textContent='音樂中心'; }
-  function showTeam(team) {
-    selectedTeam = team;
-    selectedType = '';
-    page.querySelectorAll('[data-music-team]').forEach(button => {
-      const selected = button.dataset.musicTeam === team;
-      button.classList.toggle('active', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    });
-    if (!content) return;
-    picker.classList.add('hidden');
-    content.classList.remove('hidden');
-    back.textContent='← 返回音樂中心';
-    if(title) title.textContent=team;
+  'use strict';
+  const page=document.getElementById('musicCenterPage'), open=document.getElementById('homeMusicCenterBtn'), back=document.getElementById('musicCenterBackHomeBtn'), title=document.getElementById('musicCenterPageTitle'), picker=document.getElementById('musicCenterTeamPicker'), content=document.getElementById('musicCenterTeamContent');
+  if(!page||!open||!back||!picker||!content)return;
+  const FUBON='富邦悍將', COMP='y9QNNL9J9-E';
+  const times=[['00','童堉誠',26],['1','林哲瑄',64],['2','林澤彬',111],['3','王勝偉',139],['4','高捷',162],['5','王念好',205],['6','葉子霆',247],['7','陳真',289],['14','王苡丞',351],['22','李宗賢',395],['25','林書逸',430],['29','申皓瑋',461],['31','林岱安',504],['33','張洺瑀',547],['35','王正棠',588],['43','豊暐',623],['46','范國宸',664],['47','張進德',695],['61','蕭憶銘',746],['62','林岳谷',771],['67','辛元旭',821],['77','周佳樂',869],['78','董子恩',903],['82','孔念恩',942],['85','劉俊豪',981],['95','戴培峰',1025],['97','池恩齊',1063],['98','高國麟',1084],['99','張育成',1120]];
+  const playerTracks=times.map(([number,name,start])=>({id:'p'+number,title:'#'+number+' '+name,number,name,year:2026,video:COMP,start,source:'2026 應援曲合輯'}));
+  const chanceNames=[['藍色風暴',1175,2026],['Fight For All',1234,2026],['絕對無敵',1316,2026],['Go Stronger',1376,2026],['悍將強襲',1422,2026],['藍色狂潮',1472,2026],['藍色旋風',1517,2026],['一擊稱霸',1576,2026],['強悍出擊',1624,2026],['Strive 衝鋒曲',1671,2026],['超強一擊',1733,2026],['GO 富邦悍將',1807,2017]];
+  const chance=chanceNames.map(([name,start,year],i)=>({id:'c'+i,title:name,year,video:year===2017?'NZZgudRB7bE':COMP,start:year===2017?0:start,source:year===2017?'球團官方影片':'2026 應援曲合輯'}));
+  const themeTracks=[{id:'t-fire',title:'Fire Up',year:2017,video:'',source:'球團歷年主題曲（待指定影片）'},{id:'t-power',title:'藍色力量',year:2026,video:'',source:'球團應援曲頁（待指定影片）'},{id:'t-strong',title:'我們最強',year:2026,video:COMP,start:1847,source:'2026 應援曲合輯'},{id:'t-fight',title:'戰到底',year:2026,video:COMP,start:2082,source:'2026 應援曲合輯'}];
+  const statusTracks=[{id:'s-k',title:'三振｜KKK',year:2026,video:COMP,start:3367},{id:'s-bb',title:'保送｜謝謝你的保送',year:2026,video:COMP,start:3384},{id:'s-out',title:'挑戰｜相信悍將 Out',year:2026,video:COMP,start:3433},{id:'s-safe',title:'挑戰｜相信悍將 Safe',year:2026,video:COMP,start:3473}];
+  const categories={'球員曲':playerTracks,'Chance':chance,'主題曲':themeTracks,'狀態曲':statusTracks};
+  const storageKey='dsMusicOverridesV1';
+  let overrides={};try{overrides=JSON.parse(localStorage.getItem(storageKey)||'{}')||{}}catch{}
+  let selectedTeam='',selectedType='球員曲',selectedIndex=-1,admin=false,holdTimer=0;
+  const validVideo=value=>{const str=String(value||'').trim();if(/^[A-Za-z0-9_-]{11}$/.test(str))return str;try{const u=new URL(str);if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com'].includes(u.hostname))return u.searchParams.get('v')?.match(/^[\w-]{11}$/)?.[0]||'';if(u.hostname==='youtu.be')return u.pathname.split('/')[1]?.match(/^[\w-]{11}$/)?.[0]||'';if(u.hostname==='www.youtube-nocookie.com')return u.pathname.split('/').pop()?.match(/^[\w-]{11}$/)?.[0]||''}catch{}return ''};
+  const text=(tag,value,klass='')=>{const el=document.createElement(tag);el.textContent=value;if(klass)el.className=klass;return el};
+  const button=(label,handler,klass='')=>{const b=text('button',label,klass);b.type='button';b.addEventListener('click',handler);return b};
+  const tracks=()=>selectedTeam===FUBON?(categories[selectedType]||[]):[];
+  const vid=t=>overrides[t.id]?.video??t.video;
+  const start=t=>overrides[t.id]?.start??t.start??0;
+  function navigate(target){if(typeof currentPage!=='undefined'&&typeof renderAll==='function'){currentPage=target;renderAll()}else{document.getElementById('homePage')?.classList.toggle('hidden',target!=='home');page.classList.toggle('hidden',target!=='music-center');document.getElementById('homeHeaderDateControl')?.classList.toggle('hidden',target==='music-center')}window.scrollTo(0,0)}
+  function showPicker(){selectedTeam='';selectedIndex=-1;picker.classList.remove('hidden');content.classList.add('hidden');content.replaceChildren();back.textContent='← 返回首頁';if(title)title.textContent='音樂中心'}
+  function showTeam(team){selectedTeam=team;selectedType='球員曲';selectedIndex=-1;picker.classList.add('hidden');content.classList.remove('hidden');back.textContent='← 返回音樂中心';if(title)title.textContent=team;renderCategory()}
+  function renderCategory(){
     content.replaceChildren();
-    const tabs = document.createElement('div');
-    tabs.className = 'music-center-subnav';
-    tabs.setAttribute('aria-label', '歌曲分類');
-    const space = document.createElement('div');
-    space.className = 'music-center-list-placeholder';
-    for (const type of (team === '其他' ? [] : ['球員曲','Chance','主題曲','狀態曲'])) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = type;
-      button.setAttribute('aria-pressed', 'false');
-      button.addEventListener('click', () => {
-        selectedType = type;
-        tabs.querySelectorAll('button').forEach(item => {
-          const active = item === button;
-          item.classList.toggle('active',active);
-          item.setAttribute('aria-pressed',String(active));
-        });
-        space.replaceChildren();
-      });
-      tabs.append(button);
-    }
-    if(team !== '其他') content.append(tabs);
-    content.append(space);
+    if(selectedTeam==='其他')return;
+    const tabs=document.createElement('div');tabs.className='music-center-subnav';tabs.setAttribute('aria-label','歌曲分類');
+    for(const type of Object.keys(categories)){const b=button(type,()=>{selectedType=type;selectedIndex=-1;renderCategory()});b.classList.toggle('active',type===selectedType);b.setAttribute('aria-pressed',String(type===selectedType));tabs.append(b)}
+    content.append(tabs);
+    if(selectedTeam!==FUBON){content.append(text('p','此隊歌曲尚未建檔。','music-song-note'));return}
+    const list=tracks();content.append(text('p',selectedType==='球員曲'?'2026 球員應援曲・依背號排序':'已核對的歌曲先行收錄；其他年份持續補齊。','music-song-note'));
+    const grid=document.createElement('div');grid.className='music-song-grid';
+    list.forEach((song,i)=>{const b=button(song.title,()=>showSong(i),'music-song-item');const sub=text('small',String(song.year||2026));b.append(sub);grid.append(b)});content.append(grid)
   }
-  page.querySelectorAll('[data-music-team]').forEach(button =>
-    button.addEventListener('click', () => showTeam(button.dataset.musicTeam))
-  );
+  function showSong(index){
+    const list=tracks(),song=list[index];if(!song)return;selectedIndex=index;content.replaceChildren();
+    content.append(button('← 返回'+selectedType,renderCategory,'music-song-back'));
+    content.append(text('h3',song.title,'music-song-heading'));
+    const holder=document.createElement('div');holder.className='music-song-player';
+    const playerId=validVideo(vid(song));
+    if(playerId){const frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/'+playerId+'?start='+Math.max(0,Math.floor(Number(start(song))||0))+'&rel=0';frame.title=song.title+' YouTube 影片';frame.allow='accelerometer;autoplay;encrypted-media;gyroscope;picture-in-picture;web-share';frame.allowFullscreen=true;frame.loading='lazy';frame.referrerPolicy='strict-origin-when-cross-origin';holder.append(frame)}
+    else holder.append(text('p','尚未確認可播放的 YouTube 影片。','music-song-note'));
+    content.append(holder);
+    content.append(text('p',(song.source||'2026 應援曲合輯')+'｜'+song.year+' 年','music-song-note'));
+    if(selectedType==='球員曲')content.append(text('p','球員年度數據與本站球員頁連結：尚待完成球員資料對應，避免連錯人。','music-song-note'));
+    if(admin){const manager=document.createElement('div');manager.className='music-song-admin';manager.append(text('strong','編輯影片（僅儲存在這台裝置）'));
+      const input=document.createElement('input');input.type='url';input.value=playerId?'https://www.youtube.com/watch?v='+playerId:'';input.placeholder='YouTube 影片連結';input.setAttribute('aria-label','YouTube 影片連結');
+      const second=document.createElement('input');second.type='number';second.min='0';second.value=String(start(song));second.setAttribute('aria-label','影片起播秒數');
+      const note=text('small','');manager.append(input,second,button('儲存本機修改',()=>{const id=validVideo(input.value);if(!id){note.textContent='請輸入正確的 YouTube 影片網址';return}overrides[song.id]={video:id,start:Math.max(0,Number(second.value)||0)};localStorage.setItem(storageKey,JSON.stringify(overrides));showSong(index)}),note);content.append(manager)}
+    const controls=document.createElement('div');controls.className='music-song-controls';
+    controls.append(button('← 上一首',()=>showSong((index-1+list.length)%list.length)),button('下一首 →',()=>showSong((index+1)%list.length)));content.append(controls)
+  }
+  function renderAdmin(){admin=true;if(selectedIndex>=0)showSong(selectedIndex);else{content.prepend(text('p','已開啟本機歌曲編輯。先選一首歌即可修改 YouTube 網址。此入口不是身分驗證，不能用來保護後端寫入。','music-song-note'))}}
+  const beginHold=()=>{clearTimeout(holdTimer);if(!selectedTeam)holdTimer=setTimeout(renderAdmin,5000)};
+  const stopHold=()=>clearTimeout(holdTimer);
+  if(title){title.addEventListener('pointerdown',beginHold);['pointerup','pointerleave','pointercancel'].forEach(ev=>title.addEventListener(ev,stopHold));title.addEventListener('contextmenu',e=>{if(!selectedTeam)e.preventDefault()})}
+  open.addEventListener('click',()=>{showPicker();navigate('music-center')});
+  back.addEventListener('click',()=>{if(selectedTeam)showPicker();else navigate('home')});
+  page.querySelectorAll('[data-music-team]').forEach(b=>b.addEventListener('click',()=>showTeam(b.dataset.musicTeam)));
 })();
 </script>
-  <script src="./js/module-loader.js?v=v9.60"></script>
+  <script src="./js/module-loader.js?v=v9.61"></script>
 </body>
 </html>
