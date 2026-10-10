@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.79 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.80 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -28,6 +28,14 @@
     const found=rosterPlayers.filter(p=>Number(p.number)===Number(number)&&normalizeSongName(p.name)===name);
     return {number,name,player:found.length===1?found[0]:null};
   }
+  function parseTsgPlayerVideo(title){
+    const numbered=String(title).match(/[#＃]\s*0*(\d{1,3})\s*([\u3400-\u9fff]{2,6}?)(?=🦅|應援曲|鷹援曲|\s|[】\]｜|]|$)/);
+    if(numbered&&/應援曲|鷹援曲/.test(title))return {number:numbered[1],name:normalizeSongName(numbered[2])};
+    // The official playlist includes older player songs without uniform numbers.
+    const bare=String(title).match(/^[【\s]*([\u3400-\u9fff]{2,5})🦅(?:應援曲|鷹援曲)/);
+    if(bare)return {number:'',name:normalizeSongName(bare[1])};
+    return null;
+  }
   function rebuildTsgMatches(){
     tsgImportTracks={};tsgUnmatched=[];
     tsgImportedCategories={'Chance':[],'主題曲':[],'狀態曲':[],'團隊應援':[],'歷年球員曲':[]};
@@ -39,16 +47,20 @@
       if(title==='Private video'||title==='Deleted video'||!/^[\w-]{11}$/.test(String(video.id||''))){
         tsgUnmatched.push({...video,reason:'影片不公開或已刪除'});continue;
       }
-      const parsed=parseTsgTitle(title,rosterPlayers);
       const track={videoId:video.id,start:0,source:'台鋼播放清單',title};
+      const parsed=parseTsgPlayerVideo(title);
       if(parsed){
-        if(parsed.player&&!current.has(parsed.player.id)){
-          current.set(parsed.player.id,video);
-          tsgImportTracks[parsed.player.id]=track;
+        const exact=rosterPlayers.filter(p=>normalizeSongName(p.name)===parsed.name);
+        const candidates=parsed.number?exact.filter(p=>Number(p.number)===Number(parsed.number)):exact;
+        // Only put a song on the current roster card when identity and number match.
+        if(candidates.length===1&&!current.has(candidates[0].id)){
+          current.set(candidates[0].id,video);
+          tsgImportTracks[candidates[0].id]=track;
         }else{
+          const display=(parsed.number?'#'+parsed.number+' ':'')+parsed.name;
           tsgImportedCategories['歷年球員曲'].push({
-            id:'yt-'+video.id,title:'#'+parsed.number+' '+parsed.name+'｜'+title,
-            category:'歷年球員曲',importedTrack:track,number:parsed.number,name:parsed.name
+            id:'yt-'+video.id,title:display,category:'歷年球員曲',
+            importedTrack:track,number:parsed.number,name:parsed.name
           });
         }
         continue;
@@ -485,7 +497,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.79',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.80',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
