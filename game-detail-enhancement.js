@@ -842,7 +842,7 @@
         if (fieldingSide !== side) continue;
         const description = String(play?.description || '');
         let match;
-        const defenseRe = /更換守備：([^。]+?)=>([^。]+?)(?=。|$)/g;
+        const defenseRe = /更換(?:守備|選手)：([^。]+?)=>([^。]+?)(?=。|$)/g;
         while ((match = defenseRe.exec(description))) {
           const from = roleAndName(match[1]);
           const to = roleAndName(match[2]);
