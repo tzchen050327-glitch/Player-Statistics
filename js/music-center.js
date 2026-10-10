@@ -373,21 +373,34 @@
       if(navigator.vibrate)navigator.vibrate(35);
     }
   }
+  // Five-second hold on the large "其他" card; suppress its ordinary click after a completed hold.
+  const otherCard=root.querySelector('[data-music-team="其他"]');
+  let heldOther=false;
   function beginHold(event){
     if(event.button!==undefined&&event.button!==0)return;
-    clearTimeout(holdTimer);holdTimer=setTimeout(enableAdmin,5000);
+    heldOther=false;
+    clearTimeout(holdTimer);
+    holdTimer=setTimeout(()=>{
+      heldOther=true;
+      if(!team)enableAdmin();
+    },5000);
   }
   function stopHold(){clearTimeout(holdTimer)}
-  header.style.userSelect='none';header.style.webkitUserSelect='none';
-  header.addEventListener('pointerdown',beginHold);
-  for(const ev of ['pointerup','pointercancel','pointerleave'])header.addEventListener(ev,stopHold);
-  header.addEventListener('contextmenu',e=>e.preventDefault());
+  if(otherCard){
+    otherCard.style.userSelect='none';
+    otherCard.style.webkitUserSelect='none';
+    otherCard.style.webkitTouchCallout='none';
+    otherCard.addEventListener('pointerdown',beginHold);
+    for(const ev of ['pointerup','pointercancel','pointerleave'])otherCard.addEventListener(ev,stopHold);
+    otherCard.addEventListener('contextmenu',e=>e.preventDefault());
+  }
   migrateLocalPlayerIds();
   open.addEventListener('click',()=>{renderPicker();navigate('music-center');void loadRoster()});
   back.addEventListener('click',()=>{if(selected)renderCategory();else if(team)renderPicker();else navigate('home')});
   for(const button of root.querySelectorAll('[data-music-team]')){
-    button.addEventListener('click',()=>{
+    button.addEventListener('click',(event)=>{
       const name=button.dataset.musicTeam;
+      if(name==='其他'&&heldOther){event.preventDefault();heldOther=false;return}
       if(name==='其他'){
         picker.classList.add('hidden');content.classList.remove('hidden');team='其他';header.textContent='其他';back.textContent='← 返回音樂中心';content.replaceChildren();
         content.append($('p','此分類暫無歌曲。','music-song-note'));return;
