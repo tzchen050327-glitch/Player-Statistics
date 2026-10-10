@@ -14,11 +14,57 @@ function zone(g,x,y,w,h,point){rounded(g,x,y,w,h,16,'#102038');const zx=x+w*.25,
 const pts=Array.isArray(point)?point:point?[point]:[];for(const p of pts){const px=x+(p.x/320)*w,py=y+(p.y/360)*h;g.beginPath();g.ellipse(px,py,Math.max(8,p.rx/320*w),Math.max(8,p.ry/360*h),0,0,Math.PI*2);g.fillStyle=p.red?red:green;g.fill();g.lineWidth=3;g.strokeStyle='#eff6ff';g.stroke();label(g,p.n,px,py+1,15,'#081728',true,'center');}}
 function pointsFromSvg(root){return $$(root,'.umpire-zone-point').map((e,i)=>{const m=(e.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/);return {x:Number(m?.[1]||160),y:Number(m?.[2]||180),rx:Number($ (e,'ellipse')?.getAttribute('rx')||9),ry:Number($(e,'ellipse')?.getAttribute('ry')||9),red:e.classList.contains('is-red'),n:String(i+1)};});}
 function metrics(root){return $$(root,'.umpire-metric').map(e=>({name:text($(e,'.umpire-metric-label')?.textContent),value:text($(e,'.umpire-donut-core strong')?.textContent),sub:text($(e,'.umpire-donut-core span')?.textContent)}));}
-function pageSummary(root,subtitle,pts){const {c,g}=canvas();header(g,0,1,'主審判決總覽',subtitle);const teams=$$(root,'.umpire-team-side');const official=text($(root,'.umpire-report-official')?.textContent);rounded(g,P,275,W-2*P,132);label(g,text(teams[0]?.textContent),P+34,338,34,ink,true);label(g,text(teams[1]?.textContent),W-P-34,338,34,ink,true,'right');label(g,official,W/2,385,24,muted,false,'center');
-const ms=metrics(root);ms.slice(0,3).forEach((m,i)=>{const x=P+i*363;rounded(g,x,435,346,178);label(g,m.name,x+24,474,24,muted);label(g,m.value,x+24,542,55,ink,true);label(g,m.sub,x+24,588,20,muted);});
-rounded(g,P,650,705,770);label(g,'九宮格 · 誤判位置',P+28,700,29,ink,true);zone(g,P+22,735,660,650,pts);
-rounded(g,790,650,346,770);ms.slice(3,5).forEach((m,i)=>{const y=740+i*305;label(g,m.name,820,y,26,muted);label(g,m.value,820,y+92,50,ink,true);label(g,m.sub,820,y+150,22,muted);});
-label(g,'紅色：壞球判好球   綠色：好球判壞球',P,1470,22,muted);return c;}
+function drawRing(g,cx,cy,r,value,main,sub,accent='#e7bc58',small=false){
+  const pct=Math.max(0,Math.min(100,Number.parseFloat(String(value).replace('%',''))||0));
+  g.lineWidth=small?19:23;g.strokeStyle='#373b40';g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.stroke();
+  g.strokeStyle=accent;g.beginPath();g.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+pct/100*Math.PI*2);g.stroke();
+  label(g,main,cx,cy-7,small?35:45,ink,true,'center');
+  label(g,sub,cx,cy+38,small?19:23,muted,true,'center');
+}
+function pageSummary(root,subtitle,pts){
+  const {c,g}=canvas();const teams=$$(root,'.umpire-team-side'),ms=metrics(root);
+  const awayName=text($(teams[0],'strong')?.textContent||teams[0]?.textContent);
+  const homeName=text($(teams[1],'strong')?.textContent||teams[1]?.textContent);
+  const awayScore=text($(teams[0],'b')?.textContent);
+  const homeScore=text($(teams[1],'b')?.textContent);
+  const official=text($(root,'.umpire-report-official strong')?.textContent);
+  label(g,'BALLSCOPE  /  主審判決報告',P,51,22,muted,true);
+  label(g,'01',W-P,51,22,muted,true,'right');
+  rounded(g,P,88,W-2*P,204,28,'#101a2e');
+  g.strokeStyle='#344761';g.lineWidth=2;g.beginPath();g.moveTo(480,114);g.lineTo(480,264);g.moveTo(720,114);g.lineTo(720,264);g.stroke();
+  label(g,awayName,260,132,32,ink,true,'center');label(g,awayScore,260,222,77,ink,true,'center');
+  label(g,'主審判決報告',600,135,25,muted,true,'center');label(g,official,600,197,38,ink,true,'center');
+  label(g,homeName,940,132,32,ink,true,'center');label(g,homeScore,940,222,77,ink,true,'center');
+  ms.slice(0,3).forEach((m,i)=>{
+    const x=P+i*365;rounded(g,x,330,343,375,28,'#14191f');
+    label(g,m.name,x+171,397,28,muted,true,'center');
+    drawRing(g,x+171,544,108,m.value,m.value,m.sub);
+  });
+  rounded(g,P,754,720,712,28,'#14191f');
+  label(g,'誤判球點',P+28,816,37,ink,true);
+  g.beginPath();g.arc(P+42,870,10,0,Math.PI*2);g.fillStyle='#fa464e';g.fill();
+  label(g,'壞球判好球',P+61,872,23,muted,true);
+  g.beginPath();g.arc(P+283,870,10,0,Math.PI*2);g.fillStyle='#13c771';g.fill();
+  label(g,'好球判壞球',P+302,872,23,muted,true);
+  // Chart plot position and marker numbering are read from the live SVG.
+  const x0=190,y0=985,zw=385,zh=440;
+  g.strokeStyle='#999fa8';g.lineWidth=5;g.strokeRect(x0,y0,zw,zh);
+  g.lineWidth=2;for(let k=1;k<3;k++){g.beginPath();g.moveTo(x0+k*zw/3,y0);g.lineTo(x0+k*zw/3,y0+zh);g.moveTo(x0,y0+k*zh/3);g.lineTo(x0+zw,y0+k*zh/3);g.stroke();}
+  for(const p of pts){const cx=x0+(p.x-70)/180*zw,cy=y0+(p.y-60)/240*zh;
+    const rx=Math.max(9,p.rx/180*zw),ry=Math.max(9,p.ry/240*zh);
+    g.beginPath();g.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);g.fillStyle=p.red?'#f0444a':'#10b45e';g.fill();
+    g.strokeStyle='#ffffff';g.lineWidth=3;g.stroke();label(g,p.n,cx,cy,23,'#ffffff',true,'center');
+  }
+  ms.slice(3,5).forEach((m,i)=>{
+    const x=808,y=754+i*365;rounded(g,x,y,328,347,28,'#14191f');
+    label(g,m.name,x+164,y+67,25,muted,true,'center');
+    if(i===0){
+      drawRing(g,x+164,y+210,91,100,m.value,m.sub,'#e6b800',true);
+    }else drawRing(g,x+164,y+210,91,m.value,m.value,m.sub,'#e7bc58',true);
+  });
+  label(g,subtitle,P,1510,22,muted);label(g,'BALLSCOPE',W-P,1554,21,muted,true,'right');
+  return c;
+}
 function pagesPitches(root,subtitle,pts){const cards=$$(root,'.umpire-miss-card');const canvases=[];for(let i=0;i<cards.length;i+=4){const {c,g}=canvas();header(g,0,canvases.length+2,'逐球判決',subtitle+'   ·   '+(i+1)+'–'+Math.min(i+4,cards.length)+' / '+cards.length);cards.slice(i,i+4).forEach((node,j)=>{const col=j%2,row=Math.floor(j/2),x=P+col*548,y=275+row*605;rounded(g,x,y,526,570);const lines=$$(node,'.umpire-miss-lines > div').map(e=>text(e.textContent));const title=text($(node,'.umpire-miss-head')?.textContent);label(g,title,x+23,y+42,26,ink,true);zone(g,x+105,y+82,315,318,pts[i+j]);lines.slice(0,4).forEach((s,k)=>label(g,s.slice(0,44),x+24,y+427+k*30,20,k===0?muted:ink));if(lines[4])label(g,lines[4].slice(0,42),x+24,y+548,21,green,true);});canvases.push(c);}return canvases;}
 const u16=(a,p,n)=>{a[p]=n&255;a[p+1]=(n>>>8)&255;};const u32=(a,p,n)=>{for(let i=0;i<4;i++)a[p+i]=(n>>>(i*8))&255;};
 const crcTable=Array.from({length:256},(_,i)=>{let c=i;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0;});
