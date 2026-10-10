@@ -234,33 +234,108 @@
         '</div>' + footer + '</div>';
     }
 
+    let postseasonNpbGames = [];
+    let postseasonNpbResultsAt = 0;
+    let postseasonNpbResultsPromise = null;
+    let postseasonNpbRefreshTimer = null;
+    const POSTSEASON_NPB_RESULT_TTL = 90 * 1000;
+    function postseasonNpbTeamKey(value) {
+      const name = String(value || '').replace(/\\s+/g,'');
+      if (/DeNA|ＤｅＮＡ|橫濱|横浜|ベイスターズ/.test(name)) return 'dena';
+      if (/讀賣|読売|巨人/.test(name)) return 'giants';
+      if (/阪神|タイガース/.test(name)) return 'tigers';
+      if (/軟銀|ソフトバンク|福岡/.test(name)) return 'hawks';
+      if (/日本火腿|日本ハム|ファイターズ|北海道/.test(name)) return 'fighters';
+      if (/西武|ライオンズ|埼玉/.test(name)) return 'lions';
+      return name;
+    }
+    function postseasonNpbWins(team, stage, rival) {
+      const key = postseasonNpbTeamKey(team);
+      const opponent = rival ? postseasonNpbTeamKey(rival) : null;
+      if (!key) return 0;
+      const seen = new Set();
+      let wins = 0;
+      for (const g of postseasonNpbGames) {
+        if (String(g.competition) !== stage || String(g.status).toLowerCase() !== 'final') continue;
+        const away = postseasonNpbTeamKey(g.away), home = postseasonNpbTeamKey(g.home);
+        if (!away || !home || away === home) continue;
+        if (opponent && ![away,home].includes(opponent)) continue;
+        const as = Number(g.awayScore), hs = Number(g.homeScore);
+        if (!Number.isFinite(as) || !Number.isFinite(hs) || as === hs) continue;
+        const gameId = String(g.date || '') + '|' + String(g.id || '');
+        if (seen.has(gameId)) continue;
+        seen.add(gameId);
+        if ((as > hs ? away : home) === key) wins++;
+      }
+      return wins;
+    }
+    function postseasonNpbSeriesWinner(a,b,stage,target,advantageA=0) {
+      if (!a || !b) return '';
+      const aw = advantageA + postseasonNpbWins(a,stage,b), bw = postseasonNpbWins(b,stage,a);
+      return aw >= target ? a : bw >= target ? b : '';
+    }
+    function postseasonNpbScheduleRefresh() {
+      if (postseasonNpbRefreshTimer) clearTimeout(postseasonNpbRefreshTimer);
+      if (currentPage !== 'postseason' || leagueHubLeague !== 'npb') return;
+      postseasonNpbRefreshTimer = setTimeout(() => {
+        postseasonNpbRefreshTimer = null;
+        if (currentPage === 'postseason' && leagueHubLeague === 'npb' && document.visibilityState !== 'hidden')
+          void refreshPostseasonNpbResults(true);
+      }, POSTSEASON_NPB_RESULT_TTL);
+    }
+    async function refreshPostseasonNpbResults(force=false) {
+      if (postseasonNpbResultsPromise) return postseasonNpbResultsPromise;
+      if (!force && Date.now()-postseasonNpbResultsAt < POSTSEASON_NPB_RESULT_TTL) return postseasonNpbGames;
+      postseasonNpbResultsAt = Date.now();
+      postseasonNpbResultsPromise = fetch('https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/npb-postseason-results?year='+encodeURIComponent(CURRENT_YEAR))
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok || data?.ok !== true || !Array.isArray(data.games)) throw Error('日職季後賽結果暫時無法讀取');
+          postseasonNpbGames = data.games;
+          return postseasonNpbGames;
+        }).catch(error => {
+          console.warn('NPB postseason result cache:',error);
+          return postseasonNpbGames;
+        }).finally(() => {
+          postseasonNpbResultsPromise=null;
+          if (currentPage === 'postseason' && leagueHubLeague === 'npb') {
+            renderPostseasonPage();
+            postseasonNpbScheduleRefresh();
+          }
+        });
+      return postseasonNpbResultsPromise;
+    }
+
     function postseasonNpbBracketContent() {
       const npb = standingsOfficialCache?.npb || {};
       const central = postseasonSectionRows(npb.central,3);
       const pacific = postseasonSectionRows(npb.pacific,3);
       const leagueBlock = (label, rows, isPacific = false) => {
-        const first = postseasonTeamName(rows[0]);
-        const second = postseasonTeamName(rows[1]);
-        const third = postseasonTeamName(rows[2]);
+        const first=postseasonTeamName(rows[0]),second=postseasonTeamName(rows[1]),third=postseasonTeamName(rows[2]);
+        const firstWinner=postseasonNpbSeriesWinner(second,third,'climax_first',2);
+        const advance=isPacific?2:1,finalOpponent=firstWinner||'第一階段勝者';
+        const firstScore=[postseasonNpbWins(second,'climax_first',third),postseasonNpbWins(third,'climax_first',second)];
+        const finalScore=[advance+(firstWinner?postseasonNpbWins(first,'climax_final',firstWinner):0),
+          firstWinner?postseasonNpbWins(firstWinner,'climax_final',first):0];
         return '<div class="postseason-league-bracket">' +
           '<div class="postseason-bracket-league-label">' + postseasonEscape(label) + '</div>' +
           '<div class="postseason-bracket">' +
-            '<section class="postseason-round"><div class="postseason-round-title">FIRST STAGE</div><div class="postseason-round-series">' +
-              postseasonMatchCard('第一階段', second, third, '勝者晉級 Final Stage', { format:'3戰2勝制', seriesScore:[0,0] }) +
-            '</div></section>' +
-            '<section class="postseason-round"><div class="postseason-round-title">FINAL STAGE</div><div class="postseason-round-series">' +
-              postseasonMatchCard('決勝階段', first, '第一階段勝者', first + (isPacific && String(CURRENT_YEAR) === '2026' ? '帶 2 勝優勢' : '帶 1 勝優勢'), { seriesScore:[isPacific && String(CURRENT_YEAR) === '2026' ? 2 : 1,0], format:isPacific && String(CURRENT_YEAR) === '2026' ? '7戰5勝制' : '6戰4勝制' }) +
-            '</div></section>' +
-          '</div></div>';
+          '<section class="postseason-round"><div class="postseason-round-title">FIRST STAGE</div><div class="postseason-round-series">' +
+          postseasonMatchCard('第一階段',second,third,firstWinner?firstWinner+' 晉級 Final Stage':'勝者晉級 Final Stage',
+            {format:'3戰2勝制',seriesScore:firstScore}) +
+          '</div></section>' +
+          '<section class="postseason-round"><div class="postseason-round-title">FINAL STAGE</div><div class="postseason-round-series">' +
+          postseasonMatchCard('決勝階段',first,finalOpponent,first+' 帶 '+advance+' 勝優勢',
+            {seriesScore:finalScore,format:isPacific&&String(CURRENT_YEAR)==='2026'?'7戰5勝制':'6戰4勝制'}) +
+          '</div></section></div></div>';
       };
       return '<div class="postseason-bracket-wrap">' +
-        leagueBlock('CENTRAL LEAGUE', central) +
-        '<div class="postseason-world-series">' +
-          '<section class="postseason-round"><div class="postseason-round-title">JAPAN SERIES</div><div class="postseason-round-series">' +
-            postseasonMatchCard('日本大賽', '央聯 CS 勝者', '洋聯 CS 勝者', '', {format:'7戰4勝制'}) +
-          '</div></section></div>' +
-        leagueBlock('PACIFIC LEAGUE', pacific, true) +
-      '</div>';
+        leagueBlock('CENTRAL LEAGUE',central) +
+        '<div class="postseason-world-series"><section class="postseason-round"><div class="postseason-round-title">JAPAN SERIES</div><div class="postseason-round-series">' +
+        postseasonMatchCard('日本大賽','央聯 CS 勝者','洋聯 CS 勝者','',{format:'7戰4勝制'}) +
+        '</div></section></div>' +
+        leagueBlock('PACIFIC LEAGUE',pacific) +
+        '</div>';
     }
 
     function postseasonKboBracketContent() {
@@ -604,6 +679,7 @@
 
       const active = postseasonSeasonActive();
       if (leagueHubLeague === 'mlb' && active) postseasonMlbEnsureRefreshTimer();
+      if (leagueHubLeague === 'npb' && active && !postseasonNpbResultsPromise && Date.now()-postseasonNpbResultsAt >= POSTSEASON_NPB_RESULT_TTL) void refreshPostseasonNpbResults();
       if (leagueHubLeague === 'cpbl' && active && !postseasonCpblResultsPromise && Date.now() - postseasonCpblResultsAt >= POSTSEASON_CPBL_RESULT_TTL) void refreshPostseasonCpblResults();
       else postseasonMlbStopRefreshTimer();
 
