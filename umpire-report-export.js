@@ -9,7 +9,7 @@ const escFile=s=>String(s||'report').replace(/[\\/:*?"<>|]/g,'_').slice(0,65);
 function canvas(){const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,W,H);return {c,g};}
 function rounded(g,x,y,w,h,r=18,col=card){g.fillStyle=col;g.beginPath();g.roundRect(x,y,w,h,r);g.fill();}
 function label(g,s,x,y,size=26,color=ink,bold=false,align='left'){g.fillStyle=color;g.font=(bold?'700 ':'400 ')+size+'px system-ui, "Noto Sans TC", sans-serif';g.textAlign=align;g.textBaseline='middle';g.fillText(text(s),x,y);}
-function header(g,k,page,title,subtitle){label(g,'BALLSCOPE  /  UMPIRE REPORT',P,65,24,muted,true);label(g,String(page).padStart(2,'0'),W-P,65,24,muted,true,'right');label(g,title,P,150,46,ink,true);label(g,subtitle,P,207,25,muted);g.fillStyle='#36526e';g.fillRect(P,244,W-P*2,2);label(g,'BALLSCOPE  •  裁判判決報告',P,H-55,20,muted);}
+function header(g,page,title,pageRange){label(g,'BALLSCOPE  /  UMPIRE REPORT',P,65,24,muted,true);label(g,String(page).padStart(2,'0'),W-P,65,24,muted,true,'right');label(g,title,P,150,46,ink,true);label(g,pageRange,P,207,25,muted);g.fillStyle='#36526e';g.fillRect(P,244,W-P*2,2);label(g,'BALLSCOPE  •  裁判判決報告',P,H-55,20,muted);}
 function zone(g,x,y,w,h,point){rounded(g,x,y,w,h,16,'#102038');const zx=x+w*.25,zy=y+h*.12,zw=w*.5,zh=h*.72;g.strokeStyle='#b2cbe4';g.lineWidth=3;g.strokeRect(zx,zy,zw,zh);g.strokeStyle='#52718e';g.lineWidth=1.5;for(let i=1;i<3;i++){g.beginPath();g.moveTo(zx+i*zw/3,zy);g.lineTo(zx+i*zw/3,zy+zh);g.stroke();g.beginPath();g.moveTo(zx,zy+i*zh/3);g.lineTo(zx+zw,zy+i*zh/3);g.stroke();}
 const pts=Array.isArray(point)?point:point?[point]:[];for(const p of pts){const px=x+(p.x/320)*w,py=y+(p.y/360)*h;g.beginPath();g.ellipse(px,py,Math.max(8,p.rx/320*w),Math.max(8,p.ry/360*h),0,0,Math.PI*2);g.fillStyle=p.red?red:green;g.fill();g.lineWidth=3;g.strokeStyle='#eff6ff';g.stroke();label(g,p.n,px,py+1,15,'#081728',true,'center');}}
 function pointsFromSvg(root){return $$(root,'.umpire-zone-point').map((e,i)=>{const m=(e.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/);return {x:Number(m?.[1]||160),y:Number(m?.[2]||180),rx:Number($ (e,'ellipse')?.getAttribute('rx')||9),ry:Number($(e,'ellipse')?.getAttribute('ry')||9),red:e.classList.contains('is-red'),n:String(i+1)};});}
@@ -21,7 +21,7 @@ function drawRing(g,cx,cy,r,value,main,sub,accent='#e7bc58',small=false){
   label(g,main,cx,cy-7,small?35:45,ink,true,'center');
   label(g,sub,cx,cy+38,small?19:23,muted,true,'center');
 }
-function pageSummary(root,subtitle,pts){
+function pageSummary(root,pts){
   const {c,g}=canvas();const teams=$$(root,'.umpire-team-side'),ms=metrics(root);
   const awayName=text($(teams[0],'strong')?.textContent||teams[0]?.textContent);
   const homeName=text($(teams[1],'strong')?.textContent||teams[1]?.textContent);
@@ -62,16 +62,10 @@ function pageSummary(root,subtitle,pts){
       drawRing(g,x+164,y+210,91,100,m.value,m.sub,'#e6b800',true);
     }else drawRing(g,x+164,y+210,91,m.value,m.value,m.sub,'#e7bc58',true);
   });
-  label(g,subtitle,P,1510,22,muted);label(g,'BALLSCOPE',W-P,1554,21,muted,true,'right');
+  label(g,'BALLSCOPE',W-P,1554,21,muted,true,'right');
   return c;
 }
-function pagesPitches(root,subtitle,pts){const cards=$$(root,'.umpire-miss-card');const canvases=[];for(let i=0;i<cards.length;i+=4){const {c,g}=canvas();header(g,0,canvases.length+2,'逐球判決',subtitle+'   ·   '+(i+1)+'–'+Math.min(i+4,cards.length)+' / '+cards.length);cards.slice(i,i+4).forEach((node,j)=>{const col=j%2,row=Math.floor(j/2),x=P+col*548,y=275+row*605;rounded(g,x,y,526,570);const lines=$$(node,'.umpire-miss-lines > div').map(e=>text(e.textContent));const title=text($(node,'.umpire-miss-head')?.textContent);label(g,title,x+23,y+42,26,ink,true);zone(g,x+105,y+82,315,318,pts[i+j]);lines.slice(0,4).forEach((s,k)=>label(g,s.slice(0,44),x+24,y+427+k*30,20,k===0?muted:ink));if(lines[4])label(g,lines[4].slice(0,42),x+24,y+548,21,green,true);});canvases.push(c);}return canvases;}
-const u16=(a,p,n)=>{a[p]=n&255;a[p+1]=(n>>>8)&255;};const u32=(a,p,n)=>{for(let i=0;i<4;i++)a[p+i]=(n>>>(i*8))&255;};
-const crcTable=Array.from({length:256},(_,i)=>{let c=i;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0;});
-function crc(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0;}
-function zip(files){const enc=new TextEncoder(),parts=[],central=[];let offset=0;for(const f of files){const name=enc.encode(f.name),data=f.bytes,head=new Uint8Array(30+name.length),h=new DataView(head.buffer);u32(head,0,0x04034b50);u16(head,4,20);u16(head,6,0x800);u32(head,14,crc(data));u32(head,18,data.length);u32(head,22,data.length);u16(head,26,name.length);head.set(name,30);parts.push(head,data);
-const cen=new Uint8Array(46+name.length);u32(cen,0,0x02014b50);u16(cen,4,20);u16(cen,6,20);u16(cen,8,0x800);u32(cen,16,crc(data));u32(cen,20,data.length);u32(cen,24,data.length);u16(cen,28,name.length);u32(cen,42,offset);cen.set(name,46);central.push(cen);offset+=head.length+data.length;}
-const cdlen=central.reduce((n,c)=>n+c.length,0),end=new Uint8Array(22);u32(end,0,0x06054b50);u16(end,8,files.length);u16(end,10,files.length);u32(end,12,cdlen);u32(end,16,offset);return new Blob([...parts,...central,end],{type:'application/zip'});}
+function pagesPitches(root,pts){const cards=$$(root,'.umpire-miss-card');const canvases=[];for(let i=0;i<cards.length;i+=4){const {c,g}=canvas();header(g,canvases.length+2,'逐球判決',(i+1)+'–'+Math.min(i+4,cards.length)+' / '+cards.length);cards.slice(i,i+4).forEach((node,j)=>{const col=j%2,row=Math.floor(j/2),x=P+col*548,y=275+row*605;rounded(g,x,y,526,570);const lines=$$(node,'.umpire-miss-lines > div').map(e=>text(e.textContent));const title=text($(node,'.umpire-miss-head')?.textContent);label(g,title,x+23,y+42,26,ink,true);zone(g,x+105,y+82,315,318,pts[i+j]);lines.slice(0,4).forEach((s,k)=>label(g,s.slice(0,44),x+24,y+427+k*30,20,k===0?muted:ink));if(lines[4])label(g,lines[4].slice(0,42),x+24,y+548,21,green,true);});canvases.push(c);}return canvases;}
 async function png(c){return await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNG 產生失敗')),'image/png'));}
 let exporting=false;
 const downloadUrls=new Set();
@@ -82,9 +76,10 @@ async function download(btn){
   if(!root)return;
   exporting=true;btn.disabled=true;btn.textContent='圖片產生中…';
   try{
-    const subtitle=text(document.querySelector('.game-detail-sticky-head')?.textContent||$(root,'.umpire-report-official')?.textContent||'CPBL');
+    const teams=$$(root,'.umpire-team-side');
+    const filename=escFile('BallScope_裁判報告_'+text($(teams[0],'strong')?.textContent||'客隊')+'_vs_'+text($(teams[1],'strong')?.textContent||'主隊'));
     const pts=pointsFromSvg(root);
-    const cs=[pageSummary(root,subtitle,pts),...pagesPitches(root,subtitle,pts)];
+    const cs=[pageSummary(root,pts),...pagesPitches(root,pts)];
     const output=root.querySelector('.umpire-export-images');
     clearUrls();
     if(output)output.replaceChildren();
@@ -92,7 +87,7 @@ async function download(btn){
       const blob=await png(cs[i]),url=URL.createObjectURL(blob);downloadUrls.add(url);
       const a=document.createElement('a');
       a.href=url;
-      a.download=escFile('BallScope_裁判報告_'+subtitle)+'_'+String(i+1).padStart(2,'0')+(i===0?'_總覽':'_逐球')+'.png';
+      a.download=filename+'_'+String(i+1).padStart(2,'0')+(i===0?'_總覽':'_逐球')+'.png';
       a.textContent=i===0?'下載第 1 張｜整場總覽':'下載第 '+(i+1)+' 張｜逐球判決';
       a.style.cssText='display:block;padding:11px 14px;margin:8px 0;border:1px solid #6989ae;border-radius:10px;color:#fff;background:#17385a;text-decoration:none;font-weight:700;text-align:center;';
       output?.appendChild(a);
