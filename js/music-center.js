@@ -1,4 +1,4 @@
-/* DiamondScope music center v9.65 — six-team blank catalog and device-local editor. */
+/* DiamondScope music center v9.66 — six-team blank catalog and device-local editor. */
 (() => {
   'use strict';
   const root=document.getElementById('musicCenterPage');
@@ -76,9 +76,39 @@
     b.classList.toggle('active',b.textContent===type);
     b.setAttribute('aria-pressed',String(b.textContent===type));
   }
+  // Persistent, prominently placed confirmation after the hidden five-second hold.
+  function syncAdminBanner(){
+    let ribbon=root.querySelector('#musicAdminModeBanner');
+    if(!admin){
+      ribbon?.remove();
+      header.classList.remove('music-admin-active-title');
+      return;
+    }
+    if(!ribbon){
+      ribbon=$('div','','music-admin-mode-banner');
+      ribbon.id='musicAdminModeBanner';
+      ribbon.setAttribute('role','status');
+      ribbon.setAttribute('aria-live','polite');
+      root.querySelector('.player-tools-page-head')?.insertAdjacentElement('afterend',ribbon);
+    }
+    ribbon.replaceChildren();
+    header.classList.add('music-admin-active-title');
+    const titleRow=$('div','','music-admin-mode-row');
+    titleRow.append($('strong','✓ 已進入音樂管理模式'));
+    titleRow.append(btn('退出管理',()=>{
+      admin=false;
+      if(selected)showSong(selected.id);
+      else if(team&&team!=='其他')renderCategory();
+      else renderPicker();
+      syncAdminBanner();
+    },'music-admin-exit'));
+    ribbon.append(titleRow);
+    ribbon.append($('p',selected?'往下滑到「管理這首歌曲」，貼上 YouTube 網址，再按「儲存這首歌曲」。':team&&team!=='其他'?'點選下方球員，進入歌曲頁後貼上 YouTube 影片網址。其他分類可新增空白曲目。':'先點選下方球隊，再選擇球員貼上 YouTube 影片網址。','music-admin-mode-hint'));
+    ribbon.append($('small','目前僅儲存在這台裝置，尚未同步給所有使用者。'));
+  }
   function renderPicker(){
     team='';selected=null;query='';picker.classList.remove('hidden');content.classList.add('hidden');content.replaceChildren();
-    header.textContent='音樂中心';back.textContent='← 返回首頁';
+    header.textContent='音樂中心';back.textContent='← 返回首頁';syncAdminBanner();
     picker.querySelector('.music-admin-panel')?.remove();
     if(admin){
       const pane=$('section','','music-admin-panel');
@@ -103,7 +133,7 @@
   function enterTeam(name){
     team=name;type='球員曲';selected=null;query='';
     picker.classList.add('hidden');content.classList.remove('hidden');back.textContent='← 返回音樂中心';
-    header.textContent=name;renderCategory();
+    header.textContent=name;renderCategory();syncAdminBanner();
   }
   function addPlayerForm(anchor){
     const panel=$('div','','music-edit-panel');panel.append($('strong','手動新增名單球員'));
@@ -133,7 +163,7 @@
     },'music-admin-btn'));anchor.append(panel);
   }
   function renderCategory(){
-    selected=null;content.replaceChildren();
+    selected=null;content.replaceChildren();syncAdminBanner();
     const tabs=$('div','','music-center-subnav');
     for(const t of TYPES){const b=btn(t,()=>{type=t;query='';renderCategory()});tabs.append(b);navItem(b)}
     content.append(tabs);
@@ -175,7 +205,7 @@
   function showSong(id){
     const all=categoryItems(),index=all.findIndex(p=>p.id===id);
     if(index<0){renderCategory();return}
-    const item=all[index];selected=item;content.replaceChildren();
+    const item=all[index];selected=item;content.replaceChildren();syncAdminBanner();
     content.append(btn('← 返回'+type,renderCategory,'music-song-back'));
     content.append($('h3',item.title,'music-song-heading'));
     const track=assigned(item),player=document.createElement('div');player.className='music-song-player';
@@ -251,7 +281,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.65',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v9.66',{cache:'force-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
@@ -269,9 +299,16 @@
     const a=document.createElement('a');a.href=url;a.download='diamondscope-music-draft-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2500);
   }
   function enableAdmin(){
+    const wasAdmin=admin;
     admin=true;clearTimeout(holdTimer);
     if(team){if(selected)showSong(selected.id);else renderCategory()}
     else renderPicker();
+    syncAdminBanner();
+    if(!wasAdmin){
+      const banner=root.querySelector('#musicAdminModeBanner');
+      banner?.scrollIntoView({block:'start',behavior:'smooth'});
+      if(navigator.vibrate)navigator.vibrate(35);
+    }
   }
   function beginHold(event){
     if(event.button!==undefined&&event.button!==0)return;
