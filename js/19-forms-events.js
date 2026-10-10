@@ -913,7 +913,7 @@
       // The music roster stores the official CPBL player ID; use it directly.
       // Manual additions continue through the existing name/number search.
       delete btn.dataset.musicCpblAcnt;
-      if (directAcnt && !/^\\d{4,12}$/.test(directAcnt)) {
+      if (directAcnt && !/^\d{4,12}$/.test(directAcnt)) {
         setStatus('中職球員 ID 格式不正確，無法自動連結。', true);
         return;
       }
