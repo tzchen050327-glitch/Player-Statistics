@@ -420,7 +420,18 @@
           <span class="player-tools-page-kicker">MUSIC CENTER</span>
           <h2>音樂中心</h2>
         </div></div>
-        <div class="player-tools-page-content music-center-empty-space" aria-label="音樂中心預留空間"></div>
+        <div class="player-tools-page-content music-center-empty-space" aria-label="音樂中心">
+          <div class="music-center-team-grid" aria-label="球隊分類">
+            <button type="button" data-music-team="中信兄弟">中信兄弟</button>
+            <button type="button" data-music-team="統一7-ELEVEn獅">統一7-ELEVEn獅</button>
+            <button type="button" data-music-team="樂天桃猿">樂天桃猿</button>
+            <button type="button" data-music-team="富邦悍將">富邦悍將</button>
+            <button type="button" data-music-team="味全龍">味全龍</button>
+            <button type="button" data-music-team="台鋼雄鷹">台鋼雄鷹</button>
+            <button type="button" data-music-team="其他">其他</button>
+          </div>
+          <div id="musicCenterTeamContent" class="music-center-team-content" aria-live="polite"></div>
+        </div>
       </section>
     </section>
 
@@ -1051,30 +1062,39 @@
 <style id="musicCenterEmptyPageStyles">
 #musicCenterPage:not(.hidden){display:block}
 .music-center-empty-space{min-height:55vh}
+.music-center-team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.music-center-team-grid button{padding:17px 8px;border:1px solid rgba(120,135,155,.32);border-radius:12px;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.music-center-team-grid button.active{border-color:#4386bc;background:rgba(67,134,188,.13)}
+.music-center-team-content{min-height:30vh}
+@media(max-width:550px){.music-center-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <script id="musicCenterEntryNavigation">
 (() => {
-  const home = document.getElementById('homePage');
   const page = document.getElementById('musicCenterPage');
   const open = document.getElementById('homeMusicCenterBtn');
   const back = document.getElementById('musicCenterBackHomeBtn');
-  if (!home || !page || !open || !back) return;
-  open.addEventListener('click', () => {
-    home.classList.add('hidden');
-    page.classList.remove('hidden');
-    window.scrollTo(0,0);
-  });
-  back.addEventListener('click', () => {
-    page.classList.add('hidden');
-    home.classList.remove('hidden');
-    window.scrollTo(0,0);
-  });
-  const observer = new MutationObserver(() => {
-    if (!page.classList.contains('hidden') && !home.classList.contains('hidden')) {
-      page.classList.add('hidden');
+  if (!page || !open || !back) return;
+  function navigate(target) {
+    if (typeof currentPage !== 'undefined' && typeof renderAll === 'function') {
+      currentPage = target;
+      renderAll();
+    } else {
+      document.getElementById('homePage')?.classList.toggle('hidden',target !== 'home');
+      page.classList.toggle('hidden',target !== 'music-center');
+      document.getElementById('homeHeaderDateControl')?.classList.toggle('hidden',target === 'music-center');
     }
-  });
-  observer.observe(home,{attributes:true,attributeFilter:['class']});
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  open.addEventListener('click', () => navigate('music-center'));
+  back.addEventListener('click', () => navigate('home'));
+  page.querySelectorAll('[data-music-team]').forEach(button => button.addEventListener('click', () => {
+    page.querySelectorAll('[data-music-team]').forEach(other => {
+      other.classList.toggle('active',other === button);
+      other.setAttribute('aria-pressed',String(other === button));
+    });
+    const target=document.getElementById('musicCenterTeamContent');
+    if(target)target.textContent='';
+  }));
 })();
 </script>
   <script src="./js/module-loader.js?v=v9.49"></script>
