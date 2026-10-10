@@ -146,9 +146,11 @@
 
     if (inferredOutsAfterPlay(last) >= 3) return [false,false,false];
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
-    if (league === 'CPBL' && shouldUseCpblLastAfter(detail,last)) {
-      if (last?.baseStateAfter !== undefined && last?.baseStateAfter !== null) return last.baseStateAfter;
-      if (last?.basesAfter) return last.basesAfter;
+    if (league === 'CPBL' && last) {
+      // Use the completed PA snapshot so bases, runner names and outs
+      // cannot get ahead of (or fall behind) the play-by-play log.
+      if (last.baseStateAfter !== undefined && last.baseStateAfter !== null) return last.baseStateAfter;
+      if (last.basesAfter !== undefined && last.basesAfter !== null) return last.basesAfter;
     }
     if (league === 'NPB') {
       if (detail?.current?.baseStateSource === 'npb-live-current-row') {
@@ -213,9 +215,9 @@
     const after=inferredOutsAfterPlay(last);
     // CPBL current.outs can lag one completed PA behind. Within the same half-inning,
     // never let that stale value overwrite the official completed-PA out count.
-    if(after>=3) return 3;
-    if(direct!==null) return Math.min(2,Math.max(direct,after));
-    return Math.min(2,after);
+    if(last && sameHalf && parseOutNumber(last.outs)!==null) return after>=3 ? 3 : Math.min(2,after);
+    if(direct!==null) return Math.min(2,direct);
+    return 0;
   }
 
   function visibleInningCells(detail, values, side, innings, totalRuns) {
@@ -1066,7 +1068,9 @@
     }
     const direct = directRunnerNames(detail), inferred = inferRunnerNames(detail);
     let immediate={first:'',second:'',third:''};
-    const useCpblAfter=shouldUseCpblLastAfter(detail,last);
+    const useCpblAfter=String(detail?.league||'').toUpperCase()==='CPBL' && last &&
+      (last.runnersAfter !== undefined && last.runnersAfter !== null) &&
+      playMatchesCurrentHalf(detail,last);
     if(useCpblAfter){
       const raw=last?.runnersAfter||{};
       immediate={first:compactName(raw.first||''),second:compactName(raw.second||''),third:compactName(raw.third||'')};
@@ -1076,7 +1080,7 @@
     const npbBaseSource=String(detail?.current?.baseStateSource||'');
     const useNpbSnapshot=String(detail?.league||'').toUpperCase()==='NPB' && (npbBaseSource==='npb-live-current-row'||npbBaseSource==='npb-play-prestate');
     const merged=useCpblAfter
-      ? {first:immediate.first||direct.first||inferred.first,second:immediate.second||direct.second||inferred.second,third:immediate.third||direct.third||inferred.third}
+      ? {first:immediate.first||inferred.first,second:immediate.second||inferred.second,third:immediate.third||inferred.third}
       : useNpbSnapshot
         ? {first:inferred.first||direct.first,second:inferred.second||direct.second,third:inferred.third||direct.third}
         : {first:direct.first||inferred.first,second:direct.second||inferred.second,third:direct.third||inferred.third};
