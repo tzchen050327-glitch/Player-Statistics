@@ -329,10 +329,19 @@
             {seriesScore:finalScore,format:isPacific&&String(CURRENT_YEAR)==='2026'?'7戰5勝制':'6戰4勝制'}) +
           '</div></section></div></div>';
       };
+      const leagueChampion=(rows,isPacific)=>{
+        const first=postseasonTeamName(rows[0]),second=postseasonTeamName(rows[1]),third=postseasonTeamName(rows[2]);
+        const firstWinner=postseasonNpbSeriesWinner(second,third,'climax_first',2);
+        return firstWinner?postseasonNpbSeriesWinner(first,firstWinner,'climax_final',isPacific?5:4,isPacific?2:1):'';
+      };
+      const centralChampion=leagueChampion(central,false),pacificChampion=leagueChampion(pacific,true);
+      const japanScore=centralChampion&&pacificChampion
+        ? [postseasonNpbWins(centralChampion,'japan_series',pacificChampion),postseasonNpbWins(pacificChampion,'japan_series',centralChampion)]
+        : null;
       return '<div class="postseason-bracket-wrap">' +
         leagueBlock('CENTRAL LEAGUE',central) +
         '<div class="postseason-world-series"><section class="postseason-round"><div class="postseason-round-title">JAPAN SERIES</div><div class="postseason-round-series">' +
-        postseasonMatchCard('日本大賽','央聯 CS 勝者','洋聯 CS 勝者','',{format:'7戰4勝制'}) +
+        postseasonMatchCard('日本大賽',centralChampion||'央聯 CS 勝者',pacificChampion||'洋聯 CS 勝者','',{format:'7戰4勝制',...(japanScore?{seriesScore:japanScore}:{})}) +
         '</div></section></div>' +
         leagueBlock('PACIFIC LEAGUE',pacific) +
         '</div>';
