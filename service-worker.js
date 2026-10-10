@@ -1,5 +1,5 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v973-auto';
-const CACHE_VERSION = 'v9.73';
+const CACHE_NAME = 'baseball-player-card-pwa-v974-auto';
+const CACHE_VERSION = 'v9.74';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
@@ -57,31 +57,31 @@ const APP_SHELL = [
   './',
   './index.html',
   './diagnostics.html',
-  './styles.css?v=v9.73',
-  './dark-theme-overrides.css?v=v9.73',
-  './diagnostic-runtime.js?v=v9.73',
-  './live-static-update.js?v=v9.73',
-  './cpbl-realtime.js?v=v9.73',
-  './npb-realtime.js?v=v9.73',
-  './postseason-history.css?v=v9.73',
-  './js/module-loader.js?v=v9.73',
-  './js/music-center.js?v=v9.73',
-  './data/music-roster-2026.json?v=v9.73',
+  './styles.css?v=v9.74',
+  './dark-theme-overrides.css?v=v9.74',
+  './diagnostic-runtime.js?v=v9.74',
+  './live-static-update.js?v=v9.74',
+  './cpbl-realtime.js?v=v9.74',
+  './npb-realtime.js?v=v9.74',
+  './postseason-history.css?v=v9.74',
+  './js/module-loader.js?v=v9.74',
+  './js/music-center.js?v=v9.74',
+  './data/music-roster-2026.json?v=v9.74',
   MODULE_ORDER_URL,
   VERSIONED_MODULE_ORDER_URL,
-  './postseason-history.js?v=v9.73',
-  './cpbl-cache-router.js?v=v9.73',
-  './game-detail-enhancement.css?v=v9.73',
-  './report-layout.css?v=v9.73',
-  './landscape-state.css?v=v9.73',
-  './game-detail-enhancement.js?v=v9.73',
-  './report-layout.js?v=v9.73',
-  './manifest.webmanifest?v=v9.73',
-  './icon-192.png?v=v9.73',
-  './icon-512.png?v=v9.73',
-  './favicon-32.png?v=v9.73',
-  './favicon-16.png?v=v9.73',
-  './notification-badge.png?v=v9.73'
+  './postseason-history.js?v=v9.74',
+  './cpbl-cache-router.js?v=v9.74',
+  './game-detail-enhancement.css?v=v9.74',
+  './report-layout.css?v=v9.74',
+  './landscape-state.css?v=v9.74',
+  './game-detail-enhancement.js?v=v9.74',
+  './report-layout.js?v=v9.74',
+  './manifest.webmanifest?v=v9.74',
+  './icon-192.png?v=v9.74',
+  './icon-512.png?v=v9.74',
+  './favicon-32.png?v=v9.74',
+  './favicon-16.png?v=v9.74',
+  './notification-badge.png?v=v9.74'
 ];
 
 async function getModuleShell() {
