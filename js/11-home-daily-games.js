@@ -357,6 +357,32 @@
       return String(game?.time || '').trim() || '未開打';
     }
 
+    // NPB may publish Game 3 starters even after First Stage is decided.
+    // Keep the official starter record, but annotate the unused scheduled game.
+    function homeNpbFirstStageUnplayed(game, date) {
+      if (String(game?.status || '').toLowerCase() !== 'scheduled') return false;
+      if (String(date || '').slice(5,7) !== '10') return false;
+      if (!Array.isArray(postseasonNpbGames) || !postseasonNpbGames.length) return false;
+      const away = postseasonNpbTeamKey(game?.away), home = postseasonNpbTeamKey(game?.home);
+      if (!away || !home || away === home) return false;
+      const wins = {[away]:0,[home]:0};
+      const seen = new Set();
+      for (const result of postseasonNpbGames) {
+        if (String(result?.competition) !== 'climax_first' || String(result?.status).toLowerCase() !== 'final') continue;
+        if (String(result?.date || '') >= String(date || '')) continue;
+        const a = postseasonNpbTeamKey(result?.away), h = postseasonNpbTeamKey(result?.home);
+        if (!((a === away && h === home) || (a === home && h === away))) continue;
+        if (result?.awayScore == null || result?.homeScore == null) continue;
+        const as = Number(result.awayScore), hs = Number(result.homeScore);
+        if (!Number.isFinite(as) || !Number.isFinite(hs) || as === hs) continue;
+        const id = String(result.date || '') + '|' + String(result.id || '');
+        if (seen.has(id)) continue;
+        seen.add(id);
+        wins[as > hs ? a : h]++;
+      }
+      return wins[away] >= 2 || wins[home] >= 2;
+    }
+
     function homeDailyGameScore(value) {
       if (value === null || value === undefined || value === '') return '—';
       const number = Number(value);
@@ -491,6 +517,18 @@
       const loading = homeDailyGamesLoading.has(key);
       const fresh = cached && Date.now() - Number(cached.at || 0) < HOME_DAILY_GAMES_TTL;
       const games = Array.isArray(cached?.games) ? cached.games : [];
+      // Share the postseason results cache; no extra fetch per card or starter.
+      // Only check nearby October fixtures to avoid historical browsing traffic.
+      if (league === 'NPB' && date.slice(5,7) === '10'
+          && Math.abs((Date.parse(date+'T00:00:00') - Date.parse(localISODate()+'T00:00:00')) / 86400000) <= 3
+          && games.some(g => String(g?.status || '').toLowerCase() === 'scheduled')
+          && !postseasonNpbResultsPromise
+          && Date.now() - postseasonNpbResultsAt >= POSTSEASON_NPB_RESULT_TTL) {
+        void refreshPostseasonNpbResults().then(() => {
+          if (currentPage === 'home' && homeDailyGamesLeague() === 'NPB'
+              && String(els.gameDate?.value || '') === date) renderHomeDailyGames({skipLoad:true});
+        });
+      }
       const displayRows = homeDailyGamesDisplayRows(games);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);
@@ -506,7 +544,9 @@
       } else if (!games.length) {
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
-        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game, sourceIndex }) => {
+        bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game:rawGame, sourceIndex }) => {
+          const seriesUnplayed = homeNpbFirstStageUnplayed(rawGame,date);
+          const game = seriesUnplayed ? {...rawGame,status:'cancelled',cancellationReason:'第一階段已決勝｜本場不舉行'} : rawGame;
           const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
