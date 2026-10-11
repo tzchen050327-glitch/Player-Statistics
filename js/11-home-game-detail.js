@@ -2227,16 +2227,30 @@
       return 45 * 1000;
     }
 
+    const homeFinalDecisionRetryCount = new Map();
+    function stopFinalRealtimeWatch(detail) {
+      if (String(detail?.status || '').toLowerCase() !== 'final') return;
+      window.dispatchEvent(new CustomEvent('cpbl-live-unwatch'));
+      window.dispatchEvent(new CustomEvent('npb-live-unwatch'));
+    }
+
     function scheduleHomeGameDetailRefresh(detail) {
       stopHomeGameDetailRefresh();
       if (!activeHomeGameDetail || document.visibilityState !== 'visible') return;
 
       const status = String(detail?.status || '').toLowerCase();
+      if (status === 'final') stopFinalRealtimeWatch(detail);
 
       // CPBL can publish FINAL before official W/L/GWRBI is settled. Keep a
       // low-frequency refresh alive only while those decisions are incomplete.
       if (activeHomeGameDetail.league === 'CPBL' && status === 'final'
           && (!homeGameDecisionsSettled(detail) || !homeGameDecisionCountsSettled(detail))) {
+        // After FINAL, only try to complete official pitcher decisions a few
+        // times. No continuous game-state polling or DOM observation.
+        const finalKey=activeHomeGameDetail.key;
+        const attempts=homeFinalDecisionRetryCount.get(finalKey)||0;
+        if(attempts>=3) return;
+        homeFinalDecisionRetryCount.set(finalKey,attempts+1);
         const delay = 60 * 1000;
         startHomeGameDetailRefreshCountdown(delay);
         homeGameDetailRefreshTimer = setTimeout(() => {
@@ -2476,6 +2490,8 @@
       const key = homeGameDetailKey('CPBL', date, game);
       const normalized = homeProtectLiveFromScheduled(detail, game, 'CPBL');
       const previous = homeGameDetailCache.get(key)?.detail;
+      if(String(previous?.status||'').toLowerCase()==='final'
+         && String(normalized?.status||'').toLowerCase()!=='final') return;
       if (previous && JSON.stringify(previous) === JSON.stringify(normalized)) return;
       detail = normalized;
       homeGameDetailCache.set(key, { at:Date.now(), detail });
@@ -2495,6 +2511,9 @@
       const incomingId = String(row?.game_id || detail?.game?.id || '');
       if (expectedId && incomingId && expectedId !== incomingId) return;
       const key = homeGameDetailKey('NPB', date, game);
+      const previous = homeGameDetailCache.get(key)?.detail;
+      if(String(previous?.status||'').toLowerCase()==='final'
+         && String(detail?.status||'').toLowerCase()!=='final') return;
       homeGameDetailCache.set(key, { at:Date.now(), detail });
       homeGameDetailErrorStreak = 0;
       syncHomeDailyGameFromDetail('NPB', date, game, detail);
