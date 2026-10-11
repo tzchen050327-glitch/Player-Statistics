@@ -545,7 +545,7 @@
         bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
         bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game:rawGame, sourceIndex }) => {
-          const seriesUnplayed = homeNpbFirstStageUnplayed(rawGame,date);
+          const seriesUnplayed = league === 'NPB' && homeNpbFirstStageUnplayed(rawGame,date);
           const game = seriesUnplayed ? {...rawGame,status:'cancelled',cancellationReason:'第一階段已決勝｜本場不舉行'} : rawGame;
           const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
