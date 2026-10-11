@@ -2170,6 +2170,7 @@
             ? ['play','batters','pitchers','snapshot', ...(hasUmpire ? ['umpire'] : []), 'overview']
             : ['play','batters','snapshot', ...(hasUmpire ? ['umpire'] : []), 'overview'];
           if (!allowedTabs.includes(tab)) return;
+          if (String(activeHomeGameDetail.centerTab || 'play') === tab) return;
           activeHomeGameDetail.centerTab = tab;
           const current = homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || detail;
           renderHomeGameDetail(current, game);
