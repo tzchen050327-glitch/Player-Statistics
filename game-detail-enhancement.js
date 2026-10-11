@@ -1149,7 +1149,7 @@
     if (String(detail?.league||'').toUpperCase() !== 'CPBL') return '';
     if (String(detail?.status||'').toLowerCase() !== 'final') return '';
     const d=detail?.decisions||detail?.gameDecisions||null;
-    if(!d)return '';
+    // Keep the card visible for finalized postseason games even before decisions arrive.
     const formatPitcher=(player,suffix)=>{
       const name=compactName(player?.name||player?.fullName||'');
       if(!name)return '—';
