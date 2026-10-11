@@ -187,6 +187,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         deviceToken:customNotificationDeviceToken(),
         subscription:json,
         watchSchemaVersion:2,
+        umpireReportEnabled:localStorage.getItem('ballscope-umpire-report-push-v1')==='1',
         watches:customNotificationWatchPayload()
       });
     }
@@ -268,6 +269,21 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
 
     function bindCustomNotificationEvents() {
       if (!els.customNotificationPageContent) return;
+
+      els.customNotificationPageContent.querySelector('[data-umpire-report-push]')?.addEventListener('change',async event=>{
+        const input=event.currentTarget;
+        const value=Boolean(input.checked);
+        const key='ballscope-umpire-report-push-v1';
+        const previous=localStorage.getItem(key)==='1';
+        localStorage.setItem(key,value?'1':'0');
+        try{
+          await customNotificationSyncPush({ensure:value});
+          customNotificationRenderAfterAction(value?'裁判報告完成通知已啟用。':'裁判報告通知已關閉。');
+        }catch(error){
+          localStorage.setItem(key,previous?'1':'0');
+          customNotificationRenderAfterAction(error?.message||'裁判報告推播同步失敗。',true);
+        }
+      });
 
       els.customNotificationPageContent.querySelectorAll('[data-custom-notification-player]').forEach(input => {
         input.addEventListener('change', async () => {
@@ -375,6 +391,18 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         `;
 
       els.customNotificationPageContent.innerHTML = `
+        <section class="custom-notification-summary">
+          <div>
+            <span>UMPIRE REPORT</span>
+            <strong>裁判報告</strong>
+            <small>中職各場裁判報告完整公布後推播一次，包含季後賽；尚未公布不通知，不額外增加抓取頻率。</small>
+          </div>
+          <label class="custom-notification-option" style="flex-shrink:0;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" data-umpire-report-push ${localStorage.getItem('ballscope-umpire-report-push-v1')==='1'?'checked':''}>
+            <span>通知</span>
+          </label>
+        </section>
+
         <section class="custom-notification-summary">
           <div>
             <span>CUSTOM ALERTS</span>
