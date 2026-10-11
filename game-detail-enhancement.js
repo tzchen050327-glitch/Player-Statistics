@@ -1695,6 +1695,15 @@
   const acceptRealtimeDetail = event => {
     const detail=event?.detail?.detail||event?.detail?.row?.published_payload||null;
     if (!detail?.game) return;
+    const overlay=document.getElementById('homeGameDetailOverlay');
+    if(!overlay || overlay.classList.contains('hidden') || overlay.hidden) return;
+    const current=window.__latestHomeGameDetail;
+    const incomingId=String(detail?.game?.id||'');
+    const activeId=String(current?.game?.id||'');
+    if(incomingId && activeId && incomingId!==activeId) return;
+    // Live updates come from the primary game-detail handler, which also emits
+    // home-game-detail-state. Avoid duplicate enhancement work on the same payload.
+    if(current===detail || latestDetail===detail) return;
     latestDetail=detail;
     scheduleEnhance();
   };
@@ -1703,6 +1712,8 @@
   window.addEventListener('home-game-detail-state', event => {
     const detail=event?.detail?.detail||null;
     if (!detail?.game) return;
+    const overlay=document.getElementById('homeGameDetailOverlay');
+    if(!overlay || overlay.classList.contains('hidden') || overlay.hidden) return;
     latestDetail=detail;
     scheduleEnhance();
   });
