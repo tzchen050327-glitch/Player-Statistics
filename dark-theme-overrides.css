@@ -1396,3 +1396,13 @@ html[data-theme="dark"] .postseason-loading{
   border-color:#424b56 !important;
   opacity:1 !important;
 }
+
+/* c1.07: actual out-counter is .gdx-outs (outside game-detail-content). */
+html[data-theme="dark"] .gdx-bases-card .gdx-outs,
+html[data-theme="dark"] .game-detail-enhanced-marker .gdx-outs,
+.gdx-bases-card .gdx-outs {
+  color:#f8d37e !important;
+  -webkit-text-fill-color:#f8d37e !important;
+  opacity:1 !important;
+  font-weight:900 !important;
+}
