@@ -1672,6 +1672,18 @@
       } else prev?.remove();
     }
 
+    // Realtime replacement can temporarily leave enhanced sections out of order.
+    // Repair only when needed to avoid MutationObserver render loops.
+    if(!landscapeMode){
+      const panel=scoreCard.closest('[data-match-center-panel="play"]');
+      if(panel && panel.firstElementChild!==scoreCard) panel.insertBefore(scoreCard,panel.firstChild);
+      const nodes=['live','scoreboard','decisions','last-play'].map(key=>body.querySelector('[data-gdx="'+key+'"]')).filter(Boolean);
+      let anchor=scoreCard;
+      for(const node of nodes){
+        if(anchor.nextElementSibling!==node)anchor.after(node);
+        anchor=node;
+      }
+    }
     body.querySelector('.game-detail-current-grid')?.remove();
   }
 
