@@ -13,6 +13,8 @@
   if (bootBar) bootBar.style.width = '3%';
 
   function showBootFailure(message) {
+    document.documentElement.classList.remove('routine-start-no-splash');
+    document.getElementById('appUpdateOverlay')?.classList.remove('hidden');
     const text = String(message || '未知錯誤').replace(/\s+/g, ' ').trim();
     if (bootPercent) bootPercent.textContent = '錯誤';
     if (bootStatus) bootStatus.textContent = `啟動錯誤：${text.slice(0, 180)}`;

@@ -165,6 +165,8 @@
 
       setStartupProgress(80, '程式模組載入完成，正在初始化資料…');
     } catch (error) {
+      document.documentElement.classList.remove('routine-start-no-splash');
+      document.getElementById('appUpdateOverlay')?.classList.remove('hidden');
       console.error('[module-loader] app boot failed', error);
       setStartupStatus(`啟動失敗：${error?.message || error}`);
       document.documentElement.dataset.moduleBootFailed = 'true';

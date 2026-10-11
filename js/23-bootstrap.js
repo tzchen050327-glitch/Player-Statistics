@@ -147,6 +147,7 @@
     let appRefreshing = false;
     let appUpdateProgressVisible = false;
     let suppressStartupSplash = false;
+    let suppressRoutineSplash = false;
     let suppressNextControllerReload = false;
     let appUpdateProgressShown = Math.max(
       0,
@@ -344,9 +345,9 @@
     }
 
     function parseAppVersion(value) {
-      const match = String(value || '').trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/i);
+      const match = String(value || '').trim().match(/^([vc])?(\d+)\.(\d+)(?:\.(\d+))?$/i);
       if (!match) return null;
-      return [Number(match[1]), Number(match[2]), Number(match[3] || 0)];
+      return [match[1]?.toLowerCase() === 'c' ? 1000 + Number(match[2]) : Number(match[2]), Number(match[3]), Number(match[4] || 0)];
     }
 
     function isRemoteVersionNewer(remote, current = APP_VERSION) {
@@ -495,6 +496,11 @@
       const skipControllerReload = sessionStorage.getItem('baseballSkipControllerReloadOnce') === '1';
       suppressStartupSplash = skipStartupSplash;
       suppressNextControllerReload = skipControllerReload;
+      suppressRoutineSplash = !skipStartupSplash && (() => {
+        try { return localStorage.getItem('ballscope-last-ready-version-v1') === APP_VERSION; }
+        catch { return false; }
+      })();
+      if (suppressRoutineSplash) els.appUpdateOverlay?.classList.add('hidden');
       if (skipStartupSplash) {
         sessionStorage.removeItem('baseballSkipStartupSplashOnce');
         // Keep the lightweight update overlay until init() has rendered the home page.
@@ -506,7 +512,7 @@
 
       if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
         if (!skipStartupSplash) {
-          await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
+          await checkAppUpdate({ showProgress: !suppressRoutineSplash, keepProgressOpen: !suppressRoutineSplash });
         }
         return false;
       }
@@ -522,13 +528,9 @@
         serviceWorkerRegistration = reg;
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (suppressNextControllerReload) {
-            suppressNextControllerReload = false;
-            return;
-          }
-          if (appRefreshing || startupReloadScheduled) return;
-          if (appUpdateProgressVisible) setAppUpdateProgress(100, '新版已就緒，正在重新開啟…');
-          scheduleAppReload({ delay:appUpdateProgressVisible ? 400 : 120 });
+          if (suppressNextControllerReload) suppressNextControllerReload = false;
+          // A worker takeover alone does not prove that a newer app exists.
+          // live-static-update.js verifies version.json before reloading.
         });
 
         reg.addEventListener('updatefound', () => {
@@ -545,12 +547,12 @@
 
         let updateResult = { activated:false };
         if (!skipStartupSplash) {
-          updateResult = await checkAppUpdate({ showProgress: true, keepProgressOpen: true });
+          updateResult = await checkAppUpdate({ showProgress: !suppressRoutineSplash, keepProgressOpen: !suppressRoutineSplash });
         } else {
           setAppUpdateProgress(88, '正在整理本機資料…');
         }
 
-        setInterval(() => checkAppUpdate(), 15 * 60 * 1000);
+        // No periodic worker update: live-static-update.js silently checks the release marker.
 
         // v2.82: do not check/apply updates merely because the user returned
         // to this browser tab. Startup, manual version-badge checks, and the
@@ -568,7 +570,7 @@
         return appRefreshing;
       } catch (error) {
         console.error('Service Worker 設定失敗：', error);
-        if (!suppressStartupSplash) {
+        if (!suppressStartupSplash && !suppressRoutineSplash) {
           setAppUpdateProgress(82, '更新檢查失敗，正在載入目前資料…', { error: true });
         } else {
           hideAppUpdateProgress();
@@ -585,7 +587,11 @@
       const willReloadForUpdate = await updatePromise;
       if (willReloadForUpdate) return;
 
-      if (suppressStartupSplash) {
+      if (suppressRoutineSplash) {
+        await initPromise;
+        hideAppUpdateProgress({ force:true });
+        document.documentElement.classList.remove('routine-start-no-splash');
+      } else if (suppressStartupSplash) {
         await initPromise;
         setAppUpdateProgress(100, '資料已準備完成');
         // Remove the compact-overlay mode only after it is hidden.
@@ -598,6 +604,8 @@
         await new Promise(resolve => setTimeout(resolve, 120));
         hideAppUpdateProgress();
       }
+
+      try { if (db) localStorage.setItem('ballscope-last-ready-version-v1', APP_VERSION); } catch {}
 
       // Use the most recently cached CPBL level immediately, then refresh it in background.
       void refreshCurrentRosterStatus()
