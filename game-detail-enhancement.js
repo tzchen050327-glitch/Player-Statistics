@@ -1600,7 +1600,7 @@
 
   function enhanceGameDetail() {
     applyVersionLabel();
-    const detail=latestDetail || window.__latestHomeGameDetail || null; if (!detail?.game) return;
+    const detail=window.__latestHomeGameDetail || latestDetail || null; if (!detail?.game) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
     const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
     const supportsLandscape=isCpbl||isNpb;
@@ -1633,7 +1633,7 @@
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
     const stamp=`${detailStamp(detail)}|${landscapeMode?'landscape':'portrait'}`;
-    if (body.dataset.gdxStamp===stamp) return;
+    if (body.dataset.gdxStamp===stamp && (landscapeMode || body.querySelector('[data-gdx="decisions"]') || String(detail?.status||'').toLowerCase()!=='final')) return;
     body.dataset.gdxStamp=stamp;
 
     const portrait=body.querySelector('.game-detail-content');
