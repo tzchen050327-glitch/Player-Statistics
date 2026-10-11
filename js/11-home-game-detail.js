@@ -1076,7 +1076,10 @@
         .trim();
       const pickNumber = (row, keys) => {
         for (const key of keys) {
-          const n = Number(row?.[key]);
+          const raw = row?.[key];
+          // Missing game statistics are unknown, not zero: Number(null) === 0.
+          if (raw === null || raw === undefined || String(raw).trim() === '') continue;
+          const n = Number(raw);
           if (Number.isFinite(n)) return n;
         }
         return null;
@@ -1280,7 +1283,8 @@
         const n = Number(side === 'away' ? gameInfo?.awayScore : gameInfo?.homeScore);
         return Number.isFinite(n) ? n : null;
       };
-      const value = n => Number.isFinite(Number(n)) ? String(Number(n)) : '—';
+      const value = n => n !== null && n !== undefined && String(n).trim() !== '' && Number.isFinite(Number(n))
+        ? String(Number(n)) : '—';
       const teamSection = (side, teamName) => {
         const rows = sideRows(side);
         const totals = rows.reduce((acc,row) => {
@@ -1290,6 +1294,10 @@
           return acc;
         }, {ab:0,h:0,rbi:0,bb:0,so:0,hr:0});
         const runs = teamRuns(side);
+        // When official individual-R fields disagree with the team total, do
+        // not claim that every player scored zero. Preserve known nonzero rows.
+        const allIndividualRunsZero = rows.length > 0 && rows.every(row => row.r === null || row.r === undefined || Number(row.r) === 0);
+        const inconsistentIndividualRuns = runs > 0 && allIndividualRunsZero;
         let previousOrder = null;
         return `
           <section class="game-batter-team">
@@ -1303,7 +1311,7 @@
                 <div class="game-batter-row ${row.substitute ? 'is-sub' : ''}">
                   <span class="game-batter-order">${showOrder ? row.order : ''}</span>
                   <strong class="game-batter-name" title="${escapeHtml(row.name)}">${row.substitute ? '<i class="game-batter-sub-arrow" aria-hidden="true">↳</i>' : ''}${escapeHtml(row.name)}</strong>
-                  <span>${value(row.ab)}</span><span>${value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
+                  <span>${value(row.ab)}</span><span>${inconsistentIndividualRuns ? '—' : value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
                   <span>${value(row.bb)}</span><span>${value(row.so)}</span><span>${value(row.hr)}</span>
                 </div>`;
               }).join('') : '<div class="game-detail-empty">目前沒有可整理的打者紀錄。</div>'}
