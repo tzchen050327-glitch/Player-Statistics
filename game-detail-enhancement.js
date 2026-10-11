@@ -1711,6 +1711,7 @@
   // entire document: tab redraws used to retrigger enhancement repeatedly.
   document.addEventListener('click',event=>{
     if(event.target.closest('[data-match-center-tab], #homeGameDetailDisplayMode, #homeGameDetailBack')){
+      document.querySelector('#homeGameDetailBody')?.removeAttribute('data-gdx-stamp');
       scheduleEnhance();
     }
   },true);
