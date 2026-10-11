@@ -10,9 +10,9 @@
     let schedulePageLeague = ['CPBL','NPB'].includes(localStorage.getItem('schedulePageLeague'))
       ? localStorage.getItem('schedulePageLeague')
       : 'CPBL';
-    let schedulePageDate = /^\d{4}-\d{2}-\d{2}$/.test(localStorage.getItem('schedulePageDate') || '')
-      ? localStorage.getItem('schedulePageDate')
-      : localISODate();
+    // Schedule page always starts at today's calendar date; previous browsing dates
+    // remain usable during the session but must not be restored on a fresh entry.
+    let schedulePageDate = schedulePageLeagueToday(schedulePageLeague);
 
     function playerToolsLeagueCode(value) {
       return String(value || '').toLowerCase() === 'npb' ? 'NPB' : 'CPBL';
@@ -232,6 +232,19 @@
       if (!data && !loading && !error) void loadPlayerToolsData(playerRankingLeague);
     }
 
+    function schedulePageLeagueToday(league = schedulePageLeague) {
+      const timeZone = league === 'NPB' ? 'Asia/Tokyo' : 'Asia/Taipei';
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone, year:'numeric', month:'2-digit', day:'2-digit'
+        }).formatToParts(new Date());
+        const get = type => parts.find(part => part.type === type)?.value || '';
+        const date = `${get('year')}-${get('month')}-${get('day')}`;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+      } catch {}
+      return localISODate();
+    }
+
     function schedulePageKey() {
       return `${schedulePageLeague}|${schedulePageDate}`;
     }
@@ -303,7 +316,7 @@
       const games=Array.isArray(cached?.games)?cached.games:[];
       const loading=schedulePageLoading.has(key);
       const error=schedulePageErrors.get(key)||'';
-      const today=localISODate();
+      const today=schedulePageLeagueToday(schedulePageLeague);
       const dateStrip=Array.from({length:7},(_,i)=>schedulePageShiftDate(schedulePageDate,i-3));
 
       els.schedulePageContent.innerHTML=`
@@ -370,8 +383,15 @@
       `;
 
       els.schedulePageContent.querySelectorAll('[data-schedule-league]').forEach(btn=>btn.addEventListener('click',()=>{
+        const wasToday=schedulePageDate===schedulePageLeagueToday(schedulePageLeague);
         schedulePageLeague=String(btn.dataset.scheduleLeague||'CPBL');
         localStorage.setItem('schedulePageLeague',schedulePageLeague);
+        // Follow the destination league's local today, without overriding
+        // a historical/future date deliberately selected by the user.
+        if(wasToday) {
+          schedulePageDate=schedulePageLeagueToday(schedulePageLeague);
+          localStorage.setItem('schedulePageDate',schedulePageDate);
+        }
         renderSchedulePage();
         void loadSchedulePageGames();
       }));
@@ -396,7 +416,7 @@
         void loadSchedulePageGames();
       });
       els.schedulePageContent.querySelector('[data-schedule-today]')?.addEventListener('click',()=>{
-        schedulePageDate=localISODate();
+        schedulePageDate=schedulePageLeagueToday(schedulePageLeague);
         localStorage.setItem('schedulePageDate',schedulePageDate);
         renderSchedulePage();
         void loadSchedulePageGames();

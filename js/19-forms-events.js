@@ -995,6 +995,10 @@
     });
 
     els.homeScheduleBtn?.addEventListener('click', () => {
+      // Always open the left-side League Schedule entry on the league's current day.
+      // In-page date navigation remains unchanged until the next entry.
+      schedulePageDate = schedulePageLeagueToday(schedulePageLeague);
+      localStorage.setItem('schedulePageDate', schedulePageDate);
       currentPage = 'schedule';
       renderAll();
       window.scrollTo({ top:0, behavior:'instant' });
