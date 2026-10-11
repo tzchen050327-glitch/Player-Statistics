@@ -298,7 +298,43 @@
   }catch{}
   const $=(tag,txt='',cls='')=>{const e=document.createElement(tag);e.textContent=txt;if(cls)e.className=cls;return e};
   const btn=(txt,fn,cls='')=>{const b=$('button',txt,cls);b.type='button';b.addEventListener('click',fn);return b};
-  const write=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(draft));return true}catch{alert('無法儲存本機資料，請檢查瀏覽器儲存空間。');return false}};
+  const write=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(draft));if(admin)void publishCatalog();return true}catch{alert('無法儲存本機資料，請檢查瀏覽器儲存空間。');return false}};
+
+  // Published catalog is shared; localStorage is only a device-side backup.
+  const CLOUD_ENDPOINT='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/music-center-catalog';
+  const CLOUD_KEY_STORAGE='diamondscope-music-cloud-admin-key';
+  let cloudRevision=null,cloudLoading=null;
+  function cleanDraft(){return {version:2,tracks:draft.tracks||{},extraPlayers:draft.extraPlayers||{},playerEdits:draft.playerEdits||{},items:draft.items||{},hiddenItems:draft.hiddenItems||{}}}
+  async function loadPublishedCatalog(){
+    if(cloudLoading)return cloudLoading;
+    cloudLoading=(async()=>{
+      try{
+        const response=await fetch(CLOUD_ENDPOINT,{cache:'no-store'});
+        if(!response.ok)throw Error('HTTP '+response.status);
+        const data=await response.json();
+        if(!data.ok||data.payload?.version!==2)throw Error('資料格式不符');
+        cloudRevision=data.revision;
+        // Never erase the existing local backup when a cloud request fails.
+        draft={...draft,...data.payload};
+        localStorage.setItem(STORAGE,JSON.stringify(cleanDraft()));
+        if(team){if(selected)showSong(selected.id);else renderCategory()}else renderPicker();
+      }catch(e){console.warn('Music catalog sync unavailable; local backup retained',e)}
+      finally{cloudLoading=null}
+    })();
+    return cloudLoading;
+  }
+  async function publishCatalog(){
+    if(!admin)return;
+    let key=sessionStorage.getItem(CLOUD_KEY_STORAGE)||'';
+    if(!key){key=prompt('請輸入音樂中心雲端管理密碼，之後本次分頁修改會自動同步：')||'';if(!key){alert('已在此裝置保留修改，但尚未發布到其他裝置。');return}sessionStorage.setItem(CLOUD_KEY_STORAGE,key)}
+    try{
+      if(cloudRevision===null){await loadPublishedCatalog();alert('已取得雲端版本，請重新確認並儲存剛剛的修改。');return}
+      const response=await fetch(CLOUD_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','x-music-admin-key':key},body:JSON.stringify({revision:cloudRevision,payload:cleanDraft()}),cache:'no-store'});
+      const data=await response.json();
+      if(!response.ok||!data.ok){if(response.status===403)sessionStorage.removeItem(CLOUD_KEY_STORAGE);if(response.status===409)cloudRevision=null;throw Error(data.error||('HTTP '+response.status))}
+      cloudRevision=data.revision;
+    }catch(e){alert('音樂中心雲端同步失敗（本機備份仍保留）：'+e.message)}
+  }
   const rosterTeam=t=>Array.isArray(roster?.teams?.[t])?roster.teams[t]:[];
   const arrKey=(t,k)=>t+'|'+k;
   const entryKey=(t,k,id)=>t+'|'+k+'|'+id;
@@ -431,7 +467,7 @@
     },'music-admin-exit'));
     ribbon.append(titleRow);
     ribbon.append($('p',selected?'往下滑到「管理這首歌曲」，貼上 YouTube 網址，再按「儲存這首歌曲」。':team&&team!=='其他'?'點選下方球員，進入歌曲頁後貼上 YouTube 影片網址。其他分類可新增空白曲目。':'先點選下方球隊，再選擇球員貼上 YouTube 影片網址。','music-admin-mode-hint'));
-    ribbon.append($('small','目前僅儲存在這台裝置，尚未同步給所有使用者。'));
+    ribbon.append($('small','管理員儲存後會同步全站；如提示同步失敗，請保留本機備份。'));
   }
   function renderPicker(){
     team='';selected=null;query='';picker.classList.remove('hidden');content.classList.add('hidden');content.replaceChildren();
@@ -518,7 +554,7 @@
     if(admin){
       const management=$('div','','music-admin-status');
       management.append($('strong','編輯模式 · '+team));
-      management.append($('small','僅這台裝置的草稿，儲存後可立即預覽；尚未全站同步'));
+      management.append($('small','管理員儲存後會同步全站；如提示同步失敗，請保留本機備份'));
       management.append(btn('匯出備份',exportDraft,'music-admin-secondary'));
       management.append(btn('離開管理',()=>{admin=false;renderCategory()},'music-admin-secondary'));
       content.append(management);
@@ -735,7 +771,7 @@
     otherCard.addEventListener('contextmenu',e=>e.preventDefault());
   }
   migrateLocalPlayerIds();
-  open.addEventListener('click',()=>{renderPicker();navigate('music-center');void loadRoster()});
+  open.addEventListener('click',()=>{renderPicker();navigate('music-center');void loadRoster();void loadPublishedCatalog()});
   back.addEventListener('click',()=>{if(selected)renderCategory();else if(team)renderPicker();else navigate('home')});
   for(const button of root.querySelectorAll('[data-music-team]')){
     button.addEventListener('click',(event)=>{
