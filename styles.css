@@ -17114,3 +17114,22 @@ html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
     padding-bottom:16px;
   }
 }
+
+/* c1.06: legible out-count indicators on dark match-center panels. */
+.game-detail-content [class*="out-count"],
+.game-detail-content [class*="outs-label"],
+.game-detail-content [class*="out-label"],
+.game-detail-content [class*="outs-count"],
+.game-detail-content [class*="base-outs"],
+.game-detail-content [class*="bases-outs"] {
+  color: #f8c86a !important;
+  font-weight: 850;
+}
+@media (prefers-color-scheme: dark) {
+  .game-detail-content [class*="out-count"],
+  .game-detail-content [class*="outs-label"],
+  .game-detail-content [class*="out-label"],
+  .game-detail-content [class*="outs-count"],
+  .game-detail-content [class*="base-outs"],
+  .game-detail-content [class*="bases-outs"] { color: #ffd37d !important; }
+}
