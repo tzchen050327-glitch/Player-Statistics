@@ -371,6 +371,7 @@
 
     let postseasonCpblResults = [];
     let postseasonCpblOfficialWins = null;
+    let postseasonCpblTaiwanWins = null;
     let postseasonCpblFetchError = '';
     let postseasonCpblResultsAt = 0;
     let postseasonCpblResultsPromise = null;
@@ -392,6 +393,7 @@
         const next = Array.isArray(data.games) ? data.games : [];
         postseasonCpblResults = next;
         postseasonCpblOfficialWins = data.wins && typeof data.wins === 'object' ? data.wins : null;
+        postseasonCpblTaiwanWins = data.taiwanWins && typeof data.taiwanWins === 'object' ? data.taiwanWins : null;
         postseasonCpblFetchError = '';
         postseasonCpblResultsAt = Date.now();
         if (currentPage === 'postseason' && leagueHubLeague === 'cpbl') { renderPostseasonPage(); updateCpblSeriesScoreDom(); }
@@ -426,6 +428,14 @@
       else round.removeAttribute('data-series-fetch-error');
       teams[0].querySelector('b')?.replaceChildren(document.createTextNode(String(score[0])));
       teams[1].querySelector('b')?.replaceChildren(document.createTextNode(String(score[1])));
+      const taiwan=rounds.find(node=>node.querySelector('.postseason-round-title')?.textContent?.trim()==='TAIWAN SERIES');
+      if(taiwan){
+        const pair=[...taiwan.querySelectorAll('.postseason-bracket-team')];
+        if(pair.length===2){
+          const scores=postseasonTaiwanSeriesScore(pair[0].querySelector('strong')?.textContent,pair[1].querySelector('strong')?.textContent);
+          pair.forEach((node,i)=>node.querySelector('b')?.replaceChildren(document.createTextNode(String(scores[i]))));
+        }
+      }
     }
     function postseasonCpblSeriesScore(a,b) {
       const normalize = value => {
@@ -464,6 +474,11 @@
       return score;
     }
 
+    function postseasonTaiwanSeriesScore(a,b){
+      const normal=x=>{const n=String(x||'').normalize('NFKC').replace(/\s/g,'').toLowerCase();if(n.includes('統一')&&n.includes('獅'))return 'uni';if(n.includes('中信')&&n.includes('兄弟'))return 'ctbc';return n};
+      const count=x=>Object.entries(postseasonCpblTaiwanWins||{}).reduce((n,[name,wins])=>n+(normal(name)===normal(x)?Number(wins)||0:0),0);
+      return [a&&b?count(a):0,a&&b?count(b):0];
+    }
     function postseasonCpblBracketContent() {
       const cpbl = standingsOfficialCache?.cpbl || {};
       const first = postseasonSectionRows(cpbl.first,1)[0] || null;
@@ -493,6 +508,11 @@
         playoffB = postseasonTeamName(outsider);
       }
 
+      const challengeScore=postseasonCpblSeriesScore(playoffA,playoffB);
+      const challengeWinner=playoffA&&playoffB?(challengeScore[0]>=3?playoffA:challengeScore[1]>=3?playoffB:''):'';
+      const taiwanOpponent=challengeWinner||'季後挑戰賽勝者';
+      const taiwanScore=postseasonTaiwanSeriesScore(direct,challengeWinner);
+
       return '<div class="postseason-bracket-wrap">' +
         '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">CPBL POSTSEASON</div>' +
         '<div class="postseason-bracket">' +
@@ -502,7 +522,7 @@
               { seriesScore: postseasonCpblSeriesScore(playoffA, playoffB), format: '4戰3勝制｜' + playoffA + '先帶1勝' + (postseasonCpblFetchError ? '｜戰績更新失敗' : (!postseasonCpblOfficialWins && !postseasonCpblResults.length ? '｜戰績同步中' : '')) }) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">TAIWAN SERIES</div><div class="postseason-round-series">' +
-            postseasonMatchCard('台灣大賽', direct, '季後挑戰賽勝者', '', {format:'7戰4勝制'}) +
+            postseasonMatchCard('台灣大賽', direct, taiwanOpponent, '', {format:'7戰4勝制',seriesScore:taiwanScore}) +
           '</div></section>' +
         '</div></div></div>';
     }
