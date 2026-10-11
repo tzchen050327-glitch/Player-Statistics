@@ -306,6 +306,27 @@
       return postseasonNpbResultsPromise;
     }
 
+    // From 2026, the top seed receives two wins only when the eventual
+    // First Stage opponent finished 10+ games back or below .500.
+    // Before the opponent is settled, display two wins only if both possible
+    // opponents qualify; this avoids a premature advantage announcement.
+    function postseasonNpbFinalAdvantage(rows, firstWinner = '') {
+      if (Number(CURRENT_YEAR) < 2026) return 1;
+      const champion = rows?.[0];
+      const candidates = firstWinner
+        ? rows.slice(1,3).filter(row => postseasonNpbTeamKey(postseasonTeamName(row)) === postseasonNpbTeamKey(firstWinner))
+        : rows.slice(1,3);
+      if (!champion || candidates.length !== (firstWinner ? 1 : 2)) return 1;
+      const leadWins = Number(champion.wins), leadLosses = Number(champion.losses);
+      if (!Number.isFinite(leadWins) || !Number.isFinite(leadLosses)) return 1;
+      return candidates.every(row => {
+        const wins = Number(row.wins), losses = Number(row.losses);
+        if (!Number.isFinite(wins) || !Number.isFinite(losses) || wins + losses <= 0) return false;
+        const gap = (leadWins - wins + losses - leadLosses) / 2;
+        return gap >= 10 || wins / (wins + losses) < 0.5;
+      }) ? 2 : 1;
+    }
+
     function postseasonNpbBracketContent() {
       const npb = standingsOfficialCache?.npb || {};
       const central = postseasonSectionRows(npb.central,3);
@@ -313,7 +334,7 @@
       const leagueBlock = (label, rows, isPacific = false) => {
         const first=postseasonTeamName(rows[0]),second=postseasonTeamName(rows[1]),third=postseasonTeamName(rows[2]);
         const firstWinner=postseasonNpbSeriesWinner(second,third,'climax_first',2);
-        const advance=isPacific?2:1,finalOpponent=firstWinner||'第一階段勝者';
+        const advance=postseasonNpbFinalAdvantage(rows,firstWinner),finalOpponent=firstWinner||'第一階段勝者';
         const firstScore=[postseasonNpbWins(second,'climax_first',third),postseasonNpbWins(third,'climax_first',second)];
         const finalScore=[advance+(firstWinner?postseasonNpbWins(first,'climax_final',firstWinner):0),
           firstWinner?postseasonNpbWins(firstWinner,'climax_final',first):0];
@@ -326,13 +347,14 @@
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">FINAL STAGE</div><div class="postseason-round-series">' +
           postseasonMatchCard('決勝階段',first,finalOpponent,first+' 帶 '+advance+' 勝優勢',
-            {seriesScore:finalScore,format:isPacific&&String(CURRENT_YEAR)==='2026'?'7戰5勝制':'6戰4勝制'}) +
+            {seriesScore:finalScore,format:advance===2?'7戰5勝制':'6戰4勝制'}) +
           '</div></section></div></div>';
       };
       const leagueChampion=(rows,isPacific)=>{
         const first=postseasonTeamName(rows[0]),second=postseasonTeamName(rows[1]),third=postseasonTeamName(rows[2]);
         const firstWinner=postseasonNpbSeriesWinner(second,third,'climax_first',2);
-        return firstWinner?postseasonNpbSeriesWinner(first,firstWinner,'climax_final',isPacific?5:4,isPacific?2:1):'';
+        const advance=postseasonNpbFinalAdvantage(rows,firstWinner);
+        return firstWinner?postseasonNpbSeriesWinner(first,firstWinner,'climax_final',advance===2?5:4,advance):'';
       };
       const centralChampion=leagueChampion(central,false),pacificChampion=leagueChampion(pacific,true);
       const japanScore=centralChampion&&pacificChampion
