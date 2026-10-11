@@ -17090,3 +17090,28 @@ html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
   pointer-events:none !important;
 }
 
+
+/* c1.02: mobile international explorer uses the available screen width. */
+@media (max-width: 700px) {
+  #homePage.international-home-mode .home-layout {
+    grid-template-columns: minmax(0,1fr);
+    gap: 0;
+    overflow: hidden;
+  }
+  #homePage.international-home-mode .home-sidebar { display: none !important; }
+  #homePage.international-home-mode .home-main-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  #homePage.international-home-mode #homeInternationalExplorer {
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  #homePage.international-home-mode .intl-path-row { grid-template-columns: 1fr; gap: 4px; }
+  #homePage.international-home-mode .intl-path-label { padding-top: 0; }
+  #homePage.international-home-mode .intl-chip-list { min-width: 0; }
+}
