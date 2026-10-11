@@ -60,6 +60,48 @@
 
   ensureV271DomCompatibility();
 
+  // Active PWA documents keep their original JavaScript after a worker update.
+  // Promote the installed release on focus, without requiring the user to kill the app.
+  const loadedRelease = String(document.querySelector('meta[name="app-version"]')?.content || '').trim();
+  const releaseRank = value => {
+    const m=String(value||'').match(/^c(\\d+)\\.(\\d+)$/i);
+    return m ? Number(m[1])*100000+Number(m[2]) : null;
+  };
+  let checkingRelease=false;
+  let lastReleaseCheck=0;
+  function activateRelease(version) {
+    const next=String(version||'').trim();
+    const oldRank=releaseRank(loadedRelease),newRank=releaseRank(next);
+    if(!next || oldRank===null || newRank===null || newRank<=oldRank) return;
+    const key='ballscope-release-navigation-'+next;
+    if(sessionStorage.getItem(key)==='1') return;
+    sessionStorage.setItem(key,'1');
+    const target=new URL(location.href);
+    target.searchParams.set('__app_release',next);
+    // Avoid a cache-busted document repeatedly bouncing between worker versions.
+    location.replace(target.href);
+  }
+  async function checkRelease(force=false) {
+    if(checkingRelease || (!force && document.visibilityState!=='visible')) return;
+    if(!force && Date.now()-lastReleaseCheck<60000) return;
+    checkingRelease=true;lastReleaseCheck=Date.now();
+    try {
+      const url=new URL('./version.json',location.href);
+      url.searchParams.set('_release_check',String(Date.now()));
+      const res=await fetch(url.href,{cache:'no-store'});
+      if(res.ok) activateRelease((await res.json()).version);
+    } catch {}
+    finally {checkingRelease=false;}
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{void checkRelease(true);});
+  }
+  window.addEventListener('pageshow',()=>{void checkRelease(true);});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void checkRelease(true);});
+  window.addEventListener('focus',()=>{void checkRelease();});
+  setInterval(()=>{void checkRelease();},120000);
+
+
   // Service Worker registration is owned by the bootstrap/update flow.
   // Keep the recovery path below only for genuinely stuck boots.
 
