@@ -1707,7 +1707,13 @@
     scheduleEnhance();
   });
 
-  new MutationObserver(()=>scheduleEnhance()).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  // Game-detail state events already announce live updates. Avoid observing the
+  // entire document: tab redraws used to retrigger enhancement repeatedly.
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-match-center-tab], #homeGameDetailDisplayMode, #homeGameDetailBack')){
+      scheduleEnhance();
+    }
+  },true);
   document.addEventListener('click',event=>{if(event.target.closest('[data-home-game], .home-daily-game, .home-game-row')) setTimeout(scheduleEnhance,200);},true);
   window.addEventListener('resize',scheduleEnhance,{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(scheduleEnhance,80),{passive:true});
