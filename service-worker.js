@@ -1,13 +1,13 @@
-const CACHE_NAME = 'baseball-player-card-pwa-v1001-auto';
-const CACHE_VERSION = 'v10.01';
+const CACHE_NAME = 'baseball-player-card-pwa-c101-auto';
+const CACHE_VERSION = 'c1.01';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
 const APP_CACHE_PREFIX = 'baseball-player-card-pwa-v';
 
 function parseAppVersion(value) {
-  const match = String(value || '').trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/i);
-  return match ? [Number(match[1]), Number(match[2]), Number(match[3] || 0)] : null;
+  const match = String(value || '').trim().match(/^([vc])?(\d+)\.(\d+)(?:\.(\d+))?$/i);
+  return match ? [match[1]?.toLowerCase()==='c' ? 1000+Number(match[2]) : Number(match[2]), Number(match[3]), Number(match[4] || 0)] : null;
 }
 
 function compareAppVersions(a, b) {
@@ -22,8 +22,8 @@ function compareAppVersions(a, b) {
 }
 
 function cacheVersionFromName(name) {
-  const match = String(name || '').match(/^baseball-player-card-pwa-v(\d+)(\d{2})-auto$/i);
-  return match ? [Number(match[1]), Number(match[2]), 0] : null;
+  const match = String(name || '').match(/^baseball-player-card-pwa-([vc])(\d+)(\d{2})-auto$/i);
+  return match ? [match[1].toLowerCase()==='c' ? 1000+Number(match[2]) : Number(match[2]), Number(match[3]), 0] : null;
 }
 
 async function assertNoNewerInstalledCache() {
@@ -57,31 +57,31 @@ const APP_SHELL = [
   './',
   './index.html',
   './diagnostics.html',
-  './styles.css?v=v10.01',
-  './dark-theme-overrides.css?v=v10.01',
-  './diagnostic-runtime.js?v=v10.01',
-  './live-static-update.js?v=v10.01',
-  './cpbl-realtime.js?v=v10.01',
-  './npb-realtime.js?v=v10.01',
-  './postseason-history.css?v=v10.01',
-  './js/module-loader.js?v=v10.01',
-  './js/music-center.js?v=v10.01',
-  './data/music-roster-2026.json?v=v10.01',
+  './styles.css?v=c1.01',
+  './dark-theme-overrides.css?v=c1.01',
+  './diagnostic-runtime.js?v=c1.01',
+  './live-static-update.js?v=c1.01',
+  './cpbl-realtime.js?v=c1.01',
+  './npb-realtime.js?v=c1.01',
+  './postseason-history.css?v=c1.01',
+  './js/module-loader.js?v=c1.01',
+  './js/music-center.js?v=c1.01',
+  './data/music-roster-2026.json?v=c1.01',
   MODULE_ORDER_URL,
   VERSIONED_MODULE_ORDER_URL,
-  './postseason-history.js?v=v10.01',
-  './cpbl-cache-router.js?v=v10.01',
-  './game-detail-enhancement.css?v=v10.01',
-  './report-layout.css?v=v10.01',
-  './landscape-state.css?v=v10.01',
-  './game-detail-enhancement.js?v=v10.01',
-  './report-layout.js?v=v10.01',
-  './manifest.webmanifest?v=v10.01',
-  './icon-192.png?v=v10.01',
-  './icon-512.png?v=v10.01',
-  './favicon-32.png?v=v10.01',
-  './favicon-16.png?v=v10.01',
-  './notification-badge.png?v=v10.01'
+  './postseason-history.js?v=c1.01',
+  './cpbl-cache-router.js?v=c1.01',
+  './game-detail-enhancement.css?v=c1.01',
+  './report-layout.css?v=c1.01',
+  './landscape-state.css?v=c1.01',
+  './game-detail-enhancement.js?v=c1.01',
+  './report-layout.js?v=c1.01',
+  './manifest.webmanifest?v=c1.01',
+  './icon-192.png?v=c1.01',
+  './icon-512.png?v=c1.01',
+  './favicon-32.png?v=c1.01',
+  './favicon-16.png?v=c1.01',
+  './notification-badge.png?v=c1.01'
 ];
 
 async function getModuleShell() {
