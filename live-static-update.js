@@ -64,7 +64,7 @@
   // Promote the installed release on focus, without requiring the user to kill the app.
   const loadedRelease = String(document.querySelector('meta[name="app-version"]')?.content || '').trim();
   const releaseRank = value => {
-    const m=String(value||'').match(/^c(\\d+)\\.(\\d+)$/i);
+    const m=String(value||'').match(/^c(\d+)\.(\d+)$/i);
     return m ? Number(m[1])*100000+Number(m[2]) : null;
   };
   let checkingRelease=false;
