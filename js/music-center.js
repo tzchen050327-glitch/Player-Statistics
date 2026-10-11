@@ -387,6 +387,19 @@
   function playersForTeam(){
     const baseline=rosterTeam(team),extras=draft.extraPlayers?.[team]||[],byId=new Map();
     for(const p of [...baseline,...extras])if(p?.id&&p?.name)byId.set(String(p.id),effectivePlayer(p));
+    // A published track must stay discoverable even when this device has an old/missing roster.
+    const ids=new Set();
+    for(const key of [...Object.keys(draft.tracks||{}),...Object.keys(draft.playerEdits||{})]){
+      const prefix=team+'|player|';
+      if(key.startsWith(prefix))ids.add(key.slice(prefix.length));
+    }
+    for(const id of ids){
+      if(byId.has(id))continue;
+      const edit=draft.playerEdits?.[entryKey(team,'player',id)]||{};
+      if(edit.hidden)continue;
+      const fallback={id,cpblId:edit.cpblId||id,name:edit.name||('球員 '+id),number:edit.number||'',role:'hitter',level:'',custom:true};
+      byId.set(id,effectivePlayer(fallback));
+    }
     const n=p=>/^\d+$/.test(p.number||'')?Number(p.number):999;
     return [...byId.values()].filter(p=>!p.hidden&&p.role!=='pitcher').sort((a,b)=>
       n(a)-n(b)||(a.number==='00'?-1:b.number==='00'?1:0)||String(a.number).localeCompare(String(b.number))||String(a.name).localeCompare(String(b.name),'zh-Hant'));
@@ -719,7 +732,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=v9.86',{cache:'force-cache'});
+      const response=await fetch('./data/music-roster-2026.json?v=v10.01',{cache:'no-store'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');
