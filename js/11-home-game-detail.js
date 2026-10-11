@@ -2213,6 +2213,7 @@
 
     function homeGameDetailCacheTtl(detail) {
       const status = String(detail?.status || '').toLowerCase();
+      if (status === 'final' && ['E','C'].includes(String(activeHomeGameDetail?.game?.kindCode || detail?.kindCode || '').toUpperCase())) return 60 * 1000;
       if (status === 'final') {
         const plays = Array.isArray(detail?.plays) ? detail.plays : [];
         if (activeHomeGameDetail?.league === 'CPBL' && plays.length === 0) return 0;
@@ -2346,6 +2347,21 @@
             fromPublishedCache = false;
             fromAnyCache = true;
           } catch {}
+        }
+        const postseasonFinal = league === 'CPBL'
+          && ['E','C'].includes(String(game?.kindCode || '').toUpperCase())
+          && String(detail?.status || cached?.detail?.status || game?.status || '').toLowerCase() === 'final';
+        if (postseasonFinal) {
+          // The published live snapshot can be older than the official postseason
+          // result feed. Never make it authoritative for final game decisions.
+          try {
+            const official = await leagueGameDetailRequest(league, date, game, false);
+            if (official?.game && String(official.status||'').toLowerCase()==='final') {
+              detail = official;
+              fromPublishedCache = false;
+              fromAnyCache = true;
+            }
+          } catch (error) { console.warn('postseason final decision refresh deferred',error); }
         }
         if (!detail && staleDetail && !cpblFinalDecisionIncomplete) detail = staleDetail;
         if (!detail) detail = await leagueGameDetailRequest(league, date, game, league === 'CPBL' ? false : force);
