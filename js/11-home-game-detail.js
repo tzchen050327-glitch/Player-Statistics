@@ -2522,7 +2522,7 @@
     window.addEventListener('cpbl-live-cache-update', event => {
       if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
       const row = event?.detail?.row || null;
-      const detail = event?.detail?.detail || row?.published_payload || null;
+      let detail = event?.detail?.detail || row?.published_payload || null;
       if (!detail?.game) return;
       const { date, game } = activeHomeGameDetail;
       if (String(row?.game_date || detail?.date || '') !== String(date || '')) return;
