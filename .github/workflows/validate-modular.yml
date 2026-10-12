@@ -146,6 +146,35 @@ jobs:
           assert.equal(liveGuard(mk('8局上',73,140),newest),newest,'do not roll back inning');
           assert.equal(liveGuard(mk('8局下',73,141),newest),newest,'do not roll back same-count revision');
           assert.notEqual(liveGuard(mk('8局下',74,143),newest),newest,'allow newer PA');
+          // Same game, 9-top: PR 林祖傑 replaces 陳鏞基 at first base
+          // before 陳聖平 finishes his PA; third-base 潘傑楷 stays put.
+          const substitutionStart=source.indexOf('  function cpblResolveRunnerSubstitutions(detail,names) {');
+          const substitutionEnd=source.indexOf('  function currentRunnerNames(detail) {', substitutionStart);
+          assert.ok(substitutionStart>=0&&substitutionEnd>substitutionStart);
+          const substituteResolver=vm.runInNewContext(
+            source.slice(substitutionStart,substitutionEnd)+';cpblResolveRunnerSubstitutions',{
+              compactName:value=>String(value||'').trim(),
+              normName:value=>String(value||'').replace(/[・·.\\s]/g,'').toLowerCase(),
+              samePlayerName:(a,b)=>String(a||'')===String(b||''),
+              currentOffenseSide:detail=>/上/.test(detail.game?.inningLabel||'')?'away':'home'
+            });
+          const prRoster=[{name:'陳鏞基',position:'(1B)'},{name:'林祖傑',position:'(PR)'}];
+          const prDetail={league:'CPBL',game:{inningLabel:'9局上'},
+            lineups:{away:{roster:prRoster,batters:[{name:'林祖傑',position:'(PR)'}]}}};
+          const namesAfter=substituteResolver(prDetail,{first:'陳鏞基',second:'',third:'潘傑楷'});
+          assert.equal(namesAfter.first,'林祖傑','pinch runner replaces only the on-base original');
+          assert.equal(namesAfter.third,'潘傑楷','unrelated third-base runner remains');
+          const later=substituteResolver(prDetail,{first:'林泓弦',second:'陳聖平',third:''});
+          assert.equal(later.first,'林泓弦','historical PR must not replace later first-base hitter');
+          assert.equal(later.second,'陳聖平','unrelated second base remains');
+          const barePr={...prDetail,lineups:{away:{batters:[{name:'林祖傑',position:'(PR)'}]}}};
+          assert.equal(substituteResolver(barePr,{first:'林泓弦',second:'',third:''}).first,'林泓弦',
+            'batting-nine PR tag alone must not invent substitution');
+          const verified={...barePr,current:{runnerSubstitutions:[{base:'first',from:'陳鏞基',to:'林祖傑'}]}};
+          assert.equal(substituteResolver(verified,{first:'陳鏞基',second:'',third:''}).first,'林祖傑',
+            'backend verified substitution works without full roster');
+          assert.equal(substituteResolver({...prDetail,league:'NPB'},{first:'陳鏞基'}).first,'陳鏞基',
+            'NPB unchanged');
           console.log('CPBL base preservation regression tests passed');
           """
           subprocess.run(['node','-e',script],check=True)
