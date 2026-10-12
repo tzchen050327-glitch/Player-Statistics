@@ -58,4 +58,8 @@ jobs:
           assert './js/module-order.txt' in loader
           for needle in ['function setSyncUiLocked(locked)', 'async function importCpblDaily(player)', 'function seasonStatsForOutputRole(player, role)', 'bootApp();']:
               assert needle in bundle, f'missing guard: {needle}'
+          enhancement = Path('game-detail-enhancement.js').read_text(encoding='utf-8')
+          assert "if ((isCpbl || isNpb) && status==='live')" in enhancement, 'NPB portrait live missing'
+          assert "const rows=isNpb ? [" in enhancement, 'NPB official pitcher decisions not rendered'
+          assert "const decisionsHtml=renderGameDecisions(detail);" in enhancement, 'NPB decisions renderer disabled'
           print('validated modular runtime', v)
