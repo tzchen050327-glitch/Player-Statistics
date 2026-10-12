@@ -2522,6 +2522,7 @@
     window.addEventListener('cpbl-live-cache-update', event => {
       if (!activeHomeGameDetail || activeHomeGameDetail.league !== 'CPBL') return;
       const row = event?.detail?.row || null;
+      // Replaced with a protected, normalized payload below; this binding must be mutable.
       let detail = event?.detail?.detail || row?.published_payload || null;
       if (!detail?.game) return;
       const { date, game } = activeHomeGameDetail;
