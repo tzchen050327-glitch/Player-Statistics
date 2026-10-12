@@ -1146,10 +1146,11 @@
   }
 
   function renderGameDecisions(detail) {
-    if (String(detail?.league||'').toUpperCase() !== 'CPBL') return '';
+    if (!['CPBL','NPB'].includes(String(detail?.league||'').toUpperCase())) return '';
     if (String(detail?.status||'').toLowerCase() !== 'final') return '';
     const d=detail?.decisions||detail?.gameDecisions||null;
-    // Keep the card visible for finalized postseason games even before decisions arrive.
+    const isNpb=String(detail?.league||'').toUpperCase()==='NPB';
+    // Keep the official result card visible after FINAL while decisions are pending.
     const formatPitcher=(player,suffix)=>{
       const name=compactName(player?.name||player?.fullName||'');
       if(!name)return '—';
@@ -1164,7 +1165,11 @@
       ? holds.map(player=>formatPitcher(player,'中繼')).join('<br>')
       : '—';
     const gwrbi=compactName(d?.winningRbi?.name||d?.winningRbi?.fullName||'');
-    const rows=[
+    const rows=isNpb ? [
+      ['勝投',formatPitcher(d?.winningPitcher,'勝')],
+      ['敗投',formatPitcher(d?.losingPitcher,'敗')],
+      ['救援成功',formatPitcher(d?.savePitcher||d?.savingPitcher,'救援')]
+    ] : [
       ['勝投',formatPitcher(d?.winningPitcher,'勝')],
       ['敗投',formatPitcher(d?.losingPitcher,'敗')],
       ['中繼成功',holdHtml],
@@ -1647,7 +1652,7 @@
 
       const status=String(detail.status||'').toLowerCase();
       let live=body.querySelector('[data-gdx="live"]');
-      if (isCpbl && status==='live') {
+      if ((isCpbl || isNpb) && status==='live') {
         const liveHtml=renderLiveSituation(detail);
         if (live) patchOrReplace(body,'[data-gdx="live"]',liveHtml,detail);
         else scoreCard.insertAdjacentHTML('afterend',liveHtml);
@@ -1658,7 +1663,7 @@
       if (scoreExtra) patchOrReplace(body,'[data-gdx="scoreboard"]',scoreHtml,detail);
       else (body.querySelector('[data-gdx="live"]')||scoreCard).insertAdjacentHTML('afterend',scoreHtml);
 
-      const decisionsHtml=isCpbl?renderGameDecisions(detail):'';
+      const decisionsHtml=renderGameDecisions(detail);
       const decisions=body.querySelector('[data-gdx="decisions"]');
       if(decisionsHtml){
         if(decisions) patchOrReplace(body,'[data-gdx="decisions"]',decisionsHtml,detail);
