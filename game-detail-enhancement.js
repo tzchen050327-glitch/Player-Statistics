@@ -1099,9 +1099,8 @@
     const side=currentOffenseSide(detail);
     const lineup=detail?.lineups?.[side]||{};
     const roster=Array.isArray(lineup.roster)?lineup.roster:[];
-    const batters=Array.isArray(lineup.batters)?lineup.batters:[];
     const out={...names};
-    if(!roster.length&&!batters.length&&!detail?.current?.runnerSubstitutions?.length)return out;
+    if(!roster.length&&!detail?.current?.runnerSubstitutions?.length)return out;
     // CPBL live current.runners may still name the original batter after
     // a pinch runner is inserted in the same batting-order roster chain.
     // A PR row immediately following its replaced player is authoritative
@@ -1116,17 +1115,9 @@
       const to=compactName(substitute?.name||substitute?.fullName||'');
       if(from&&to&&!samePlayerName(from,to))substitutes.set(normName(from),to);
     }
-    // A substitution can arrive between completed PAs. The batting-nine
-    // lineup often updates before the historical PA/current runner name does.
-    const last=Array.isArray(detail?.plays)?detail.plays.at(-1):null;
-    const latestHitter=compactName(last?.batter||'');
-    const lineupPr=batters.filter(entry=>
-      /(?:^|[^A-Z])PR(?:$|[^A-Z])|代跑/.test(String(entry?.position||entry?.pos||'').toUpperCase()));
-    if(latestHitter&&lineupPr.length===1 && playMatchesCurrentHalf(detail,last)){
-      const prName=compactName(lineupPr[0]?.name||lineupPr[0]?.fullName||'');
-      if(prName&&['first','second','third'].some(base=>samePlayerName(out[base],latestHitter)))
-        substitutes.set(normName(latestHitter),prName);
-    }
+    // Do not guess from a PR tag in the nine-man lineup alone: an earlier
+    // PR remains listed during unrelated later PAs. Only explicit roster
+    // predecessor -> PR and confirmed live substitution events may rename.
     for(const substitution of (Array.isArray(detail?.current?.runnerSubstitutions)?detail.current.runnerSubstitutions:[])){
       const from=compactName(substitution?.from),to=compactName(substitution?.to);
       if(from&&to)substitutes.set(normName(from),to);
