@@ -7,6 +7,8 @@ on:
       - 'js/**'
       - 'index.html'
       - 'service-worker.js'
+      - 'version.json'
+      - 'manifest.webmanifest'
       - 'game-detail-enhancement.js'
       - 'scripts/build-app.py'
       - '.github/workflows/auto-version-bump.yml'
@@ -17,6 +19,8 @@ on:
       - 'app.js'
       - 'index.html'
       - 'service-worker.js'
+      - 'version.json'
+      - 'manifest.webmanifest'
       - 'game-detail-enhancement.js'
       - 'scripts/build-app.py'
 
