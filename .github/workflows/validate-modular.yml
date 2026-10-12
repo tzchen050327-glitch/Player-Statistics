@@ -7,6 +7,7 @@ on:
       - 'js/**'
       - 'index.html'
       - 'service-worker.js'
+      - 'game-detail-enhancement.js'
       - 'scripts/build-app.py'
       - '.github/workflows/auto-version-bump.yml'
       - '.github/workflows/validate-modular.yml'
@@ -16,6 +17,7 @@ on:
       - 'app.js'
       - 'index.html'
       - 'service-worker.js'
+      - 'game-detail-enhancement.js'
       - 'scripts/build-app.py'
 
 permissions:
@@ -62,4 +64,39 @@ jobs:
           assert "if ((isCpbl || isNpb) && status==='live')" in enhancement, 'NPB portrait live missing'
           assert "const rows=isNpb ? [" in enhancement, 'NPB official pitcher decisions not rendered'
           assert "const decisionsHtml=renderGameDecisions(detail);" in enhancement, 'NPB decisions renderer disabled'
+          assert "function cpblPassiveOutPreservedBases(detail,last)" in enhancement, 'CPBL runner rescue missing'
+          assert "const preserved=cpblPassiveOutPreservedBases(detail,last);" in enhancement, 'CPBL runner rescue disabled'
+          # CPBL live PA after-state: a caught fly at 2 outs must not erase a runner.
+          import subprocess
+          script = r"""
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert/strict');
+const source = fs.readFileSync('game-detail-enhancement.js','utf8');
+const start = source.indexOf('  function cpblPassiveOutPreservedBases(detail,last) {');
+const end = source.indexOf('  function currentBaseState(detail) {', start);
+assert.ok(start !== -1 && end > start, 'base-preservation helper exists');
+const normalizeBaseState = value => {
+  if (Array.isArray(value)) return {first:!!value[0],second:!!value[1],third:!!value[2]};
+  const s=String(value||'');
+  return {first:/一壘/.test(s),second:/二壘/.test(s),third:/三壘/.test(s)};
+};
+const context={
+  normalizeBaseState,
+  inferredOutsAfterPlay:play=>Number(play?.outsAfter??play?.outs??0),
+  playMatchesCurrentHalf:(detail,play)=>detail.game?.inningLabel===String(play?.inning)+'局'+(play?.half==='bottom'?'下':'上')
+};
+const rescue=vm.runInNewContext(source.slice(start,end)+'\ncpblPassiveOutPreservedBases',context);
+const game={league:'CPBL',status:'live',game:{inningLabel:'4局下'}};
+const fly={inning:4,half:'bottom',result:'中飛',outs:'2',description:'打者-中外野手 飛球接殺出局。 2人出局。',baseStateBefore:[false,true,false],baseStateAfter:[false,false,false]};
+assert.deepEqual(Array.from(Object.values(rescue(game,fly))),[false,true,false],'二壘跑者 remains after caught fly');
+assert.equal(rescue(game,{...fly,outs:'3'}),null,'third out clears bases');
+assert.equal(rescue({...game,game:{inningLabel:'5局上'}},fly),null,'half inning changed');
+assert.equal(rescue(game,{...fly,result:'二壘安打'}),null,'hit is not a routine out');
+assert.equal(rescue(game,{...fly,description:'二壘跑者詹子賢出局。2人出局。'}),null,'explicit runner out');
+assert.equal(rescue(game,{...fly,baseStateBefore:[false,false,false]}),null,'no fabricated runner');
+assert.equal(rescue({...game,league:'NPB'},fly),null,'never change NPB rules');
+console.log('CPBL base preservation regression tests passed');
+"""
+          subprocess.run(['node','-e',script],check=True)
           print('validated modular runtime', v)
