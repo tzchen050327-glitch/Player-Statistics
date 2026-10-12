@@ -153,6 +153,25 @@
     return {state:{first:false,second:key==='second',third:key==='third'},names:{first:'',second:key==='second'?name:'',third:key==='third'?name:''}};
   }
 
+  // The CPBL postseason feed can report an empty post-PA snapshot after an
+  // ordinary caught fly despite an occupied pre-PA base and only two outs.
+  // Never turn that missing runner identity into a cleared base. This rescue
+  // does NOT apply to a third out, half-inning switch, hit, double play, or
+  // any explicit runner advance/out/score/substitution.
+  function cpblPassiveOutPreservedBases(detail,last) {
+    if (String(detail?.league||'').toUpperCase()!=='CPBL' || !last) return null;
+    if (!['live','suspended'].includes(String(detail?.status||'').toLowerCase())) return null;
+    if (!playMatchesCurrentHalf(detail,last) || inferredOutsAfterPlay(last)>=3) return null;
+    const result=String(last?.result||last?.raw||'');
+    if (!/飛|直|三振|接殺/.test(result) || /安打|一安|二安|三安|全壘|四壞|觸身|死球|野選|雙殺|併殺/.test(result)) return null;
+    const description=String(last?.description||'');
+    if (/跑者|盜壘|牽制|封殺|觸殺|刺殺|雙殺|併殺|得分|回本壘|推進|暴投|捕逸|投手犯規|代跑/.test(description)) return null;
+    const before=normalizeBaseState(last?.baseStateBefore??last?.basesBefore??'');
+    const after=normalizeBaseState(last?.baseStateAfter??last?.basesAfter??last?.baseState??last?.bases??'');
+    if (!['first','second','third'].some(k=>before[k]&&!after[k])) return null;
+    return {first:before.first||after.first,second:before.second||after.second,third:before.third||after.third};
+  }
+
   function currentBaseState(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
@@ -167,6 +186,8 @@
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
     const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
     if(cpblAdvance)return [cpblAdvance.state.first,cpblAdvance.state.second,cpblAdvance.state.third];
+    const preserved=cpblPassiveOutPreservedBases(detail,last);
+    if(preserved)return [preserved.first,preserved.second,preserved.third];
     if (league === 'CPBL' && last) {
       // Use the completed PA snapshot so bases, runner names and outs
       // cannot get ahead of (or fall behind) the play-by-play log.
@@ -1095,6 +1116,17 @@
     }
     const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
     if(cpblAdvance)return cpblAdvance.names;
+    const preserved=cpblPassiveOutPreservedBases(detail,last);
+    if(preserved){
+      const prior=[...plays.slice(0,-1)].reverse().find(play => Number(play?.inning)===Number(last?.inning) && play?.half===last?.half);
+      const raw=prior?.runnersAfter||prior?.runners||{};
+      const direct=directRunnerNames(detail), inferred=inferRunnerNames(detail);
+      const names={first:'',second:'',third:''};
+      for(const base of ['first','second','third'])if(preserved[base]){
+        names[base]=compactName(raw?.[base]||direct?.[base]||inferred?.[base]||'');
+      }
+      return cpblResolveRunnerSubstitutions(detail,names);
+    }
     const direct = directRunnerNames(detail), inferred = inferRunnerNames(detail);
     let immediate={first:'',second:'',third:''};
     const useCpblAfter=String(detail?.league||'').toUpperCase()==='CPBL' && last &&
