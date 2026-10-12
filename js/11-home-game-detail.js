@@ -13,6 +13,33 @@
       return [league, date, String(game?.kindCode || ''), String(game?.id || ''), String(game?.away || ''), String(game?.home || '')].join('|');
     }
 
+    // Do not allow a slower detail request to overwrite a newer Realtime PA.
+    // The full, ordered plays are authoritative for game progress.
+    function homeCpblLiveProgress(detail) {
+      const label=String(detail?.game?.inningLabel||'');
+      const m=label.match(/(\d+)\s*局?\s*([上下])/);
+      const half=m?Number(m[1])*2+(m[2]==='下'?1:0):0;
+      const plays=Array.isArray(detail?.plays)?detail.plays:[];
+      const last=plays[plays.length-1];
+      const lastHalf=last?Number(last.inning||0)*2+(String(last.half)==='bottom'?1:0):0;
+      return {half:Math.max(half,lastHalf),count:plays.length,revision:Number(detail?._cpblPublishedRevision||0)};
+    }
+    function homeKeepNewerCpblLive(incoming,existing) {
+      if(!incoming?.game||!existing?.game) return incoming;
+      if(String(incoming.league||'').toUpperCase()!=='CPBL'
+         ||String(existing.league||'').toUpperCase()!=='CPBL'
+         ||String(incoming.game.id||'')!==String(existing.game.id||'')
+         ||String(incoming.game.kindCode||incoming.kindCode||'A')!==String(existing.game.kindCode||existing.kindCode||'A')) return incoming;
+      const previousStatus=String(existing.status||'').toLowerCase();
+      const currentStatus=String(incoming.status||'').toLowerCase();
+      if(previousStatus==='final'&&currentStatus!=='final')return existing;
+      if(!['live','suspended'].includes(previousStatus)||!['live','suspended'].includes(currentStatus))return incoming;
+      const old=homeCpblLiveProgress(existing),now=homeCpblLiveProgress(incoming);
+      if(now.half<old.half || (now.half===old.half&&now.count<old.count))return existing;
+      if(now.half===old.half&&now.count===old.count&&now.revision>0&&old.revision>0&&now.revision<old.revision)return existing;
+      return incoming;
+    }
+
     function homeGameDetailBudget() {
       const day = localISODate();
       try {
@@ -2354,6 +2381,8 @@
           try {
             const published = await window.__cpblRealtimeReadPublished(date, String(game.id), String(game?.kindCode || 'A'));
             detail = published?.detail || null;
+            if(detail && Number(published?.row?.published_revision)>0)
+              detail={...detail,_cpblPublishedRevision:Number(published.row.published_revision)};
             fromPublishedCache = Boolean(detail);
             if (detail) fromAnyCache = true;
           } catch {}
@@ -2432,6 +2461,9 @@
             }
           }
         }
+        // A Realtime update may arrive while this request is in flight.
+        // Never roll back to an older inning, fewer completed PAs or revision.
+        if(league==='CPBL')detail=homeKeepNewerCpblLive(detail,homeGameDetailCache.get(key)?.detail);
         const detailChanged = !cached?.detail || JSON.stringify(cached.detail) !== JSON.stringify(detail);
         homeGameDetailCache.set(key, { at:Date.now(), detail });
         homeGameDetailErrorStreak = 0;
@@ -2534,8 +2566,11 @@
       if (expectedId && incomingId && expectedId !== incomingId) return;
       if (expectedKind !== incomingKind) return;
       const key = homeGameDetailKey('CPBL', date, game);
-      const normalized = homeProtectLiveFromScheduled(detail, game, 'CPBL');
+      let normalized = homeProtectLiveFromScheduled(detail, game, 'CPBL');
+      if(Number(row?.published_revision)>0)
+        normalized={...normalized,_cpblPublishedRevision:Number(row.published_revision)};
       const previous = homeGameDetailCache.get(key)?.detail;
+      normalized=homeKeepNewerCpblLive(normalized,previous);
       if(String(previous?.status||'').toLowerCase()==='final'
          && String(normalized?.status||'').toLowerCase()!=='final') return;
       if (previous && JSON.stringify(previous) === JSON.stringify(normalized)) return;
