@@ -1123,6 +1123,35 @@
         const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
         if (name) rawByName.set(normalizeName(name), row);
       }
+      const teamRuns = side => {
+        const fromBoard = detailRunsFromScoreboard(detail, side);
+        if (fromBoard !== null) return fromBoard;
+        const n = Number(side === 'away' ? gameInfo?.awayScore : gameInfo?.homeScore);
+        return Number.isFinite(n) ? n : null;
+      };
+      const scoredRunsBySide = {};
+      for (const side of ['away','home']) {
+        const byName = new Map();
+        let scored = 0;
+        let hasUnnamedScorer = false;
+        for (const play of plays) {
+          const playSide = play?.half === 'top' ? 'away' : play?.half === 'bottom' ? 'home' : '';
+          if (playSide !== side) continue;
+          for (const event of Array.isArray(play?.events) ? play.events : []) {
+            if (event?.type !== 'score' || event?.to !== 'home') continue;
+            scored += 1;
+            const name = normalizeName(event.runner || event.runnerName);
+            if (!name) { hasUnnamedScorer = true; continue; }
+            byName.set(name,(byName.get(name)||0)+1);
+          }
+        }
+        const officialTotal = teamRuns(side);
+        scoredRunsBySide[side] = {
+          byName,
+          complete:!hasUnnamedScorer && officialTotal !== null
+            && officialTotal > 0 && scored === officialTotal
+        };
+      }
       const sideRows = side => {
         const lineup = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
         const lockedStarters = Array.isArray(detail?.startingLineup?.[side]) ? detail.startingLineup[side] : [];
@@ -1220,8 +1249,8 @@
           const key = normalizeName(name);
           if (!key) continue;
           const existing = rawByKey.get(key);
-          const score = ['gameAb','gameHits','gameRbi','gameWalks','gameBb','gameStrikeouts','gameSo','gameHomeRuns','gameHr']
-            .reduce((sum,k) => sum + (Number.isFinite(Number(row?.[k])) ? 1 : 0), 0);
+          const score = ['gameAb','gameRuns','gameHits','gameRbi','gameWalks','gameBb','gameStrikeouts','gameSo','gameHomeRuns','gameHr']
+            .reduce((sum,k) => sum + (pickNumber(row,[k]) !== null ? 1 : 0), 0);
           if (!existing || score > existing.score) rawByKey.set(key, { row, score });
         }
 
@@ -1234,6 +1263,16 @@
           const fallback = playStatsFor(name);
           const stat = keyName => {
             const official = pickNumber(raw, statAliases[keyName]);
+            if (keyName === 'r') {
+              // Count named scoring events when they reconcile with the official
+              // team total. Otherwise use the official individual scoring column.
+              const scored = scoredRunsBySide[side];
+              if (scored?.complete) return scored.byName.get(key) || 0;
+              if (official !== null) return official;
+              // No team runs means every player has scored zero, even when a
+              // live/NPB box score has not populated an individual-R field yet.
+              return teamRuns(side) === 0 ? 0 : null;
+            }
             return official === null ? fallback[keyName] ?? null : official;
           };
           seen.add(key);
@@ -1277,12 +1316,6 @@
           || a.firstAppearance - b.firstAppearance
         );
       };
-      const teamRuns = side => {
-        const fromBoard = detailRunsFromScoreboard(detail, side);
-        if (fromBoard !== null) return fromBoard;
-        const n = Number(side === 'away' ? gameInfo?.awayScore : gameInfo?.homeScore);
-        return Number.isFinite(n) ? n : null;
-      };
       const value = n => n !== null && n !== undefined && String(n).trim() !== '' && Number.isFinite(Number(n))
         ? String(Number(n)) : '—';
       const teamSection = (side, teamName) => {
@@ -1294,10 +1327,6 @@
           return acc;
         }, {ab:0,h:0,rbi:0,bb:0,so:0,hr:0});
         const runs = teamRuns(side);
-        // When official individual-R fields disagree with the team total, do
-        // not claim that every player scored zero. Preserve known nonzero rows.
-        const allIndividualRunsZero = rows.length > 0 && rows.every(row => row.r === null || row.r === undefined || Number(row.r) === 0);
-        const inconsistentIndividualRuns = runs > 0 && allIndividualRunsZero;
         let previousOrder = null;
         return `
           <section class="game-batter-team">
@@ -1311,7 +1340,7 @@
                 <div class="game-batter-row ${row.substitute ? 'is-sub' : ''}">
                   <span class="game-batter-order">${showOrder ? row.order : ''}</span>
                   <strong class="game-batter-name" title="${escapeHtml(row.name)}">${row.substitute ? '<i class="game-batter-sub-arrow" aria-hidden="true">↳</i>' : ''}${escapeHtml(row.name)}</strong>
-                  <span>${value(row.ab)}</span><span>${inconsistentIndividualRuns ? '—' : value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
+                  <span>${value(row.ab)}</span><span>${value(row.r)}</span><span>${value(row.h)}</span><span>${value(row.rbi)}</span>
                   <span>${value(row.bb)}</span><span>${value(row.so)}</span><span>${value(row.hr)}</span>
                 </div>`;
               }).join('') : '<div class="game-detail-empty">目前沒有可整理的打者紀錄。</div>'}
