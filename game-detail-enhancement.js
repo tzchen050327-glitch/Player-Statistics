@@ -138,7 +138,7 @@
     if(String(detail?.league||'').toUpperCase()!=='CPBL'||!last)return null;
     const plays=Array.isArray(detail?.plays)?detail.plays:[];
     if(plays.length<2||String(detail?.status||'').toLowerCase()==='final')return null;
-    if(inferredOutsAfterPlay(last)>=3||!playMatchesCurrentHalf(detail,last))return null;
+    if(inferredOutsAfterPlay(last,detail)>=3||!playMatchesCurrentHalf(detail,last))return null;
     // Only a strikeout with no runner movement can inherit an earlier runner
     // advancement. The official CPBL after-state sometimes clears incorrectly.
     if(!/三振|strikeout/i.test(String(last?.result||last?.raw||'')))return null;
@@ -161,7 +161,7 @@
   function cpblPassiveOutPreservedBases(detail,last) {
     if (String(detail?.league||'').toUpperCase()!=='CPBL' || !last) return null;
     if (!['live','suspended'].includes(String(detail?.status||'').toLowerCase())) return null;
-    if (!playMatchesCurrentHalf(detail,last) || inferredOutsAfterPlay(last)>=3) return null;
+    if (!playMatchesCurrentHalf(detail,last) || inferredOutsAfterPlay(last,detail)>=3) return null;
     const result=String(last?.result||last?.raw||'');
     if (!/飛|直|三振|接殺/.test(result) || /安打|一安|二安|三安|全壘|四壞|觸身|死球|野選|雙殺|併殺/.test(result)) return null;
     const description=String(last?.description||'');
@@ -182,7 +182,7 @@
     const extraPending=cpblExtraInningPendingState(detail);
     if(extraPending) return [false,true,false];
 
-    if (inferredOutsAfterPlay(last) >= 3) return [false,false,false];
+    if (inferredOutsAfterPlay(last,detail) >= 3) return [false,false,false];
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
     const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
     if(cpblAdvance)return [cpblAdvance.state.first,cpblAdvance.state.second,cpblAdvance.state.third];
@@ -215,8 +215,16 @@
     return m ? Number(m[1]) : null;
   }
 
-  function inferredOutsAfterPlay(play) {
+  function inferredOutsAfterPlay(play, detail) {
     if (!play) return 0;
+    // CPBL postseason LiveLog reports outs AFTER each completed PA,
+    // unlike regular-season source which reports outs BEFORE the PA.
+    const league=String(detail?.league||'').toUpperCase();
+    const kind=String(detail?.kindCode||detail?.game?.kindCode||'').toUpperCase();
+    const recorded=String(play?.outs??'');
+    if(league==='CPBL' && ['E','C'].includes(kind) && /^[0-3]$/.test(recorded)){
+      return Number(recorded);
+    }
     const before = parseOutNumber(play.outs);
     if (before === null) return 0;
     const resultText=`${play.result || ''} ${play.raw || ''}`;
@@ -254,7 +262,7 @@
     // Do not carry a lagging CPBL current.outs value across the side change.
     if(!sameHalf) return 0;
 
-    const after=inferredOutsAfterPlay(last);
+    const after=inferredOutsAfterPlay(last,detail);
     // CPBL current.outs can lag one completed PA behind. Within the same half-inning,
     // never let that stale value overwrite the official completed-PA out count.
     if(last && sameHalf && parseOutNumber(last.outs)!==null) return after>=3 ? 3 : Math.min(2,after);
@@ -319,7 +327,7 @@
     if(!info) return raw;
 
     const last=Array.isArray(detail?.plays)?detail.plays.at(-1):null;
-    const currentHalfComplete=!!(last && playMatchesCurrentHalf(detail,last) && inferredOutsAfterPlay(last)>=3);
+    const currentHalfComplete=!!(last && playMatchesCurrentHalf(detail,last) && inferredOutsAfterPlay(last,detail)>=3);
     const sideHalf=side==='away'?'top':'bottom';
     const numericTotal=Number(totalRuns);
     const priorRuns=raw.reduce((sum,value,index)=>{
@@ -709,7 +717,7 @@
     if(anchorPlay){
       if(!completedPlateAppearance(anchorPlay)) return null;
       // Three outs end this offense's half. Do not advance to the same team's next batter.
-      if(inferredOutsAfterPlay(anchorPlay)>=3) return null;
+      if(inferredOutsAfterPlay(anchorPlay,detail)>=3) return null;
     } else {
       // New half-inning: continue this offense's batting order from its previous half-inning.
       anchorPlay=[...plays].reverse().find(p=>String(p?.half||'')===info.half&&Number(p?.inning)<info.inning&&completedPlateAppearance(p))||null;
@@ -945,7 +953,7 @@
     };
     const heuristicAfter=(before,dest,result,play)=>{
       let after={first:!!before.first,second:!!before.second,third:!!before.third};
-      if(inferredOutsAfterPlay(play)>=3 || dest==='home') return {first:false,second:false,third:false};
+      if(inferredOutsAfterPlay(play,detail)>=3 || dest==='home') return {first:false,second:false,third:false};
       if(dest==='third') return {first:false,second:false,third:true};
       if(dest==='second') return {first:false,second:true,third:!!before.first};
       if(dest==='first') {
@@ -1060,7 +1068,7 @@
         if(action.to) runners[action.to]=action.name;
       }
 
-      if(inferredOutsAfterPlay(play)>=3) runners={first:'',second:'',third:''};
+      if(inferredOutsAfterPlay(play,detail)>=3) runners={first:'',second:'',third:''};
     }
     return runners;
   }
@@ -1108,7 +1116,7 @@
       };
     }
 
-    if (inferredOutsAfterPlay(last) >= 3) {
+    if (inferredOutsAfterPlay(last,detail) >= 3) {
       return {first:'',second:'',third:''};
     }
     if (String(detail?.league||'').toUpperCase()==='CPBL' && last && !playMatchesCurrentHalf(detail,last)) {
@@ -1506,7 +1514,7 @@
   function landscapeShowBothLineups(detail) {
     if (String(detail?.status || '').toLowerCase() === 'final') return true;
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
-    return inferredOutsAfterPlay(plays.at(-1)) >= 3;
+    return inferredOutsAfterPlay(plays.at(-1),detail) >= 3;
   }
 
   function renderLandscapeBoard(detail,board) {
@@ -1525,7 +1533,7 @@
     const play=Array.isArray(detail?.plays)?detail.plays.at(-1):null;
     if (!play) return '';
     const inning=Number(play.inning)||0, half=play.half==='bottom'?'下':play.half==='top'?'上':'';
-    const outs=inferredOutsAfterPlay(play), meta=[outs>=3?'3出局':`${Math.max(0,outs)}出局`];
+    const outs=inferredOutsAfterPlay(play,detail), meta=[outs>=3?'3出局':`${Math.max(0,outs)}出局`];
     if (Number(play.rbi)||0) meta.push(`${Number(play.rbi)}打點`);
     const title=String(detail?.status||'').toLowerCase()==='final'?'最後一個打席':'上一個打席';
     return `<section class="gdx-last-play game-detail-enhanced-marker" data-gdx="last-play"><div class="gdx-last-play-head"><strong>${title}</strong><span>${inning?`${inning}局${half}`:''}</span></div><div class="gdx-last-play-main"><strong>${esc(play.batter||play.hitter||'—')}</strong><span>${esc(window.ballScopeCpblStrikeoutLabel?.(play,detail?.league||latestDetail?.league||window.__latestHomeGameDetail?.league||'')||play.result||play.raw||'—')}</span></div><div class="gdx-last-play-meta">${meta.map(esc).join('<i>｜</i>')}</div></section>`;
