@@ -172,6 +172,25 @@
     return {first:before.first||after.first,second:before.second||after.second,third:before.third||after.third};
   }
 
+  // During an inning change the last completed PA may still belong to the
+  // previous half. Its third out must never override a newer live current row.
+  function cpblNewHalfCurrent(detail,last){
+    if(String(detail?.league||'').toUpperCase()!=='CPBL'
+       ||!['live','suspended'].includes(String(detail?.status||'').toLowerCase())
+       ||!last||playMatchesCurrentHalf(detail,last))return null;
+    const current=detail?.current||{};
+    const outs=Number(current.outs);
+    if(!Number.isInteger(outs)||outs<0||outs>2)return null;
+    if(current.baseState===undefined&&current.bases===undefined)return null;
+    const state=normalizeBaseState(current.baseState??current.bases);
+    const names=current.runners||{};
+    return {state:[state.first,state.second,state.third],names:{
+      first:state.first?compactName(names.first||''):'',
+      second:state.second?compactName(names.second||''):'',
+      third:state.third?compactName(names.third||''):''
+    }};
+  }
+
   function currentBaseState(detail) {
     const plays = Array.isArray(detail?.plays) ? detail.plays : [];
     const last = plays[plays.length - 1];
@@ -182,6 +201,8 @@
     const extraPending=cpblExtraInningPendingState(detail);
     if(extraPending) return [false,true,false];
 
+    const newHalfCurrent=cpblNewHalfCurrent(detail,last);
+    if(newHalfCurrent)return newHalfCurrent.state;
     if (inferredOutsAfterPlay(last,detail) >= 3) return [false,false,false];
     if (league === 'CPBL' && last && !playMatchesCurrentHalf(detail,last)) return [false,false,false];
     const cpblAdvance=cpblPendingRunnerAdvance(detail,last);
@@ -1116,6 +1137,8 @@
       };
     }
 
+    const newHalfCurrent=cpblNewHalfCurrent(detail,last);
+    if(newHalfCurrent)return cpblResolveRunnerSubstitutions(detail,newHalfCurrent.names);
     if (inferredOutsAfterPlay(last,detail) >= 3) {
       return {first:'',second:'',third:''};
     }
