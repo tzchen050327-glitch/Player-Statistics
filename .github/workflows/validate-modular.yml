@@ -99,12 +99,12 @@ jobs:
           const inferStart=source.indexOf('  function inferredOutsAfterPlay(play, detail) {');
           const inferEnd=source.indexOf('  function playMatchesCurrentHalf(detail,play) {', inferStart);
           assert.ok(inferStart!==-1 && inferEnd>inferStart, 'context-aware outs function exists');
-          const infer=vm.runInNewContext(source.slice(inferStart,inferEnd)+'\\n'+'inferredOutsAfterPlay', {
+          const infer=vm.runInNewContext(source.slice(inferStart,inferEnd)+';inferredOutsAfterPlay', {
             parseOutNumber:value=>/^[0-3]$/.test(String(value??''))?Number(value):null
           });
-          const fly={outs:'2',result:'中飛',description:'打者中外野飛球接殺，2人出局。'};
-          assert.equal(infer(fly,{league:'CPBL',kindCode:'E'}),2,'postseason fly at 2 outs is 2');
-          assert.equal(infer({...fly,outs:'3'},{league:'CPBL',kindCode:'E'}),3,'postseason third out');
+          const flyAfter={outs:'2',result:'中飛',description:'打者中外野飛球接殺，2人出局。'};
+          assert.equal(infer(flyAfter,{league:'CPBL',kindCode:'E'}),2,'postseason flyAfter at 2 outs is 2');
+          assert.equal(infer({...flyAfter,outs:'3'},{league:'CPBL',kindCode:'E'}),3,'postseason third out');
           assert.equal(infer({outs:'1',result:'雙殺',description:'3人出局。'},{league:'CPBL',kindCode:'C'}),1,'postseason source outs authoritative');
           assert.equal(infer({outs:'2',result:'中飛',description:''},{league:'CPBL',kindCode:'A'}),3,'regular-season pre-PA outs unchanged');
           assert.equal(infer({outs:'1',result:'中飛',description:''},{league:'NPB'}),2,'NPB legacy inferred outs unchanged');
