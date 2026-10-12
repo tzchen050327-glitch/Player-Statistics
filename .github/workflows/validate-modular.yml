@@ -112,6 +112,40 @@ jobs:
           assert.equal(infer({outs:'1',result:'雙殺',description:'3人出局。'},{league:'CPBL',kindCode:'C'}),1,'postseason source outs authoritative');
           assert.equal(infer({outs:'2',result:'中飛',description:''},{league:'CPBL',kindCode:'A'}),3,'regular-season pre-PA outs unchanged');
           assert.equal(infer({outs:'1',result:'中飛',description:''},{league:'NPB'}),2,'NPB legacy inferred outs unchanged');
+          // A completed PA in the previous half must not clear the CURRENT
+          // half's official runner snapshot (8-bottom, 2 outs).
+          const currentStart=source.indexOf('  function cpblNewHalfCurrent(detail,last){');
+          const currentEnd=source.indexOf('  function currentBaseState(detail) {',currentStart);
+          assert.ok(currentStart!==-1&&currentEnd>currentStart,'new-half snapshot guard');
+          const newHalf=vm.runInNewContext(source.slice(currentStart,currentEnd)+';cpblNewHalfCurrent',{
+            normalizeBaseState,
+            compactName:value=>String(value||'').trim(),
+            playMatchesCurrentHalf:context.playMatchesCurrentHalf
+          });
+          const current8={league:'CPBL',status:'live',game:{inningLabel:'8局下'},
+            current:{outs:2,baseState:[true,false,true],runners:{first:'宋晟睿',second:'',third:'王威晨'}}};
+          const oldHalf={inning:8,half:'top',outs:'3',result:'中飛'};
+          const snap=newHalf(current8,oldHalf);
+          assert.deepEqual(Array.from(snap.state),[true,false,true],'8-bottom base occupancy survives stale 8-top third out');
+          assert.equal(snap.names.first,'宋晟睿');
+          assert.equal(snap.names.third,'王威晨');
+          assert.equal(newHalf(current8,{...oldHalf,half:'bottom'}),null,'same-half finished PA stays authoritative');
+          assert.equal(newHalf({...current8,league:'NPB'},oldHalf),null,'NPB logic unaffected');
+          // Requests begun before a Realtime update must not roll back it.
+          const homeSource=fs.readFileSync('js/11-home-game-detail.js','utf8');
+          const guardStart=homeSource.indexOf('    function homeCpblLiveProgress(detail) {');
+          const guardEnd=homeSource.indexOf('    function homeGameDetailBudget() {',guardStart);
+          assert.ok(guardStart!==-1&&guardEnd>guardStart,'in-flight CPBL progress guard exists');
+          const liveGuard=vm.runInNewContext(homeSource.slice(guardStart,guardEnd)+';homeKeepNewerCpblLive');
+          const mk=(inning,count,revision)=>({league:'CPBL',status:'live',kindCode:'E',
+            game:{id:'4',kindCode:'E',inningLabel:inning},
+            plays:Array.from({length:count},(_,i)=>({inning:i>=68?8:7,half:i>=68?'bottom':'top'})),
+            _cpblPublishedRevision:revision});
+          const newest=mk('8局下',73,142);
+          assert.equal(liveGuard(mk('8局下',70,140),newest),newest,'do not replace 73 PAs with 70 PAs');
+          assert.equal(liveGuard(mk('8局上',73,140),newest),newest,'do not roll back inning');
+          assert.equal(liveGuard(mk('8局下',73,141),newest),newest,'do not roll back same-count revision');
+          assert.notEqual(liveGuard(mk('8局下',74,143),newest),newest,'allow newer PA');
           console.log('CPBL base preservation regression tests passed');
           """
           subprocess.run(['node','-e',script],check=True)
