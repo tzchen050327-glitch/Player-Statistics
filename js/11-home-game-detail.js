@@ -2087,7 +2087,11 @@
       const board = game?.scoreboard && typeof game.scoreboard === 'object' ? game.scoreboard : {};
       const inningNumbers = Array.isArray(board.innings)
         ? board.innings.map(v => Number(v)).filter(n => Number.isInteger(n) && n > 0 && n <= 30) : [];
-      const maximum = Math.max(9, ...inningNumbers);
+      // KBO official tables may always include empty 10-12 columns. Hide unplayed
+      // trailing innings, but preserve actual extra innings and the unplayed home ninth.
+      const playedInnings = inningNumbers.filter((n,i) =>
+        typeof board.away?.[i] === 'number' || typeof board.home?.[i] === 'number');
+      const maximum = Math.max(9, ...playedInnings);
       const innings = Array.from({ length:Math.min(30, maximum) }, (_, i) => i + 1);
       const away = new Map(inningNumbers.map((n,i) => [n, board.away?.[i]]));
       const home = new Map(inningNumbers.map((n,i) => [n, board.home?.[i]]));
