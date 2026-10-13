@@ -2096,9 +2096,18 @@
       const awayName = teamLabel(game?.away || '客隊');
       const homeName = teamLabel(game?.home || '主隊');
       const rows = [
-        { name:awayName, score:game?.awayScore, values:away },
-        { name:homeName, score:game?.homeScore, values:home }
+        { name:awayName, score:game?.awayScore, totals:board.awayTotals || {}, values:away, isHome:false },
+        { name:homeName, score:game?.homeScore, totals:board.homeTotals || {}, values:home, isHome:true }
       ];
+      const scoreCell = (row, inning) => {
+        const value = row.values.get(inning);
+        if (value !== null && value !== undefined && value !== '') return homeSimpleInningValue(value);
+        // When the home side leads after the visiting ninth, the bottom ninth is not played.
+        if (status === 'final' && row.isHome && hasBoard && inning === maximum && inning >= 9
+            && away.has(inning) && Number.isFinite(Number(away.get(inning)))
+            && Number(game?.homeScore) > Number(game?.awayScore)) return 'X';
+        return '—';
+      };
       const stamp = game?.sharedFetchedAt ? Date.parse(String(game.sharedFetchedAt)) : 0;
       const updated = Number.isFinite(stamp) && stamp > 0 ? homeMatchCenterDisplayTime(stamp) : '';
       const statusLabel = status === 'final' ? '比賽結束'
@@ -2130,13 +2139,17 @@
               <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center;white-space:nowrap">
                 <thead><tr><th scope="col" style="position:sticky;left:0;background:var(--panel);padding:11px 9px;z-index:1;text-align:left;min-width:95px">球隊</th>
                 ${innings.map(n => `<th scope="col" style="min-width:30px;padding:10px 6px">${n}</th>`).join('')}
-                <th scope="col" style="padding:10px 9px;font-weight:900">R</th></tr></thead>
+                <th scope="col" style="padding:10px 7px;font-weight:900">R</th>
+                <th scope="col" style="padding:10px 7px;font-weight:900">H</th>
+                <th scope="col" style="padding:10px 7px;font-weight:900">E</th></tr></thead>
                 <tbody>${rows.map(row => `<tr><th scope="row" style="position:sticky;left:0;background:var(--panel);padding:12px 9px;text-align:left;z-index:1">${row.name}</th>
-                  ${innings.map(n => `<td style="padding:12px 6px;border-top:1px solid var(--line)">${hasBoard ? homeSimpleInningValue(row.values.get(n)) : '—'}</td>`).join('')}
-                  <td style="padding:12px 9px;font-weight:900;border-top:1px solid var(--line)">${homeDailyGameScore(row.score)}</td></tr>`).join('')}</tbody>
+                  ${innings.map(n => `<td style="padding:12px 6px;border-top:1px solid var(--line)">${scoreCell(row,n)}</td>`).join('')}
+                  <td style="padding:12px 7px;font-weight:900;border-top:1px solid var(--line)">${homeDailyGameScore(row.score ?? row.totals.R)}</td>
+                  <td style="padding:12px 7px;font-weight:900;border-top:1px solid var(--line)">${homeDailyGameScore(row.totals.H)}</td>
+                  <td style="padding:12px 7px;font-weight:900;border-top:1px solid var(--line)">${homeDailyGameScore(row.totals.E)}</td></tr>`).join('')}</tbody>
               </table>
             </div>
-            ${!hasBoard && ['live','final'].includes(status) ? '<div class="game-detail-empty">官方各局得分尚未提供，目前先顯示總比分。</div>' : ''}
+            ${!hasBoard && ['live','final'].includes(status) ? '<div class="game-detail-empty">舊賽事計分板資料正在補齊；有資料後將顯示完整各局比分、安打與失誤。</div>' : ''}
             ${error ? `<div class="game-detail-error">${escapeHtml(error)}</div>` : ''}
             <div style="margin-top:14px;text-align:center;font-size:12px;opacity:.7">本頁顯示最近一次共用快取狀態，並非逐球即時轉播。</div>
             <div style="margin-top:14px;text-align:center"><button id="homeSimpleGameRefresh" class="game-detail-back" type="button">重新讀取</button></div>
