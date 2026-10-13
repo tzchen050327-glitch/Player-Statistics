@@ -2071,7 +2071,7 @@
     function homeSimpleInningValue(value) {
       if (value === null || value === undefined || value === '') return '—';
       const raw = String(value).trim();
-      return /^\\d+$/.test(raw) ? raw : (/^[xX×-]$/.test(raw) ? raw : '—');
+      return /^\d+$/.test(raw) ? raw : (/^[xX×-]$/.test(raw) ? raw : '—');
     }
 
     function renderHomeSimpleGameDetail(game, { loading = false, error = '' } = {}) {
