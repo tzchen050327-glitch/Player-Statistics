@@ -6,7 +6,7 @@
     const HOME_UMPIRE_REPORT_API_URL = 'https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-umpire-report-sync';
 
     function homeGameDetailSupported(league) {
-      return league === 'CPBL' || league === 'NPB';
+      return ['CPBL','NPB','KBO','MLB'].includes(league);
     }
 
     function homeGameDetailKey(league, date, game = {}) {
@@ -2067,6 +2067,137 @@
     window.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
     window.visualViewport?.addEventListener('resize', syncHomePitcherSplitHeight, { passive:true });
 
+    // KBO / MLB use only the shared schedule snapshot. No per-viewer official lookups.
+    function homeSimpleInningValue(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      const raw = String(value).trim();
+      return /^\\d+$/.test(raw) ? raw : (/^[xX×-]$/.test(raw) ? raw : '—');
+    }
+
+    function renderHomeSimpleGameDetail(game, { loading = false, error = '' } = {}) {
+      const active = activeHomeGameDetail;
+      if (!active || !['KBO','MLB'].includes(active.league)) return;
+      const overlay = ensureHomeGameDetailOverlay();
+      const body = overlay.querySelector('#homeGameDetailBody');
+      if (!body) return;
+      overlay.classList.remove('game-detail-wide-mode');
+      const league = active.league;
+      const status = String(game?.status || 'scheduled').toLowerCase();
+      const live = status === 'live';
+      const board = game?.scoreboard && typeof game.scoreboard === 'object' ? game.scoreboard : {};
+      const inningNumbers = Array.isArray(board.innings)
+        ? board.innings.map(v => Number(v)).filter(n => Number.isInteger(n) && n > 0 && n <= 30) : [];
+      const maximum = Math.max(9, ...inningNumbers);
+      const innings = Array.from({ length:Math.min(30, maximum) }, (_, i) => i + 1);
+      const away = new Map(inningNumbers.map((n,i) => [n, board.away?.[i]]));
+      const home = new Map(inningNumbers.map((n,i) => [n, board.home?.[i]]));
+      const hasBoard = away.size > 0 || home.size > 0;
+      const teamLabel = name => escapeHtml(league === 'MLB' ? mlbTeamZh(String(name || '')) : String(name || ''));
+      const awayName = teamLabel(game?.away || '客隊');
+      const homeName = teamLabel(game?.home || '主隊');
+      const rows = [
+        { name:awayName, score:game?.awayScore, values:away },
+        { name:homeName, score:game?.homeScore, values:home }
+      ];
+      const stamp = game?.sharedFetchedAt ? Date.parse(String(game.sharedFetchedAt)) : 0;
+      const updated = Number.isFinite(stamp) && stamp > 0 ? homeMatchCenterDisplayTime(stamp) : '';
+      const statusLabel = status === 'final' ? '比賽結束'
+        : status === 'cancelled' ? '比賽取消'
+        : status === 'suspended' ? '比賽暫停'
+        : status === 'live' ? (String(game?.inningLabel || '').trim() || '比賽中')
+        : '尚未開賽';
+      const outs = Number(game?.outs);
+      const hasOuts = live && game?.outs !== null && game?.outs !== undefined && Number.isInteger(outs) && outs >= 0 && outs <= 2;
+      body.innerHTML = `
+        <header class="game-detail-sticky-head">
+          <button id="homeGameDetailBack" class="game-detail-back" type="button">← 返回首頁</button>
+          <div class="game-detail-head-copy"><strong>單場計分板</strong><span>${league === 'KBO' ? '韓國職棒' : '美國職棒'}｜${escapeHtml(String(active.date || ''))}${updated ? '｜資料更新 ' + escapeHtml(updated) : ''}</span></div>
+          ${live ? '<span class="game-detail-live-dot"><i></i>LIVE</span>' : ''}
+        </header>
+        <main class="game-detail-content" style="max-width:1000px;margin:0 auto;width:100%;box-sizing:border-box">
+          <section class="game-detail-score-card" style="padding:18px 14px">
+            <div class="game-detail-status" style="font-size:16px;font-weight:850">${escapeHtml(statusLabel)}${loading ? '｜讀取中…' : ''}</div>
+            <div class="game-detail-score-row">
+              <div><span>${awayName}</span><strong>${homeGameDetailScore(game?.awayScore)}</strong></div>
+              <b>－</b>
+              <div><span>${homeName}</span><strong>${homeGameDetailScore(game?.homeScore)}</strong></div>
+            </div>
+            ${live ? `<div style="text-align:center;margin-top:14px;font-size:16px;font-weight:800">出局數 O：${hasOuts ? outs : '—'}</div>` : ''}
+          </section>
+          <section class="game-detail-play-section" style="margin-top:12px">
+            <div class="game-detail-section-title"><strong>各局計分板</strong><span>每 2 分鐘更新</span></div>
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+              <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center;white-space:nowrap">
+                <thead><tr><th scope="col" style="position:sticky;left:0;background:var(--panel);padding:11px 9px;z-index:1;text-align:left;min-width:95px">球隊</th>
+                ${innings.map(n => `<th scope="col" style="min-width:30px;padding:10px 6px">${n}</th>`).join('')}
+                <th scope="col" style="padding:10px 9px;font-weight:900">R</th></tr></thead>
+                <tbody>${rows.map(row => `<tr><th scope="row" style="position:sticky;left:0;background:var(--panel);padding:12px 9px;text-align:left;z-index:1">${row.name}</th>
+                  ${innings.map(n => `<td style="padding:12px 6px;border-top:1px solid var(--line)">${hasBoard ? homeSimpleInningValue(row.values.get(n)) : '—'}</td>`).join('')}
+                  <td style="padding:12px 9px;font-weight:900;border-top:1px solid var(--line)">${homeGameDetailScore(row.score)}</td></tr>`).join('')}</tbody>
+              </table>
+            </div>
+            ${!hasBoard && ['live','final'].includes(status) ? '<div class="game-detail-empty">官方各局得分尚未提供，目前先顯示總比分。</div>' : ''}
+            ${error ? `<div class="game-detail-error">${escapeHtml(error)}</div>` : ''}
+            <div style="margin-top:14px;text-align:center;font-size:12px;opacity:.7">本頁顯示最近一次共用快取狀態，並非逐球即時轉播。</div>
+            <div style="margin-top:14px;text-align:center"><button id="homeSimpleGameRefresh" class="game-detail-back" type="button">重新讀取</button></div>
+          </section>
+        </main>`;
+      overlay.classList.remove('hidden');
+      document.body.classList.add('home-game-detail-open');
+      body.querySelector('#homeGameDetailBack')?.addEventListener('click', closeHomeGameDetail);
+      body.querySelector('#homeSimpleGameRefresh')?.addEventListener('click', () => void refreshHomeSimpleGameDetail({ force:true }));
+    }
+
+    function scheduleHomeSimpleGameRefresh(game) {
+      stopHomeGameDetailRefresh();
+      const active = activeHomeGameDetail;
+      if (!active || document.visibilityState !== 'visible') return;
+      const status = String(game?.status || '').toLowerCase();
+      if (!['scheduled','live','suspended'].includes(status)) return;
+      if (String(active.date) !== String(homeDailyGamesLeagueToday(active.league))) return;
+      homeGameDetailRefreshTimer = setTimeout(() => {
+        homeGameDetailRefreshTimer = 0;
+        if (activeHomeGameDetail?.key === active.key && document.visibilityState === 'visible') {
+          void refreshHomeSimpleGameDetail();
+        }
+      }, 120000);
+    }
+
+    async function refreshHomeSimpleGameDetail({ force = false } = {}) {
+      const active = activeHomeGameDetail;
+      if (!active || !['KBO','MLB'].includes(active.league) || active.loading) return;
+      active.loading = true;
+      renderHomeSimpleGameDetail(active.game, { loading:true });
+      try {
+        // loadHomeDailyGames shares the same in-memory and server-side schedule cache
+        // as homepage cards. It never calls per-game play-by-play/detail endpoints.
+        const games = await loadHomeDailyGames(active.league, active.date, { force });
+        if (!activeHomeGameDetail || activeHomeGameDetail.key !== active.key) return;
+        const match = Array.isArray(games) ? (
+          games.find(item => active.game?.id && String(item?.id || '') === String(active.game.id))
+          || games.find(item => String(item?.away || '') === String(active.game?.away || '') && String(item?.home || '') === String(active.game?.home || ''))
+        ) : null;
+        if (match) active.game = { ...active.game, ...match };
+        const cached = homeDailyGamesCache.get(`${active.league}|${active.date}`);
+        const error = String(cached?.error || (!match && !Array.isArray(games) ? '資料更新中，暫時保留上一筆比分。' : ''));
+        renderHomeSimpleGameDetail(active.game, { error });
+      } catch (e) {
+        if (activeHomeGameDetail?.key !== active.key) return;
+        renderHomeSimpleGameDetail(active.game, { error:e?.message || '暫時無法更新計分板。' });
+      } finally {
+        active.loading = false;
+        if (activeHomeGameDetail?.key === active.key) scheduleHomeSimpleGameRefresh(active.game);
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (['KBO','MLB'].includes(activeHomeGameDetail?.league)) {
+        stopHomeGameDetailRefresh();
+        void refreshHomeSimpleGameDetail();
+      }
+    });
+
     function renderHomeGameDetail(detail, game, { loading = false, error = '' } = {}) {
       // Async responses can arrive after the user has closed the overlay.
       // Rendering must never reopen a closed matchup center.
@@ -2522,6 +2653,14 @@
     function openHomeGameDetail(game, league, date, options = {}) {
       if (!homeGameDetailSupported(league)) return;
       stopHomeDailyGamesAutoRefresh();
+      if (league === 'KBO' || league === 'MLB') {
+        stopHomeGameDetailRefresh();
+        const key = homeGameDetailKey(league, date, game);
+        activeHomeGameDetail = { league, date, game:{ ...game }, key, loading:false };
+        renderHomeSimpleGameDetail(activeHomeGameDetail.game);
+        void refreshHomeSimpleGameDetail();
+        return;
+      }
       const key = homeGameDetailKey(league, date, game);
       const rawRequestedTab = String(options?.tab || '');
       const openAllowedTabs = league === 'CPBL'
