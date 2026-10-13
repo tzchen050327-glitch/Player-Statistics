@@ -390,9 +390,8 @@
     }
 
     async function leagueDailyGamesRequest(league, date, force = false) {
-      const requestUrl = league === 'KBO'
-        ? KBO_GAMES_API_URL
-        : LEAGUE_GAMES_A_API_URL;
+      // KBO and MLB read the same published two-minute snapshot as the shared updater.
+      const requestUrl = LEAGUE_GAMES_A_API_URL;
       const response = await fetch(requestUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
@@ -412,6 +411,7 @@
         throw new Error(data?.error || `當日賽事讀取失敗（${response.status}）`);
       }
       let games = Array.isArray(data.games) ? data.games : [];
+      if (league === 'KBO' || league === 'MLB') games = games.map(game => ({ ...game, sharedFetchedAt:data?.cache?.fetchedAt || null }));
       if (league === 'NPB') {
         games = games.map(game => {
           const status = String(game?.status || '').toLowerCase();
