@@ -2118,9 +2118,9 @@
           <section class="game-detail-score-card" style="padding:18px 14px">
             <div class="game-detail-status" style="font-size:16px;font-weight:850">${escapeHtml(statusLabel)}${loading ? '｜讀取中…' : ''}</div>
             <div class="game-detail-score-row">
-              <div><span>${awayName}</span><strong>${homeGameDetailScore(game?.awayScore)}</strong></div>
+              <div><span>${awayName}</span><strong>${homeDailyGameScore(game?.awayScore)}</strong></div>
               <b>－</b>
-              <div><span>${homeName}</span><strong>${homeGameDetailScore(game?.homeScore)}</strong></div>
+              <div><span>${homeName}</span><strong>${homeDailyGameScore(game?.homeScore)}</strong></div>
             </div>
             ${live ? `<div style="text-align:center;margin-top:14px;font-size:16px;font-weight:800">出局數 O：${hasOuts ? outs : '—'}</div>` : ''}
           </section>
@@ -2133,7 +2133,7 @@
                 <th scope="col" style="padding:10px 9px;font-weight:900">R</th></tr></thead>
                 <tbody>${rows.map(row => `<tr><th scope="row" style="position:sticky;left:0;background:var(--panel);padding:12px 9px;text-align:left;z-index:1">${row.name}</th>
                   ${innings.map(n => `<td style="padding:12px 6px;border-top:1px solid var(--line)">${hasBoard ? homeSimpleInningValue(row.values.get(n)) : '—'}</td>`).join('')}
-                  <td style="padding:12px 9px;font-weight:900;border-top:1px solid var(--line)">${homeGameDetailScore(row.score)}</td></tr>`).join('')}</tbody>
+                  <td style="padding:12px 9px;font-weight:900;border-top:1px solid var(--line)">${homeDailyGameScore(row.score)}</td></tr>`).join('')}</tbody>
               </table>
             </div>
             ${!hasBoard && ['live','final'].includes(status) ? '<div class="game-detail-empty">官方各局得分尚未提供，目前先顯示總比分。</div>' : ''}
