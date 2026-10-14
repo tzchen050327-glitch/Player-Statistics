@@ -40,7 +40,41 @@ function nextDue(statuses:any[],starts:number[],now=Date.now()){
 }
 async function state(league:string){return (await rows(`league_fixed_refresh_state?league=eq.${league}&select=*`))[0]||null}
 async function saveState(league:string,date:string,next:number,lastError:string|null=null){const r=await rest('league_fixed_refresh_state?on_conflict=league',{method:'POST',headers:{prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({league,game_date:date,next_refresh_at:new Date(next).toISOString(),last_refresh_at:lastError?undefined:new Date().toISOString(),last_error:lastError,updated_at:new Date().toISOString()})});if(!r.ok)throw new Error(`state ${r.status}: ${await r.text()}`)}
-async function fetchKbo(date:string){const r=await fetch(KBO_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'daily-games',league:'KBO',date})});const j=await r.json().catch(()=>({}));if(!r.ok||!j?.ok)throw new Error(j?.error||`KBO ${r.status}`);const games=Array.isArray(j.games)?j.games:[];return{games,starts:games.map((g:any)=>kboStart(date,g?.time)),statuses:games.map((g:any)=>g?.status)}}
+async function fetchKbo(date:string){
+  const r=await fetch(KBO_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'daily-games',league:'KBO',date})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j?.ok)throw new Error(j?.error||`KBO ${r.status}`);
+  let games:any[]=Array.isArray(j.games)?j.games:[];
+  // KBO occasionally reports a 0:0 FINAL placeholder while the official scorer is still settling.
+  // Only read an extra database row on this anomalous transition; never roll back confirmed scores.
+  const suspect=(g:any)=>String(g?.status||'').toLowerCase()==='final'&&score(g?.awayScore)===0&&score(g?.homeScore)===0;
+  if(games.some(suspect)){
+    let prior:any[]=[];
+    try{
+      const key='KBO|SCHEDULE|'+date+'|ALL';
+      const previous=await rows('league_schedule_cache?cache_key=eq.'+encodeURIComponent(key)+'&select=payload&limit=1');
+      prior=Array.isArray(previous[0]?.payload?.games)?previous[0].payload.games:[];
+    }catch(e){console.warn('KBO zero-score guard cache unavailable',e)}
+    games=games.map(g=>{
+      if(!suspect(g))return g;
+      const previous=prior.find((p:any)=>String(p?.id||'')&&String(p?.id||'')===String(g?.id||''));
+      const previousAway=score(previous?.awayScore),previousHome=score(previous?.homeScore);
+      if(previousAway!==null&&previousHome!==null&&(previousAway>0||previousHome>0)){
+        const wasFinal=String(previous?.status||'').toLowerCase()==='final';
+        return{...g,awayScore:previousAway,homeScore:previousHome,
+          status:wasFinal?'final':'live',inningLabel:wasFinal?'':'比分確認中',
+          scoreGuard:'preserve-confirmed-score'};
+      }
+      // A provisional zero FINAL must not stop the two-minute updater during the game window.
+      const start=kboStart(date,g?.time),elapsed=Date.now()-start;
+      if(Number.isFinite(start)&&elapsed>=0&&elapsed<5*60*60_000){
+        return{...g,status:'live',inningLabel:'比分確認中',scoreGuard:'verify-zero-final'};
+      }
+      return g;
+    });
+  }
+  return{games,starts:games.map((g:any)=>kboStart(date,g?.time)),statuses:games.map((g:any)=>g?.status)};
+}
 function mlbCompetitionLabel(r:any){const desc=clean(r?.seriesDescription||r?.seriesStatus?.shortDescription||'');const type=String(r?.gameType||'').toUpperCase();const hay=desc.toLowerCase();if(/wild card/.test(hay)||type==='F')return'外卡';if(/division series/.test(hay)||type==='D')return'分區系列賽';if(/league championship/.test(hay)||type==='L')return'聯盟冠軍賽';if(/world series/.test(hay)||type==='W')return'世界大賽';if(/regular season/.test(hay)||type==='R')return'例行賽';if(/spring training/.test(hay)||type==='S')return'春訓';if(/all-star/.test(hay)||type==='A')return'明星賽';return desc||'';}
 function mlbLabel(g:any,status:string){if(status!=='live')return'';const l=g?.linescore||{};const inn=Number(l?.currentInning);if(!inn)return'';const st=String(l?.inningState||l?.inningHalf||'').toLowerCase();if(st.includes('top'))return`${inn}局上`;if(st.includes('bottom'))return`${inn}局下`;if(st.includes('middle'))return`${inn}局中`;if(st.includes('end'))return`${inn}局結束`;return`${inn}局`}
 async function fetchMlb(date:string){const r=await fetch(`${MLB}/schedule?sportId=1&date=${encodeURIComponent(date)}&hydrate=linescore,team,venue`,{headers:{accept:'application/json'}});if(!r.ok)throw new Error(`MLB ${r.status}`);const j=await r.json();const raw=(j?.dates||[]).flatMap((d:any)=>d?.games||[]);const games:any[]=[],starts:number[]=[],statuses:string[]=[];for(const g of raw){const x=String(g?.status?.abstractGameState||g?.status?.detailedState||'');let status=/Final|Completed/i.test(x)?'final':/Live|In Progress|Warmup/i.test(x)?'live':'scheduled';if(/Postponed|Cancelled/i.test(x))status='cancelled';if(/Suspended/i.test(x))status='suspended';const start=Date.parse(String(g?.gameDate||''));starts.push(start);statuses.push(status);let time='';try{if(g?.gameDate)time=new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(g.gameDate));}catch{}const competitionLabel=mlbCompetitionLabel(g);games.push({away:g?.teams?.away?.team?.name||'',home:g?.teams?.home?.team?.name||'',awayScore:score(g?.teams?.away?.score),homeScore:score(g?.teams?.home?.score),status,time,venue:g?.venue?.name||'',id:String(g?.gamePk||''),inningLabel:mlbLabel(g,status),gameType:String(g?.gameType||''),seriesDescription:clean(g?.seriesDescription||''),competition:competitionLabel==='例行賽'?'regular':'postseason',competitionLabel,seriesGameNumber:Number(g?.seriesGameNumber)||null})}return{games,starts,statuses}}
@@ -51,4 +85,4 @@ async function tickLeague(league:'KBO'|'MLB',zone:string){const z=zoneNow(zone),
   const stateDate=String(st?.game_date||'');const dueAt=Date.parse(String(st?.next_refresh_at||''));if(stateDate===date&&Number.isFinite(dueAt)&&dueAt>now)return{league,date,sleeping:true,nextRefreshAt:new Date(dueAt).toISOString()};
   try{const src=league==='KBO'?await fetchKbo(date):await fetchMlb(date);const next=nextDue(src.statuses,src.starts,Date.now());const pub=await publish(league,date,src.games,next);await saveState(league,date,next,null);return{league,date,refreshed:true,changed:Boolean(pub?.changed),revision:Number(pub?.revision||0),games:src.games.length,nextRefreshAt:new Date(next).toISOString()}}catch(e){const msg=e instanceof Error?e.message:String(e),next=Date.now()+2*60_000;await saveState(league,date,next,msg).catch(()=>{});return{league,date,refreshed:false,error:msg,nextRefreshAt:new Date(next).toISOString()}}
 }
-Deno.serve(async(req:Request)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});if(req.method!=='POST')return reply({ok:false,error:'POST only'},405);try{const body=await req.json().catch(()=>({}));if(body?.appKey!==APP_KEY)return reply({ok:false,error:'Forbidden'},403);const requested=String(body?.league||'').toUpperCase();let results:any[]=[];if(requested==='KBO')results=[await tickLeague('KBO','Asia/Seoul')];else if(requested==='MLB')results=[await tickLeague('MLB','America/New_York')];else results=await Promise.all([tickLeague('KBO','Asia/Seoul'),tickLeague('MLB','America/New_York')]);return reply({ok:true,mode:'scheduled-due-only',rules:{live:{KBO:120,MLB:120},pregame30:'T-30 one verification check',pregame2:'T-2 begins 120-second cadence',start:'120-second cadence while live/suspended',dailyDiscovery:'one fetch after league-local date rollover',idle:'database cron does not call this function until due'},results})}catch(e){return reply({ok:false,error:e instanceof Error?e.message:String(e)},500)}});
+Deno.serve(async(req:Request)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});if(req.method!=='POST')return reply({ok:false,error:'POST only'},405);try{const body=await req.json().catch(()=>({}));if(body?.appKey!==APP_KEY)return reply({ok:false,error:'Forbidden'},403);const results=await Promise.all([tickLeague('KBO','Asia/Seoul'),tickLeague('MLB','America/New_York')]);return reply({ok:true,mode:'fixed-no-heartbeat',rules:{live:{KBO:120,MLB:120},pregame30:'T-30 one verification check',pregame2:'T-2 begins 120-second cadence',start:'120-second cadence while live/suspended',dailyDiscovery:'one fetch after league-local date rollover'},results})}catch(e){return reply({ok:false,error:e instanceof Error?e.message:String(e)},500)}});
