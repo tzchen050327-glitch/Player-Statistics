@@ -6,7 +6,9 @@
   const teams = PITCHER_BATTER_TEAMS;
   const url = SUPABASE_A_FUNCTIONS_BASE + '/cpbl-team-pitching-matchup';
   let mode = 'teams', teamA = 'AAA', teamB = 'ACN', year = CURRENT_YEAR;
-  let role = 'all', sort = 'era', data = null, error = '', loading = false, queried = false, sequence = 0;
+  let category='pitching', role='all', sort='era', data=null, error='', loading=false, queried=false, sequence=0;
+  const cachedResults=new Map();
+  const resultKey=()=>[teamA,teamB,year,category].join('|');
 
   const safe = v => escapeHtml(String(v ?? ''));
   const teamName = code => teams.find(x => x.code === code)?.name || code;
@@ -18,40 +20,48 @@
   const ui = () => {
     const el = document.getElementById('pitcherBatterPageContent');
     if (!el) return;
-    const years = Array.from({ length:CURRENT_YEAR - 1990 + 1 },(_,i)=>CURRENT_YEAR-i);
-    const ready = data?.ok && data?.byRole && !error;
+    const years = Array.from({length:CURRENT_YEAR-1990+1},(_,i)=>CURRENT_YEAR-i);
+    const ready = data?.ok && data?.role===category && (category==='batting'?data?.byTeam:data?.byRole) && !error;
+    const sorts = category==='batting'
+      ? [['avg','打擊率 AVG'],['ops','攻擊指數 OPS'],['obp','上壘率 OBP'],['slg','長打率 SLG'],['h','安打 H'],['hr','全壘打 HR'],['rbi','打點 RBI'],['pa','打席 PA']]
+      : [['era','防禦率 ERA'],['whip','每局上壘 WHIP'],['outs','投球局數 IP'],['so','三振 SO']];
     el.innerHTML = '<div class="tpm-root">' + tabs() + `
-      <section class="tpm-panel" aria-label="球隊年度對戰投手排行">
-        <header class="tpm-head">
-          <strong>球隊對戰投手</strong>
-          <span>只統計所選年份兩隊之間的一軍例行賽，不含生涯累計。</span>
-        </header>
+      <section class="tpm-panel" aria-label="球隊年度對戰數據">
+        <header class="tpm-head"><strong>球隊對戰數據</strong><span>只統計所選年份兩隊之間的一軍例行賽，不含生涯累計。</span></header>
         <div class="tpm-matchup-row">
           <label class="tpm-team-select"><span>球隊 A</span><select id="tpmA" aria-label="第一支球隊">${teams.map(t=>opt(t.code,teamA,t.name)).join('')}</select></label>
           <strong class="tpm-versus" aria-hidden="true">VS</strong>
           <label class="tpm-team-select"><span>球隊 B</span><select id="tpmB" aria-label="第二支球隊">${teams.map(t=>opt(t.code,teamB,t.name)).join('')}</select></label>
         </div>
+        <div class="tpm-category" role="group" aria-label="球員分類">
+          ${[['pitching','投手'],['batting','打者']].map(([id,label])=>`<button type="button" data-tpm-category="${id}" class="${category===id?'active':''}" aria-pressed="${category===id}">${label}</button>`).join('')}
+        </div>
         <div class="tpm-controls">
           <label><span>年份</span><select id="tpmYear">${years.map(y=>opt(y,year,y+' 年')).join('')}</select></label>
-          <label><span>排序</span><select id="tpmSort">
-            ${[['era','防禦率 ERA'],['whip','每局上壘 WHIP'],['outs','投球局數 IP'],['so','三振 SO']].map(([id,title])=>opt(id,sort,title)).join('')}
-          </select></label>
+          <label><span>排序</span><select id="tpmSort">${sorts.map(([id,title])=>opt(id,sort,title)).join('')}</select></label>
         </div>
-        <div class="tpm-filter" role="group" aria-label="投手角色">
+        <div class="tpm-filter" role="group" aria-label="投手角色" ${category==='batting'?'hidden':''}>
           ${[['all','全部投手'],['starter','先發'],['reliever','後援']].map(([id,title])=>`<button type="button" data-tpm-role="${id}" class="${role===id?'active':''}" aria-pressed="${role===id}">${title}</button>`).join('')}
         </div>
         <div class="tpm-livebar">
-          <span>${year} 年 · 例行賽</span>
+          <span>${year} 年 · ${category==='batting'?'打者':'投手'} · 例行賽</span>
           <button type="button" id="tpmReload" ${loading?'disabled':''} aria-label="重新取得兩隊對戰數據">↻ 重新整理</button>
         </div>
         <div id="tpmResult" aria-live="polite">
           ${loading?'<div class="tpm-message">正在整理兩隊交手紀錄…</div>':
             error?`<div class="tpm-error" role="alert">${safe(error)}</div>`:
             ready?renderResult(data):
-            '<div class="tpm-message">選擇球隊及年份後顯示年度對戰投手數據。</div>'}
+            '<div class="tpm-message">選擇球隊、年份與球員類別，即可查看對戰成績。</div>'}
         </div>
       </section></div>`;
     el.querySelectorAll('[data-tpm-mode]').forEach(btn=>btn.addEventListener('click',()=>setMode(btn.dataset.tpmMode)));
+    el.querySelectorAll('[data-tpm-category]').forEach(btn=>btn.addEventListener('click',()=>{
+      const next=btn.dataset.tpmCategory;
+      if(next===category)return;
+      category=next;
+      sort=category==='batting'?'avg':'era';
+      reset();
+    }));
     el.querySelector('#tpmA')?.addEventListener('change',e=>{
       const next=e.target.value,old=teamA;
       teamA=next;if(teamA===teamB)teamB=old;reset();
@@ -64,7 +74,7 @@
     el.querySelector('#tpmSort')?.addEventListener('change',e=>{sort=e.target.value;ui()});
     el.querySelectorAll('[data-tpm-role]').forEach(btn=>btn.addEventListener('click',()=>{role=btn.dataset.tpmRole;ui()}));
     el.querySelector('#tpmReload')?.addEventListener('click',()=>{void query()});
-    if(!queried && !loading)queueMicrotask(()=>{if(mode==='teams'&&!queried)void query()});
+    if(!queried&&!loading)queueMicrotask(()=>{if(mode==='teams'&&!queried)void query()});
   };
   function sortedRows(rows) {
     const result=[...rows],small=p=>Number(p.outs||0)<9;
@@ -131,15 +141,17 @@
     ${parts.map(section).join('')}
     <p class="tpm-footnote">按投手卡片可展開完整數據。IP 以出局數累計；ERA 與 WHIP 依總局數重新計算。依 ERA／WHIP 排序時，未滿 3 局的投手排列在後，不會隱藏。</p>`;
   }
-  function reset(){++sequence;loading=false;queried=false;data=null;error='';ui()}
+  function reset(){++sequence;loading=false;data=cachedResults.get(resultKey())||null;queried=Boolean(data);error='';ui()}
   async function query(){
     const seq=++sequence;loading=true;queried=true;data=null;error='';ui();
     try{
-      const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({appKey:CPBL_APP_KEY,teamA,teamB,year})});
+      const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({appKey:CPBL_APP_KEY,teamA,teamB,year,role:category})});
       const payload=await response.json().catch(()=>({}));
       if(!response.ok||payload?.ok!==true)throw new Error(payload?.error||'CPBL 對戰資料暫時無法取得（'+response.status+'）');
       if(seq!==sequence)return;
       data=payload;
+      cachedResults.set(resultKey(),payload);
+      if(cachedResults.size>30)cachedResults.delete(cachedResults.keys().next().value);
     }catch(e){if(seq!==sequence)return;error=String(e?.message||'對戰資料查詢失敗')}
     finally{if(seq===sequence){loading=false;ui()}}
   }
