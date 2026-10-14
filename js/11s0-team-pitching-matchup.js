@@ -112,6 +112,7 @@
     renderPitcherBatterPage();
   }
   renderPitcherBatterPage=function(){
+    document.body?.classList.toggle('tpm-team-mode',mode==='teams');
     if(mode==='teams'){ui();return}
     originalRender();
     const el=document.getElementById('pitcherBatterPageContent');
@@ -122,6 +123,7 @@
   if(!document.getElementById('tpmStyles')){
     const style=document.createElement('style');style.id='tpmStyles';
     style.textContent=`
+    body.tpm-team-mode #pitcherBatterPage .data-center-search,body.tpm-team-mode #pitcherBatterPage .data-center-search-note{display:none!important}
     .tpm-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-radius:13px;padding:5px;background:var(--panel-muted,rgba(120,135,155,.12));margin-bottom:16px}
     .tpm-tabs button{border:0;border-radius:9px;padding:13px 7px;background:transparent;color:var(--text,inherit);font:inherit;font-size:clamp(12px,3vw,15px);font-weight:750;cursor:pointer}
     .tpm-tabs button.active{background:var(--panel,#fff);box-shadow:0 2px 8px rgba(0,0,0,.14);color:var(--text,inherit)}
