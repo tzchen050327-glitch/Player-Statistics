@@ -369,25 +369,120 @@
         '</div>';
     }
 
+
+    // KBO postseason: read aggregated final games from the same cache as homepage.
+    // Only one low-cost backend read per 120 seconds while this panel is visible.
+    let postseasonKboGames = [];
+    let postseasonKboResultsAt = 0;
+    let postseasonKboResultsPromise = null;
+    let postseasonKboResultsError = '';
+    let postseasonKboRefreshTimer = null;
+    const POSTSEASON_KBO_RESULT_TTL = 120 * 1000;
+
+    function postseasonKboTeamKey(value) {
+      return String(value || '').normalize('NFKC').replace(/[\s・·]/g,'').toLowerCase();
+    }
+    function postseasonKboStage(game) {
+      const direct = String(game?.competition || '');
+      if (['wild_card','semi_playoff','playoff','korean_series'].includes(direct)) return direct;
+      return ({ '4':'wild_card','3':'semi_playoff','5':'playoff','7':'korean_series' })[String(game?.seriesId || '')] || '';
+    }
+    function postseasonKboSeries(stage, a, b, advantage = 0) {
+      const result = { scores:[a && b ? advantage : 0,0], ties:0, games:0 };
+      if (!a || !b) return result;
+      const ak = postseasonKboTeamKey(a), bk = postseasonKboTeamKey(b);
+      for (const g of postseasonKboGames) {
+        if (postseasonKboStage(g) !== stage || String(g?.status || '').toLowerCase() !== 'final') continue;
+        const away = postseasonKboTeamKey(g.away), home = postseasonKboTeamKey(g.home);
+        if (!((away === ak && home === bk) || (away === bk && home === ak))) continue;
+        if (g?.awayScore === null || g?.homeScore === null || g?.awayScore === undefined || g?.homeScore === undefined) continue;
+        const as = Number(g.awayScore), hs = Number(g.homeScore);
+        if (!Number.isFinite(as) || !Number.isFinite(hs)) continue;
+        result.games++;
+        if (as === hs) { result.ties++; continue; }
+        const winningTeam = as > hs ? away : home;
+        result.scores[winningTeam === ak ? 0 : 1]++;
+      }
+      return result;
+    }
+    function postseasonKboWinner(a, b, result, target, wildCard = false) {
+      if (!a || !b || !result) return '';
+      if (wildCard && result.ties > 0) return a; // Fourth seed advances on a tie.
+      return result.scores[0] >= target ? a : result.scores[1] >= target ? b : '';
+    }
+    function postseasonKboStopRefreshTimer() {
+      if (postseasonKboRefreshTimer) clearTimeout(postseasonKboRefreshTimer);
+      postseasonKboRefreshTimer = null;
+    }
+    function postseasonKboEnsureRefreshTimer() {
+      if (postseasonKboRefreshTimer || currentPage !== 'postseason' || leagueHubLeague !== 'kbo' || document.hidden) return;
+      postseasonKboRefreshTimer = setTimeout(() => {
+        postseasonKboRefreshTimer = null;
+        if (currentPage !== 'postseason' || leagueHubLeague !== 'kbo' || document.hidden) return;
+        void refreshPostseasonKboResults(true).finally(postseasonKboEnsureRefreshTimer);
+      }, POSTSEASON_KBO_RESULT_TTL);
+    }
+    async function refreshPostseasonKboResults(force = false) {
+      if (postseasonKboResultsPromise) return postseasonKboResultsPromise;
+      if (!force && Date.now() - postseasonKboResultsAt < POSTSEASON_KBO_RESULT_TTL) return postseasonKboGames;
+      postseasonKboResultsPromise = (async () => {
+        const r = await fetch(LEAGUE_GAMES_A_API_URL, {
+          method:'POST',
+          headers:{ 'content-type':'application/json' },
+          body:JSON.stringify({appKey:CPBL_APP_KEY,action:'kbo-postseason-results',league:'KBO',year:String(CURRENT_YEAR)})
+        });
+        const d = await r.json().catch(()=>({}));
+        if (!r.ok || d?.ok !== true) throw new Error(d?.error || '韓職季後賽成績讀取失敗');
+        postseasonKboGames = Array.isArray(d.games) ? d.games : [];
+        postseasonKboResultsAt = Date.now();
+        postseasonKboResultsError = '';
+        if (currentPage === 'postseason' && leagueHubLeague === 'kbo') renderPostseasonPage();
+        return postseasonKboGames;
+      })().catch(e => {
+        postseasonKboResultsError = String(e?.message || e);
+        // Retry later, without requesting one separate official-game call per viewer.
+        postseasonKboResultsAt = Date.now();
+        console.warn('KBO postseason cache',e);
+        if (currentPage === 'postseason' && leagueHubLeague === 'kbo') renderPostseasonPage();
+        return postseasonKboGames;
+      }).finally(() => { postseasonKboResultsPromise = null; });
+      return postseasonKboResultsPromise;
+    }
+
     function postseasonKboBracketContent() {
       const rows = postseasonSectionRows(standingsOfficialCache?.kbo?.regular,5);
       const t = index => postseasonTeamName(rows[index]);
+      const wc = postseasonKboSeries('wild_card',t(3),t(4),1);
+      const wcWinner = postseasonKboWinner(t(3),t(4),wc,2,true);
+      const semi = wcWinner ? postseasonKboSeries('semi_playoff',t(2),wcWinner) : null;
+      const semiWinner = postseasonKboWinner(t(2),wcWinner,semi,3);
+      const po = semiWinner ? postseasonKboSeries('playoff',t(1),semiWinner) : null;
+      const poWinner = postseasonKboWinner(t(1),semiWinner,po,3);
+      const ks = poWinner ? postseasonKboSeries('korean_series',t(0),poWinner) : null;
+      const ksWinner = postseasonKboWinner(t(0),poWinner,ks,4);
+      const note = winner => winner ? winner+'晉級' : '';
+      const wcNote = wcWinner ? note(wcWinner) : '4 號種子帶 1 勝優勢';
       return '<div class="postseason-bracket-wrap">' +
         '<div class="postseason-league-bracket"><div class="postseason-bracket-league-label">KBO POSTSEASON</div>' +
         '<div class="postseason-bracket">' +
           '<section class="postseason-round"><div class="postseason-round-title">WILD CARD</div><div class="postseason-round-series">' +
-            postseasonMatchCard('外卡決定戰', t(3), t(4), '4 號種子帶 1 勝優勢', {seriesScore:[1,0],format:'最多2戰，4號種子1勝或1和即晉級'}) +
+            postseasonMatchCard('外卡決定戰', t(3), t(4), wcNote,
+              {seriesScore:wc.scores,format:'最多2戰｜4號種子1勝或1和晉級'}) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">SEMI-PLAYOFF</div><div class="postseason-round-series">' +
-            postseasonMatchCard('準季後賽', t(2), '外卡勝者', '', {format:'5戰3勝制'}) +
+            postseasonMatchCard('準季後賽', t(2), wcWinner||'外卡勝者', note(semiWinner),
+              { ...(semi ? {seriesScore:semi.scores} : {}), format:'5戰3勝制'}) +
           '</div></section>' +
           '<section class="postseason-round"><div class="postseason-round-title">PLAYOFF</div><div class="postseason-round-series">' +
-            postseasonMatchCard('季後賽', t(1), '準季後賽勝者', '', {format:'5戰3勝制'}) +
+            postseasonMatchCard('季後賽', t(1), semiWinner||'準季後賽勝者', note(poWinner),
+              { ...(po ? {seriesScore:po.scores} : {}), format:'5戰3勝制'}) +
           '</div></section>' +
         '</div></div>' +
         '<div class="postseason-world-series"><section class="postseason-round"><div class="postseason-round-title">KOREAN SERIES</div><div class="postseason-round-series">' +
-          postseasonMatchCard('韓國大賽', t(0), '季後賽勝者', '', {format:'7戰4勝制'}) +
+          postseasonMatchCard('韓國大賽', t(0), poWinner||'季後賽勝者', ksWinner ? ksWinner+'奪冠' : '',
+            { ...(ks ? {seriesScore:ks.scores} : {}), format:'7戰4勝制'}) +
         '</div></section></div>' +
+        (postseasonKboResultsError ? '<div class="postseason-footnote">季後賽戰績暫無法同步：'+postseasonEscape(postseasonKboResultsError)+'</div>' : '') +
       '</div>';
     }
 
@@ -736,6 +831,10 @@
       const active = postseasonSeasonActive();
       if (leagueHubLeague === 'mlb' && active) postseasonMlbEnsureRefreshTimer();
       if (leagueHubLeague === 'npb' && active && !postseasonNpbResultsPromise && Date.now()-postseasonNpbResultsAt >= POSTSEASON_NPB_RESULT_TTL) void refreshPostseasonNpbResults();
+      if (leagueHubLeague === 'kbo' && active) {
+        postseasonKboEnsureRefreshTimer();
+        if (!postseasonKboResultsPromise && Date.now()-postseasonKboResultsAt >= POSTSEASON_KBO_RESULT_TTL) void refreshPostseasonKboResults();
+      } else postseasonKboStopRefreshTimer();
       if (leagueHubLeague === 'cpbl' && active && !postseasonCpblResultsPromise && Date.now() - postseasonCpblResultsAt >= POSTSEASON_CPBL_RESULT_TTL) void refreshPostseasonCpblResults();
       else postseasonMlbStopRefreshTimer();
 
