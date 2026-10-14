@@ -2,7 +2,7 @@
 // Does not alter live updating or existing single-player matchup APIs.
 const SB_URL=Deno.env.get('SUPABASE_URL')||'';
 const SB_SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
-const APP_KEY_SHA256='fd2a2f093be5bb84ab00c6724a4f73af370908d2a1157f958ce1157388fdf5';
+const APP_KEY_SHA256='fd2a2f093be5bb84ab00c6724a4f73af370908d2a1157f958ce115738fdfd6a8';
 const STATS='https://stats.cpbl.com.tw/api/proxy/v1';
 const TEAMS=new Set(['AAA','ACN','ADD','AEO','AJL','AKP']);
 const HEADERS={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36','accept':'application/json','accept-language':'zh-TW,zh;q=0.9'};
