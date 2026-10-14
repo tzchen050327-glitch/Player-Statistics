@@ -159,35 +159,146 @@
   if(!document.getElementById('tpmStyles')){
     const style=document.createElement('style');style.id='tpmStyles';
     style.textContent=`
-    body.tpm-team-mode #pitcherBatterPage .data-center-search,body.tpm-team-mode #pitcherBatterPage .data-center-search-note{display:none!important}
-    .tpm-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-radius:13px;padding:5px;background:var(--panel-muted,rgba(120,135,155,.12));margin-bottom:16px}
-    .tpm-tabs button{border:0;border-radius:9px;padding:13px 7px;background:transparent;color:var(--text,inherit);font:inherit;font-size:clamp(12px,3vw,15px);font-weight:750;cursor:pointer}
-    .tpm-tabs button.active{background:var(--panel,#fff);box-shadow:0 2px 8px rgba(0,0,0,.14);color:var(--text,inherit)}
-    .tpm-panel{display:grid;gap:16px}
-    .tpm-head{display:grid;gap:6px}.tpm-head strong{font-size:21px}.tpm-head span{font-size:13px;line-height:1.6;color:var(--muted,#858b93)}
-    .tpm-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    .tpm-picker label,.tpm-filter label{display:flex;flex-direction:column;gap:7px;color:var(--muted,#858b93);font-size:12px;font-weight:750}
-    .tpm-picker select,.tpm-filter select{min-width:0;width:100%;background:var(--panel,#fff);color:var(--text,inherit);border:1px solid var(--line,#ccc);padding:12px 8px;border-radius:10px;font:inherit;font-size:15px}
-    .tpm-filter{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px}
-    .tpm-filter [role=group]{display:flex;gap:5px;border-radius:9px;padding:4px;background:var(--panel-muted,rgba(120,135,155,.12))}
-    .tpm-filter [role=group] button{border:0;border-radius:7px;background:transparent;color:var(--text,inherit);padding:10px 16px;font-size:13px;font-weight:750;cursor:pointer}
-    .tpm-filter [role=group] button.active{background:var(--panel,#fff);box-shadow:0 1px 5px rgba(0,0,0,.12)}
-    .tpm-filter #tpmReload{border:1px solid var(--line,#ccc);background:var(--panel,#fff);color:var(--text,inherit);border-radius:9px;padding:11px 13px;font-weight:650;cursor:pointer}
-    .tpm-message,.tpm-error{padding:18px 13px;border-radius:11px;border:1px solid var(--line,#ccc);line-height:1.6;color:var(--muted,#858b93)}
+    /* Same mobile composition at every width; desktop enlarges it up to 2x. */
+    body.tpm-team-mode #pitcherBatterPage .data-center-search,
+    body.tpm-team-mode #pitcherBatterPage .data-center-search-note{display:none!important}
+    body.tpm-team-mode #pitcherBatterPage .data-center-toolbar,
+    body.tpm-team-mode #pitcherBatterPage .player-tools-page-top,
+    body.tpm-team-mode #pitcherBatterPage .player-tools-page-head{
+      width:min(100%,780px);max-width:780px;margin-inline:auto
+    }
+    body.tpm-team-mode #pitcherBatterPage .data-center-tab{
+      font-size:clamp(12px,1.9vw,24px);padding:clamp(10px,1.2vw,21px) 5px
+    }
+    body.tpm-team-mode #pitcherBatterPage .player-tools-page-head h2{
+      font-size:clamp(20px,2.6vw,38px)
+    }
+    .tpm-root{width:min(100%,780px);margin-inline:auto;container-type:inline-size;min-width:0}
+    .tpm-root *{box-sizing:border-box}
+    .tpm-root>.tpm-panel,.tpm-root>.tpm-tabs{--tpm-u:clamp(1px,.26cqi,2px)}
+    .tpm-root>.tpm-tabs{
+      display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--tpm-u)*5);
+      border-radius:calc(var(--tpm-u)*12);padding:calc(var(--tpm-u)*4);
+      background:var(--panel-muted,rgba(120,135,155,.12));
+      margin-bottom:calc(var(--tpm-u)*15)
+    }
+    .tpm-root .tpm-tabs button{
+      min-width:0;border:0;border-radius:calc(var(--tpm-u)*9);
+      padding:calc(var(--tpm-u)*12) calc(var(--tpm-u)*4);
+      background:transparent;color:var(--text,inherit);
+      font:inherit;font-size:calc(var(--tpm-u)*13);font-weight:800;
+      line-height:1.35;cursor:pointer
+    }
+    .tpm-root .tpm-tabs button.active{
+      color:var(--text,inherit);background:var(--panel,#fff);
+      box-shadow:0 1px 5px rgba(0,0,0,.13)
+    }
+    .tpm-panel{
+      display:grid;gap:calc(var(--tpm-u)*13);
+      font-size:calc(var(--tpm-u)*14);line-height:1.45;
+      font-variant-numeric:tabular-nums;min-width:0;color:var(--text)
+    }
+    .tpm-head{display:grid;gap:.25em;margin-bottom:.15em}
+    .tpm-head strong{font-size:1.45em;font-weight:900;line-height:1.25}
+    .tpm-head span{font-size:.86em;line-height:1.55;color:var(--muted,#858b93)}
+    .tpm-matchup-row{
+      display:grid;grid-template-columns:minmax(0,1fr) 2.1em minmax(0,1fr);
+      align-items:end;gap:.4em
+    }
+    .tpm-team-select,.tpm-controls label{
+      display:grid;gap:.38em;min-width:0;
+      font-size:.82em;font-weight:750;color:var(--muted,#858b93)
+    }
+    .tpm-matchup-row select,.tpm-controls select{
+      display:block;width:100%;min-width:0;min-height:2.9em;
+      border:1px solid var(--line,#ccc);border-radius:.65em;
+      background:var(--panel,#fff);color:var(--text,inherit);
+      padding:.7em .6em;font:inherit;font-size:1.2em
+    }
+    .tpm-versus{text-align:center;align-self:end;line-height:2.9em;font-size:.92em;color:var(--muted,#858b93)}
+    .tpm-controls{display:grid;grid-template-columns:1fr 1fr;gap:.7em}
+    .tpm-filter{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.34em;
+      padding:.28em;border-radius:.7em;background:var(--panel-muted,rgba(120,135,155,.12))
+    }
+    .tpm-filter button{
+      min-width:0;min-height:2.7em;border:0;border-radius:.55em;
+      background:transparent;color:var(--text,inherit);
+      font:inherit;font-size:.93em;font-weight:800;cursor:pointer
+    }
+    .tpm-filter button.active{
+      background:var(--panel,#fff);box-shadow:0 1px 6px rgba(0,0,0,.13)
+    }
+    .tpm-livebar{display:flex;align-items:center;justify-content:space-between;gap:.7em}
+    .tpm-livebar span{font-size:.85em;color:var(--muted,#858b93);font-weight:700}
+    .tpm-livebar button{
+      border:1px solid var(--line,#ccc);border-radius:.65em;
+      background:var(--panel,#fff);color:var(--text,inherit);
+      padding:.56em .85em;font:inherit;font-size:.84em;font-weight:700;cursor:pointer
+    }
+    .tpm-livebar button:disabled{opacity:.6;cursor:wait}
+    .tpm-message,.tpm-error{
+      border:1px solid var(--line,#ccc);border-radius:.75em;
+      padding:1.25em 1em;font-size:.92em;line-height:1.65;color:var(--muted,#858b93)
+    }
     .tpm-error{color:#d56161;border-color:#b86c6c}
-    .tpm-coverage{border:1px solid var(--line,#ccc);border-radius:12px;padding:11px 14px;display:grid;gap:4px;margin-bottom:13px}
-    .tpm-coverage strong{font-size:14px}.tpm-coverage span{font-size:12px;color:var(--muted,#858b93);line-height:1.5}.tpm-coverage.incomplete{border-color:#b28c58}
-    .tpm-team-results{margin:12px 0 22px}.tpm-team-results h3{font-size:18px;margin:0 0 11px}.tpm-team-results h3 span{font-size:12px;font-weight:550;color:var(--muted,#858b93);margin-left:6px}
-    .tpm-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#ccc);border-radius:11px}
-    .tpm-table{min-width:980px;width:100%;border-collapse:collapse;font-size:13px;color:var(--text,inherit);font-variant-numeric:tabular-nums}
-    .tpm-table th,.tpm-table td{padding:11px 10px;border-bottom:1px solid var(--line,#ccc);text-align:right;white-space:nowrap}
-    .tpm-table tr:last-child th,.tpm-table tr:last-child td{border-bottom:0}
-    .tpm-table th:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--panel,#fff);min-width:100px}
-    .tpm-table thead th{font-size:11px;color:var(--muted,#858b93);font-weight:750}
-    .tpm-table tbody th{font-size:14px;font-weight:800}
-    .tpm-table tbody th small{display:block;font-weight:500;font-size:10px;color:var(--muted,#858b93)}
-    .tpm-footnote{color:var(--muted,#858b93);font-size:12px;line-height:1.7}
-    @media(max-width:520px){.tpm-picker{grid-template-columns:1fr 1fr}.tpm-picker label:last-child{grid-column:span 2}.tpm-filter{display:grid;grid-template-columns:1fr 1fr}.tpm-filter [role=group]{grid-column:span 2;justify-content:stretch}.tpm-filter [role=group] button{flex:1}.tpm-head strong{font-size:19px}}
+    .tpm-coverage{
+      display:grid;gap:.14em;padding:.8em 1em;border-radius:.75em;
+      border:1px solid var(--line,#ccc);margin-bottom:1.15em
+    }
+    .tpm-coverage strong{font-size:1em;font-weight:850}
+    .tpm-coverage span{font-size:.78em;color:var(--muted,#858b93)}
+    .tpm-coverage.incomplete{border-color:#b28c58}
+    .tpm-team-results{margin:0 0 1.4em}
+    .tpm-team-heading{
+      display:flex;justify-content:space-between;align-items:center;
+      gap:.5em;margin:0 0 .7em;padding-bottom:.5em;
+      border-bottom:1px solid var(--line,#ccc)
+    }
+    .tpm-team-heading>div{display:flex;align-items:baseline;gap:.55em;min-width:0}
+    .tpm-team-heading strong{font-size:1.28em;font-weight:900}
+    .tpm-team-heading span{font-size:.8em;color:var(--muted,#858b93)}
+    .tpm-team-heading>small{font-size:.75em;color:var(--muted,#858b93);white-space:nowrap}
+    .tpm-pitcher-list{display:grid;gap:.56em}
+    .tpm-pitcher-card{
+      min-width:0;overflow:hidden;background:var(--panel,#fff);
+      border:1px solid var(--line,#ccc);border-radius:.82em
+    }
+    .tpm-pitcher-card[open]{border-color:var(--accent,#5286bd)}
+    .tpm-pitcher-card summary{display:block;padding:.78em .84em;cursor:pointer;list-style:none}
+    .tpm-pitcher-card summary::-webkit-details-marker{display:none}
+    .tpm-pitcher-card summary::marker{content:''}
+    .tpm-player-head{display:grid;grid-template-columns:1.6em minmax(0,1fr) auto;align-items:center;gap:.55em}
+    .tpm-rank{
+      display:grid;place-items:center;width:1.6em;height:1.6em;border-radius:.4em;
+      background:var(--panel-muted,rgba(120,135,155,.12));font-size:.83em;font-weight:850
+    }
+    .tpm-player-name{display:flex;flex-direction:column;gap:.09em;min-width:0}
+    .tpm-player-name b{font-size:1.12em;font-weight:900}
+    .tpm-player-name small{font-size:.75em;color:var(--muted,#858b93);line-height:1.4}
+    .tpm-detail-toggle{font-size:.8em;color:var(--muted,#858b93);white-space:nowrap}
+    .tpm-chevron{display:inline-block;transition:transform .18s ease;font-size:1.15em}
+    .tpm-pitcher-card[open] .tpm-chevron{transform:rotate(180deg)}
+    .tpm-metric-row{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:.25em;margin-top:.74em;padding-top:.68em;border-top:1px solid var(--line,#ccc)
+    }
+    .tpm-metric{display:flex;flex-direction:column;align-items:center;gap:.16em;min-width:0}
+    .tpm-metric small{font-size:.72em;color:var(--muted,#858b93);font-weight:700}
+    .tpm-metric b{font-size:1.18em;font-weight:900;white-space:nowrap}
+    .tpm-metric.featured b{color:var(--accent,#4780b7)}
+    .tpm-detail-grid{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6em .35em;
+      padding:.85em .84em 1em;border-top:1px solid var(--line,#ccc);
+      background:var(--panel-muted,rgba(120,135,155,.07))
+    }
+    .tpm-detail-stat{display:grid;gap:.12em;min-width:0;text-align:center}
+    .tpm-detail-stat small{font-size:.7em;color:var(--muted,#858b93)}
+    .tpm-detail-stat b{font-size:1em;font-weight:800}
+    .tpm-footnote{margin:0 0 1.5em;font-size:.82em;line-height:1.65;color:var(--muted,#858b93)}
+    .tpm-root button:focus-visible,.tpm-root select:focus-visible,
+    .tpm-pitcher-card summary:focus-visible{outline:2px solid var(--accent,#5286bd);outline-offset:2px}
+    @media(prefers-reduced-motion:reduce){.tpm-chevron{transition:none}}
     `;
     document.head.appendChild(style);
   }
