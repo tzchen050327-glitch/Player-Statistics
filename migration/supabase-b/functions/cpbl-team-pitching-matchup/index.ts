@@ -98,7 +98,57 @@ function summarize(games:any[],club:string,role:string){
   return [...map.values()].map(p=>({...p,ip:Math.floor(p.outs/3)+'.'+p.outs%3,era:p.outs?Number((p.er*27/p.outs).toFixed(2)):null,whip:p.outs?Number(((p.h+p.bb)*3/p.outs).toFixed(2)):null}))
     .sort((a,b)=>b.outs-a.outs||b.so-a.so||a.name.localeCompare(b.name,'zh-Hant'));
 }
-async function matchup(teamA:string,teamB:string,year:number){
+
+function officialHitters(game:any,scheduled:any){
+  const out=[] as any[];
+  for(const [side,key,team] of [['away','Visiting',scheduled.awayCode],['home','Home',scheduled.homeCode]] as const){
+    const rows=Array.isArray(game?.[key]?.Hitters)?game[key].Hitters:[];
+    for(const p of rows){
+      const acnt=text(field(p,'HitterAcnt','Acnt')||p?.Player?.Acnt||p?.Hitter?.Acnt);
+      const name=text(field(p,'HitterName','PlayerName','Name')||p?.Player?.Name||p?.Hitter?.Name).replace(/^[#＃*＊\s]+/,'');
+      if(!acnt||!name)continue;
+      const ab=Math.max(0,num(field(p,'HitCnt'))),h=Math.max(0,num(field(p,'HittingCnt')));
+      const bb=Math.max(0,num(field(p,'BasesONBallsCnt'))); // Official BB already includes IBB
+      const hbp=Math.max(0,num(field(p,'HitBYPitchCnt'))),sf=Math.max(0,num(field(p,'SacrificeFlyCnt')));
+      const sh=Math.max(0,num(field(p,'SacrificeHitCnt')));
+      const pa=num(field(p,'PlateAppearances'))||ab+bb+hbp+sf+sh;
+      const runs=Math.max(0,num(field(p,'ScoreCnt')));
+      if(!pa&&!runs)continue;
+      out.push({acnt,name,team,side,g:1,pa,ab,h,
+        doubles:Math.max(0,num(field(p,'TwoBaseHitCnt'))),
+        triples:Math.max(0,num(field(p,'ThreeBaseHitCnt'))),
+        hr:Math.max(0,num(field(p,'HomeRunCnt'))),
+        rbi:Math.max(0,num(field(p,'RunBattedINCnt','RunBattedInCnt'))),
+        runs,bb,hbp,so:Math.max(0,num(field(p,'StrikeOutCnt'))),sf,sh,
+        ibb:Math.max(0,num(field(p,'IntentionalBasesONBallsCnt')))});
+    }
+  }
+  if(!out.length)throw new Error('官方單場打者紀錄為空');
+  return out;
+}
+function summarizeHitters(games:any[],team:string){
+  const map=new Map<string,any>(),fields=['g','pa','ab','h','doubles','triples','hr','rbi','runs','bb','hbp','so','sf','sh','ibb'];
+  for(const game of games)for(const p of game){
+    if(p.team!==team)continue;
+    const key=p.acnt||p.name;
+    const row=map.get(key)||{acnt:p.acnt,name:p.name,team,...Object.fromEntries(fields.map(k=>[k,0]))};
+    for(const k of fields)row[k]+=Math.max(0,num(p[k]));
+    if(p.name)row.name=p.name;
+    map.set(key,row);
+  }
+  return [...map.values()].map(row=>{
+    const tb=row.h+row.doubles+row.triples*2+row.hr*3;
+    const obDen=row.ab+row.bb+row.hbp+row.sf;
+    const avg=row.ab?Number((row.h/row.ab).toFixed(4)):null;
+    const obp=obDen?Number(((row.h+row.bb+row.hbp)/obDen).toFixed(4)):null;
+    const slg=row.ab?Number((tb/row.ab).toFixed(4)):null;
+    const ops=obp!==null&&slg!==null?Number((obp+slg).toFixed(4)):null;
+    return {...row,tb,avg,obp,slg,ops};
+  }).sort((a,b)=>b.pa-a.pa||b.h-a.h||a.name.localeCompare(b.name,'zh-Hant'));
+}
+
+async function matchup(teamA:string,teamB:string,year:number,role='pitching'){
+  const batting=role==='batting';
   const all=await seasonGames(year);
   const scheduled=all.filter(g=>{
     const a=text(g.awayCode),b=text(g.homeCode),status=text(g.status).toUpperCase();
@@ -107,33 +157,62 @@ async function matchup(teamA:string,teamB:string,year:number){
   if(scheduled.length>36)throw new Error('單組交手場次超過安全上限');
   const fetched=[] as any[],missing=[] as any[];
   if(scheduled.length){
-    const ids=scheduled.map(x=>x.fullGameId),query='cpbl_team_pitching_matchup_game_cache?select=full_game_id,pitching_rows&full_game_id=in.('+ids.join(',')+')';
-    const cache=await dbRead(query),by=new Map(cache.map((r:any)=>[r.full_game_id,r.pitching_rows]));
-    for(const g of scheduled) {
-      const p=by.get(g.fullGameId);
-      if(Array.isArray(p)&&p.length)fetched.push(p);
+    const ids=scheduled.map(x=>x.fullGameId);
+    const column=batting?'batting_rows':'pitching_rows';
+    const query='cpbl_team_pitching_matchup_game_cache?select=full_game_id,'+column+'&full_game_id=in.('+ids.join(',')+')';
+    const cache=await dbRead(query);
+    const by=new Map(cache.map((r:any)=>[r.full_game_id,r[column]]));
+    for(const g of scheduled){
+      const rows=by.get(g.fullGameId);
+      if(Array.isArray(rows)&&rows.length)fetched.push(rows);
       else missing.push(g);
     }
   }
   let failures=0;
   for(let i=0;i<missing.length;i+=4){
-    const batch=await Promise.allSettled(missing.slice(i,i+4).map(async g=>{
-      const d=await stats('/games/'+encodeURIComponent(g.fullGameId));
+    const batch=await Promise.allSettled(missing.slice(i,i+4).map(async game=>{
+      const d=await stats('/games/'+encodeURIComponent(game.fullGameId));
       const raw=d?.Game??d;
-      const rows=officialPitchers(raw,g);
-      return{full_game_id:g.fullGameId,game_year:year,kind_code:'A',game_date:g.date||null,away_code:g.awayCode,home_code:g.homeCode,game_status:'FINISHED',pitching_rows:rows,updated_at:new Date().toISOString()};
+      const rows=batting?officialHitters(raw,game):officialPitchers(raw,game);
+      return {
+        full_game_id:game.fullGameId,game_year:year,kind_code:'A',
+        game_date:game.date||null,away_code:game.awayCode,
+        home_code:game.homeCode,game_status:'FINISHED',
+        ...(batting?{batting_rows:rows}:{pitching_rows:rows}),
+        updated_at:new Date().toISOString()
+      };
     }));
     const succeed=[] as any[];
-    for(const item of batch){if(item.status==='fulfilled'){succeed.push(item.value);fetched.push(item.value.pitching_rows)}else{failures++;console.warn('team matchup game unavailable',String(item.reason).slice(0,160))}}
-    if(succeed.length){try{await dbUpsert('cpbl_team_pitching_matchup_game_cache',succeed,'full_game_id')}catch(e){console.error('team matchup cache write',e)}}
+    for(const item of batch){
+      if(item.status==='fulfilled'){
+        succeed.push(item.value);
+        fetched.push(batting?item.value.batting_rows:item.value.pitching_rows);
+      }else{
+        failures++;
+        console.warn('team matchup game unavailable',String(item.reason).slice(0,160));
+      }
+    }
+    if(succeed.length){
+      try{await dbUpsert('cpbl_team_pitching_matchup_game_cache',succeed,'full_game_id')}
+      catch(e){console.error('team matchup cache write',e)}
+    }
     if(i+4<missing.length)await sleep(120);
   }
+  const base={year,kindCode:'A',teamA,teamB,role,games:scheduled.length,
+    completedGames:fetched.length,failedGames:failures,
+    complete:failures===0,updatedAt:new Date().toISOString()};
+  if(batting){
+    return {...base,byTeam:[
+      {team:teamA,rows:summarizeHitters(fetched,teamA)},
+      {team:teamB,rows:summarizeHitters(fetched,teamB)}
+    ],source:'CPBL 官方逐場打者紀錄'};
+  }
   const byRole={} as Record<string,any>;
-  for(const role of ['all','starter','reliever'])byRole[role]=[
-    {team:teamA,rows:summarize(fetched,teamA,role)},
-    {team:teamB,rows:summarize(fetched,teamB,role)}
+  for(const pitchingRole of ['all','starter','reliever'])byRole[pitchingRole]=[
+    {team:teamA,rows:summarize(fetched,teamA,pitchingRole)},
+    {team:teamB,rows:summarize(fetched,teamB,pitchingRole)}
   ];
-  return{year,kindCode:'A',teamA,teamB,games:scheduleCount(scheduled),completedGames:fetched.length,failedGames:failures,complete:failures===0,byRole,source:'CPBL 官方逐場投手紀錄',updatedAt:new Date().toISOString()};
+  return {...base,byRole,source:'CPBL 官方逐場投手紀錄'};
 }
 function scheduleCount(games:any[]){return games.length}
 Deno.serve(async req=>{
@@ -146,7 +225,8 @@ Deno.serve(async req=>{
     if(!TEAMS.has(teamA)||!TEAMS.has(teamB)||teamA===teamB)return respond({ok:false,error:'請選擇兩支不同的中職球隊'},400);
     const now=taiwanParts().year;
     if(!Number.isInteger(year)||year<1990||year>now)return respond({ok:false,error:'年份不支援'},400);
-    const data=await matchup(teamA,teamB,year);
+    const role=text(body.role)==='batting'?'batting':'pitching';
+    const data=await matchup(teamA,teamB,year,role);
     return respond({ok:true,...data});
   }catch(e){
     console.error('team matchup error',String(e).slice(0,240));
