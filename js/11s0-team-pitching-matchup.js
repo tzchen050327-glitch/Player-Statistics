@@ -77,69 +77,113 @@
     if(!queried&&!loading)queueMicrotask(()=>{if(mode==='teams'&&!queried)void query()});
   };
   function sortedRows(rows) {
-    const result=[...rows],small=p=>Number(p.outs||0)<9;
+    const result=[...rows],small=p=>category==='batting'?Number(p.pa||0)<10:Number(p.outs||0)<9;
     return result.sort((a,b)=>{
+      if(category==='batting'){
+        if(['avg','ops','obp','slg'].includes(sort)){
+          if(small(a)!==small(b))return Number(small(a))-Number(small(b));
+          const av=a[sort]===null?-Infinity:Number(a[sort]);
+          const bv=b[sort]===null?-Infinity:Number(b[sort]);
+          if(av!==bv)return bv-av;
+        }else if(Number(a[sort])!==Number(b[sort]))return Number(b[sort])-Number(a[sort]);
+        return b.pa-a.pa||b.h-a.h||String(a.name).localeCompare(String(b.name),'zh-Hant');
+      }
       if(sort==='era'||sort==='whip'){
-        // Flag tiny samples and keep them below pitchers with 3+ innings.
         if(small(a)!==small(b))return Number(small(a))-Number(small(b));
-        const av=a[sort]===null?Infinity:Number(a[sort]),bv=b[sort]===null?Infinity:Number(b[sort]);
+        const av=a[sort]===null?Infinity:Number(a[sort]);
+        const bv=b[sort]===null?Infinity:Number(b[sort]);
         if(av!==bv)return av-bv;
-      } else if (sort==='outs' && a.outs!==b.outs)return b.outs-a.outs;
+      }else if(sort==='outs'&&a.outs!==b.outs)return b.outs-a.outs;
       else if(sort==='so'&&a.so!==b.so)return b.so-a.so;
-      return (b.outs-a.outs)||(b.so-a.so)||String(a.name).localeCompare(String(b.name),'zh-Hant');
+      return b.outs-a.outs||b.so-a.so||String(a.name).localeCompare(String(b.name),'zh-Hant');
     });
   }
-  const rate = v=>v===null||v===undefined?'—':Number(v).toFixed(2);
-  const metric = (label,value,highlight=false)=>`<span class="tpm-metric ${highlight?'featured':''}"><small>${safe(label)}</small><b>${safe(value)}</b></span>`;
-  const detailStat = (label,value)=>`<span class="tpm-detail-stat"><small>${safe(label)}</small><b>${safe(value)}</b></span>`;
-  function section(sectionData) {
+  const rate=v=>v===null||v===undefined?'—':Number(v).toFixed(2);
+  const battingRate=v=>v===null||v===undefined?'—':Number(v).toFixed(3).replace(/^0(?=\.)/,'');
+  const metric=(label,value,highlight=false)=>`<span class="tpm-metric ${highlight?'featured':''}"><small>${safe(label)}</small><b>${safe(value)}</b></span>`;
+  const detailStat=(label,value)=>`<span class="tpm-detail-stat"><small>${safe(label)}</small><b>${safe(value)}</b></span>`;
+  function batterCard(p,index){
+    return `<details class="tpm-pitcher-card">
+      <summary aria-label="${safe(p.name)}，查看打者詳細成績">
+        <span class="tpm-player-head">
+          <span class="tpm-rank">${index+1}</span>
+          <span class="tpm-player-name"><b>${safe(p.name)}</b><small>${p.pa} 打席 · ${p.h} 安打${p.pa<10?' · 未滿 10 打席':''}</small></span>
+          <span class="tpm-detail-toggle">詳細 <span class="tpm-chevron" aria-hidden="true">⌄</span></span>
+        </span>
+        <span class="tpm-metric-row">
+          ${metric('PA',p.pa,sort==='pa')}
+          ${metric('AVG',battingRate(p.avg),sort==='avg')}
+          ${metric('OPS',battingRate(p.ops),sort==='ops')}
+          ${metric('HR',p.hr,sort==='hr')}
+        </span>
+      </summary>
+      <div class="tpm-detail-grid" aria-label="打者詳細數據">
+        ${detailStat('G 出賽',p.g)}
+        ${detailStat('AB 打數',p.ab)}
+        ${detailStat('H 安打',p.h)}
+        ${detailStat('2B 二壘打',p.doubles)}
+        ${detailStat('3B 三壘打',p.triples)}
+        ${detailStat('RBI 打點',p.rbi)}
+        ${detailStat('R 得分',p.runs)}
+        ${detailStat('OBP 上壘率',battingRate(p.obp))}
+        ${detailStat('SLG 長打率',battingRate(p.slg))}
+        ${detailStat('BB 保送',p.bb)}
+        ${detailStat('SO 三振',p.so)}
+        ${detailStat('HBP 觸身',p.hbp)}
+        ${detailStat('SF 犧牲飛球',p.sf)}
+        ${detailStat('SH 犧牲短打',p.sh)}
+      </div>
+    </details>`;
+  }
+  function pitcherCard(p,index){
+    return `<details class="tpm-pitcher-card">
+      <summary aria-label="${safe(p.name)}，查看投手詳細成績">
+        <span class="tpm-player-head">
+          <span class="tpm-rank">${index+1}</span>
+          <span class="tpm-player-name"><b>${safe(p.name)}</b>
+            <small>${Number(p.outs)<9?'投球未滿 3 局':p.g+' 場出賽 · '+p.w+' 勝 '+p.l+' 敗'}</small>
+          </span>
+          <span class="tpm-detail-toggle">詳細 <span class="tpm-chevron" aria-hidden="true">⌄</span></span>
+        </span>
+        <span class="tpm-metric-row">
+          ${metric('IP',p.ip,sort==='outs')}
+          ${metric('ERA',rate(p.era),sort==='era')}
+          ${metric('WHIP',rate(p.whip),sort==='whip')}
+          ${metric('SO',p.so,sort==='so')}
+        </span>
+      </summary>
+      <div class="tpm-detail-grid" aria-label="投手詳細數據">
+        ${detailStat('G 出賽',p.g)}
+        ${detailStat('GS 先發',p.gs)}
+        ${detailStat('W–L',p.w+'–'+p.l)}
+        ${detailStat('H 被安打',p.h)}
+        ${detailStat('BB 保送',p.bb)}
+        ${detailStat('HBP 觸身',p.hbp)}
+        ${detailStat('HR 被全壘打',p.hr)}
+        ${detailStat('ER 自責分',p.er)}
+        ${detailStat('SV 救援',p.sv)}
+        ${detailStat('HLD 中繼',p.hld)}
+        ${detailStat('球數',p.pitches)}
+      </div>
+    </details>`;
+  }
+  function section(sectionData){
     const rows=sortedRows(Array.isArray(sectionData?.rows)?sectionData.rows:[]);
-    const own=teamName(sectionData.team);
-    const opponent=teamName(sectionData.team===teamA?teamB:teamA);
-    return `<section class="tpm-team-results" aria-label="${safe(own)}投手對戰成績">
-      <header class="tpm-team-heading"><div><strong>${safe(own)}</strong><span>對 ${safe(opponent)}</span></div><small>${rows.length} 位投手</small></header>
-      ${rows.length?`<div class="tpm-pitcher-list">
-        ${rows.map((p,index)=>`<details class="tpm-pitcher-card">
-          <summary aria-label="${safe(p.name)}，查看完整投手成績">
-            <span class="tpm-player-head">
-              <span class="tpm-rank">${index+1}</span>
-              <span class="tpm-player-name"><b>${safe(p.name)}</b>
-                ${Number(p.outs)<9?'<small>投球未滿 3 局</small>':`<small>${safe(p.g)} 場出賽 · ${safe(p.w)} 勝 ${safe(p.l)} 敗</small>`}
-              </span>
-              <span class="tpm-detail-toggle">詳細 <span class="tpm-chevron" aria-hidden="true">⌄</span></span>
-            </span>
-            <span class="tpm-metric-row">
-              ${metric('IP',p.ip)}
-              ${metric('ERA',rate(p.era),sort==='era')}
-              ${metric('WHIP',rate(p.whip),sort==='whip')}
-              ${metric('SO',p.so,sort==='so')}
-            </span>
-          </summary>
-          <div class="tpm-detail-grid" aria-label="完整投手數據">
-            ${detailStat('G 出賽',p.g)}
-            ${detailStat('GS 先發',p.gs)}
-            ${detailStat('W–L',p.w+'–'+p.l)}
-            ${detailStat('H 被安打',p.h)}
-            ${detailStat('BB 保送',p.bb)}
-            ${detailStat('HBP 觸身球',p.hbp)}
-            ${detailStat('HR 被全壘打',p.hr)}
-            ${detailStat('ER 自責分',p.er)}
-            ${detailStat('SV 救援',p.sv)}
-            ${detailStat('HLD 中繼',p.hld)}
-            ${detailStat('球數',p.pitches)}
-          </div>
-        </details>`).join('')}
-      </div>`:'<div class="tpm-message">這組條件沒有對戰投手紀錄。</div>'}
+    const own=teamName(sectionData.team),opponent=teamName(sectionData.team===teamA?teamB:teamA);
+    const who=category==='batting'?'打者':'投手';
+    return `<section class="tpm-team-results" aria-label="${safe(own)}${who}對戰成績">
+      <header class="tpm-team-heading"><div><strong>${safe(own)}</strong><span>對 ${safe(opponent)}</span></div><small>${rows.length} 位${who}</small></header>
+      ${rows.length?`<div class="tpm-pitcher-list">${rows.map((p,i)=>category==='batting'?batterCard(p,i):pitcherCard(p,i)).join('')}</div>`:'<div class="tpm-message">這組條件沒有對戰紀錄。</div>'}
     </section>`;
   }
-  function renderResult(d) {
-    const parts=Array.isArray(d.byRole?.[role])?d.byRole[role]:[];
+  function renderResult(d){
+    const parts=category==='batting'?(Array.isArray(d.byTeam)?d.byTeam:[]):(Array.isArray(d.byRole?.[role])?d.byRole[role]:[]);
     return `<div class="tpm-coverage ${!d.complete?'incomplete':''}">
       <strong>${Number(d.completedGames)||0} / ${Number(d.games)||0} 場交手已統計</strong>
-      <span>${d.complete?'來源：CPBL 官方逐場投手紀錄':'有 '+(Number(d.failedGames)||0)+' 場讀取失敗，以下是部分資料，不能視為完整排名。'}</span>
+      <span>${d.complete?'來源：CPBL 官方逐場'+(category==='batting'?'打者':'投手')+'紀錄':'有 '+(Number(d.failedGames)||0)+' 場讀取失敗，以下為部分數據，不能視為完整年度排名。'}</span>
     </div>
     ${parts.map(section).join('')}
-    <p class="tpm-footnote">按投手卡片可展開完整數據。IP 以出局數累計；ERA 與 WHIP 依總局數重新計算。依 ERA／WHIP 排序時，未滿 3 局的投手排列在後，不會隱藏。</p>`;
+    <p class="tpm-footnote">${category==='batting'?'點擊打者卡片可查看完整打擊成績。AVG、OBP、SLG、OPS 以逐場計數合併後重新計算；率值排序時未滿 10 打席者置後。':'點擊投手卡片可查看完整投球成績。IP 以出局數累計；ERA、WHIP 重新計算，未滿 3 局者在率值排序時置後。'}</p>`;
   }
   function reset(){++sequence;loading=false;data=cachedResults.get(resultKey())||null;queried=Boolean(data);error='';ui()}
   async function query(){
@@ -172,6 +216,11 @@
     const style=document.createElement('style');style.id='tpmStyles';
     style.textContent=`
     /* Same mobile composition at every width; desktop enlarges it up to 2x. */
+    .tpm-category{display:grid;grid-template-columns:1fr 1fr;gap:.35em;padding:.28em;border-radius:.72em;background:var(--panel-muted,rgba(120,135,155,.12))}
+    .tpm-category button{border:0;border-radius:.55em;min-height:2.9em;padding:.4em .6em;background:transparent;color:var(--text,inherit);font:inherit;font-weight:850;cursor:pointer}
+    .tpm-category button.active{background:var(--panel,#fff);box-shadow:0 1px 6px rgba(0,0,0,.13)}
+    .tpm-filter[hidden]{display:none!important}
+
     body.tpm-team-mode #pitcherBatterPage .data-center-search,
     body.tpm-team-mode #pitcherBatterPage .data-center-search-note{display:none!important}
     body.tpm-team-mode #pitcherBatterPage .data-center-toolbar,
