@@ -390,9 +390,9 @@
     }
 
     async function leagueDailyGamesRequest(league, date, force = false) {
-      const requestUrl = league === 'KBO'
-        ? KBO_GAMES_API_URL
-        : LEAGUE_GAMES_A_API_URL;
+      // KBO shares the same persistent schedule snapshot as its fixed two-minute updater.
+      // Avoid racing a separate GameList response against the official cached result.
+      const requestUrl = LEAGUE_GAMES_A_API_URL;
       const response = await fetch(requestUrl, {
         method:'POST',
         headers:{ 'content-type':'application/json' },
