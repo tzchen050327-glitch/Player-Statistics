@@ -1,4 +1,4 @@
-// CPBL two-team pitcher splits, presented as an alternate view of 投打對決.
+// CPBL two-team yearly batting and pitching splits, rendered as mobile-first cards in 投打對決.
 (() => {
   'use strict';
   if (typeof renderPitcherBatterPage !== 'function') return;
