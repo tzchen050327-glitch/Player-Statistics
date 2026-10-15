@@ -2,7 +2,7 @@
       const international = homeRootSection === 'international';
       const special = homeRootSection === 'special';
       const reels = homeRootSection === 'reels';
-      const standalone = standalone || reels;
+      const standalone = international || special || reels;
       if (international) homeZone = 'international';
       else if (special) homeZone = 'special';
       else if (reels) homeZone = 'reels';
