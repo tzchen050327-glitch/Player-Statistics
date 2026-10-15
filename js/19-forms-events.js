@@ -1053,7 +1053,8 @@
     }
 
     function openLeagueHub(view = leagueHubView) {
-      const nextView = ['schedule','prediction','standings','postseason'].includes(view) ? view : 'prediction';
+      const requestedView = ['schedule','prediction','standings','postseason'].includes(view) ? view : 'prediction';
+      const nextView = requestedView === 'schedule' && !['cpbl','npb'].includes(leagueHubLeague) ? 'prediction' : requestedView;
       leagueHubView = nextView;
       localStorage.setItem('leagueHubView', nextView);
       syncLeagueHubLeague(leagueHubLeague);
