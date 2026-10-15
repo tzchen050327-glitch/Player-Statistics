@@ -50,6 +50,9 @@ jobs:
           from pathlib import Path
           order = [line.strip() for line in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if line.strip()]
           bundle = ''.join((Path('js') / name).read_text(encoding='utf-8') for name in order)
+          core = (Path('js') / order[0]).read_text(encoding='utf-8')
+          for helper in ['escapeHtml', 'escapeAttr']:
+              assert f'function {helper}(value)' in core, f'{helper} must exist in first-loaded module'
           html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('service-worker.js').read_text(encoding='utf-8')
           loader = Path('js/module-loader.js').read_text(encoding='utf-8')
