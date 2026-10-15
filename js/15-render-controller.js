@@ -83,6 +83,7 @@
       if (pitcherBatterPageActive) renderPitcherBatterPage();
 
       if (leagueHubPageActive) {
+        if (els.leagueHubViewSwitch) els.leagueHubViewSwitch.style.gridTemplateColumns = ['cpbl','npb'].includes(leagueHubLeague) ? 'repeat(4,minmax(0,1fr))' : 'repeat(3,minmax(0,1fr))';
         els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
           const active = btn.dataset.leagueHubLeague === leagueHubLeague;
           btn.classList.toggle('active', active);
