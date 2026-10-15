@@ -41,10 +41,10 @@
       const predictionPageActive = currentPage === 'prediction';
       const standingsPageActive = currentPage === 'standings';
       const postseasonPageActive = currentPage === 'postseason';
-      const leagueHubPageActive = predictionPageActive || standingsPageActive || postseasonPageActive;
+      const schedulePageActive = currentPage === 'schedule';
+      const leagueHubPageActive = predictionPageActive || standingsPageActive || postseasonPageActive || schedulePageActive;
       const advancedStatsPageActive = currentPage === 'advanced-stats';
       const playerRankingPageActive = currentPage === 'player-ranking';
-      const schedulePageActive = currentPage === 'schedule';
       const musicCenterPageActive = currentPage === 'music-center';
       const errorPageActive = playerPageActive && selectedTab === 'errors' && playerScope(player) === 'cpbl';
       if (leagueHubPageActive) {
@@ -64,7 +64,11 @@
       els.leagueHubPage?.classList.toggle('hidden', !leagueHubPageActive);
       els.advancedStatsPage?.classList.toggle('hidden', !advancedStatsPageActive);
       els.playerRankingPage?.classList.toggle('hidden', !playerRankingPageActive);
-      els.schedulePage?.classList.toggle('hidden', !schedulePageActive);
+      // Schedule content lives in the existing league hub rather than a separate page.
+      els.schedulePage?.classList.add('hidden');
+      const hubScheduleSlot = document.getElementById('leagueHubScheduleContent');
+      if (hubScheduleSlot && els.schedulePageContent?.parentElement !== hubScheduleSlot) hubScheduleSlot.appendChild(els.schedulePageContent);
+      hubScheduleSlot?.classList.toggle('hidden', !schedulePageActive);
       document.getElementById('musicCenterPage')?.classList.toggle('hidden', !musicCenterPageActive);
       els.predictionPageContent?.classList.toggle('hidden', !predictionPageActive);
       els.standingsPageContent?.classList.toggle('hidden', !standingsPageActive);
@@ -85,6 +89,7 @@
           btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
         els.leagueHubViewSwitch?.querySelectorAll('[data-league-hub-view]').forEach(btn => {
+          if (btn.dataset.leagueHubView === 'schedule') btn.classList.toggle('hidden', leagueHubLeague !== 'cpbl' && leagueHubLeague !== 'npb');
           const active = btn.dataset.leagueHubView === currentPage;
           btn.classList.toggle('active', active);
           btn.setAttribute('aria-pressed', active ? 'true' : 'false');
