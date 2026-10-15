@@ -98,7 +98,7 @@
     els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
       button.addEventListener('click', () => {
         const chosenRoot = button.dataset.homeRoot;
-        homeRootSection = ['international','special'].includes(chosenRoot) ? chosenRoot : 'pro';
+        homeRootSection = ['international','special','reels'].includes(chosenRoot) ? chosenRoot : 'pro';
         if (chosenRoot === 'asia' || chosenRoot === 'america') {
           homeProContinent = chosenRoot === 'america' ? 'AMERICA' : 'ASIA';
           if (homeProContinent === 'AMERICA') homeProCountry = 'US';
@@ -109,6 +109,8 @@
           homeSpecialFilter = '';
           homeInternationalEditionFilter = '';
           homeInternationalTeamFilter = '';
+        } else if (homeRootSection === 'reels') {
+          homeZone = 'reels';
         } else if (homeRootSection === 'special') {
           homeZone = 'special';
           homeSpecialFilter = '';
@@ -120,6 +122,15 @@
         homeTeamFilter = '';
         renderRecentPlayers();
       });
+    });
+
+    document.getElementById('homeAuthorCollectionBtn')?.addEventListener('click', () => {
+      homeRootSection = 'special';
+      homeZone = 'special';
+      homeSpecialFilter = '';
+      if (typeof authorCollectionSection !== 'undefined') authorCollectionSection = '';
+      renderRecentPlayers();
+      document.querySelector('.home-main-panel')?.scrollTo({top:0,behavior:'instant'});
     });
 
     els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
@@ -1042,10 +1053,16 @@
     }
 
     function openLeagueHub(view = leagueHubView) {
-      const nextView = ['prediction','standings','postseason'].includes(view) ? view : 'prediction';
+      const nextView = ['schedule','prediction','standings','postseason'].includes(view) ? view : 'prediction';
       leagueHubView = nextView;
       localStorage.setItem('leagueHubView', nextView);
       syncLeagueHubLeague(leagueHubLeague);
+      if (nextView === 'schedule') {
+        schedulePageLeague = leagueHubLeague === 'npb' ? 'NPB' : 'CPBL';
+        schedulePageDate = schedulePageLeagueToday(schedulePageLeague);
+        localStorage.setItem('schedulePageLeague', schedulePageLeague);
+        localStorage.setItem('schedulePageDate', schedulePageDate);
+      }
       currentPage = nextView;
       renderAll();
       if (nextView === 'standings') void loadOfficialStandings({ force:true });
@@ -1059,6 +1076,16 @@
     els.leagueHubCountrySwitch?.querySelectorAll('[data-league-hub-league]').forEach(btn => {
       btn.addEventListener('click', () => {
         syncLeagueHubLeague(btn.dataset.leagueHubLeague);
+        if (currentPage === 'schedule') {
+          if (leagueHubLeague !== 'cpbl' && leagueHubLeague !== 'npb') {
+            openLeagueHub('prediction');
+            return;
+          }
+          schedulePageLeague = leagueHubLeague === 'npb' ? 'NPB' : 'CPBL';
+          schedulePageDate = schedulePageLeagueToday(schedulePageLeague);
+          localStorage.setItem('schedulePageLeague', schedulePageLeague);
+          localStorage.setItem('schedulePageDate', schedulePageDate);
+        }
         renderAll();
         if (currentPage === 'standings') void loadOfficialStandings({ force:true });
       });
