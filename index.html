@@ -280,17 +280,6 @@
             <strong>進階數據</strong>
           </button>
 
-          <button id="homeScheduleBtn" class="panel home-standings-entry home-schedule-entry" type="button" aria-label="開啟聯盟賽程">
-            <span class="home-standings-entry-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
-                <path d="M7.5 3.5v4M16.5 3.5v4M3.5 9.5h17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M7.5 13h2M12 13h2M16.5 13h.1M7.5 16.5h2M12 16.5h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-            </span>
-            <strong>聯盟賽程</strong>
-          </button>
-
           <button id="homeLeagueHubBtn" class="panel home-standings-entry home-prediction-entry" type="button" aria-label="開啟聯盟分析">
             <span class="home-standings-entry-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -299,7 +288,7 @@
                 <circle cx="6" cy="7" r="2" stroke="currentColor" stroke-width="1.6"/>
               </svg>
             </span>
-            <strong>聯盟分析</strong>
+            <strong>聯盟分析・賽程</strong>
           </button>
 
 <button id="homePitcherBatterBtn" class="panel home-standings-entry data-center-legacy-entry" type="button" aria-label="開啟投打對決">
@@ -314,6 +303,12 @@
           </button>
 
 
+
+          <button id="homeAuthorCollectionBtn" class="panel home-standings-entry" type="button" aria-label="開啟作者收藏">
+            <span class="home-standings-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5h14v15H5zM8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span><strong>作者收藏</strong>
+          </button>
 
           <button id="homeMusicCenterBtn" class="panel home-standings-entry" type="button" aria-label="開啟音樂中心">
             <span class="home-standings-entry-icon" aria-hidden="true">
@@ -351,7 +346,7 @@
             <button class="home-zone-btn active" type="button" data-home-root="asia">亞洲職棒</button>
             <button class="home-zone-btn" type="button" data-home-root="america">美洲職棒</button>
             <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
-            <button class="home-zone-btn" type="button" data-home-root="special">作者收藏</button>
+            <button class="home-zone-btn" type="button" data-home-root="reels">REELS</button>
           </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
@@ -412,6 +407,7 @@
           <div id="homeSpecialFilters" class="home-special-filter-row hidden" aria-label="國外聯盟篩選"></div>
           <div id="homeInternationalExplorer" class="international-explorer hidden" aria-label="國際賽賽事瀏覽"></div>
           <div id="homeSpecialGamesExplorer" class="special-games-explorer hidden" aria-label="作者收藏瀏覽"></div>
+          <div id="homeReelsExplorer" class="home-reels-explorer hidden" aria-label="REELS"><div class="home-reels-empty"><strong>REELS</strong><p>精華影片將在這裡顯示。</p></div></div>
 
           <div id="recentPlayers" class="home-player-grid"></div>
         </section>
@@ -520,12 +516,14 @@
               <button class="standings-switch-btn" type="button" data-league-hub-league="kbo">韓國</button>
               <button class="standings-switch-btn" type="button" data-league-hub-league="mlb">美國</button>
             </div>
-            <div id="leagueHubViewSwitch" class="standings-secondary-tabs is-three" aria-label="功能選擇">
+            <div id="leagueHubViewSwitch" class="standings-secondary-tabs" aria-label="功能選擇">
+              <button class="standings-switch-btn" type="button" data-league-hub-view="schedule">聯盟賽程</button>
               <button class="standings-switch-btn active" type="button" data-league-hub-view="prediction">預測專區</button>
               <button class="standings-switch-btn" type="button" data-league-hub-view="standings">戰績排名</button>
               <button class="standings-switch-btn" type="button" data-league-hub-view="postseason">季後賽專區</button>
             </div>
           </div>
+          <div id="leagueHubScheduleContent" class="hidden" aria-live="polite"></div>
           <div id="predictionPageContent" class="prediction-page-content" aria-live="polite"></div>
           <div id="standingsPageContent" class="hidden" aria-live="polite"></div>
           <div id="postseasonPageContent" class="hidden" aria-live="polite"></div>
@@ -1175,5 +1173,11 @@
 </style>
 <script src="./js/music-center.js?v=c1.30" defer></script>
   <script src="./js/module-loader.js?v=c1.30"></script>
+<style id="leagueHubReelsStyles">
+#homeZoneSwitch{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+#homeZoneSwitch .home-zone-btn{min-width:0;padding-inline:2px;font-size:clamp(10px,2.8vw,14px);white-space:nowrap}
+.home-reels-explorer{min-height:40vh;padding:16px 2px}.home-reels-empty{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:32vh;gap:9px;text-align:center;color:var(--muted)}.home-reels-empty strong{font-size:24px;color:var(--text)}.home-reels-empty p{font-size:13px;margin:0}
+#leagueHubScheduleContent .schedule-league-tabs{display:none!important}
+</style>
 </body>
 </html>
