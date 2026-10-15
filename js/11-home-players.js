@@ -1,8 +1,11 @@
     function renderHomePlayerFilters() {
       const international = homeRootSection === 'international';
       const special = homeRootSection === 'special';
+      const reels = homeRootSection === 'reels';
+      const standalone = standalone || reels;
       if (international) homeZone = 'international';
       else if (special) homeZone = 'special';
+      else if (reels) homeZone = 'reels';
       else applyHomeProSelection();
 
       els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
@@ -13,7 +16,7 @@
         button.classList.toggle('active', active);
       });
 
-      els.homeProCountrySwitch?.classList.toggle('hidden', international || special);
+      els.homeProCountrySwitch?.classList.toggle('hidden', standalone);
       els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
         const country = button.dataset.proCountry;
         button.classList.toggle('hidden', homeProContinent === 'AMERICA' ? country !== 'US' : country === 'US');
@@ -22,21 +25,23 @@
 
       els.homeUsLeagueSwitch?.classList.add('hidden');
 
-      const cpbl = !international && !special && homeProCountry === 'TW';
-      els.homeDailyGames?.classList.toggle('hidden', international || special);
+      const cpbl = !standalone && homeProCountry === 'TW';
+      els.homeDailyGames?.classList.toggle('hidden', standalone);
       els.homeSpecialFilters?.classList.add('hidden');
       els.homeInternationalExplorer?.classList.toggle('hidden', !international);
       els.homeSpecialGamesExplorer?.classList.toggle('hidden', !special);
-      document.querySelector('.home-player-head')?.classList.toggle('hidden', international || special);
+      document.getElementById('homeReelsExplorer')?.classList.toggle('hidden', !reels);
+      document.querySelector('.home-player-head')?.classList.toggle('hidden', standalone);
       const homeActions = document.querySelector('.home-player-actions');
-      homeActions?.classList.toggle('hidden', international || special);
+      homeActions?.classList.toggle('hidden', standalone);
       homeActions?.classList.remove('international-actions');
       document.getElementById('addPlayerBtn')?.classList.remove('hidden');
-      els.recent?.classList.toggle('hidden', international || special);
+      els.recent?.classList.toggle('hidden', standalone);
 
       if (els.homePlayerTitle) {
         if (international) els.homePlayerTitle.textContent = '國際賽';
         else if (special) els.homePlayerTitle.textContent = '作者收藏';
+        else if (reels) els.homePlayerTitle.textContent = 'REELS';
         else if (homeProCountry === 'TW') els.homePlayerTitle.textContent = '台灣｜中華職棒';
         else if (homeProCountry === 'US') els.homePlayerTitle.textContent = '美國｜MLB / MiLB';
         else if (homeProCountry === 'JP') els.homePlayerTitle.textContent = '日本｜NPB';
@@ -52,6 +57,9 @@
         } else if (special) {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = '作者整理收錄的特殊紀錄與比賽。';
+        } else if (reels) {
+          els.homeZoneNote.classList.add('hidden');
+          els.homeZoneNote.textContent = '';
         } else if (homeProCountry === 'AWB') {
           els.homeZoneNote.classList.remove('hidden');
           els.homeZoneNote.textContent = '冬盟入口已建立；即時比分、逐打席及球員資料尚待官方來源串接。';
@@ -71,10 +79,10 @@
         els.pageSubtitle.textContent = homePageBreadcrumb();
       }
       els.homePage?.classList.toggle('international-home-mode', homeRootSection === 'international');
-      els.homePage?.classList.toggle('special-home-mode', homeRootSection === 'special');
+      els.homePage?.classList.toggle('special-home-mode', homeRootSection === 'special' || homeRootSection === 'reels');
       renderHomeDailyGames();
 
-      if (homeRootSection === 'international' || homeRootSection === 'special') {
+      if (homeRootSection === 'international' || homeRootSection === 'special' || homeRootSection === 'reels') {
         if (els.homePlayerCount) els.homePlayerCount.textContent = '';
         if (els.recent) els.recent.innerHTML = '';
         return;
