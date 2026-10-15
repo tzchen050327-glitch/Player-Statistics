@@ -222,7 +222,7 @@
     let leagueHubLeague = ['cpbl','npb','kbo','mlb'].includes(savedLeagueHubLeague)
       ? savedLeagueHubLeague
       : 'cpbl';
-    let leagueHubView = ['prediction','standings','postseason'].includes(localStorage.getItem('leagueHubView'))
+    let leagueHubView = ['schedule','prediction','standings','postseason'].includes(localStorage.getItem('leagueHubView'))
       ? localStorage.getItem('leagueHubView')
       : 'prediction';
     const CURRENT_YEAR = new Date().getFullYear();
