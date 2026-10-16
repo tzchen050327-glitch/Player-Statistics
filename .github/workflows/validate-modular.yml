@@ -61,6 +61,13 @@ jobs:
           assert m and m.group(1) == v
           assert f'<meta name="app-version" content="{v}" />' in html
           assert f'./js/module-loader.js?v={v}' in html
+          assert f"const CACHE_VERSION = '{v}';" in sw
+          assert f"const CACHE_NAME = 'baseball-player-card-pwa-{v.replace('.', '')}-auto';" in sw
+          assert "const APP_CACHE_PREFIX = 'baseball-player-card-pwa-';" in sw
+          for path in ['index.html', 'service-worker.js', 'manifest.webmanifest', 'js/00-core-config.js', 'js/music-center.js']:
+               content = Path(path).read_text(encoding='utf-8')
+               for asset_version in re.findall(r'\?v=([vc]\d+\.\d+)', content):
+                   assert asset_version == v, f'{path}: stale asset version {asset_version} (expected {v})'
           assert './app.js?v=' not in html
           assert './app.js?v=' not in sw
           assert "const MODULE_ORDER_URL = './js/module-order.txt';" in sw

@@ -24,46 +24,47 @@ jobs:
           from pathlib import Path
           data = json.loads(Path('version.json').read_text(encoding='utf-8'))
           old = str(data.get('version', '')).strip()
-          m = re.fullmatch(r'v(\d+)\.(\d+)', old)
+          m = re.fullmatch(r'([vc])(\d+)\.(\d+)', old)
           if not m: raise SystemExit(f'Unsupported version format: {old!r}')
-          major = int(m.group(1))
-          minor = int(m.group(2)) + 1
+          prefix = m.group(1)
+          major = int(m.group(2))
+          minor = int(m.group(3)) + 1
           if minor >= 100:
               major += minor // 100
               minor %= 100
-          new = f'v{major}.{minor:02d}'
+          new = f'{prefix}{major}.{minor:02d}'
           cache_tag = new.replace('.', '')
           Path('version.json').write_text(json.dumps({'version':new}, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
 
           order = [x.strip() for x in Path('js/module-order.txt').read_text(encoding='utf-8').splitlines() if x.strip()]
           found = 0
-          for name in order:
+          for name in [*order, 'music-center.js']:
               p = Path('js') / name
               text = p.read_text(encoding='utf-8')
-              text, n = re.subn(r"const APP_VERSION = 'v\d+\.\d+';", f"const APP_VERSION = '{new}';", text)
+              text, n = re.subn(r"const APP_VERSION = '[vc]\d+\.\d+';", f"const APP_VERSION = '{new}';", text)
               found += n
-              text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+              text = re.sub(r'\?v=[vc]\d+\.\d+', f'?v={new}', text)
               p.write_text(text, encoding='utf-8')
           if found != 1: raise SystemExit(f'expected one source APP_VERSION, found {found}')
 
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
-          text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")v\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', text, count=1)
-          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
-          text = re.sub(r'(id="appVersionBadge"[^>]*>)v\d+\.\d+(</button>)', rf'\g<1>{new}\2', text, count=1)
+          text, n = re.subn(r'(<meta\s+name="app-version"\s+content=")[vc]\d+\.\d+("\s*/?>)', rf'\g<1>{new}\2', text, count=1)
+          text = re.sub(r'\?v=[vc]\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r'(id="appVersionBadge"[^>]*>)[vc]\d+\.\d+(</button>)', rf'\g<1>{new}\2', text, count=1)
           if not n: raise SystemExit('app-version meta not found')
           p.write_text(text, encoding='utf-8')
 
           p = Path('service-worker.js')
           text = p.read_text(encoding='utf-8')
-          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r'\?v=[vc]\d+\.\d+', f'?v={new}', text)
           text = re.sub(r"const CACHE_NAME = '[^']+';", f"const CACHE_NAME = 'baseball-player-card-pwa-{cache_tag}-auto';", text, count=1)
           text = re.sub(r"const CACHE_VERSION = '[^']+';", f"const CACHE_VERSION = '{new}';", text, count=1)
           p.write_text(text, encoding='utf-8')
 
           p = Path('manifest.webmanifest')
           text = p.read_text(encoding='utf-8')
-          text = re.sub(r'\?v=v\d+\.\d+', f'?v={new}', text)
+          text = re.sub(r'\?v=[vc]\d+\.\d+', f'?v={new}', text)
           p.write_text(text, encoding='utf-8')
           print(f'{old} -> {new}')
 
@@ -94,6 +95,13 @@ jobs:
           assert f'content="{v}"' in html
           assert f'./js/module-loader.js?v={v}' in html
           assert f'./js/module-loader.js?v={v}' in sw
+          assert f"const CACHE_VERSION = '{v}';" in sw
+          assert f"const CACHE_NAME = 'baseball-player-card-pwa-{v.replace('.', '')}-auto';" in sw
+          assert "const APP_CACHE_PREFIX = 'baseball-player-card-pwa-';" in sw
+          for path in ['index.html', 'service-worker.js', 'manifest.webmanifest', 'js/00-core-config.js', 'js/music-center.js']:
+              content = Path(path).read_text(encoding='utf-8')
+              for asset_version in __import__('re').findall(r'\?v=([vc]\d+\.\d+)', content):
+                  assert asset_version == v, f'{path}: stale asset version {asset_version} (expected {v})'
           assert './app.js?v=' not in html
           assert './app.js?v=' not in sw
 
@@ -114,7 +122,7 @@ jobs:
               # If another release already advanced the version, avoid an older bump.
               remote_version=$(git show origin/main:version.json | python -c 'import json,sys; print(json.load(sys.stdin)["version"])')
               local_version=$(python -c 'import json; print(json.load(open("version.json"))["version"])')
-              if python -c 'import sys; parse=lambda v: tuple(map(int,v.lstrip("v").split("."))); sys.exit(0 if parse(sys.argv[1]) >= parse(sys.argv[2]) else 1)' "$remote_version" "$local_version"; then
+              if python -c 'import sys; parse=lambda v: tuple(map(int,v.lstrip("vc").split("."))); sys.exit(0 if parse(sys.argv[1]) >= parse(sys.argv[2]) else 1)' "$remote_version" "$local_version"; then
                 echo "Remote version $remote_version already covers $local_version; skipping stale release."
                 exit 0
               fi
