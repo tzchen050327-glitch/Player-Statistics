@@ -643,33 +643,54 @@
     }
 
     function homeProtectLiveFromScheduled(detail, game, league = 'CPBL') {
-      if (!detail || league !== 'CPBL') return detail;
-      const incoming = String(detail.status || '').toLowerCase();
-      const known = String(game?.status || '').toLowerCase();
-      if (!['scheduled','pregame',''].includes(incoming) || !['live','final','suspended'].includes(known)) return detail;
-      const sourceGame = detail.game || {};
-      const nextGame = {...sourceGame, status:known,
-        awayScore:Number.isFinite(Number(game.awayScore)) ? Number(game.awayScore) : sourceGame.awayScore,
-        homeScore:Number.isFinite(Number(game.homeScore)) ? Number(game.homeScore) : sourceGame.homeScore,
-        inningLabel:game.inningLabel || sourceGame.inningLabel || ''};
-      return {...detail, status:known, game:nextGame};
+      // A mutable home card may carry a stale "live" state from another detail.
+      // Never promote an official scheduled payload based on a card's status.
+      return detail;
+    }
+
+    function homeSanitizeScheduledDetail(detail, selectedGame, league) {
+      if (!detail || league !== 'CPBL' || String(detail?.status || '').toLowerCase() !== 'scheduled') return detail;
+      const source = detail?.game || {};
+      const selected = selectedGame || {};
+      return {
+        ...detail,
+        status:'scheduled',
+        game:{
+          ...selected,...source,
+          id:String(selected?.id || source?.id || ''),
+          kindCode:String(selected?.kindCode || source?.kindCode || 'A'),
+          away:String(selected?.away || source?.away || ''),
+          home:String(selected?.home || source?.home || ''),
+          status:'scheduled',awayScore:null,homeScore:null,inningLabel:''
+        },
+        plays:[],current:null,scoreboard:{
+          innings:[],away:[],home:[],
+          awayTotals:{R:null,H:null,E:null},
+          homeTotals:{R:null,H:null,E:null}
+        }
+      };
     }
 
     function syncHomeDailyGameFromDetail(league, date, game, detail) {
       const info = detail?.game || {};
       const awayRuns = detailRunsFromScoreboard(detail, 'away');
       const homeRuns = detailRunsFromScoreboard(detail, 'home');
-      detail = homeProtectLiveFromScheduled(detail, game, league);
+      detail = homeSanitizeScheduledDetail(homeProtectLiveFromScheduled(detail, game, league), game, league);
       const normalizedStatus = String(detail?.status || '').toLowerCase();
       const apply = target => {
         if (!target) return;
         const awayScore = awayRuns !== null ? awayRuns : Number(info?.awayScore);
         const homeScore = homeRuns !== null ? homeRuns : Number(info?.homeScore);
-        if (Number.isFinite(awayScore)) target.awayScore = awayScore;
-        if (Number.isFinite(homeScore)) target.homeScore = homeScore;
+        if (normalizedStatus === 'scheduled') {
+          target.awayScore = null;
+          target.homeScore = null;
+          target.inningLabel = '';
+        } else {
+          if (Number.isFinite(awayScore)) target.awayScore = awayScore;
+          if (Number.isFinite(homeScore)) target.homeScore = homeScore;
+          if (String(info?.inningLabel || '').trim()) target.inningLabel = String(info.inningLabel).trim();
+        }
         if (normalizedStatus) target.status = normalizedStatus;
-        // Keep the home game card inning in sync with the live matchup center.
-        if (String(info?.inningLabel || '').trim()) target.inningLabel = String(info.inningLabel).trim();
         if (info?.id && !target.id) target.id = info.id;
         if (homeDetailLineupReady(detail, target, league)) target.lineupReady = true;
       };
@@ -1041,7 +1062,7 @@
       const awayTotals = totals?.awayTotals || {};
       const homeTotals = totals?.homeTotals || {};
 
-      if (status === 'scheduled' && !batters.length) {
+      if (status === 'scheduled') {
         return '<div class="game-snapshot-empty"><strong>比賽尚未開始</strong><span>開打後會自動把關鍵打者、重要打席與投手結果濃縮在這裡。</span></div>';
       }
 
@@ -2109,7 +2130,7 @@
         console.warn('[match-center] ignoring a foreign game detail payload', {wanted:activeHomeGameDetail.key, league:detail?.league, gameId:detail?.game?.id});
         detail = homeSelectedGamePlaceholder(activeHomeGameDetail.game);
       }
-      detail = homeProtectLiveFromScheduled(detail, game, activeHomeGameDetail?.league);
+      detail = homeSanitizeScheduledDetail(homeProtectLiveFromScheduled(detail, game, activeHomeGameDetail?.league), activeHomeGameDetail.game, activeHomeGameDetail.league);
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
       if (!body) return;
@@ -2508,7 +2529,10 @@
         }
         // A Realtime update may arrive while this request is in flight.
         // Never roll back to an older inning, fewer completed PAs or revision.
-        if(league==='CPBL')detail=homeKeepNewerCpblLive(detail,homeGameDetailCache.get(key)?.detail);
+        if(league==='CPBL'){
+          detail=homeKeepNewerCpblLive(detail,homeGameDetailCache.get(key)?.detail);
+          detail=homeSanitizeScheduledDetail(detail,game,league);
+        }
         const detailChanged = !cached?.detail || JSON.stringify(cached.detail) !== JSON.stringify(detail);
         homeGameDetailCache.set(key, { at:Date.now(), detail });
         homeGameDetailErrorStreak = 0;
@@ -2591,6 +2615,12 @@
         window.dispatchEvent(new CustomEvent('npb-live-unwatch'));
       }
 
+      // Never reuse a previously polluted live detail when opening a scheduled
+      // postseason game: always re-read the exact Supabase key.
+      if (league === 'CPBL' && ['E','C'].includes(String(game?.kindCode||'').toUpperCase())
+          && String(game?.status||'').toLowerCase() === 'scheduled') {
+        homeGameDetailCache.delete(key);
+      }
       const cached = homeGameDetailCache.get(key);
       if (cached?.detail) renderHomeGameDetail(cached.detail, game);
       else renderHomeGameDetail({ status:game?.status, game, plays:[] }, game, { loading:true });
@@ -2616,7 +2646,7 @@
       if (expectedId && incomingId && expectedId !== incomingId) return;
       if (expectedKind !== incomingKind) return;
       const key = homeGameDetailKey('CPBL', date, game);
-      let normalized = homeProtectLiveFromScheduled(detail, game, 'CPBL');
+      let normalized = homeSanitizeScheduledDetail(homeProtectLiveFromScheduled(detail, game, 'CPBL'), game, 'CPBL');
       if(Number(row?.published_revision)>0)
         normalized={...normalized,_cpblPublishedRevision:Number(row.published_revision)};
       const previous = homeGameDetailCache.get(key)?.detail;
