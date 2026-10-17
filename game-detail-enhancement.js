@@ -54,8 +54,8 @@
         response.clone().json().then(async data => {
           if (data?.ok && data?.game) {
             data = await hydrateCpblPregameLineup(data);
-            latestDetail = data;
-            scheduleEnhance();
+            // Network responses can resolve after a different game is opened.
+            // Only the active game-detail renderer may publish visual state.
           }
         }).catch(() => {});
       }
@@ -1679,9 +1679,18 @@
 
   function enhanceGameDetail() {
     applyVersionLabel();
-    const detail=window.__latestHomeGameDetail || latestDetail || null; if (!detail?.game) return;
+    const active=window.__activeHomeGameDetailIdentity;
+    const detail=window.__latestHomeGameDetail || null;
+    if (!active || !detail?.game) return;
+    const actualLeague=String(detail?.league||'').toUpperCase();
+    if (actualLeague && actualLeague !== String(active.league||'').toUpperCase()) return;
+    if (detail?.date && String(detail.date).slice(0,10) !== String(active.date)) return;
+    const actualId=String(detail?.game?.id||'');
+    if (actualId && active.gameId && actualId !== active.gameId) return;
+    const actualKind=String(detail?.game?.kindCode || detail?.kindCode || '').toUpperCase();
+    if (active.league === 'CPBL' && actualKind && actualKind !== active.kindCode) return;
     const overlay=document.getElementById('homeGameDetailOverlay'), body=overlay?.querySelector('#homeGameDetailBody');
-    const league=String(detail?.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
+    const league=String(active.league||'').toUpperCase(), isCpbl=league==='CPBL', isNpb=league==='NPB';
     const supportsLandscape=isCpbl||isNpb;
     const desktopDisplayControl=window.matchMedia('(min-width: 981px) and (pointer: fine)').matches;
     let manualLargeScreen=false;
@@ -1771,28 +1780,14 @@
     enhanceTimer=setTimeout(enhanceGameDetail,60);
   }
 
-  const acceptRealtimeDetail = event => {
-    const detail=event?.detail?.detail||event?.detail?.row?.published_payload||null;
-    if (!detail?.game) return;
-    const overlay=document.getElementById('homeGameDetailOverlay');
-    if(!overlay || overlay.classList.contains('hidden') || overlay.hidden) return;
-    const current=window.__latestHomeGameDetail;
-    const incomingId=String(detail?.game?.id||'');
-    const activeId=String(current?.game?.id||'');
-    if(incomingId && activeId && incomingId!==activeId) return;
-    // Live updates come from the primary game-detail handler, which also emits
-    // home-game-detail-state. Avoid duplicate enhancement work on the same payload.
-    if(current===detail || latestDetail===detail) return;
-    latestDetail=detail;
-    scheduleEnhance();
-  };
-  window.addEventListener('cpbl-live-cache-update',acceptRealtimeDetail);
-  window.addEventListener('npb-live-cache-update',acceptRealtimeDetail);
+  // The primary game-detail controller owns Realtime and validates
+  // league/date/kind/game. Accept only its game-scoped state events.
   window.addEventListener('home-game-detail-state', event => {
     const detail=event?.detail?.detail||null;
-    if (!detail?.game) return;
-    const overlay=document.getElementById('homeGameDetailOverlay');
-    if(!overlay || overlay.classList.contains('hidden') || overlay.hidden) return;
+    const active=window.__activeHomeGameDetailIdentity;
+    if (!detail?.game || !active || event?.detail?.key !== active.key) return;
+    if (String(event?.detail?.league||'').toUpperCase() !== String(active.league||'').toUpperCase()) return;
+    if (String(event?.detail?.date||'') !== String(active.date)) return;
     latestDetail=detail;
     scheduleEnhance();
   });
