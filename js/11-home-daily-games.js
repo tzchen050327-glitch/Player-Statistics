@@ -573,7 +573,16 @@
       } else {
         bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game:rawGame, sourceIndex }) => {
           const seriesUnplayed = league === 'NPB' && homeNpbFirstStageUnplayed(rawGame,date);
-          const game = seriesUnplayed ? {...rawGame,status:'cancelled',cancellationReason:'第一階段已決勝｜本場不舉行'} : rawGame;
+          // Normalize this verified postponed ALCS fixture before deriving any card state.
+          // This also repairs previously cached FINAL snapshots and avoids split label/score styles.
+          const rainPostponedMlb = league === 'MLB'
+            && date === '2026-10-16'
+            && (String(rawGame?.id || '') === '849817'
+              || (/Tampa Bay Rays/i.test(String(rawGame?.away || ''))
+                && /Cleveland Guardians/i.test(String(rawGame?.home || ''))));
+          const game = rainPostponedMlb
+            ? {...rawGame,status:'postponed',postponementReason:'因雨延賽',awayScore:null,homeScore:null,inningLabel:''}
+            : (seriesUnplayed ? {...rawGame,status:'cancelled',cancellationReason:'第一階段已決勝｜本場不舉行'} : rawGame);
           const gameKey = homeDailyGameStableKey(game);
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
