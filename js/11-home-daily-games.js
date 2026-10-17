@@ -341,6 +341,14 @@
     function homeDailyGameStatusLabel(game) {
       const status = String(game?.status || '').toLowerCase();
       const league = homeDailyGamesLeague();
+      // Final display guard for the verified 2026-10-16 ALCS rain postponement.
+      // Historical in-memory snapshots can predate the API/cache correction.
+      if (league === 'MLB' && String(game?.id || '') === '849817'
+          && ['final','cancelled','postponed'].includes(status)
+          && (game?.awayScore === null || game?.awayScore === undefined || game?.awayScore === '')
+          && (game?.homeScore === null || game?.homeScore === undefined || game?.homeScore === '')) {
+        return '因雨延賽';
+      }
       if (status === 'final') return '已結束';
       if (status === 'live') return String(game?.inningLabel || '').trim() || '比賽中';
       if (status === 'cancelled' || status === 'postponed') {
