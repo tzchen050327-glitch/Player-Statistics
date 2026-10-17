@@ -2227,9 +2227,9 @@
             <section class="game-detail-score-card">
               <div class="game-detail-status">${escapeHtml(homeGameDetailStatusLabel(detail || {status,game:gameInfo}))}${loading ? '｜更新中…' : ''}</div>
               <div class="game-detail-score-row">
-                <div><span>${escapeHtml(String(gameInfo?.away || game?.away || '客隊'))}</span><strong>${homeGameDetailScore(gameInfo?.awayScore)}</strong></div>
+                <div><span>${escapeHtml(String(gameInfo?.away || game?.away || '客隊'))}</span><strong>${status === 'scheduled' ? '—' : homeGameDetailScore(gameInfo?.awayScore)}</strong></div>
                 <b>－</b>
-                <div><span>${escapeHtml(String(gameInfo?.home || game?.home || '主隊'))}</span><strong>${homeGameDetailScore(gameInfo?.homeScore)}</strong></div>
+                <div><span>${escapeHtml(String(gameInfo?.home || game?.home || '主隊'))}</span><strong>${status === 'scheduled' ? '—' : homeGameDetailScore(gameInfo?.homeScore)}</strong></div>
               </div>
               ${matchup}
             </section>
