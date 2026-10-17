@@ -1718,6 +1718,14 @@
       return;
     }
 
+    // No live innings, live pitcher, runner diagram or R/H/E board before
+    // first pitch. The main renderer already shows the pregame placeholder.
+    if (isCpbl && String(detail?.status || '').toLowerCase() === 'scheduled') {
+      body.querySelectorAll('[data-gdx="live"],[data-gdx="scoreboard"],[data-gdx="decisions"],[data-gdx="last-play"],[data-gdx="landscape"]').forEach(node=>node.remove());
+      delete body.dataset.gdxStamp;
+      return;
+    }
+
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
     const stamp=`${detailStamp(detail)}|${landscapeMode?'landscape':'portrait'}`;
