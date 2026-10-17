@@ -28,7 +28,7 @@
       const sourceKind = String(detail?.game?.kindCode || detail?.kindCode || '').toUpperCase();
       const wantedKind = String(selection?.game?.kindCode || 'A').toUpperCase();
       if (wantedLeague === 'CPBL' && sourceKind && sourceKind !== wantedKind) return false;
-      const norm = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[\\s・･·.．-]/g,'');
+      const norm = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[\s・･·.．-]/g,'');
       const expectedAway = norm(selection?.game?.away), expectedHome = norm(selection?.game?.home);
       const actualAway = norm(detail?.game?.away), actualHome = norm(detail?.game?.home);
       if (wantedLeague === 'CPBL' && expectedAway && actualAway && expectedAway !== actualAway) return false;
