@@ -2343,7 +2343,15 @@
         return 60 * 1000;
       }
       if (status === 'cancelled') return 12 * 60 * 60 * 1000;
-      if (status === 'scheduled') return 2 * 60 * 1000;
+      if (status === 'scheduled') {
+        const kind = String(activeHomeGameDetail?.game?.kindCode || detail?.kindCode || '').toUpperCase();
+        const isCurrentPostseason = activeHomeGameDetail?.league === 'CPBL'
+          && ['C','E'].includes(kind)
+          && activeHomeGameDetail.date === localISODate();
+        // The live scheduler may switch to LIVE between two requests.
+        // Don't pin a pregame response in the in-memory cache for 2 minutes.
+        return isCurrentPostseason ? 30 * 1000 : 2 * 60 * 1000;
+      }
       return 45 * 1000;
     }
 
@@ -2377,6 +2385,32 @@
           homeGameDetailRefreshTimer = 0;
           stopHomeGameDetailRefreshCountdown();
           if (!activeHomeGameDetail || document.visibilityState !== 'visible' || !consumeHomeGameDetailAuto()) return;
+          refreshActiveHomeGameDetail({ force:false, automatic:true });
+        }, delay);
+        return;
+      }
+
+      if (status === 'scheduled' && activeHomeGameDetail.league === 'CPBL'
+          && activeHomeGameDetail.date === localISODate()
+          && ['E','C'].includes(String(activeHomeGameDetail.game?.kindCode || '').toUpperCase())) {
+        // The overlay must transition from pregame to LIVE even without a
+        // Realtime event. Poll the SAME game cache, not an unscoped game ID.
+        const clock = String(activeHomeGameDetail.game?.time || '17:05');
+        const match = clock.match(/^(\d{1,2}):(\d{2})$/);
+        const startAt = match
+          ? Date.parse(activeHomeGameDetail.date + 'T'
+              + match[1].padStart(2,'0') + ':' + match[2] + ':00+08:00')
+          : NaN;
+        const untilStart = Number.isFinite(startAt) ? startAt - Date.now() : 0;
+        const delay = untilStart > 60 * 60 * 1000 ? 5 * 60 * 1000
+          : untilStart > 15 * 60 * 1000 ? 2 * 60 * 1000 : 45 * 1000;
+        startHomeGameDetailRefreshCountdown(delay);
+        const scopedKey = activeHomeGameDetail.key;
+        homeGameDetailRefreshTimer = setTimeout(() => {
+          homeGameDetailRefreshTimer = 0;
+          stopHomeGameDetailRefreshCountdown();
+          if (!activeHomeGameDetail || activeHomeGameDetail.key !== scopedKey
+              || document.visibilityState !== 'visible') return;
           refreshActiveHomeGameDetail({ force:false, automatic:true });
         }, delay);
         return;
