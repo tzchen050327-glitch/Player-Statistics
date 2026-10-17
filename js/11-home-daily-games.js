@@ -425,6 +425,25 @@
           return game;
         });
       }
+      // MLB can expose abstractGameState=Final while detailedState=Postponed.
+      // A postseason game marked FINAL without either score is not a completed game.
+      if (league === 'MLB') {
+        games = games.map(game => {
+          const status = String(game?.status || '').toLowerCase();
+          const awayScoreMissing = game?.awayScore === null || game?.awayScore === undefined || game?.awayScore === '';
+          const homeScoreMissing = game?.homeScore === null || game?.homeScore === undefined || game?.homeScore === '';
+          const postseason = String(game?.competition || '').toLowerCase() === 'postseason'
+            || ['F','D','L','W'].includes(String(game?.gameType || '').toUpperCase());
+          if (status === 'final' && awayScoreMissing && homeScoreMissing && postseason) {
+            return {
+              ...game,
+              status:'postponed',
+              postponementReason:String(game?.postponementReason || '').trim() || '延賽'
+            };
+          }
+          return game;
+        });
+      }
       // CPBL schedule history can occasionally omit an end marker and look live/scheduled.
       // A date before today is immutable history in the UI, so normalize those states to FINAL.
       if (league === 'CPBL' && String(date || '') < localISODate()) {
