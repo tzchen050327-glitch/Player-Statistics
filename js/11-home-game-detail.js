@@ -13,6 +13,37 @@
       return [league, date, String(game?.kindCode || ''), String(game?.id || ''), String(game?.away || ''), String(game?.home || '')].join('|');
     }
 
+    // A game number is NOT unique across NPB/CPBL/CPBL postseason.
+    // Reject unrelated detail responses even if they complete after a tab switch.
+    function homeDetailBelongsToSelection(detail, selection = activeHomeGameDetail) {
+      if (!selection || !detail?.game) return true;
+      const sourceLeague = String(detail?.league || '').toUpperCase();
+      const wantedLeague = String(selection.league || '').toUpperCase();
+      if (sourceLeague && sourceLeague !== wantedLeague) return false;
+      const sourceDate = String(detail?.date || '').slice(0, 10);
+      if (sourceDate && sourceDate !== String(selection.date || '')) return false;
+      const sourceId = String(detail?.game?.id || detail?.gameId || '');
+      const wantedId = String(selection?.game?.id || '');
+      if (sourceId && wantedId && sourceId !== wantedId) return false;
+      const sourceKind = String(detail?.game?.kindCode || detail?.kindCode || '').toUpperCase();
+      const wantedKind = String(selection?.game?.kindCode || 'A').toUpperCase();
+      if (wantedLeague === 'CPBL' && sourceKind && sourceKind !== wantedKind) return false;
+      const norm = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[\\s・･·.．-]/g,'');
+      const expectedAway = norm(selection?.game?.away), expectedHome = norm(selection?.game?.home);
+      const actualAway = norm(detail?.game?.away), actualHome = norm(detail?.game?.home);
+      if (wantedLeague === 'CPBL' && expectedAway && actualAway && expectedAway !== actualAway) return false;
+      if (wantedLeague === 'CPBL' && expectedHome && actualHome && expectedHome !== actualHome) return false;
+      return true;
+    }
+
+    function homeSelectedGamePlaceholder(game) {
+      return { status:String(game?.status || 'scheduled'), league:String(activeHomeGameDetail?.league || ''),
+        game:{ ...game, awayScore:game?.status === 'scheduled' ? null : game?.awayScore ?? null,
+          homeScore:game?.status === 'scheduled' ? null : game?.homeScore ?? null,
+          inningLabel:game?.status === 'scheduled' ? '' : String(game?.inningLabel || '') },
+        plays:[], current:null, scoreboard:null };
+    }
+
     // Do not allow a slower detail request to overwrite a newer Realtime PA.
     // The full, ordered plays are authoritative for game progress.
     function homeCpblLiveProgress(detail) {
@@ -304,6 +335,7 @@
     }
 
     function homeGameDetailScore(value) {
+      if (value === null || value === undefined || value === '') return '—';
       const n = Number(value);
       return Number.isFinite(n) ? String(n) : '—';
     }
@@ -708,6 +740,8 @@
       window.dispatchEvent(new CustomEvent('npb-live-unwatch'));
       document.body.classList.remove('gdx-cpbl-landscape');
       activeHomeGameDetail = null;
+      window.__activeHomeGameDetailIdentity = null;
+      window.__latestHomeGameDetail = null;
       const overlay = document.getElementById('homeGameDetailOverlay');
       if (overlay) overlay.classList.add('hidden');
       document.body.classList.remove('home-game-detail-open');
@@ -2071,6 +2105,10 @@
       // Async responses can arrive after the user has closed the overlay.
       // Rendering must never reopen a closed matchup center.
       if (!activeHomeGameDetail) return;
+      if (!homeDetailBelongsToSelection(detail, activeHomeGameDetail)) {
+        console.warn('[match-center] ignoring a foreign game detail payload', {wanted:activeHomeGameDetail.key, league:detail?.league, gameId:detail?.game?.id});
+        detail = homeSelectedGamePlaceholder(activeHomeGameDetail.game);
+      }
       detail = homeProtectLiveFromScheduled(detail, game, activeHomeGameDetail?.league);
       const overlay = ensureHomeGameDetailOverlay();
       const body = overlay.querySelector('#homeGameDetailBody');
@@ -2091,9 +2129,13 @@
         // the full game payload on every UI-only render; the enhancement layer already
         // observes the DOM and this event used to make rapid tab switching do duplicate work.
         if (shouldDispatchDetailState) {
+          const selection = { key:activeHomeGameDetail.key, league:activeHomeGameDetail.league,
+            date:activeHomeGameDetail.date, gameId:String(activeHomeGameDetail.game?.id || ''),
+            kindCode:String(activeHomeGameDetail.game?.kindCode || 'A') };
           queueMicrotask(() => {
+            if (activeHomeGameDetail?.key !== selection.key) return;
             window.dispatchEvent(new CustomEvent('home-game-detail-state', {
-              detail:{ detail, league:activeHomeGameDetail?.league || detail?.league || '', date:activeHomeGameDetail?.date || detail?.date || '' }
+              detail:{ detail, ...selection }
             }));
           });
         }
@@ -2424,6 +2466,9 @@
         if (!detail && staleDetail && !cpblFinalDecisionIncomplete) detail = staleDetail;
         if (!detail) detail = await leagueGameDetailRequest(league, date, game, league === 'CPBL' ? false : force);
         if (!activeHomeGameDetail || activeHomeGameDetail.key !== key) return;
+        if (!homeDetailBelongsToSelection(detail, activeHomeGameDetail)) {
+          throw new Error('資料來源回傳其他場次，已阻擋跨聯盟比分。請重新讀取。');
+        }
         // Preserve a previously fetched pregame card when a fresh published-cache detail
         // does not contain pregame data. CPBL scheduled rows are intentionally lightweight.
         if (detail && !force && !detail?.pregame && staleDetail?.pregame) {
@@ -2530,6 +2575,10 @@
       const requestedTab = openAllowedTabs.includes(rawRequestedTab) ? rawRequestedTab : '';
       const defaultTab = requestedTab || (String(game?.status || 'scheduled').toLowerCase() === 'scheduled' ? 'overview' : 'play');
       const cachedPitchers = homePitcherRecordsCache.get(key) || null;
+      window.__latestHomeGameDetail = null;
+      window.__activeHomeGameDetailIdentity = { league, date, gameId:String(game?.id || ''),
+        kindCode:String(game?.kindCode || 'A').toUpperCase(),
+        away:String(game?.away || ''), home:String(game?.home || ''), key };
       activeHomeGameDetail = { league, date, game, key, loading:false, centerTab:defaultTab, pregameCenter:game?.overview || null, pregameExtrasLoading:false, pregameExtrasError:'', pitcherRecords:cachedPitchers?.records || null, pitcherRecordsLoading:false, pitcherRecordsError:'' };
       if (league === 'CPBL' && date === localISODate() && game?.id) {
         window.dispatchEvent(new CustomEvent('cpbl-live-watch', { detail:{ date, gameId:String(game.id), kindCode:String(game?.kindCode || 'A') } }));
@@ -2558,6 +2607,7 @@
       let detail = event?.detail?.detail || row?.published_payload || null;
       if (!detail?.game) return;
       const { date, game } = activeHomeGameDetail;
+      if (!homeDetailBelongsToSelection(detail, activeHomeGameDetail)) return;
       if (String(row?.game_date || detail?.date || '') !== String(date || '')) return;
       const expectedId = String(game?.id || '');
       const incomingId = String(row?.game_id || detail?.game?.id || '');
@@ -2588,6 +2638,8 @@
       const detail = event?.detail?.detail || row?.published_payload || null;
       if (!detail?.game) return;
       const { date, game } = activeHomeGameDetail;
+      if (!homeDetailBelongsToSelection(detail, activeHomeGameDetail)) return;
+      if (row?.game_date && String(row.game_date) !== String(date)) return;
       const expectedId = String(game?.id || '');
       const incomingId = String(row?.game_id || detail?.game?.id || '');
       if (expectedId && incomingId && expectedId !== incomingId) return;
