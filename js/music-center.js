@@ -732,7 +732,7 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=c1.80',{cache:'no-store'});
+      const response=await fetch('./data/music-roster-2026.json?v=c1.81',{cache:'no-store'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');

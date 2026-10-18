@@ -108,3 +108,18 @@
     bottom:calc(22px + env(safe-area-inset-bottom,0px));
   }
 }
+
+/* c1.81: umpire called-strike / called-ball accuracy ledger. */
+.gdx-umpire-call-breakdown {margin-top:13px;overflow:hidden;border:1px solid var(--line,#344352);border-radius:12px;}
+.gdx-umpire-call-breakdown-row {display:grid;grid-template-columns:minmax(84px,1.35fr) repeat(3,minmax(0,1fr));align-items:center;gap:4px;padding:11px 9px;border-top:1px solid var(--line,#344352);font-size:12px;}
+.gdx-umpire-call-breakdown-row:first-child {border-top:0;}
+.gdx-umpire-call-breakdown-row.is-head {background:rgba(138,157,170,.1);color:var(--muted,#b5c2d1);font-size:11px;font-weight:850;}
+.gdx-umpire-call-breakdown-row>:not(:first-child) {text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.gdx-umpire-call-breakdown-row>strong:first-child {font-size:12px;}
+.gdx-umpire-call-breakdown-row .gdx-call-correct {color:#71c5a1;}
+.gdx-umpire-call-breakdown-row .gdx-call-wrong {color:#ef918a;}
+.gdx-umpire-call-breakdown p {margin:0;padding:8px 10px;font-size:10px;color:var(--muted,#b5c2d1);border-top:1px solid var(--line,#344352);}
+@media(max-width:440px) {
+ .gdx-umpire-call-breakdown-row {grid-template-columns:minmax(77px,1.2fr) repeat(3,minmax(0,1fr));gap:2px;padding:10px 6px;font-size:11px;}
+ .gdx-umpire-call-breakdown-row>strong:first-child {font-size:11px;}
+}

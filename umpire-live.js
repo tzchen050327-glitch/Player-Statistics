@@ -142,7 +142,23 @@
     const misses=Array.isArray(report.missed_calls)?report.missed_calls:[];
     const name=String(report.umpire_name||'').trim()||'待確認';
     const accuracy=Number(report.accuracy),pct=Number.isFinite(accuracy)&&Number(report.total_calls)>0?accuracy.toFixed(1)+'%':'—';
+    // Classify by the plate umpire's ACTUAL call, not the model's zone result.
+    const strikeWrong=misses.filter(p=>p.called==='STRIKE').length;
+    const ballWrong=misses.filter(p=>p.called==='BALL').length;
+    const strikeCorrect=Number(report.strike_correct);
+    const ballCorrect=Number(report.ball_correct);
+    const hasCounts=Number.isFinite(strikeCorrect)&&Number.isFinite(ballCorrect)
+       && Number(report.total_calls)>0&&strikeCorrect+ballCorrect===Number(report.correct_calls);
+    const totals=[['全部判決',Number(report.correct_calls),Number(report.missed_count)],
+       ['主審判好球',strikeCorrect,strikeWrong],['主審判壞球',ballCorrect,ballWrong]];
+    const rows=hasCounts?'<section class="gdx-umpire-call-breakdown" aria-label="主審好壞球判決正確錯誤顆數">'
+       +'<div class="gdx-umpire-call-breakdown-row is-head"><span>判決</span><span>正確</span><span>錯誤</span><span>合計</span></div>'
+       +totals.map(([label,correct,wrong])=>'<div class="gdx-umpire-call-breakdown-row"><strong>'+esc(label)+'</strong>'
+         +'<strong class="gdx-call-correct">'+correct+' 顆</strong>'
+         +'<strong class="gdx-call-wrong">'+wrong+' 顆</strong><span>'+(correct+wrong)+' 顆</span></div>').join('')
+       +'<p>好球、壞球依主審實際宣告分類，非模型判定的球種。</p></section>':'';
     return '<section class="gdx-umpire-modal-summary"><div><span>主審</span><strong>'+esc(name)+'</strong></div><div><span>暫定準確率</span><strong>'+esc(pct)+'</strong></div><div><span>疑似誤判</span><strong>'+esc(misses.length)+' 顆</strong></div></section>'
+      +rows
       +'<p class="gdx-umpire-disclaimer">依 TrackMan 球點與固定身高估算好球帶分析，僅為暫定模型結果，非官方裁判評分。邊界球可能有判讀差異。</p>'
       +(misses.length?'<div class="gdx-umpire-miss-list">'+misses.map((p,i)=>{
         const inning=(Number(p.inning_num)||0)+'局'+(p.inning_half==='▲'?'上':'下');
