@@ -2,9 +2,9 @@
   'use strict';
   // Live umpire panel only. The official postgame report and its notifications stay untouched.
   const API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/cpbl-umpire-live-read';
-  const SUMMARY_TTL=120000, DETAIL_TTL=30000;
+  const SUMMARY_TTL=120000, DETAIL_TTL=120000;
   const summaries=new Map(), details=new Map();
-  let active=null,renderTimer=0,summaryPending=new Set(),detailPending=false;
+  let active=null,renderTimer=0,summaryPending=new Set(),detailPending=false,detailTimer=null;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const statusLive=v=>['live','suspended'].includes(String(v||'').toLowerCase());
   function currentCard(){
@@ -86,6 +86,7 @@
     d.innerHTML='<div class="gdx-umpire-dialog-head"><div><span>賽中暫定分析</span><strong>主審疑似誤判</strong></div><button type="button" class="gdx-umpire-dialog-close" aria-label="關閉">✕</button></div><div class="gdx-umpire-dialog-body" aria-live="polite"></div>';
     d.querySelector('.gdx-umpire-dialog-close').addEventListener('click',()=>d.close());
     d.addEventListener('click',e=>{if(e.target===d)d.close();});
+    d.addEventListener('close',()=>{clearInterval(detailTimer);detailTimer=null;delete d.dataset.reportKey;});
     document.body.appendChild(d);
     return d;
   }
@@ -119,23 +120,41 @@
         +'<span>受益：'+esc(p.favor_team||'未判定')+'</span></div></article>';
       }).join('')+'</div>':'<div class="gdx-umpire-empty">目前沒有疑似誤判球。</div>');
   }
-  async function openDetail(key){
-    if(!active||cacheKey()!==key||!statusLive(active.status))return;
-    const a={...active};
-    const d=ensureDialog(),body=d.querySelector('.gdx-umpire-dialog-body');
-    if(!d.open)d.showModal();
-    const previous=details.get(key);
-    if(previous&&Date.now()-previous.at<DETAIL_TTL){body.innerHTML=detailHtml(previous.data);return;}
-    if(detailPending)return;
+  // Refresh only while the current match's modal is open. Uses Supabase compact projection.
+  async function refreshOpenDetail(){
+    const d=document.getElementById('gdxLiveUmpireDialog');
+    if(!d?.open||document.hidden||!active||!statusLive(active.status))return;
+    const key=cacheKey(),previous=details.get(key);
+    if(d.dataset.reportKey!==key||detailPending||(previous&&Date.now()-previous.at<DETAIL_TTL))return;
+    const a={...active},body=d.querySelector('.gdx-umpire-dialog-body');
     detailPending=true;
-    body.innerHTML='<div class="gdx-umpire-empty">正在載入逐球疑似誤判…</div>';
+    if(!previous)body.innerHTML='<div class="gdx-umpire-empty">正在載入逐球疑似誤判…</div>';
     try{
       const report=await fetchReport(a,'&details=1');
       details.set(key,{at:Date.now(),data:report});
-      if(d.open&&cacheKey()===key)body.innerHTML=detailHtml(report);
+      if(d.open&&d.dataset.reportKey===key&&cacheKey()===key){
+        const scroll=body.scrollTop;
+        body.innerHTML=detailHtml(report);
+        body.scrollTop=scroll;
+      }
     }catch{
-      if(d.open)body.innerHTML='<div class="gdx-umpire-empty">暫時無法讀取判決，請稍後重新開啟。</div>';
+      // Keep stale content during a transient failure and back off for two minutes.
+      details.set(key,{at:Date.now(),data:previous?.data||null});
+      if(!previous&&d.open&&d.dataset.reportKey===key){
+        body.innerHTML='<div class="gdx-umpire-empty">暫時無法讀取判決，請稍後重新開啟。</div>';
+      }
     }finally{detailPending=false;}
+  }
+  function openDetail(key){
+    if(!active||cacheKey()!==key||!statusLive(active.status))return;
+    const d=ensureDialog(),body=d.querySelector('.gdx-umpire-dialog-body');
+    d.dataset.reportKey=key;
+    const previous=details.get(key);
+    body.innerHTML=previous?detailHtml(previous.data):'<div class="gdx-umpire-empty">正在載入逐球疑似誤判…</div>';
+    if(!d.open)d.showModal();
+    // Timer checks locally. Network reads are throttled to one per two minutes.
+    if(!detailTimer)detailTimer=setInterval(()=>{void refreshOpenDetail();},15000);
+    void refreshOpenDetail();
   }
   window.addEventListener('home-game-detail-state',event=>{
     const info=event?.detail||{},a=window.__activeHomeGameDetailIdentity,d=info.detail||{};
@@ -154,6 +173,7 @@
     if(!/^20\d\d-\d\d-\d\d$/.test(date)||!/^[AEC]$/.test(kindCode)||!/^\d+$/.test(gameId))return;
     active={key:a.key,date,kindCode,gameId,status};
     scheduleRender();
+    if(document.getElementById('gdxLiveUmpireDialog')?.open)void refreshOpenDetail();
   });
   document.addEventListener('click',event=>{
     const card=event.target.closest('.gdx-umpire-card');
@@ -162,5 +182,5 @@
       scheduleRender();
     }
   });
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRender();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){scheduleRender();void refreshOpenDetail();}});
 })();

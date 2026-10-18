@@ -50,3 +50,17 @@
 .gdx-umpire-miss-count {color:#d9ac4d;font-weight:900}
 .gdx-umpire-empty {padding:30px 12px;text-align:center;color:var(--muted,#9babbc)}
 
+
+/* c1.79: modal scroll viewport (desktop mouse wheel + phone touch swipe). */
+.gdx-umpire-dialog[open] {
+  display:flex;flex-direction:column;box-sizing:border-box;
+  height:min(86dvh,850px);max-height:min(86dvh,850px);overflow:hidden;
+}
+.gdx-umpire-dialog[open]>.gdx-umpire-dialog-head {
+  flex:0 0 auto;position:relative;top:auto;
+}
+.gdx-umpire-dialog[open]>.gdx-umpire-dialog-body {
+  flex:1 1 auto;min-height:0;height:auto;
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+  touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
+}
