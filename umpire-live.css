@@ -1,0 +1,52 @@
+/* CPBL in-game umpire preview: mobile-first, hidden on final. */
+.gdx-live-situation.gdx-has-live-umpire {
+  grid-template-columns:minmax(98px,.75fr) minmax(175px,1.4fr) minmax(128px,.95fr);
+  gap:9px;
+}
+.gdx-umpire-card {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  min-width:0;min-height:132px;padding:13px 7px;border-radius:18px;
+  border:1px solid #d5aa52;background:linear-gradient(145deg,#161913,#111713);
+  color:#f2e2b3;cursor:pointer;font:inherit;text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.1);
+}
+.gdx-umpire-card-label {font-size:12px;font-weight:900;letter-spacing:.02em}
+.gdx-umpire-card-name {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e4eaed;font-size:12px;font-weight:800}
+.gdx-umpire-card-pct {font-size:clamp(23px,3vw,36px);font-weight:950;line-height:1.2;font-variant-numeric:tabular-nums;color:#e8bd55}
+.gdx-umpire-card-foot {font-size:10px;font-weight:800;color:#b6a882}
+.gdx-umpire-card:focus-visible {outline:3px solid #e9bd57;outline-offset:2px}
+@media(max-width:720px) {
+  .gdx-live-situation.gdx-has-live-umpire {grid-template-columns:minmax(72px,.73fr) minmax(115px,1.32fr) minmax(92px,.95fr);gap:6px}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-bases-card {padding:10px 3px}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-current-row {padding:10px 9px;gap:3px}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-current-row>span {font-size:11px}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-current-row>strong {font-size:clamp(15px,4.2vw,20px);overflow-wrap:anywhere}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-diamond {transform:scale(.82);margin:1px -3px -5px}
+  .gdx-live-situation.gdx-has-live-umpire .gdx-outs {font-size:13px}
+  .gdx-umpire-card {min-height:118px;padding:8px 3px;gap:6px;border-radius:16px}
+  .gdx-umpire-card-label {font-size:11px}
+  .gdx-umpire-card-name {font-size:11px}
+  .gdx-umpire-card-pct {font-size:clamp(20px,6vw,27px)}
+  .gdx-umpire-card-foot {font-size:9px}
+}
+.gdx-umpire-dialog {border:1px solid var(--line,#2d4257);border-radius:16px;background:var(--panel,#111b27);color:var(--text,#f1f5f9);width:min(96vw,560px);max-height:min(86dvh,850px);padding:0;box-shadow:0 24px 80px #000a}
+.gdx-umpire-dialog::backdrop {background:#000b}
+.gdx-umpire-dialog-head {position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 18px;background:var(--panel,#111b27);border-bottom:1px solid var(--line,#324050);z-index:2}
+.gdx-umpire-dialog-head>div {display:flex;flex-direction:column;gap:3px}
+.gdx-umpire-dialog-head span {color:var(--muted,#9fb0c5);font-size:11px;font-weight:800}
+.gdx-umpire-dialog-head strong {font-size:18px}
+.gdx-umpire-dialog-close {background:transparent;color:inherit;border:1px solid var(--line,#536171);padding:7px 11px;border-radius:9px;cursor:pointer}
+.gdx-umpire-dialog-body {padding:15px 15px 23px;overflow:auto}
+.gdx-umpire-modal-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gdx-umpire-modal-summary>div {display:flex;flex-direction:column;gap:8px;padding:12px 7px;background:rgba(133,145,156,.08);border:1px solid var(--line,#2b3742);border-radius:11px;text-align:center}
+.gdx-umpire-modal-summary span {font-size:11px;color:var(--muted,#9baebd);font-weight:750}
+.gdx-umpire-modal-summary strong {font-size:18px;font-weight:900}
+.gdx-umpire-disclaimer {font-size:12px;line-height:1.7;color:var(--muted,#b0bdcc);margin:15px 0}
+.gdx-umpire-miss-list {display:flex;flex-direction:column;gap:9px}
+.gdx-umpire-miss {display:grid;grid-template-columns:87px minmax(0,1fr);gap:12px;padding:11px;border:1px solid var(--line,#374353);border-radius:12px;background:rgba(127,144,164,.06)}
+.gdx-umpire-miss-position svg {display:block;width:80px;max-height:100px;color:var(--text,#ebf3fa)}
+.gdx-umpire-miss-main {min-width:0;display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted,#afc0cd)}
+.gdx-umpire-miss-main strong {font-size:13px;color:var(--text,#f1f6fd)}
+.gdx-umpire-miss-count {color:#d9ac4d;font-weight:900}
+.gdx-umpire-empty {padding:30px 12px;text-align:center;color:var(--muted,#9babbc)}
+

@@ -18,6 +18,7 @@
     './postseason-history.js',
     './cpbl-cache-router.js',
     './game-detail-enhancement.js',
+    './umpire-live.js',
     './report-layout.js',
     './umpire-report-export.js'
   ];
