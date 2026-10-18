@@ -10,9 +10,11 @@
 
       els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
         const tab = button.dataset.homeRoot;
-        const active = homeRootSection === 'pro'
-          ? (homeProContinent === 'AMERICA' ? tab === 'america' : tab === 'asia')
-          : tab === homeRootSection;
+        const combinedActive = document.getElementById('homePage')?.classList.contains('combined-home-mode');
+        const active = combinedActive ? tab === 'combined'
+          : homeRootSection === 'pro'
+            ? (homeProContinent === 'AMERICA' ? tab === 'america' : tab === 'asia')
+            : tab === homeRootSection;
         button.classList.toggle('active', active);
       });
 
