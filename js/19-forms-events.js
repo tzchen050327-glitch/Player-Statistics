@@ -447,7 +447,7 @@
       const scheduleKey = dsIntlCompetition+':'+year;
       const scheduleLoading = intlSchedulePending.has(scheduleKey);
       const scheduleRetryAt = intlScheduleRetryAfter.get(scheduleKey)||0;
-      if(dsIntlTab!=='teams'&&!liveSchedule)requestIntlSchedule(dsIntlCompetition,year);
+      if(dsIntlTab!=='teams'&&!liveSchedule && !(dsIntlTab==='rankings'&&dsIntlVerifiedRankings[dsIntlCompetition+':'+year]))requestIntlSchedule(dsIntlCompetition,year);
       if(dsIntlTab==='schedule'&&!intlStoredGamesCache.has(dsIntlCompetition+':'+year)){
         intlStoredGamesCache.set(dsIntlCompetition+':'+year,[]);
         void readIntlStoredGames(dsIntlCompetition,year);
@@ -463,7 +463,7 @@
       const officialGames = liveSchedule?.games||[];
       const knownIds = new Set(officialGames.map(g=>String(g.id||'')).filter(Boolean));
       const knownPairs = new Set(officialGames.map(g=>String(g.date||'').slice(0,10)+':'+[intlLocalizeTeam(g.away),intlLocalizeTeam(g.home)].sort().join('|')));
-      const extraGames=savedGames.filter(g=>!knownIds.has(String(g.id||''))&&!knownPairs.has(g.date+':'+[g.away,g.home].sort().join('|')));
+      const extraGames=dsIntlCompetition==='WBCQ'&&year==='2025'?[]:savedGames.filter(g=>!knownIds.has(String(g.id||''))&&!knownPairs.has(g.date+':'+[g.away,g.home].sort().join('|')));
       const displayedGames=[...officialGames,...extraGames].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       if(dsIntlTab==='schedule' && displayedGames.length) {
         body='<p class="ds-intl-source">'+officialGames.length+' 場官方賽程'+(extraGames.length?' · '+extraGames.length+' 場球員逐場紀錄（未驗證比分）':'')+'</p>'+
