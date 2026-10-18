@@ -269,6 +269,17 @@
 #homePage.combined-home-mode .combined-competition-hub.hidden{display:none}
 #homePage.combined-home-mode .combined-competition-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
 #homePage.combined-home-mode .combined-competition-cards .ds-cup-entry{width:100%;min-width:0;text-align:left;cursor:pointer}
+#combinedInternationalDetail{margin:12px 0;min-width:0}
+#combinedInternationalDetail.hidden{display:none!important}
+.combined-intl-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 14px}
+.combined-intl-heading strong{font-size:18px}
+.combined-intl-heading select{min-height:36px;border:1px solid #5a4b29;border-radius:9px;background:#1a2029;color:#f5e5c1;padding:7px 10px}
+.combined-intl-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.combined-intl-tabs button{border:1px solid #394252;background:#151c27;color:#dce3ef;padding:10px 4px;border-radius:9px;cursor:pointer}
+.combined-intl-tabs button.active{border-color:#d4a344;color:#eac06c}
+.combined-intl-message{padding:16px;border:1px solid #394252;border-radius:12px;font-size:13px;color:#c1c9d4}
+.combined-intl-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px}
+.combined-intl-teams button{border:1px solid #394252;border-radius:10px;background:#151c27;color:#e5eaf2;text-align:left;padding:13px;cursor:pointer}
 #homePage.combined-home-mode[data-combined-view="international"] #homeReelsExplorer,
 #homePage.combined-home-mode[data-combined-view="winter"] #homeReelsExplorer{display:none!important}
 #homePage.combined-home-mode[data-combined-view="landing"] #homeReelsExplorer{display:none!important}
@@ -432,11 +443,16 @@
         <section class="panel home-main-panel">
           <div id="combinedCompetitionHub" class="combined-competition-hub hidden" aria-label="國際賽、三級棒球及冬盟">
             <div id="combinedCompetitionCards" class="combined-competition-cards">
-              <button class="ds-cup-entry" type="button" data-combined-open="international"><div><strong>國際賽</strong><span>原有國際賽事、年份、球隊與球員</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="WBC"><div><strong>世界棒球經典賽</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="WBCQ"><div><strong>經典賽資格賽</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="世界12強"><div><strong>世界12強</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="亞洲運動會"><div><strong>亞洲運動會</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="U18亞青"><div><strong>U18亞洲青棒錦標賽</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="international" data-competition="亞錦賽"><div><strong>亞洲棒球錦標賽</strong><span>年份・球隊・球員・賽事資訊</span></div><strong aria-hidden="true">›</strong></button>
               <button class="ds-cup-entry" type="button" data-combined-open="youth"><div><strong>2026 中信盃黑豹旗</strong><span>賽程・球隊・籤表・比賽球場</span></div><strong aria-hidden="true">›</strong></button>
               <button class="ds-cup-entry" type="button" data-combined-open="winter"><div><strong>亞洲冬季棒球聯盟</strong><span>戰績・數據・球隊・歷屆賽事</span></div><strong aria-hidden="true">›</strong></button>
             </div>
-            <button id="combinedCompetitionBack" class="press-btn hidden" type="button">← 返回賽事入口</button>
+            <button id="combinedCompetitionBack" class="press-btn hidden" type="button">← 返回賽事入口</button><div id="combinedInternationalDetail" class="hidden" aria-label="國際賽資訊"></div>
           </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
