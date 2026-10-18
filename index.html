@@ -214,6 +214,31 @@
   min-width:0;
 }
 </style>
+<style id="homeFullwidthNavigationStyles">
+/* Full-width shared root navigation above sidebar and league content. */
+#homePage .home-fullwidth-navigation{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  margin:0 0 12px;
+}
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-root-switch{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:42px!important;
+  padding:4px!important;
+}
+#homePage .home-layout{
+  height:calc(100dvh - 214px);
+}
+/* Root navigation no longer occupies the scrolling right panel. */
+#homePage .home-main-panel.awb-mode{
+  min-width:0;
+}
+</style>
 </head>
 <body>
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
@@ -265,6 +290,14 @@
     </div>
 
     <section id="homePage">
+      <nav class="home-fullwidth-navigation" aria-label="主要棒球分類">
+        <div id="homeZoneSwitch" class="home-zone-switch home-root-switch" aria-label="資料分類">
+          <button class="home-zone-btn active" type="button" data-home-root="asia">亞洲職棒</button>
+          <button class="home-zone-btn" type="button" data-home-root="america">美洲職棒</button>
+          <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
+          <button class="home-zone-btn" type="button" data-home-root="reels">三級棒球</button>
+        </div>
+      </nav>
       <div class="home-layout">
         <aside class="home-sidebar">
           <section class="panel home-background-panel">
@@ -359,12 +392,6 @@
         </aside>
 
         <section class="panel home-main-panel">
-          <div id="homeZoneSwitch" class="home-zone-switch home-root-switch" aria-label="資料分類">
-            <button class="home-zone-btn active" type="button" data-home-root="asia">亞洲職棒</button>
-            <button class="home-zone-btn" type="button" data-home-root="america">美洲職棒</button>
-            <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
-            <button class="home-zone-btn" type="button" data-home-root="reels">三級棒球</button>
-          </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="JP">日本</button>
