@@ -189,6 +189,11 @@
           ['圖森組','哥倫比亞',3,0],['圖森組','巴西',3,1],['圖森組','德國',1,3],['圖森組','中國',0,3]
         ]
       },
+      '亞洲運動會:2026':{
+        source:'https://www.japan-baseball.jp/en/team/amateur/2026/asiangames/overview.html',
+        venues:['岡崎中央綜合公園棒球場','豐橋市民球場'],
+        games:[["09/21","菲律賓","巴勒斯坦",12,0,"豐橋市民球場"],["09/21","香港","泰國",7,10,"岡崎中央綜合公園棒球場"],["09/21","日本","中國",11,3,"豐橋市民球場"],["09/21","中華台北","韓國",0,5,"岡崎中央綜合公園棒球場"],["09/22","中國","菲律賓",15,8,"岡崎中央綜合公園棒球場"],["09/22","泰國","中華台北",0,15,"豐橋市民球場"],["09/22","巴勒斯坦","日本",0,15,"岡崎中央綜合公園棒球場"],["09/22","韓國","香港",13,0,"豐橋市民球場"],["09/23","菲律賓","日本",0,7,"豐橋市民球場"],["09/23","泰國","韓國",1,18,"岡崎中央綜合公園棒球場"],["09/23","巴勒斯坦","中國",1,9,"岡崎中央綜合公園棒球場"],["09/23","香港","中華台北",0,11,"豐橋市民球場"],["09/25","菲律賓","泰國",18,7,"岡崎中央綜合公園棒球場"],["09/25","巴勒斯坦","香港",7,2,"豐橋市民球場"],["09/25","中華台北","中國",9,1,"岡崎中央綜合公園棒球場"],["09/25","韓國","日本",0,5,"豐橋市民球場"],["09/26","巴勒斯坦","泰國",0,1,"岡崎中央綜合公園棒球場"],["09/26","香港","菲律賓",7,5,"豐橋市民球場"],["09/26","中國","韓國",2,9,"豐橋市民球場"],["09/26","中華台北","日本",3,7,"岡崎中央綜合公園棒球場"],["09/27","中國","中華台北",1,5,"岡崎中央綜合公園棒球場"],["09/27","韓國","日本",3,1,"豐橋市民球場"]]
+      },
       '世界12強:2024':{
         source:'https://www.koreabaseball.com/Schedule/International/Etc/Premier2024.aspx',
         venues:['東京巨蛋（日本東京，複賽與決賽）']
@@ -1188,16 +1193,16 @@
       const officialGames = liveSchedule?.games||[];
       const knownIds = new Set(officialGames.map(g=>String(g.id||'')).filter(Boolean));
       const knownPairs = new Set(officialGames.map(g=>String(g.date||'').slice(0,10)+':'+[intlLocalizeTeam(g.away),intlLocalizeTeam(g.home)].sort().join('|')));
-      const extraGames=dsIntlCompetition==='WBCQ'&&year==='2025'?[]:savedGames.filter(g=>!knownIds.has(String(g.id||''))&&!knownPairs.has(g.date+':'+[g.away,g.home].sort().join('|')));
+      const extraGames=(dsIntlCompetition==='WBCQ'&&year==='2025')||(dsIntlCompetition==='亞洲運動會'&&year==='2026')?[]:savedGames.filter(g=>!knownIds.has(String(g.id||''))&&!knownPairs.has(g.date+':'+[g.away,g.home].sort().join('|')));
       const displayedGames=[...officialGames,...extraGames].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       if(dsIntlTab==='schedule' && displayedGames.length) {
         body='<p class="ds-intl-source">'+officialGames.length+' 場官方賽程'+(extraGames.length?' · '+extraGames.length+' 場球員逐場紀錄（未驗證比分）':'')+'</p>'+
-          displayedGames.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(intlLocalizeVenue(g.venue||''))+' · '+escapeHtml(intlLocalizeGameStatus(g.status||''))+'</small><strong>'+
+          displayedGames.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(intlLocalizeVenue(g.venue||''))+' · '+(g.gameType||g.description?escapeHtml(g.gameType||g.description)+' · ':'')+escapeHtml(intlLocalizeGameStatus(g.status||''))+'</small><strong>'+
           escapeHtml(intlLocalizeTeam(g.away||'待定'))+' <span class="score">'+escapeHtml(String(g.awayScore??'—'))+'</span> — <span class="score">'+escapeHtml(String(g.homeScore??'—'))+'</span> '+escapeHtml(intlLocalizeTeam(g.home||'待定'))+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && liveSchedule?.games?.length) {
         body=[...new Set(liveSchedule.games.map(g=>intlLocalizeVenue(g.venue)).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
       } else if(dsIntlTab==='schedule' && snapshot?.games?.length) {
-        body = '<p class="ds-intl-source">已核對場次（部分紀錄，持續補齊其他分組）</p>'+
+        body = '<p class="ds-intl-source">'+(dsIntlCompetition==='亞洲運動會'&&year==='2026'?'官方比賽紀錄 · 22 場（完整賽程）':'已核對場次（部分紀錄，持續補齊其他分組）')+'</p>'+
           snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(intlLocalizeVenue(g[5]))+'</small><strong>'+escapeHtml(g[1])+
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
