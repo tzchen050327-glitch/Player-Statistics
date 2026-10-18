@@ -209,6 +209,25 @@
         standings:[['A組','日本',3,0],['A組','中國',2,1],['A組','菲律賓',1,2],['A組','巴基斯坦',0,3]]
       }
     };
+    const intlScheduleCache = new Map();
+    const intlSchedulePending = new Set();
+    function requestIntlSchedule(competition,year){
+      if(competition!=='WBC'||!year)return;
+      const key=competition+':'+year;
+      if(intlScheduleCache.has(key)||intlSchedulePending.has(key))return;
+      intlSchedulePending.add(key);
+      fetch('https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/international-tournament-schedule?competition='+encodeURIComponent(competition)+'&year='+encodeURIComponent(year),{signal:AbortSignal.timeout(14000)})
+        .then(r=>{if(!r.ok)throw new Error('schedule '+r.status);return r.json();})
+        .then(data=>{
+          if(!Array.isArray(data.games)||!data.games.length)throw new Error('empty schedule');
+          intlScheduleCache.set(key,data);
+        })
+        .catch(err=>console.warn('[International schedule]',key,err))
+        .finally(()=>{
+          intlSchedulePending.delete(key);
+          if(!dsIntlPage.classList.contains('hidden')&&dsIntlCompetition===competition&&dsIntlYear.value===String(year))renderStandaloneIntl();
+        });
+    }
     function closeStandaloneIntl() {
       ++dsIntlOpenToken;
       dsIntlPage?.classList.add('hidden');
@@ -273,6 +292,8 @@
         return;
       }
       const snapshot = dsIntlOfficial[dsIntlCompetition+':'+year];
+      const liveSchedule = intlScheduleCache.get(dsIntlCompetition+':'+year);
+      if(dsIntlTab!=='teams'&&!liveSchedule)requestIntlSchedule(dsIntlCompetition,year);
       const messages = {
         schedule:'此屆逐場比賽資料尚未匯入，資料不足時不產生虛構比分。',
         venues:'此屆官方球場資料尚未匯入。',
@@ -280,7 +301,13 @@
       };
       const source = snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
       let body = '';
-      if(dsIntlTab==='schedule' && snapshot?.games?.length) {
+      if(dsIntlTab==='schedule' && liveSchedule?.games?.length) {
+        body='<p class="ds-intl-source">官方賽程 · '+liveSchedule.games.length+' 場</p>'+
+          liveSchedule.games.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(g.venue||'')+' · '+escapeHtml(g.status||'')+'</small><strong>'+
+          escapeHtml(g.away||'待定')+' <span class="score">'+(g.awayScore??'—')+'</span> — <span class="score">'+(g.homeScore??'—')+'</span> '+escapeHtml(g.home||'待定')+'</strong></article>').join('');
+      } else if(dsIntlTab==='venues' && liveSchedule?.games?.length) {
+        body=[...new Set(liveSchedule.games.map(g=>g.venue).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
+      } else if(dsIntlTab==='schedule' && snapshot?.games?.length) {
         body = '<p class="ds-intl-source">已核對場次（部分紀錄，持續補齊其他分組）</p>'+
           snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(g[5])+'</small><strong>'+escapeHtml(g[1])+
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
