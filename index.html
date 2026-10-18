@@ -505,7 +505,6 @@
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="JP">日本</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="KR">韓國</button>
-            <button class="home-hierarchy-btn" type="button" data-pro-country="AWB">冬盟</button>
             <button class="home-hierarchy-btn hidden" type="button" data-pro-country="US">美國</button>
           </div>
           <div id="homeUsLeagueSwitch" class="home-us-league-switch hidden" aria-label="美國職棒聯盟">
@@ -1124,8 +1123,8 @@
   function select(tab){if(!['standings','stats','teams'].includes(tab))return;current=tab;detail=null;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);render();}
   buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
   body.addEventListener('click',event=>{const cat=event.target.closest('[data-awb-category]'),team=event.target.closest('[data-awb-team]'),back=event.target.closest('[data-awb-back]');if(cat)detail=cat.dataset.awbCategory;else if(team)detail=team.dataset.awbTeam;else if(back)detail=null;else return;render();body.scrollTop=0;});
-  function sync(){const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active'),root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');const show=!!active&&(!!root||document.getElementById('homePage')?.dataset.combinedView==='winter');section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);for(const el of panel.querySelectorAll('.home-player-head,.home-player-actions'))el.classList.toggle('hidden',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
-  const observer=new MutationObserver(sync);for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
+  function sync(){const page=document.getElementById('homePage');const show=!!page?.classList.contains('combined-home-mode')&&page.dataset.combinedView==='winter';section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);for(const el of panel.querySelectorAll('.home-player-head,.home-player-actions'))el.classList.toggle('hidden',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
+  const observer=new MutationObserver(sync);const awbPage=document.getElementById('homePage');if(awbPage)observer.observe(awbPage,{attributes:true,attributeFilter:['class','data-combined-view']});
   select('standings');sync();
 })();
 </script>
