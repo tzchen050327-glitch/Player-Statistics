@@ -42,16 +42,16 @@
 </style>
 <style id="awbCompactStyles">
 .home-main-panel.awb-mode .home-player-head,.home-main-panel.awb-mode .home-player-actions,.home-main-panel.awb-mode #homeSpecialFilters,.home-main-panel.awb-mode #homeInternationalExplorer,.home-main-panel.awb-mode #homeSpecialGamesExplorer,.home-main-panel.awb-mode #recentPlayers,.home-main-panel.awb-mode #homeZoneNote{display:none!important}
-.awb-schedule-shell.hidden,.awb-compact.hidden{display:none!important}
-.awb-schedule-shell{box-sizing:border-box;flex:0 0 auto!important;min-height:max-content!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:9px 0 12px!important;border-radius:13px!important}
-.awb-schedule-shell .home-daily-games-head{padding:9px 12px 7px;margin-bottom:4px}
-.awb-schedule-shell .home-daily-games-title{display:flex;align-items:center;gap:8px}
-.awb-schedule-shell .home-daily-games-title>span{font-size:11px;opacity:.7}
-.awb-schedule-date{font-size:11px;white-space:nowrap;opacity:.7;font-weight:700}
-.awb-schedule-track{display:grid!important;grid-auto-flow:column!important;grid-auto-columns:minmax(210px,250px)!important;gap:11px!important;overflow-x:auto!important;overflow-y:hidden!important;align-items:stretch;padding:2px 2px 8px!important;max-height:none!important;min-height:0!important;scroll-snap-type:x proximity}
-.awb-schedule-track .home-game-card{box-sizing:border-box;min-width:0!important;width:auto!important;max-width:none!important;height:auto!important;align-self:stretch;scroll-snap-align:start}
-.awb-schedule-shell{padding:15px 16px 13px!important}
-.awb-schedule-shell .home-daily-games-head{padding:0!important;margin-bottom:12px!important}
+
+
+
+
+
+
+
+
+
+
 .awb-compact{box-sizing:border-box;flex:0 0 auto!important;display:flex;flex-direction:column;min-width:0;min-height:0!important;height:auto!important;overflow:visible!important;margin:0 0 12px;border:1px solid rgba(127,145,169,.22);border-radius:12px;background:var(--surface,#121a24);color:var(--text,#e9eff5)}
 .awb-compact-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto!important;min-height:0!important;padding:12px 14px;border-bottom:1px solid rgba(127,145,169,.16)}
 .awb-heading-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -99,7 +99,7 @@
 .awb-roster-group{margin-top:14px}.awb-roster-group>b{display:block;margin-bottom:8px;font-size:12px}.awb-roster-group>div{display:flex;flex-wrap:wrap;gap:6px}.awb-roster-group span{padding:6px 9px;background:rgba(127,145,169,.1);border-radius:6px;font-size:12px}
 .awb-official-link{display:inline-block;margin-top:12px;font-size:12px;color:var(--accent,#6bb5ff)}
 .awb-compact-empty{display:flex;min-height:125px;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}.awb-compact-empty strong{font-size:14px}.awb-compact-empty span{font-size:12px;opacity:.65;line-height:1.5}
-@media(max-width:600px){.awb-schedule-track .home-game-card{flex-basis:205px!important;min-width:200px!important}.awb-schedule-shell .home-daily-games-head{padding:9px 9px 6px}.awb-schedule-track{padding:3px 9px 11px!important}.awb-compact-heading{padding:11px}.awb-year-control label{display:none}.awb-compact-body{padding:11px}.awb-metrics{gap:5px}.awb-metric{padding:9px 7px}.awb-metric strong{font-size:16px}.awb-categories{gap:7px}.awb-category{padding:10px 21px 10px 10px}}
+
 @media(max-width:350px){.awb-metric strong{font-size:14px}.awb-categories{grid-template-columns:1fr}}
 
 /* AWB shares the same fixed-height frame as the other leagues.
@@ -199,127 +199,21 @@
 .awb-history-status-row .is-pending{opacity:.52}
 @media(max-width:700px){.awb-history-team-grid{grid-template-columns:1fr}.awb-history-champion{padding:12px}.awb-history-champion-name{font-size:18px}.awb-history-team-pills{gap:5px}.awb-history-team-pills span{font-size:11px;padding:6px 8px}.awb-history-section-head{margin-top:12px}}
 
-/* AWB: use the same compact typography and game-card proportions as league schedules. */
-#homePage .home-main-panel.awb-mode #awbSchedule{
-  box-sizing:border-box!important;
-  width:100%!important;
-  min-width:0!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-head{
-  min-width:0!important;
-  padding:0!important;
-  margin-bottom:12px!important;
-  align-items:center!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title strong{
-  font-size:17px!important;
-  line-height:1.2!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title span{
-  font-size:11px!important;
-  line-height:1.2!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-date{
-  font-size:11px!important;
-  line-height:1.2!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-track{
-  grid-auto-columns:minmax(210px,250px)!important;
-  width:100%!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
-  scrollbar-gutter:auto!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-card{
-  min-height:142px!important;
-  padding:12px 13px 10px!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-team-name{
-  font-size:14px!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-score{
-  font-size:23px!important;
-}
-@media(max-width:640px){
-  #homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title strong{
-    font-size:16px!important;
-  }
-}
 
-/* Winter schedule: match the fixed compact scoreboard footprint, including at narrow widths. */
-#homePage .home-main-panel.awb-mode #awbSchedule.awb-schedule-shell{
-  margin:9px 0 12px!important;
-  padding:12px!important;
-  min-height:0!important;
-  overflow:hidden!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-head{
-  display:flex!important;
-  flex-direction:row!important;
-  flex-wrap:nowrap!important;
-  justify-content:space-between!important;
-  align-items:center!important;
-  gap:6px!important;
-  width:100%!important;
-  margin-bottom:10px!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title{
-  display:flex!important;
-  flex:0 1 auto!important;
-  flex-direction:row!important;
-  flex-wrap:nowrap!important;
-  align-items:baseline!important;
-  width:auto!important;
-  gap:6px!important;
-  min-width:0!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title strong{
-  font-size:16px!important;
-  white-space:nowrap!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title span{
-  font-size:10px!important;
-  white-space:nowrap!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-date{
+/* AWB scoreboard: use the identical shared league scoreboard layout.
+   No separate card dimensions, typography or track sizing. */
+#homePage .home-main-panel.awb-mode #awbSchedule {
   flex:0 0 auto!important;
-  font-size:10px!important;
-  white-space:nowrap!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-track{
-  display:grid!important;
-  grid-auto-flow:column!important;
-  grid-auto-columns:220px!important;
-  align-items:start!important;
-  gap:10px!important;
-  padding:2px 2px 8px!important;
-  max-height:160px!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-track .home-game-card{
-  box-sizing:border-box!important;
-  width:220px!important;
-  min-width:220px!important;
-  max-width:220px!important;
-  height:142px!important;
-  min-height:142px!important;
-  max-height:142px!important;
-  padding:10px 12px!important;
+  width:100%;
+  min-width:0;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
   overflow:hidden!important;
+  margin:18px 0 20px;
 }
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-card-top{
-  min-height:21px!important;
-  margin-bottom:3px!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-team{
-  padding:3px 0!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-team-name{
-  font-size:13px!important;
-}
-#homePage .home-main-panel.awb-mode #awbSchedule .home-game-score{
-  font-size:21px!important;
+#homePage .home-main-panel.awb-mode #awbSchedule .home-games-scroller {
+  min-width:0;
 }
 </style>
 </head>
@@ -487,12 +381,12 @@
           <div id="homeZoneNote" class="home-zone-note hidden"></div>
           <div id="homeDailyGames" class="home-daily-games" aria-live="polite"></div>
 
-            <section id="awbSchedule" class="home-daily-games-shell awb-schedule-shell hidden" aria-label="2025 冬盟賽事">
+            <section id="awbSchedule" class="home-daily-games-shell hidden" aria-label="2025 冬盟賽事">
               <div class="home-daily-games-head">
                 <div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟</span></div>
-                <span class="awb-schedule-date">2025/12/07　2 場</span>
+                <span class="home-daily-games-meta">2025/12/07　2 場</span>
               </div>
-              <div class="home-games-scroller awb-schedule-track">
+              <div class="home-games-scroller">
                 <article class="home-game-card status-final">
                   <div class="home-game-card-top"><span class="home-game-status status-final">已結束</span></div>
                   <div class="home-game-team"><span class="home-game-team-name">日本社會人</span><strong class="home-game-score">5</strong></div>
@@ -1049,7 +943,7 @@
       standings=data.standings;teams=data.teams;categories=data.categories;knownPlayers=data.knownPlayers;ready=true;
       if(schedule){
         const cards=data.games.map(g=>'<article class="home-game-card status-'+esc(g.status||'scheduled')+'"><div class="home-game-card-top"><span class="home-game-status">'+esc(g.statusLabel||'未開打')+'</span></div><div class="home-game-team"><span class="home-game-team-name">'+esc(g.away||'客隊')+'</span><strong class="home-game-score">'+esc(g.awayScore??'—')+'</strong></div><div class="home-game-team"><span class="home-game-team-name">'+esc(g.home||'主隊')+'</span><strong class="home-game-score">'+esc(g.homeScore??'—')+'</strong></div><div class="home-game-venue"><span class="home-game-venue-name">'+esc(g.venue||'場地待公布')+'</span></div></article>').join('');
-        schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟</span></div><span class="awb-schedule-date">'+esc(data.displayDate||'2026')+'　'+data.games.length+' 場</span></div>'+(cards?'<div class="home-games-scroller awb-schedule-track">'+cards+'</div>':'<div class="home-games-state">所選日期無賽事</div>');
+        schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟</span></div><span class="home-daily-games-meta">'+esc(data.displayDate||'2026')+'　'+data.games.length+' 場</span></div>'+(cards?'<div class="home-games-scroller">'+cards+'</div>':'<div class="home-games-state">所選日期無賽事</div>');
       }
     }catch(e){if(year===2026)error='資料讀取失敗：'+(e?.message||'未知錯誤');}
     if(year===2026)render();
