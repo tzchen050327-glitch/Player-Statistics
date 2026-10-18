@@ -137,28 +137,48 @@
      +'<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="5.5" fill="'+stroke+'" stroke="#fff" stroke-width="1.7"/>'
      +'</svg>';
   }
+  // The three rings match the main umpire report: estimated zone-defined
+  // strikes/balls, not 'called strike' versus 'called ball' categories.
+  function liveAccuracyRing(label,correct,total){
+    const valid=Number.isFinite(correct)&&Number.isFinite(total)&&total>0
+      &&correct>=0&&correct<=total;
+    const ratio=valid?(100*correct/total):0;
+    const displayed=valid?ratio.toFixed(1)+'%':'—';
+    const fraction=valid?correct+' / '+total:'— / —';
+    return '<div class="gdx-umpire-accuracy-card">'
+      +'<span class="gdx-umpire-accuracy-label">'+esc(label)+'</span>'
+      +'<div class="gdx-umpire-accuracy-ring'+(valid?'':' is-empty')+'"'
+      +' style="--gdx-ring-fill:'+ratio.toFixed(2)+'%"'
+      +' role="img" aria-label="'+esc(label+' '+displayed+'，'+fraction)+'">'
+      +'<div class="gdx-umpire-accuracy-center"><strong>'+esc(displayed)+'</strong>'
+      +'<small>'+esc(fraction)+'</small></div></div></div>';
+  }
   function detailHtml(report){
     if(!report)return '<div class="gdx-umpire-empty">目前尚無可用的逐球判決資料。</div>';
     const misses=Array.isArray(report.missed_calls)?report.missed_calls:[];
     const name=String(report.umpire_name||'').trim()||'待確認';
-    const accuracy=Number(report.accuracy),pct=Number.isFinite(accuracy)&&Number(report.total_calls)>0?accuracy.toFixed(1)+'%':'—';
-    // Classify by the plate umpire's ACTUAL call, not the model's zone result.
-    const strikeWrong=misses.filter(p=>p.called==='STRIKE').length;
-    const ballWrong=misses.filter(p=>p.called==='BALL').length;
-    const strikeCorrect=Number(report.strike_correct);
-    const ballCorrect=Number(report.ball_correct);
-    const hasCounts=Number.isFinite(strikeCorrect)&&Number.isFinite(ballCorrect)
-       && Number(report.total_calls)>0&&strikeCorrect+ballCorrect===Number(report.correct_calls);
-    const totals=[['全部判決',Number(report.correct_calls),Number(report.missed_count)],
-       ['主審判好球',strikeCorrect,strikeWrong],['主審判壞球',ballCorrect,ballWrong]];
-    const rows=hasCounts?'<section class="gdx-umpire-call-breakdown" aria-label="主審好壞球判決正確錯誤顆數">'
-       +'<div class="gdx-umpire-call-breakdown-row is-head"><span>判決</span><span>正確</span><span>錯誤</span><span>合計</span></div>'
-       +totals.map(([label,correct,wrong])=>'<div class="gdx-umpire-call-breakdown-row"><strong>'+esc(label)+'</strong>'
-         +'<strong class="gdx-call-correct">'+correct+' 顆</strong>'
-         +'<strong class="gdx-call-wrong">'+wrong+' 顆</strong><span>'+(correct+wrong)+' 顆</span></div>').join('')
-       +'<p>好球、壞球依主審實際宣告分類，非模型判定的球種。</p></section>':'';
-    return '<section class="gdx-umpire-modal-summary"><div><span>主審</span><strong>'+esc(name)+'</strong></div><div><span>暫定準確率</span><strong>'+esc(pct)+'</strong></div><div><span>疑似誤判</span><strong>'+esc(misses.length)+' 顆</strong></div></section>'
-      +rows
+    const total=Number(report.total_calls),correct=Number(report.correct_calls);
+    const strikeTotal=Number(report.strike_total),strikeCorrect=Number(report.strike_correct);
+    const ballTotal=Number(report.ball_total),ballCorrect=Number(report.ball_correct);
+    const hasCounts=[total,correct,strikeTotal,strikeCorrect,ballTotal,ballCorrect].every(Number.isFinite)
+      &&total>0&&correct>=0&&correct<=total
+      &&strikeTotal>=0&&ballTotal>=0
+      &&strikeTotal+ballTotal===total&&strikeCorrect+ballCorrect===correct;
+    const stats='<section class="gdx-umpire-accuracy-grid" aria-label="裁判判決準確率">'
+      +liveAccuracyRing('整體準確率',correct,total)
+      +liveAccuracyRing('好球準確率',hasCounts?strikeCorrect:NaN,hasCounts?strikeTotal:NaN)
+      +liveAccuracyRing('壞球準確率',hasCounts?ballCorrect:NaN,hasCounts?ballTotal:NaN)
+      +'</section>';
+    const ledger=hasCounts?'<section class="gdx-umpire-call-breakdown" aria-label="好球壞球正確與錯誤顆數">'
+       +'<div class="gdx-umpire-call-breakdown-row is-head"><span>分類</span><span>正確</span><span>錯誤</span><span>合計</span></div>'
+       +[['全部判決',correct,total-correct],['好球',strikeCorrect,strikeTotal-strikeCorrect],['壞球',ballCorrect,ballTotal-ballCorrect]]
+        .map(([label,right,wrong])=>'<div class="gdx-umpire-call-breakdown-row"><strong>'+esc(label)+'</strong>'
+         +'<strong class="gdx-call-correct">'+right+' 顆</strong>'
+         +'<strong class="gdx-call-wrong">'+wrong+' 顆</strong><span>'+(right+wrong)+' 顆</span></div>').join('')
+       +'<p>好球、壞球依估算好球帶分類，和三張圓環使用同一計算基準。</p></section>':'';
+    return '<div class="gdx-umpire-identity">主審 <strong>'+esc(name)+'</strong><span>疑似誤判 '+esc(misses.length)+' 顆</span></div>'
+      +stats
+      +ledger
       +'<p class="gdx-umpire-disclaimer">依 TrackMan 球點與固定身高估算好球帶分析，僅為暫定模型結果，非官方裁判評分。邊界球可能有判讀差異。</p>'
       +(misses.length?'<div class="gdx-umpire-miss-list">'+misses.map((p,i)=>{
         const inning=(Number(p.inning_num)||0)+'局'+(p.inning_half==='▲'?'上':'下');

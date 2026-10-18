@@ -122,3 +122,65 @@
  .gdx-umpire-call-breakdown-row {grid-template-columns:minmax(77px,1.2fr) repeat(3,minmax(0,1fr));gap:2px;padding:10px 6px;font-size:11px;}
  .gdx-umpire-call-breakdown-row>strong:first-child {font-size:11px;}
 }
+
+
+/* c1.83: full three-ring accuracy cards in the in-game umpire dialog. */
+.gdx-umpire-identity {
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:7px 12px;
+  padding:4px 0 13px;
+  font-size:13px;
+  font-weight:750;
+  color:var(--muted,#9eafbd);
+}
+.gdx-umpire-identity strong {color:var(--text,#f4f7fb);font-size:15px;margin-left:4px}
+.gdx-umpire-identity span {font-size:12px;color:var(--muted,#b3c1cf)}
+.gdx-umpire-accuracy-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+.gdx-umpire-accuracy-card {
+  min-width:0;box-sizing:border-box;min-height:175px;
+  padding:15px 7px 13px;
+  display:flex;align-items:center;flex-direction:column;
+  justify-content:space-between;gap:15px;
+  background:rgba(133,145,156,.055);
+  border:1px solid var(--line,#344353);
+  border-radius:20px;
+}
+.gdx-umpire-accuracy-label {
+  width:100%;font-size:12px;line-height:1.4;font-weight:850;
+  color:var(--muted,#aebdd0);text-align:center;
+  white-space:nowrap;
+}
+.gdx-umpire-accuracy-ring {
+  position:relative;flex-shrink:0;
+  width:min(112px,100%);aspect-ratio:1/1;
+  border-radius:50%;
+  background:conic-gradient(#e6b94e 0% var(--gdx-ring-fill), #2d3540 var(--gdx-ring-fill) 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.gdx-umpire-accuracy-ring::before {
+  content:"";position:absolute;inset:13px;
+  border-radius:50%;background:var(--panel,#111b27);
+}
+.gdx-umpire-accuracy-center {
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;text-align:center;line-height:1.15;
+  font-variant-numeric:tabular-nums;
+}
+.gdx-umpire-accuracy-center strong {font-weight:950;font-size:clamp(15px,3.8vw,23px);color:var(--text,#f5f7fa)}
+.gdx-umpire-accuracy-center small {font-size:clamp(10px,2.4vw,12px);font-weight:800;color:#91b8d5}
+.gdx-umpire-accuracy-ring.is-empty {background:#2d3540}
+.gdx-umpire-accuracy-grid+.gdx-umpire-call-breakdown {margin-top:15px}
+@media(max-width:440px) {
+  .gdx-umpire-accuracy-grid {gap:6px}
+  .gdx-umpire-accuracy-card {min-height:135px;border-radius:14px;gap:8px;padding:12px 4px 10px}
+  .gdx-umpire-accuracy-label {font-size:clamp(10px,2.6vw,12px)}
+  .gdx-umpire-accuracy-ring {width:min(88px,100%)}
+  .gdx-umpire-accuracy-ring::before {inset:10px}
+  .gdx-umpire-accuracy-center strong {font-size:clamp(13px,3.8vw,17px)}
+  .gdx-umpire-accuracy-center small {font-size:clamp(9px,2.45vw,11px)}
+}
