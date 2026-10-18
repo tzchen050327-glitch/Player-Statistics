@@ -209,6 +209,20 @@
         standings:[['A組','日本',3,0],['A組','中國',2,1],['A組','菲律賓',1,2],['A組','巴基斯坦',0,3]]
       }
     };
+    const intlTeamZh = {
+      'Chinese Taipei':'中華台北','Taiwan':'中華台北','TPE':'中華台北','Japan':'日本','JPN':'日本','Korea':'韓國','South Korea':'韓國','KOR':'韓國',
+      'Australia':'澳洲','AUS':'澳洲','United States':'美國','USA':'美國','United States of America':'美國','Cuba':'古巴','CUB':'古巴',
+      'Dominican Republic':'多明尼加','DOM':'多明尼加','Puerto Rico':'波多黎各','PUR':'波多黎各','Venezuela':'委內瑞拉','VEN':'委內瑞拉',
+      'Mexico':'墨西哥','MEX':'墨西哥','Canada':'加拿大','CAN':'加拿大','Netherlands':'荷蘭','NED':'荷蘭','Italy':'義大利','ITA':'義大利',
+      'Panama':'巴拿馬','PAN':'巴拿馬','Colombia':'哥倫比亞','COL':'哥倫比亞','Nicaragua':'尼加拉瓜','NCA':'尼加拉瓜',
+      'Brazil':'巴西','BRA':'巴西','Czechia':'捷克','Czech Republic':'捷克','CZE':'捷克','Israel':'以色列','ISR':'以色列',
+      'China':'中國','CHN':'中國','Hong Kong':'香港','HKG':'香港','Philippines':'菲律賓','PHI':'菲律賓',
+      'Pakistan':'巴基斯坦','PAK':'巴基斯坦','Palestine':'巴勒斯坦','PLE':'巴勒斯坦','South Africa':'南非','RSA':'南非',
+      'Germany':'德國','GER':'德國','Spain':'西班牙','ESP':'西班牙','Great Britain':'英國','GBR':'英國',
+      'Argentina':'阿根廷','ARG':'阿根廷','Peru':'秘魯','PER':'秘魯','Thailand':'泰國','THA':'泰國',
+      'Singapore':'新加坡','SGP':'新加坡','Indonesia':'印尼','INA':'印尼','India':'印度','IND':'印度'
+    };
+    const intlLocalizeTeam = name => intlTeamZh[String(name||'').trim()] || String(name||'').trim();
     const intlScheduleCache = new Map();
     const intlSchedulePending = new Set();
     const intlScheduleRetryAfter = new Map();
@@ -305,7 +319,7 @@
       if(dsIntlTab==='schedule' && liveSchedule?.games?.length) {
         body='<p class="ds-intl-source">官方賽程 · '+liveSchedule.games.length+' 場</p>'+
           liveSchedule.games.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(g.venue||'')+' · '+escapeHtml(g.status||'')+'</small><strong>'+
-          escapeHtml(g.away||'待定')+' <span class="score">'+(g.awayScore??'—')+'</span> — <span class="score">'+(g.homeScore??'—')+'</span> '+escapeHtml(g.home||'待定')+'</strong></article>').join('');
+          escapeHtml(intlLocalizeTeam(g.away||'待定'))+' <span class="score">'+(g.awayScore??'—')+'</span> — <span class="score">'+(g.homeScore??'—')+'</span> '+escapeHtml(intlLocalizeTeam(g.home||'待定'))+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && liveSchedule?.games?.length) {
         body=[...new Set(liveSchedule.games.map(g=>g.venue).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
       } else if(dsIntlTab==='schedule' && snapshot?.games?.length) {
