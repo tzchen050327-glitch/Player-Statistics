@@ -472,7 +472,7 @@
   },
   "亞洲運動會:2006": {
     "kind": "placements",
-    "source": "https://www.baseball-reference.com/bullpen/2006_Asian_Games",
+    "source": "https://en.wikipedia.org/wiki/Baseball_at_the_2006_Asian_Games",
     "verifiedSource": false,
     "complete": true,
     "rows": [
@@ -993,7 +993,7 @@
 };
     function renderIntlOfficialRankings(data){
       if(!data)return '';
-      const link='<p class="ds-intl-source">官方資料：<a href="'+escapeHtml(data.source)+'" target="_blank" rel="noopener noreferrer">查看賽事排名來源 ↗</a></p>';
+      const link='<p class="ds-intl-source">'+(data.verifiedSource===false?'資料來源：':'官方資料：')+'<a href="'+escapeHtml(data.source)+'" target="_blank" rel="noopener noreferrer">查看賽事排名來源 ↗</a></p>';
       if(data.kind==='placements'){
         const desc=data.complete?'賽事最終排名。':'目前可核對的名次（並非完整參賽隊伍排名）。';
         const qualifier=data.verifiedSource?'官方賽事紀錄':'歷史賽事紀錄';
