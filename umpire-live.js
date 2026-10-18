@@ -39,7 +39,7 @@
     if(!fab){
       fab=document.createElement('button');
       fab.type='button';fab.className='gdx-umpire-fab';
-      fab.innerHTML='<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M14 12c0-6 4-9 10-9s10 3 10 9v4H14Z" fill="#202c39" stroke="#f6d681" stroke-width="2"/><path d="M11 15h26" stroke="#f6d681" stroke-width="3" stroke-linecap="round"/><path d="M17 18c0-4 3-6 7-6s7 2 7 6v4c0 5-3 8-7 8s-7-3-7-8Z" fill="#efc9aa"/><path d="M17 21h14" stroke="#253244" stroke-width="4" stroke-linecap="round"/><path d="M15 31l-8 5v10h34V36l-9-5-8 6Z" fill="#d9e2ec" stroke="#243246" stroke-width="2"/><path d="M20 34v12m8-12v12" stroke="#263445" stroke-width="2"/><path d="M34 34 39 22 44 9" stroke="#efc9aa" stroke-width="5" stroke-linecap="round"/><path d="M42 9V3" stroke="#efc9aa" stroke-width="4" stroke-linecap="round"/></svg><span>裁判</span>';
+      fab.innerHTML='<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M14 12c0-6 4-9 10-9s10 3 10 9v4H14Z" fill="#202c39" stroke="#f6d681" stroke-width="2"/><path d="M11 15h26" stroke="#f6d681" stroke-width="3" stroke-linecap="round"/><path d="M17 18c0-4 3-6 7-6s7 2 7 6v4c0 5-3 8-7 8s-7-3-7-8Z" fill="#efc9aa"/><path d="M17 21h14" stroke="#253244" stroke-width="4" stroke-linecap="round"/><path d="M15 31l-8 5v10h34V36l-9-5-8 6Z" fill="#d9e2ec" stroke="#243246" stroke-width="2"/><path d="M20 34v12m8-12v12" stroke="#263445" stroke-width="2"/><path d="M34 34 39 22 44 9" stroke="#efc9aa" stroke-width="5" stroke-linecap="round"/><path d="M42 9V3" stroke="#efc9aa" stroke-width="4" stroke-linecap="round"/></svg>';
       overlay.appendChild(fab);
     }
     fab.dataset.reportKey=key;
