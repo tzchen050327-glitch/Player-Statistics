@@ -111,7 +111,7 @@
   max-height:100%!important;
   min-height:0!important;
   overflow:hidden!important;
-  scrollbar-gutter:auto!important;
+  scrollbar-gutter:stable!important;
 }
 /* The root and country tab rows intentionally inherit the shared league
    dimensions. AWB must not override their height, grid rows, or padding. */
@@ -212,7 +212,8 @@
   min-height:0!important;
   max-height:none!important;
   overflow:hidden!important;
-  margin:18px 0 20px;
+  /* Flex margins do not collapse: 10px country margin + 8px = the shared 18px gap. */
+  margin:8px 0 20px;
 }
 #homePage .home-main-panel.awb-mode #awbSchedule .home-games-scroller {
   min-width:0;
