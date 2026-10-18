@@ -209,20 +209,35 @@
         standings:[['A組','日本',3,0],['A組','中國',2,1],['A組','菲律賓',1,2],['A組','巴基斯坦',0,3]]
       }
     };
-    const intlTeamZh = {
-      'Chinese Taipei':'中華台北','Taiwan':'中華台北','TPE':'中華台北','Japan':'日本','JPN':'日本','Korea':'韓國','South Korea':'韓國','KOR':'韓國',
-      'Australia':'澳洲','AUS':'澳洲','United States':'美國','USA':'美國','United States of America':'美國','Cuba':'古巴','CUB':'古巴',
-      'Dominican Republic':'多明尼加','DOM':'多明尼加','Puerto Rico':'波多黎各','PUR':'波多黎各','Venezuela':'委內瑞拉','VEN':'委內瑞拉',
-      'Mexico':'墨西哥','MEX':'墨西哥','Canada':'加拿大','CAN':'加拿大','Netherlands':'荷蘭','NED':'荷蘭','Italy':'義大利','ITA':'義大利',
-      'Panama':'巴拿馬','PAN':'巴拿馬','Colombia':'哥倫比亞','COL':'哥倫比亞','Nicaragua':'尼加拉瓜','NCA':'尼加拉瓜',
-      'Brazil':'巴西','BRA':'巴西','Czechia':'捷克','Czech Republic':'捷克','CZE':'捷克','Israel':'以色列','ISR':'以色列',
-      'China':'中國','CHN':'中國','Hong Kong':'香港','HKG':'香港','Philippines':'菲律賓','PHI':'菲律賓',
-      'Pakistan':'巴基斯坦','PAK':'巴基斯坦','Palestine':'巴勒斯坦','PLE':'巴勒斯坦','South Africa':'南非','RSA':'南非',
-      'Germany':'德國','GER':'德國','Spain':'西班牙','ESP':'西班牙','Great Britain':'英國','GBR':'英國',
-      'Argentina':'阿根廷','ARG':'阿根廷','Peru':'秘魯','PER':'秘魯','Thailand':'泰國','THA':'泰國',
-      'Singapore':'新加坡','SGP':'新加坡','Indonesia':'印尼','INA':'印尼','India':'印度','IND':'印度'
+    // Share the same country-name normalization used by international player records.
+    const intlLocalizeTeam = name => normalizeInternationalTeamName(name);
+    const intlVenueNames = {
+      'Tokyo Dome':'東京巨蛋','Taipei Dome':'臺北大巨蛋','Taipei Tianmu Baseball Stadium':'臺北天母棒球場',
+      'Tianmu Baseball Stadium':'臺北天母棒球場','Taichung Intercontinental Baseball Stadium':'臺中洲際棒球場',
+      'Taoyuan International Baseball Stadium':'桃園國際棒球場','Gocheok Sky Dome':'高尺天空巨蛋',
+      'Jamsil Baseball Stadium':'蠶室棒球場','Kyocera Dome Osaka':'大阪京瓷巨蛋',
+      'Hiram Bithorn Stadium':'席然畢松球場','Daikin Park':'大金公園球場（休士頓）',
+      'loanDepot park':'貸得寶球場（邁阿密）','Kino Veterans Memorial Stadium':'基諾退伍軍人紀念球場',
+      'Pingtan Park':'平潭棒球場'
     };
-    const intlLocalizeTeam = name => intlTeamZh[String(name||'').trim()] || String(name||'').trim();
+    const intlLocalizeVenue = name => {
+      const raw=String(name||'').trim();
+      const key=raw.toLowerCase().replace(/\\s+/g,' ');
+      const found=Object.entries(intlVenueNames).find(([en])=>en.toLowerCase()===key);
+      return found?found[1]:raw;
+    };
+    function intlLocalizeGameStatus(status) {
+      const raw=String(status||'').trim();
+      if(!raw) return '';
+      if(/^(final|completed|finished|game over)(\\s*\\/\\s*\\d+)?$/i.test(raw))return '比賽結束'+(raw.match(/\\/\\s*\\d+/)?.[0]||'');
+      if(/^(scheduled|preview|pre-game|not started|not yet started|upcoming)$/i.test(raw))return '未開賽';
+      if(/^(live|in progress|playing|ongoing)$/i.test(raw))return '進行中';
+      if(/^(postponed|ppd)$/i.test(raw))return '延賽';
+      if(/^(cancelled|canceled)$/i.test(raw))return '取消';
+      if(/^(suspended|interrupted)$/i.test(raw))return '暫停';
+      if(/^(delayed|delay)$/i.test(raw))return '延遲';
+      return raw;
+    }
     const intlStoredGamesCache = new Map();
     async function readIntlStoredGames(competition,year){
       const key=competition+':'+year;
@@ -326,7 +341,7 @@
         const draw = () => {
           if (version !== dsIntlOpenToken) return;
           const teams = [...new Set([...(INTERNATIONAL_TEAM_CATALOG[dsIntlCompetition+':'+year]||[]),
-            ...(internationalTeamCache.get(key)||[]),...stored].filter(Boolean))];
+            ...(internationalTeamCache.get(key)||[]),...stored].map(intlLocalizeTeam).filter(Boolean))];
           dsIntlBody.innerHTML='<h3>參賽球隊</h3><div class="ds-intl-team-list">'+
             (teams.map(t=>'<button data-intl-team="'+escapeHtml(t)+'" type="button">'+escapeHtml(t)+' →</button>').join('')||
             '<div class="ds-intl-empty">尚未取得該屆參賽隊伍。</div>')+'</div>';
@@ -360,13 +375,13 @@
       const displayedGames=[...officialGames,...extraGames].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       if(dsIntlTab==='schedule' && displayedGames.length) {
         body='<p class="ds-intl-source">'+officialGames.length+' 場官方賽程'+(extraGames.length?' · '+extraGames.length+' 場球員逐場紀錄（未驗證比分）':'')+'</p>'+
-          displayedGames.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(g.venue||'')+' · '+escapeHtml(g.status||'')+'</small><strong>'+
-          escapeHtml(intlLocalizeTeam(g.away||'待定'))+' <span class="score">'+(g.awayScore??'—')+'</span> — <span class="score">'+(g.homeScore??'—')+'</span> '+escapeHtml(intlLocalizeTeam(g.home||'待定'))+'</strong></article>').join('');
+          displayedGames.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(intlLocalizeVenue(g.venue||''))+' · '+escapeHtml(intlLocalizeGameStatus(g.status||''))+'</small><strong>'+
+          escapeHtml(intlLocalizeTeam(g.away||'待定'))+' <span class="score">'+escapeHtml(String(g.awayScore??'—'))+'</span> — <span class="score">'+escapeHtml(String(g.homeScore??'—'))+'</span> '+escapeHtml(intlLocalizeTeam(g.home||'待定'))+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && liveSchedule?.games?.length) {
-        body=[...new Set(liveSchedule.games.map(g=>g.venue).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
+        body=[...new Set(liveSchedule.games.map(g=>intlLocalizeVenue(g.venue)).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
       } else if(dsIntlTab==='schedule' && snapshot?.games?.length) {
         body = '<p class="ds-intl-source">已核對場次（部分紀錄，持續補齊其他分組）</p>'+
-          snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(g[5])+'</small><strong>'+escapeHtml(g[1])+
+          snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(intlLocalizeVenue(g[5]))+'</small><strong>'+escapeHtml(g[1])+
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
         body = snapshot.venues.map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
