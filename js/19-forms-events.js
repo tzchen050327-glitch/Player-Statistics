@@ -120,7 +120,7 @@
         if (chosenRoot === 'asia' || chosenRoot === 'america') {
           homeProContinent = chosenRoot === 'america' ? 'AMERICA' : 'ASIA';
           if (homeProContinent === 'AMERICA') homeProCountry = 'US';
-          else if (homeProCountry === 'US') homeProCountry = 'TW';
+          else if (!['TW','JP','KR'].includes(homeProCountry)) homeProCountry = 'TW';
         }
         if (homeRootSection === 'international') {
           homeZone = 'international';
@@ -459,9 +459,6 @@
       renderRecentPlayers();
       combinedCards?.classList.add('hidden');
       combinedBack?.classList.remove('hidden');
-      if (section === 'winter') {
-        document.getElementById('homeProCountrySwitch')?.querySelector('[data-pro-country="AWB"]')?.classList.add('active');
-      }
     });
     combinedBack?.addEventListener('click', openCombinedLanding);
 
@@ -477,7 +474,7 @@
     els.homeProCountrySwitch?.querySelectorAll('[data-pro-country]').forEach(button => {
       button.addEventListener('click', () => {
         const country = button.dataset.proCountry;
-        homeProCountry = ['TW','US','JP','KR','AWB'].includes(country) ? country : 'TW';
+        homeProCountry = ['TW','US','JP','KR'].includes(country) ? country : 'TW';
         homeRootSection = 'pro';
         homeProContinent = homeProCountry === 'US' ? 'AMERICA' : 'ASIA';
         homeTeamFilter = '';
