@@ -223,6 +223,35 @@
       'Singapore':'新加坡','SGP':'新加坡','Indonesia':'印尼','INA':'印尼','India':'印度','IND':'印度'
     };
     const intlLocalizeTeam = name => intlTeamZh[String(name||'').trim()] || String(name||'').trim();
+    const intlStoredGamesCache = new Map();
+    async function readIntlStoredGames(competition,year){
+      const key=competition+':'+year;
+      try{
+        const records=await idbGetAll(STORES.games);
+        const localPlayers=new Map(players.filter(p=>playerScope(p)==='international' &&
+          playerSpecialCompetition(p)===competition && String(internationalEdition(p))===String(year))
+          .map(p=>[String(p.id),p]));
+        const dedup=new Map();
+        for(const rec of records){
+          if(!rec?.internationalOfficialImport || !localPlayers.has(String(rec.playerId)))continue;
+          const player=localPlayers.get(String(rec.playerId));
+          const team=intlLocalizeTeam(internationalTeam(player));
+          const opponent=intlLocalizeTeam(rec.opponent||'');
+          if(!team||!opponent||!rec.date)continue;
+          const id=String(rec.internationalGameId||'');
+          const names=[team,opponent].sort().join('|');
+          const dedupKey=id?'id:'+id:'date:'+rec.date+':'+names;
+          const prior=dedup.get(dedupKey);
+          if(prior){prior.playerCount++;continue;}
+          dedup.set(dedupKey,{id,date:String(rec.date).slice(0,10),away:team,home:opponent,
+            awayScore:null,homeScore:null,venue:'',status:'球員逐場紀錄',playerCount:1,fromPlayer:true});
+        }
+        const games=[...dedup.values()].sort((a,b)=>a.date.localeCompare(b.date));
+        intlStoredGamesCache.set(key,games);
+        if(!dsIntlPage.classList.contains('hidden')&&dsIntlCompetition===competition&&String(dsIntlYear.value)===String(year))
+          renderStandaloneIntl();
+      }catch(err){console.warn('[International saved games]',err)}
+    }
     const intlScheduleCache = new Map();
     const intlSchedulePending = new Set();
     const intlScheduleRetryAfter = new Map();
@@ -308,10 +337,15 @@
       }
       const snapshot = dsIntlOfficial[dsIntlCompetition+':'+year];
       const liveSchedule = intlScheduleCache.get(dsIntlCompetition+':'+year);
+      const savedGames = intlStoredGamesCache.get(dsIntlCompetition+':'+year)||[];
       const scheduleKey = dsIntlCompetition+':'+year;
       const scheduleLoading = intlSchedulePending.has(scheduleKey);
       const scheduleRetryAt = intlScheduleRetryAfter.get(scheduleKey)||0;
       if(dsIntlTab!=='teams'&&!liveSchedule)requestIntlSchedule(dsIntlCompetition,year);
+      if(dsIntlTab==='schedule'&&!intlStoredGamesCache.has(dsIntlCompetition+':'+year)){
+        intlStoredGamesCache.set(dsIntlCompetition+':'+year,[]);
+        void readIntlStoredGames(dsIntlCompetition,year);
+      }
       const messages = {
         schedule:'此屆逐場比賽資料尚未匯入，資料不足時不產生虛構比分。',
         venues:'此屆官方球場資料尚未匯入。',
@@ -319,9 +353,14 @@
       };
       const source = snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
       let body = '';
-      if(dsIntlTab==='schedule' && liveSchedule?.games?.length) {
-        body='<p class="ds-intl-source">官方賽程 · '+liveSchedule.games.length+' 場</p>'+
-          liveSchedule.games.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(g.venue||'')+' · '+escapeHtml(g.status||'')+'</small><strong>'+
+      const officialGames = liveSchedule?.games||[];
+      const knownIds = new Set(officialGames.map(g=>String(g.id||'')).filter(Boolean));
+      const knownPairs = new Set(officialGames.map(g=>String(g.date||'').slice(0,10)+':'+[intlLocalizeTeam(g.away),intlLocalizeTeam(g.home)].sort().join('|')));
+      const extraGames=savedGames.filter(g=>!knownIds.has(String(g.id||''))&&!knownPairs.has(g.date+':'+[g.away,g.home].sort().join('|')));
+      const displayedGames=[...officialGames,...extraGames].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+      if(dsIntlTab==='schedule' && displayedGames.length) {
+        body='<p class="ds-intl-source">'+officialGames.length+' 場官方賽程'+(extraGames.length?' · '+extraGames.length+' 場球員逐場紀錄（未驗證比分）':'')+'</p>'+
+          displayedGames.map(g=>'<article class="ds-intl-game"><small>'+escapeHtml(g.date||'')+' · '+escapeHtml(g.venue||'')+' · '+escapeHtml(g.status||'')+'</small><strong>'+
           escapeHtml(intlLocalizeTeam(g.away||'待定'))+' <span class="score">'+(g.awayScore??'—')+'</span> — <span class="score">'+(g.homeScore??'—')+'</span> '+escapeHtml(intlLocalizeTeam(g.home||'待定'))+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && liveSchedule?.games?.length) {
         body=[...new Set(liveSchedule.games.map(g=>g.venue).filter(Boolean))].map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
