@@ -48,8 +48,10 @@
 .awb-schedule-shell .home-daily-games-title{display:flex;align-items:center;gap:8px}
 .awb-schedule-shell .home-daily-games-title>span{font-size:11px;opacity:.7}
 .awb-schedule-date{font-size:11px;white-space:nowrap;opacity:.7;font-weight:700}
-.awb-schedule-track{display:flex!important;gap:9px!important;overflow-x:auto!important;overflow-y:visible!important;align-items:stretch;padding:3px 12px 12px!important;max-height:none!important;min-height:max-content!important;scroll-snap-type:x proximity}
-.awb-schedule-track .home-game-card{box-sizing:border-box;flex:0 0 218px!important;min-width:200px!important;max-width:235px!important;height:auto!important;align-self:stretch;scroll-snap-align:start}
+.awb-schedule-track{display:grid!important;grid-auto-flow:column!important;grid-auto-columns:minmax(210px,250px)!important;gap:11px!important;overflow-x:auto!important;overflow-y:hidden!important;align-items:stretch;padding:2px 2px 8px!important;max-height:none!important;min-height:0!important;scroll-snap-type:x proximity}
+.awb-schedule-track .home-game-card{box-sizing:border-box;min-width:0!important;width:auto!important;max-width:none!important;height:auto!important;align-self:stretch;scroll-snap-align:start}
+.awb-schedule-shell{padding:15px 16px 13px!important}
+.awb-schedule-shell .home-daily-games-head{padding:0!important;margin-bottom:12px!important}
 .awb-compact{box-sizing:border-box;flex:0 0 auto!important;display:flex;flex-direction:column;min-width:0;min-height:0!important;height:auto!important;overflow:visible!important;margin:0 0 12px;border:1px solid rgba(127,145,169,.22);border-radius:12px;background:var(--surface,#121a24);color:var(--text,#e9eff5)}
 .awb-compact-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto!important;min-height:0!important;padding:12px 14px;border-bottom:1px solid rgba(127,145,169,.16)}
 .awb-heading-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
