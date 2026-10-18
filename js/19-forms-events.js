@@ -223,7 +223,7 @@
         [5,'中華台北',4,3],[6,'澳洲',2,5],[7,'加拿大',1,2],[7,'多明尼加',1,2],
         [7,'委內瑞拉',1,2],[10,'古巴',1,2],[10,'荷蘭',0,3],[10,'波多黎各',0,3]
       ]},
-      '世界12強:2015':{kind:'final',source:'https://static.wbsc.org/uploads/federations/0/documents/5b982b5f-e134-a8b7-655c-849c78ddb2fb.pdf',rows:[
+      '世界12強:2015':{kind:'final',source:'https://s3.eu-west-1.amazonaws.com/static.wbsc.org/assets/documents/202106_Tokyo2020_mediaguide_DEFfinal.pdf',rows:[
         [1,'韓國',6,2],[2,'美國',5,3],[3,'日本',7,1],[4,'墨西哥',3,5],
         [5,'加拿大',5,1],[6,'古巴',3,3],[7,'荷蘭',3,3],[8,'波多黎各',2,4],
         [9,'中華台北',2,3],[10,'委內瑞拉',2,3],[11,'多明尼加',0,5],[12,'義大利',0,5]
@@ -271,6 +271,34 @@
           ['D組｜佛羅里達',[['多明尼加',3,0,1],['委內瑞拉',2,1,1],['義大利',1,2],['澳洲',0,3]]]
         ]}
     };
+
+
+    function renderIntlOfficialRankings(data){
+      if(!data)return '';
+      const link='<p class="ds-intl-source">官方資料：<a href="'+escapeHtml(data.source)+'" target="_blank" rel="noopener noreferrer">查看賽事排名來源 ↗</a></p>';
+      if(data.kind==='final'){
+        return '<p class="ds-intl-source">官方賽事最終排名（並列名次依官方原序顯示）。勝敗為整屆戰績，不用勝率重排名次。</p>'+
+          data.rows.map(t=>'<article class="ds-intl-game"><small>第 '+Number(t[0])+' 名</small><strong>'+
+          escapeHtml(intlLocalizeTeam(t[1]))+'　'+Number(t[2])+'勝 '+Number(t[3])+'敗</strong></article>').join('')+link;
+      }
+      if(data.kind==='wbc'){
+        const labels=['冠軍','亞軍','四強（並列）','四強（並列）'];
+        let html='<h4 class="ds-intl-standing-heading">淘汰賽最終結果</h4>'+
+          '<p class="ds-intl-source">經典賽沒有季軍戰；兩支四強止步球隊不分第三、第四名。</p>'+
+          data.top.map((team,i)=>'<article class="ds-intl-game"><small>'+labels[i]+'</small><strong>'+
+            escapeHtml(intlLocalizeTeam(team))+'</strong></article>').join('')+
+          '<h4 class="ds-intl-standing-heading">官方首輪分組排名</h4>'+
+          '<p class="ds-intl-source">依 WBC 官方排序及同組比較規則，並非用總勝率自行重排。</p>';
+        for(const [group,teams] of data.groups){
+          html+='<h4 class="ds-intl-standing-heading">'+escapeHtml(group)+'</h4>'+
+            teams.map((t,i)=>'<article class="ds-intl-game"><small>第 '+(i+1)+' 名'+
+              (t[3]?' · 晉級次輪':'')+'</small><strong>'+escapeHtml(intlLocalizeTeam(t[0]))+
+              '　'+Number(t[1])+'勝 '+Number(t[2])+'敗</strong></article>').join('');
+        }
+        return html+link;
+      }
+      return '';
+    }
 
     // Share the same country-name normalization used by international player records.
     const intlLocalizeTeam = name => normalizeInternationalTeamName(name);
@@ -429,7 +457,8 @@
         venues:'此屆官方球場資料尚未匯入。',
         rankings:'此屆官方球隊戰績或排名尚未匯入。'
       };
-      const source = snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
+      const verifiedRankings = dsIntlVerifiedRankings[dsIntlCompetition+':'+year];
+      const source = dsIntlTab==='rankings' && verifiedRankings ? '' : snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
       let body = '';
       const officialGames = liveSchedule?.games||[];
       const knownIds = new Set(officialGames.map(g=>String(g.id||'')).filter(Boolean));
@@ -448,6 +477,8 @@
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
         body = snapshot.venues.map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
+      } else if(dsIntlTab==='rankings' && verifiedRankings) {
+        body=renderIntlOfficialRankings(verifiedRankings);
       } else if(dsIntlTab==='rankings' && liveSchedule?.games?.length && !snapshot?.standings?.length) {
         const rows=new Map();
         for(const g of liveSchedule.games){
