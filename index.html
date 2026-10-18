@@ -191,8 +191,14 @@
 
 /* Keep both navigation rows fully visible inside the AWB flex layout. */
 #homePage .home-main-panel.awb-mode #homeZoneSwitch.home-root-switch {
+  /* Match the shared four-tab width instead of allowing the flex item
+     to size from its own content. */
   box-sizing:border-box!important;
+  align-self:stretch!important;
   flex:0 0 50px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
   height:50px!important;
   min-height:50px!important;
   max-height:50px!important;
