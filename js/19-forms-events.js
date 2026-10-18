@@ -211,10 +211,11 @@
     };
     const intlScheduleCache = new Map();
     const intlSchedulePending = new Set();
+    const intlScheduleRetryAfter = new Map();
     function requestIntlSchedule(competition,year){
       if(competition!=='WBC'||!year)return;
       const key=competition+':'+year;
-      if(intlScheduleCache.has(key)||intlSchedulePending.has(key))return;
+      if(intlScheduleCache.has(key)||intlSchedulePending.has(key)||Date.now()<(intlScheduleRetryAfter.get(key)||0))return;
       intlSchedulePending.add(key);
       fetch('https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/international-tournament-schedule?competition='+encodeURIComponent(competition)+'&year='+encodeURIComponent(year),{signal:AbortSignal.timeout(14000)})
         .then(r=>{if(!r.ok)throw new Error('schedule '+r.status);return r.json();})
@@ -222,7 +223,7 @@
           if(!Array.isArray(data.games)||!data.games.length)throw new Error('empty schedule');
           intlScheduleCache.set(key,data);
         })
-        .catch(err=>console.warn('[International schedule]',key,err))
+        .catch(err=>{intlScheduleRetryAfter.set(key,Date.now()+300000);console.warn('[International schedule]',key,err);})
         .finally(()=>{
           intlSchedulePending.delete(key);
           if(!dsIntlPage.classList.contains('hidden')&&dsIntlCompetition===competition&&dsIntlYear.value===String(year))renderStandaloneIntl();
