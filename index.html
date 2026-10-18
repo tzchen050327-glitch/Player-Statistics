@@ -227,7 +227,7 @@
   width:100%!important;
   max-width:100%!important;
   margin:0!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-columns:2fr 1fr 1fr!important;
   grid-template-rows:42px!important;
   padding:4px!important;
 }
@@ -238,6 +238,31 @@
 #homePage .home-main-panel.awb-mode{
   min-width:0;
 }
+/* Composite competition landing: left half of nav, full content width only in this mode. */
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-root-switch{grid-template-columns:2fr 1fr 1fr!important}
+#homePage #homeZoneSwitch [data-home-root="combined"]{grid-column:1!important}
+#homePage #homeZoneSwitch [data-home-root="asia"]{grid-column:2!important}
+#homePage #homeZoneSwitch [data-home-root="america"]{grid-column:3!important}
+#homePage #homeZoneSwitch [data-home-root="combined"],
+#homePage #homeZoneSwitch [data-home-root="asia"],
+#homePage #homeZoneSwitch [data-home-root="america"]{grid-row:1!important}
+#homePage.combined-home-mode .home-layout{grid-template-columns:minmax(0,1fr)!important}
+#homePage.combined-home-mode .home-sidebar{display:none!important}
+#homePage.combined-home-mode .home-main-panel{width:100%;min-width:0}
+#homePage.combined-home-mode #homeZoneSwitch{width:100%}
+#homePage.combined-home-mode #homeProCountrySwitch{display:none!important}
+#homePage.combined-home-mode .combined-competition-hub{display:block;margin-bottom:12px}
+#homePage.combined-home-mode .combined-competition-hub.hidden{display:none}
+#homePage.combined-home-mode .combined-competition-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+#homePage.combined-home-mode .combined-competition-cards .ds-cup-entry{width:100%;min-width:0;text-align:left;cursor:pointer}
+#homePage.combined-home-mode[data-combined-view="international"] #homeReelsExplorer,
+#homePage.combined-home-mode[data-combined-view="winter"] #homeReelsExplorer{display:none!important}
+#homePage.combined-home-mode[data-combined-view="landing"] #homeReelsExplorer{display:none!important}
+#homePage.combined-home-mode[data-combined-view="winter"] #homeProCountrySwitch{display:none!important}
+#homePage.combined-home-mode[data-combined-view="winter"] #awbSchedule,
+#homePage.combined-home-mode[data-combined-view="winter"] #awbCompact{display:block}
+#homePage.combined-home-mode[data-combined-view="winter"] #awbCompact.hidden,
+#homePage.combined-home-mode[data-combined-view="winter"] #awbSchedule.hidden{display:none}
 </style>
 </head>
 <body>
@@ -292,10 +317,9 @@
     <section id="homePage">
       <nav class="home-fullwidth-navigation" aria-label="主要棒球分類">
         <div id="homeZoneSwitch" class="home-zone-switch home-root-switch" aria-label="資料分類">
+          <button class="home-zone-btn" type="button" data-home-root="combined">國際賽/三級棒球/冬盟</button>
           <button class="home-zone-btn active" type="button" data-home-root="asia">亞洲職棒</button>
           <button class="home-zone-btn" type="button" data-home-root="america">美洲職棒</button>
-          <button class="home-zone-btn" type="button" data-home-root="international">國際賽</button>
-          <button class="home-zone-btn" type="button" data-home-root="reels">三級棒球</button>
         </div>
       </nav>
       <div class="home-layout">
@@ -392,6 +416,14 @@
         </aside>
 
         <section class="panel home-main-panel">
+          <div id="combinedCompetitionHub" class="combined-competition-hub hidden" aria-label="國際賽、三級棒球及冬盟">
+            <div id="combinedCompetitionCards" class="combined-competition-cards">
+              <button class="ds-cup-entry" type="button" data-combined-open="international"><div><strong>國際賽</strong><span>原有國際賽事、年份、球隊與球員</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="youth"><div><strong>2026 中信盃黑豹旗</strong><span>賽程・球隊・籤表・比賽球場</span></div><strong aria-hidden="true">›</strong></button>
+              <button class="ds-cup-entry" type="button" data-combined-open="winter"><div><strong>亞洲冬季棒球聯盟</strong><span>戰績・數據・球隊・歷屆賽事</span></div><strong aria-hidden="true">›</strong></button>
+            </div>
+            <button id="combinedCompetitionBack" class="press-btn hidden" type="button">← 返回賽事入口</button>
+          </div>
           <div id="homeProCountrySwitch" class="home-pro-country-switch" aria-label="職棒國家">
             <button class="home-hierarchy-btn active" type="button" data-pro-country="TW">台灣</button>
             <button class="home-hierarchy-btn" type="button" data-pro-country="JP">日本</button>
@@ -1011,7 +1043,7 @@
   function select(tab){if(!['standings','stats','teams'].includes(tab))return;current=tab;detail=null;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);render();}
   buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
   body.addEventListener('click',event=>{const cat=event.target.closest('[data-awb-category]'),team=event.target.closest('[data-awb-team]'),back=event.target.closest('[data-awb-back]');if(cat)detail=cat.dataset.awbCategory;else if(team)detail=team.dataset.awbTeam;else if(back)detail=null;else return;render();body.scrollTop=0;});
-  function sync(){const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active'),root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');const show=!!active&&!!root;section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);for(const el of panel.querySelectorAll('.home-player-head,.home-player-actions'))el.classList.toggle('hidden',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
+  function sync(){const active=document.querySelector('#homeProCountrySwitch [data-pro-country="AWB"].active'),root=document.querySelector('#homeZoneSwitch [data-home-root="asia"].active');const show=!!active&&(!!root||document.getElementById('homePage')?.dataset.combinedView==='winter');section.classList.toggle('hidden',!show);document.getElementById('awbSchedule')?.classList.toggle('hidden',!show);panel.classList.toggle('awb-mode',show);for(const el of panel.querySelectorAll('.home-player-head,.home-player-actions'))el.classList.toggle('hidden',show);if(show)document.getElementById('homeZoneNote')?.classList.add('hidden');}
   const observer=new MutationObserver(sync);for(const node of [document.getElementById('homeProCountrySwitch'),document.getElementById('homeZoneSwitch')])if(node)observer.observe(node,{attributes:true,subtree:true,attributeFilter:['class']});
   select('standings');sync();
 })();
