@@ -189,6 +189,36 @@
 @media(max-width:700px){.awb-history-team-grid{grid-template-columns:1fr}.awb-history-champion{padding:12px}.awb-history-champion-name{font-size:18px}.awb-history-team-pills{gap:5px}.awb-history-team-pills span{font-size:11px;padding:6px 8px}.awb-history-section-head{margin-top:12px}}
 
 
+/* Keep both navigation rows fully visible inside the AWB flex layout. */
+#homePage .home-main-panel.awb-mode #homeZoneSwitch.home-root-switch,
+#homePage .home-main-panel.awb-mode #homeProCountrySwitch {
+  flex:0 0 auto!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+#homePage .home-main-panel.awb-mode #homeZoneSwitch.home-root-switch {
+  min-height:0!important;
+  grid-template-rows:auto!important;
+}
+#homePage .home-main-panel.awb-mode #homeZoneSwitch.home-root-switch > .home-zone-btn {
+  min-height:0;
+}
+#homePage .home-main-panel.awb-mode #awbCompact .awb-compact-heading {
+  min-width:0;
+  gap:8px;
+}
+#homePage .home-main-panel.awb-mode #awbCompact .awb-heading-copy {
+  flex:1 1 auto;
+  min-width:0;
+}
+#homePage .home-main-panel.awb-mode #awbCompact .awb-eyebrow,
+#homePage .home-main-panel.awb-mode #awbCompact .awb-heading-caption {
+  white-space:nowrap;
+}
+#homePage .home-main-panel.awb-mode #awbCompact .awb-year-control {
+  flex:0 0 auto;
+}
 /* AWB scoreboard: use the identical shared league scoreboard layout.
    No separate card dimensions, typography or track sizing. */
 #homePage .home-main-panel.awb-mode #awbSchedule {
