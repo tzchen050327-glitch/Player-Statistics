@@ -110,6 +110,12 @@
           return;
         }
         if (homepage) { homepage.classList.remove('combined-home-mode'); delete homepage.dataset.combinedView; }
+        // Leaving the combined hub must also hide its DOM, not just remove the
+        // layout class; otherwise cards remain visible beneath pro league tabs.
+        document.getElementById('combinedCompetitionHub')?.classList.add('hidden');
+        document.getElementById('combinedCompetitionCards')?.classList.remove('hidden');
+        document.getElementById('combinedCompetitionBack')?.classList.add('hidden');
+        document.getElementById('combinedInternationalDetail')?.classList.add('hidden');
         homeRootSection = ['international','special','reels'].includes(chosenRoot) ? chosenRoot : 'pro';
         if (chosenRoot === 'asia' || chosenRoot === 'america') {
           homeProContinent = chosenRoot === 'america' ? 'AMERICA' : 'ASIA';
