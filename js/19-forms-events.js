@@ -308,6 +308,9 @@
       }
       const snapshot = dsIntlOfficial[dsIntlCompetition+':'+year];
       const liveSchedule = intlScheduleCache.get(dsIntlCompetition+':'+year);
+      const scheduleKey = dsIntlCompetition+':'+year;
+      const scheduleLoading = intlSchedulePending.has(scheduleKey);
+      const scheduleRetryAt = intlScheduleRetryAfter.get(scheduleKey)||0;
       if(dsIntlTab!=='teams'&&!liveSchedule)requestIntlSchedule(dsIntlCompetition,year);
       const messages = {
         schedule:'此屆逐場比賽資料尚未匯入，資料不足時不產生虛構比分。',
@@ -333,7 +336,7 @@
           snapshot.standings.map(t=>'<article class="ds-intl-game"><small>'+escapeHtml(t[0])+'</small><strong>'+
           escapeHtml(t[1])+'　'+t[2]+'勝 '+t[3]+'敗</strong></article>').join('');
       } else {
-        body='<div class="ds-intl-empty">'+messages[dsIntlTab]+'</div>';
+        body='<div class="ds-intl-empty">'+(scheduleLoading && (dsIntlTab==='schedule'||dsIntlTab==='venues')?'正在向官方來源讀取賽事資料…':scheduleRetryAt>Date.now() && (dsIntlTab==='schedule'||dsIntlTab==='venues')?'官方賽程暫時無法取得，稍後重試；這不代表該屆沒有比賽。':messages[dsIntlTab])+'</div>';
       }
       dsIntlBody.innerHTML='<h3>'+dsIntlLabels[dsIntlTab]+'</h3>'+body+source;
     }
