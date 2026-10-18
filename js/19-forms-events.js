@@ -98,6 +98,18 @@
     els.homeZoneSwitch?.querySelectorAll('[data-home-root]').forEach(button => {
       button.addEventListener('click', () => {
         const chosenRoot = button.dataset.homeRoot;
+        const homepage = document.getElementById('homePage');
+        if (chosenRoot === 'combined') {
+          if (homepage) { homepage.classList.add('combined-home-mode'); homepage.dataset.combinedView = 'landing'; }
+          homeRootSection = 'reels';
+          homeZone = 'reels';
+          renderRecentPlayers();
+          document.getElementById('combinedCompetitionCards')?.classList.remove('hidden');
+          document.getElementById('combinedCompetitionBack')?.classList.add('hidden');
+          document.getElementById('combinedCompetitionHub')?.classList.remove('hidden');
+          return;
+        }
+        if (homepage) { homepage.classList.remove('combined-home-mode'); delete homepage.dataset.combinedView; }
         homeRootSection = ['international','special','reels'].includes(chosenRoot) ? chosenRoot : 'pro';
         if (chosenRoot === 'asia' || chosenRoot === 'america') {
           homeProContinent = chosenRoot === 'america' ? 'AMERICA' : 'ASIA';
@@ -123,6 +135,42 @@
         renderRecentPlayers();
       });
     });
+
+    // The combined competition entry reuses existing International, Panther Cup
+    // and Winter League views without replacing their underlying data.
+    const combinedHub = document.getElementById('combinedCompetitionHub');
+    const combinedCards = document.getElementById('combinedCompetitionCards');
+    const combinedBack = document.getElementById('combinedCompetitionBack');
+    function openCombinedLanding() {
+      document.querySelector('#homeZoneSwitch [data-home-root="combined"]')?.click();
+    }
+    combinedHub?.addEventListener('click', event => {
+      const item = event.target.closest('[data-combined-open]');
+      if (!item) return;
+      const section = item.dataset.combinedOpen;
+      const page = document.getElementById('homePage');
+      page.classList.add('combined-home-mode');
+      page.dataset.combinedView = section === 'youth' ? 'landing' : section;
+      if (section === 'youth') {
+        document.getElementById('dsCupEntry')?.click();
+        return;
+      }
+      homeRootSection = section === 'international' ? 'international' : 'pro';
+      if (section === 'international') {
+        homeZone = 'international';
+      } else {
+        homeProContinent = 'ASIA';
+        homeProCountry = 'AWB';
+        applyHomeProSelection();
+      }
+      renderRecentPlayers();
+      combinedCards?.classList.add('hidden');
+      combinedBack?.classList.remove('hidden');
+      if (section === 'winter') {
+        document.getElementById('homeProCountrySwitch')?.querySelector('[data-pro-country="AWB"]')?.classList.add('active');
+      }
+    });
+    combinedBack?.addEventListener('click', openCombinedLanding);
 
     document.getElementById('homeAuthorCollectionBtn')?.addEventListener('click', () => {
       homeRootSection = 'special';
