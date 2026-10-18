@@ -16891,7 +16891,16 @@ select,
 #homePage #homeZoneSwitch [data-home-root="international"]{grid-column:3 !important}
 #homePage #homeZoneSwitch [data-home-root="special"]{grid-column:4 !important}
 #homePage #homeProCountrySwitch{
-  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+#homePage #homeProCountrySwitch > .home-hierarchy-btn:not(.hidden){
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  justify-self:stretch;
 }
 #homePage #homeProCountrySwitch > .home-hierarchy-btn.hidden{display:none !important}
 #homePage #homeProCountrySwitch:has(> [data-pro-country="US"]:not(.hidden)){
