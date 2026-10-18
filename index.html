@@ -292,23 +292,31 @@
 #homePage.combined-home-mode[data-combined-view="winter"] #awbSchedule.hidden{display:none}
 </style>
 <style id="dsInternationalPageStyles">
-#dsInternationalPage{position:fixed;z-index:10100;inset:40px 0 0;background:#0d1118;color:#eaf0fa;display:flex;flex-direction:column}
+#dsInternationalPage{position:fixed;z-index:10100;inset:40px 0 0;background:#0b1018;color:#eaf0fa;display:flex;flex-direction:column;min-width:0}
 #dsInternationalPage.hidden{display:none!important}
-.ds-intl-page-head{display:flex;align-items:center;gap:12px;padding:14px;min-height:76px;background:#111823;border-bottom:1px solid #2c3440}
-.ds-intl-page-head button,.ds-intl-page-head select{padding:10px 12px;background:#171e2a;border:1px solid #323c4d;border-radius:10px;color:#eef2f8}
-.ds-intl-page-head strong{flex:1;min-width:0;font-size:18px}
-.ds-intl-page-scroll{flex:1;overflow-y:auto;max-width:780px;width:100%;margin:auto;padding:16px}
-.ds-intl-hero{padding:18px;border-radius:13px;background:linear-gradient(130deg,#26344b,#111a27);margin-bottom:12px}
-.ds-intl-hero h2{margin:0 0 8px;font-size:23px}
-.ds-intl-hero p{margin:0;font-size:12px;color:#b4c0d1}
-.ds-intl-page-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:14px 0}
-.ds-intl-page-tabs button{border:1px solid #303846;border-radius:10px;background:#1c222b;color:#e5eaf4;padding:11px 2px;font-size:12px}
-.ds-intl-page-tabs button.active{background:#d6a640;color:#161411}
-.ds-intl-team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.ds-intl-team-list button,.ds-intl-roster button{background:#171e28;border:1px solid #384352;padding:15px 12px;color:#eef3fa;text-align:left;border-radius:11px}
-.ds-intl-roster{display:grid;gap:9px}
-.ds-intl-empty{border:1px solid #343e4d;background:#161e2a;border-radius:11px;padding:20px;color:#cbd5e2}
-@media(max-width:520px){.ds-intl-page-head{gap:7px;padding:8px}.ds-intl-page-head strong{font-size:14px}.ds-intl-page-head button,.ds-intl-page-head select{padding:8px 5px;font-size:12px}}
+.ds-intl-page-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 16px;min-height:68px;background:#111823;border-bottom:1px solid #2c3440}
+.ds-intl-page-head button,.ds-intl-page-head select{background:#171e2a;border:1px solid #323c4d;border-radius:10px;color:#eef2f8;height:38px;box-sizing:border-box}
+.ds-intl-page-head button{padding:0 12px;white-space:nowrap}
+.ds-intl-page-head select{width:92px!important;max-width:92px!important;min-width:92px!important;flex:none!important;padding:0 9px;font-size:14px}
+.ds-intl-page-head strong{display:block;min-width:0;width:auto;font-size:16px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;writing-mode:horizontal-tb!important;word-break:normal!important}
+.ds-intl-page-scroll{flex:1;min-height:0;overflow-y:auto;max-width:780px;width:100%;margin:0 auto;padding:14px;box-sizing:border-box}
+.ds-intl-hero{padding:20px;border-radius:14px;background:linear-gradient(125deg,#253650,#131d2c);border:1px solid #354056;margin-bottom:14px}
+.ds-intl-hero h2{margin:0 0 7px;font-size:23px;line-height:1.3}
+.ds-intl-hero p{margin:0;font-size:12px;color:#bac5d5}
+.ds-intl-page-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0 18px}
+.ds-intl-page-tabs button{border:1px solid #353f4e;border-radius:10px;background:#1b222d;color:#e5eaf4;padding:12px 3px;font-size:13px;cursor:pointer}
+.ds-intl-page-tabs button.active{background:#d6a640;color:#161411;font-weight:800}
+.ds-intl-team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+.ds-intl-team-list button,.ds-intl-roster button{background:#161f2c;border:1px solid #384352;padding:13px;color:#eef3fa;text-align:left;border-radius:11px;cursor:pointer}
+.ds-intl-roster{display:grid;gap:8px}
+.ds-intl-empty{border:1px solid #343e4d;background:#151e2b;border-radius:11px;padding:17px;color:#cbd5e2;font-size:13px;line-height:1.65}
+.ds-intl-game{padding:13px 15px;border:1px solid #313d4f;border-radius:12px;background:#141c28;margin:8px 0}
+.ds-intl-game small{display:block;color:#aebdd0;margin-bottom:7px;font-size:11px}
+.ds-intl-game strong{font-size:15px}
+.ds-intl-game .score{color:#e6b754;font-weight:900}
+.ds-intl-source{font-size:11px;color:#aebdd0;margin:14px 0}
+.ds-intl-source a{color:#e4bb68}
+@media(max-width:480px){.ds-intl-page-head{padding:9px 10px;gap:8px}.ds-intl-page-head button{padding:0 7px;font-size:12px}.ds-intl-page-head strong{font-size:13px}.ds-intl-page-head select{width:76px!important;min-width:76px!important;max-width:76px!important}.ds-intl-page-scroll{padding:12px}.ds-intl-hero h2{font-size:21px}}
 </style>
 </head>
 <body>
