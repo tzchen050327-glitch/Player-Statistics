@@ -239,6 +239,20 @@
   min-width:0;
 }
 /* Composite competition landing: left half of nav, full content width only in this mode. */
+/* Override legacy four-slot rules with higher specificity for all three entries. */
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="combined"]{
+  grid-column:1!important;grid-row:1!important;
+}
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="asia"]{
+  grid-column:2!important;grid-row:1!important;
+}
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-zone-switch.home-root-switch > button.home-zone-btn[data-home-root="america"]{
+  grid-column:3!important;grid-row:1!important;
+}
+#homePage .home-fullwidth-navigation #homeZoneSwitch.home-zone-switch.home-root-switch{
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr)!important;
+}
+
 #homePage .home-fullwidth-navigation #homeZoneSwitch.home-root-switch{grid-template-columns:2fr 1fr 1fr!important}
 #homePage #homeZoneSwitch [data-home-root="combined"]{grid-column:1!important}
 #homePage #homeZoneSwitch [data-home-root="asia"]{grid-column:2!important}
