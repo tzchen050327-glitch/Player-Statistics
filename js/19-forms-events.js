@@ -142,6 +142,114 @@
       });
     });
 
+    // Standalone tournament UI shares the existing roster/individual player path.
+    const dsIntlPage = document.getElementById('dsInternationalPage');
+    const dsIntlTitle = document.getElementById('dsIntlPageTitle');
+    const dsIntlYear = document.getElementById('dsIntlYear');
+    const dsIntlHero = document.getElementById('dsIntlHero');
+    const dsIntlTabs = document.getElementById('dsIntlTabs');
+    const dsIntlBody = document.getElementById('dsIntlPageBody');
+    let dsIntlCompetition = '';
+    let dsIntlTab = 'schedule';
+    let dsIntlTeam = '';
+    let dsIntlOpenToken = 0;
+    const dsIntlLabels = {schedule:'賽程',teams:'球隊',bracket:'籤表',venues:'場地',rankings:'球隊排名'};
+    function closeStandaloneIntl() {
+      ++dsIntlOpenToken;
+      dsIntlPage?.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    function showStandaloneIntl(competition) {
+      if (!INTERNATIONAL_COMPETITIONS.includes(competition)) return;
+      dsIntlCompetition = competition;
+      dsIntlTeam = '';
+      dsIntlTab = 'schedule';
+      homeSpecialFilter = competition;
+      homeInternationalEditionFilter = String((INTERNATIONAL_TOURNAMENT_YEARS[competition] || [])[0] || '');
+      homeInternationalTeamFilter = '';
+      dsIntlYear.innerHTML = (INTERNATIONAL_TOURNAMENT_YEARS[competition] || []).map(y =>
+        '<option value="'+y+'">'+y+'</option>').join('');
+      dsIntlYear.value = homeInternationalEditionFilter;
+      dsIntlPage.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      renderStandaloneIntl();
+    }
+    function renderStandaloneIntl() {
+      if (!dsIntlCompetition || dsIntlPage.classList.contains('hidden')) return;
+      const version = ++dsIntlOpenToken;
+      const year = String(dsIntlYear.value || '');
+      const title = INTERNATIONAL_TOURNAMENT_META[dsIntlCompetition]?.name || dsIntlCompetition;
+      dsIntlTitle.textContent = title;
+      dsIntlHero.innerHTML = '<h2>'+escapeHtml(title)+'</h2><p>'+escapeHtml(year)+' 年度賽事｜賽程・球隊・籤表・場地・球隊排名</p>';
+      dsIntlTabs.innerHTML = Object.entries(dsIntlLabels).map(([id,label]) =>
+        '<button type="button" data-intl-tab="'+id+'" class="'+(dsIntlTab===id?'active':'')+'">'+label+'</button>').join('');
+      if (dsIntlTab === 'teams') {
+        if (dsIntlTeam) {
+          dsIntlBody.innerHTML = '<button class="press-btn" data-intl-team-back type="button">← 返回球隊</button><h3>'+escapeHtml(dsIntlTeam)+'</h3><div class="ds-intl-empty">正在讀取球員名單…</div>';
+          const key = internationalRosterKey(dsIntlCompetition,year,dsIntlTeam);
+          const apply = () => {
+            if (version !== dsIntlOpenToken) return;
+            const data = internationalRosterCache.get(key);
+            const roster = Array.isArray(data?.players) ? data.players : [];
+            const stored = players.filter(p => playerScope(p)==='international'
+              && playerSpecialCompetition(p)===dsIntlCompetition
+              && internationalEdition(p)===year && internationalTeam(p)===dsIntlTeam);
+            const list = roster.length ? roster.map((p,i)=>'<button type="button" data-intl-roster-index="'+i+'">#'+escapeHtml(p.number||'—')+'　'+escapeHtml(p.zhName||p.name||'球員')+'</button>').join('')
+              : stored.map(p=>'<button type="button" data-intl-local-player="'+escapeHtml(p.id)+'">#'+escapeHtml(p.number||'—')+'　'+escapeHtml(p.name||'球員')+'</button>').join('');
+            dsIntlBody.innerHTML = '<button class="press-btn" data-intl-team-back type="button">← 返回球隊</button><h3>'+escapeHtml(dsIntlTeam)+'</h3><div class="ds-intl-roster">'+(list||'<div class="ds-intl-empty">本屆球員名單尚未取得。</div>')+'</div>';
+          };
+          if (internationalRosterCache.has(key)) apply();
+          else void loadInternationalRoster(dsIntlCompetition,year,dsIntlTeam).then(apply);
+          return;
+        }
+        const key = internationalTeamListKey(dsIntlCompetition,year);
+        const stored = players.filter(p=>playerScope(p)==='international'
+          && playerSpecialCompetition(p)===dsIntlCompetition && internationalEdition(p)===year).map(internationalTeam);
+        const draw = () => {
+          if (version !== dsIntlOpenToken) return;
+          const teams = [...new Set([...(INTERNATIONAL_TEAM_CATALOG[dsIntlCompetition+':'+year]||[]),
+            ...(internationalTeamCache.get(key)||[]),...stored].filter(Boolean))];
+          dsIntlBody.innerHTML='<h3>參賽球隊</h3><div class="ds-intl-team-list">'+
+            (teams.map(t=>'<button data-intl-team="'+escapeHtml(t)+'" type="button">'+escapeHtml(t)+' →</button>').join('')||
+            '<div class="ds-intl-empty">尚未取得該屆參賽隊伍。</div>')+'</div>';
+        };
+        if (internationalTeamCache.has(key)) draw();
+        else { draw(); void loadInternationalTeams(dsIntlCompetition,year).then(draw); }
+        return;
+      }
+      const messages = {
+        schedule:'本屆完整賽程尚未匯入。取得官方對戰日期、比分與場次後會在此顯示。',
+        bracket:'本屆籤表尚未匯入；不會以預測結果代替官方賽制。',
+        venues:'本屆場地清單尚未匯入，待取得官方球場資訊後顯示。',
+        rankings:'本屆球隊排名尚未匯入，待取得官方名次後顯示。'
+      };
+      dsIntlBody.innerHTML='<h3>'+dsIntlLabels[dsIntlTab]+'</h3><div class="ds-intl-empty">'+messages[dsIntlTab]+'</div>';
+    }
+    dsIntlYear?.addEventListener('change',()=> {
+      homeInternationalEditionFilter=dsIntlYear.value;
+      homeInternationalTeamFilter='';
+      dsIntlTeam='';
+      renderStandaloneIntl();
+    });
+    dsIntlTabs?.addEventListener('click', e=>{
+      const tab=e.target.closest('[data-intl-tab]')?.dataset.intlTab;
+      if(!tab)return;
+      dsIntlTab=tab;dsIntlTeam='';renderStandaloneIntl();
+    });
+    dsIntlBody?.addEventListener('click', async e=>{
+      const team=e.target.closest('[data-intl-team]')?.dataset.intlTeam;
+      if(team){dsIntlTeam=team;homeInternationalTeamFilter=team;renderStandaloneIntl();return;}
+      if(e.target.closest('[data-intl-team-back]')){dsIntlTeam='';renderStandaloneIntl();return;}
+      const idx=e.target.closest('[data-intl-roster-index]')?.dataset.intlRosterIndex;
+      if(idx!==undefined){
+        const roster=internationalRosterCache.get(internationalRosterKey(dsIntlCompetition,dsIntlYear.value,dsIntlTeam))?.players||[];
+        const entry=roster[Number(idx)];
+        if(entry){closeStandaloneIntl();await openInternationalRosterPlayer(entry,dsIntlCompetition,dsIntlYear.value,dsIntlTeam);}
+      }
+      const local=e.target.closest('[data-intl-local-player]')?.dataset.intlLocalPlayer;
+      if(local){closeStandaloneIntl();await selectPlayer(local);}
+    });
+    document.getElementById('dsIntlBack')?.addEventListener('click',closeStandaloneIntl);
     // The combined competition entry reuses existing International, Panther Cup
     // and Winter League views without replacing their underlying data.
     const combinedHub = document.getElementById('combinedCompetitionHub');
@@ -159,6 +267,10 @@
       page.dataset.combinedView = section === 'youth' ? 'landing' : section;
       if (section === 'youth') {
         document.getElementById('dsCupEntry')?.click();
+        return;
+      }
+      if (section === 'international') {
+        showStandaloneIntl(String(item.dataset.competition || ''));
         return;
       }
       homeRootSection = section === 'international' ? 'international' : 'pro';
