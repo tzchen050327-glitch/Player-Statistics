@@ -406,9 +406,21 @@
             '</strong><small>得分 '+t.rf+' · 失分 '+t.ra+'</small></article>').join('');
         }else body='<div class="ds-intl-empty">目前沒有足夠的完整比分可以計算戰績。</div>';
       } else if(dsIntlTab==='rankings' && snapshot?.standings?.length) {
-        body = '<p class="ds-intl-source">已核對分組戰績，非賽事最終排名。</p>'+
-          snapshot.standings.map(t=>'<article class="ds-intl-game"><small>'+escapeHtml(t[0])+'</small><strong>'+
-          escapeHtml(t[1])+'　'+t[2]+'勝 '+t[3]+'敗</strong></article>').join('');
+        const isFinalQualifiers=dsIntlCompetition==='WBCQ'&&year==='2025';
+        const advanced=new Set(['尼加拉瓜','中華台北','哥倫比亞','巴西']);
+        const groupIndex=new Map();
+        body='<p class="ds-intl-source">'+(isFinalQualifiers?
+          '2025 經典賽資格賽官方最終排名（含附加賽）；標示「晉級」的球隊取得經典賽正賽資格。':
+          '已核對分組戰績，非賽事最終排名。')+'</p>'+
+          snapshot.standings.map(t=>{
+            const group=String(t[0]||'');
+            const index=(groupIndex.get(group)||0)+1;
+            groupIndex.set(group,index);
+            const team=intlLocalizeTeam(t[1]);
+            return '<article class="ds-intl-game"><small>'+escapeHtml(group)+' · 第 '+index+' 名</small><strong>'+
+              escapeHtml(team)+'　'+Number(t[2])+'勝 '+Number(t[3])+'敗'+
+              (isFinalQualifiers&&advanced.has(team)?' · 晉級':'')+'</strong></article>';
+          }).join('');
       } else {
         body='<div class="ds-intl-empty">'+(scheduleLoading && (dsIntlTab==='schedule'||dsIntlTab==='venues')?'正在向官方來源讀取賽事資料…':scheduleRetryAt>Date.now() && (dsIntlTab==='schedule'||dsIntlTab==='venues')?'官方賽程暫時無法取得，稍後重試；這不代表該屆沒有比賽。':messages[dsIntlTab])+'</div>';
       }
