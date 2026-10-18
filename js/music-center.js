@@ -732,7 +732,9 @@
   async function loadRoster(force=false){
     if(!force&&roster)return;
     try{
-      const response=await fetch('./data/music-roster-2026.json?v=c1.84',{cache:'no-store'});
+      const appVersion=document.querySelector('meta[name="app-version"]')?.content?.trim() || '';
+      const rosterUrl='./data/music-roster-2026.json'+(appVersion ? '?v='+encodeURIComponent(appVersion) : '');
+      const response=await fetch(rosterUrl,{cache:'no-store'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const value=await response.json();
       if(value.season!==2026||typeof value.teams!=='object')throw Error('資料格式不符');

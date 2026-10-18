@@ -68,6 +68,14 @@ jobs:
                content = Path(path).read_text(encoding='utf-8')
                for asset_version in re.findall(r'\?v=([vc]\d+\.\d+)', content):
                    assert asset_version == v, f'{path}: stale asset version {asset_version} (expected {v})'
+          # Cover every frontend source rather than only a fixed list of versioned paths.
+          release_sources = [*Path('js').rglob('*.js'), *Path('.').glob('*.js'),
+                             *Path('.').glob('*.html'), *Path('.').glob('*.css'),
+                             Path('manifest.webmanifest')]
+          for path in release_sources:
+              content = path.read_text(encoding='utf-8')
+              for asset_version in re.findall(r'\?v=([vc]\d+\.\d+)', content):
+                  assert asset_version == v, f'{path}: stale asset version {asset_version} (expected {v})'
           assert './app.js?v=' not in html
           assert './app.js?v=' not in sw
           assert "const MODULE_ORDER_URL = './js/module-order.txt';" in sw
