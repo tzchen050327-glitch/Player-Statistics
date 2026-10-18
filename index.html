@@ -198,6 +198,53 @@
 .awb-history-status-row .is-ready{color:#77ba9a;font-weight:750}
 .awb-history-status-row .is-pending{opacity:.52}
 @media(max-width:700px){.awb-history-team-grid{grid-template-columns:1fr}.awb-history-champion{padding:12px}.awb-history-champion-name{font-size:18px}.awb-history-team-pills{gap:5px}.awb-history-team-pills span{font-size:11px;padding:6px 8px}.awb-history-section-head{margin-top:12px}}
+
+/* AWB: use the same compact typography and game-card proportions as league schedules. */
+#homePage .home-main-panel.awb-mode #awbSchedule{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-head{
+  min-width:0!important;
+  padding:0!important;
+  margin-bottom:12px!important;
+  align-items:center!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title strong{
+  font-size:17px!important;
+  line-height:1.2!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title span{
+  font-size:11px!important;
+  line-height:1.2!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-date{
+  font-size:11px!important;
+  line-height:1.2!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .awb-schedule-track{
+  grid-auto-columns:minmax(210px,250px)!important;
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  scrollbar-gutter:auto!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-game-card{
+  min-height:142px!important;
+  padding:12px 13px 10px!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-game-team-name{
+  font-size:14px!important;
+}
+#homePage .home-main-panel.awb-mode #awbSchedule .home-game-score{
+  font-size:23px!important;
+}
+@media(max-width:640px){
+  #homePage .home-main-panel.awb-mode #awbSchedule .home-daily-games-title strong{
+    font-size:16px!important;
+  }
+}
 </style>
 </head>
 <body>
