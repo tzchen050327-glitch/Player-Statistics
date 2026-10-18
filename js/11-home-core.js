@@ -50,7 +50,7 @@
     function normalizeInternationalTeamName(value = '') {
       const raw = String(value || '').normalize('NFKC').replace(/\s+/g,' ').trim();
       if (!raw) return '';
-      const variants=[raw,raw.replace(/^team\s+/i,''),raw.replace(/\s+national\s+team$/i,'')];
+      const variants=[raw,raw.replace(/^team\s+/i,''),raw.replace(/\s+national\s+team$/i,''),raw.replace(/\s*\([a-z]{2,3}\)$/i,''),raw.replace(/\s+u[-\s]?(?:12|15|18|23)$/i,'')];
       for (const candidate of variants) {
         const zh=INTERNATIONAL_TEAM_NAME_MAP[candidate] ||
           internationalTeamAliasIndex.get(internationalTeamAliasKey(candidate));
