@@ -64,3 +64,47 @@
   overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
   touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
 }
+
+/* c1.80: umpire floating action button, shown within CPBL referee-report tab. */
+#homeGameDetailOverlay .gdx-umpire-fab {
+  position:fixed;
+  z-index:30;
+  right:max(18px,calc((100vw - 900px)/2 + 24px));
+  bottom:calc(22px + env(safe-area-inset-bottom,0px));
+  width:68px;
+  height:68px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  padding:7px;
+  border:2px solid #d9b25a;
+  border-radius:50%;
+  background:linear-gradient(150deg,#253346,#111b28 72%);
+  box-shadow:0 8px 25px rgba(0,0,0,.42),0 0 0 4px rgba(218,170,82,.14);
+  color:#f5d991;
+  cursor:pointer;
+  font:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+#homeGameDetailOverlay .gdx-umpire-fab svg {
+  display:block;
+  width:39px;
+  height:39px;
+  flex:0 0 auto;
+}
+#homeGameDetailOverlay .gdx-umpire-fab span {
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.05em;
+  line-height:1;
+}
+#homeGameDetailOverlay .gdx-umpire-fab:active {transform:scale(.96)}
+#homeGameDetailOverlay .gdx-umpire-fab:focus-visible {outline:3px solid #f4d083;outline-offset:4px}
+@media(max-width:900px) {
+  #homeGameDetailOverlay .gdx-umpire-fab {
+    right:calc(18px + env(safe-area-inset-right,0px));
+    bottom:calc(22px + env(safe-area-inset-bottom,0px));
+  }
+}
