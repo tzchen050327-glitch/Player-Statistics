@@ -222,14 +222,14 @@
     };
     const intlLocalizeVenue = name => {
       const raw=String(name||'').trim();
-      const key=raw.toLowerCase().replace(/\\s+/g,' ');
+      const key=raw.toLowerCase().replace(/\s+/g,' ');
       const found=Object.entries(intlVenueNames).find(([en])=>en.toLowerCase()===key);
       return found?found[1]:raw;
     };
     function intlLocalizeGameStatus(status) {
       const raw=String(status||'').trim();
       if(!raw) return '';
-      if(/^(final|completed|finished|game over)(\\s*\\/\\s*\\d+)?$/i.test(raw))return '比賽結束'+(raw.match(/\\/\\s*\\d+/)?.[0]||'');
+      if(/^(final|completed|finished|game over)(\s*\/\s*\d+)?$/i.test(raw))return '比賽結束'+(raw.match(/\/\s*\d+/)?.[0]||'');
       if(/^(scheduled|preview|pre-game|not started|not yet started|upcoming)$/i.test(raw))return '未開賽';
       if(/^(live|in progress|playing|ongoing)$/i.test(raw))return '進行中';
       if(/^(postponed|ppd)$/i.test(raw))return '延賽';
