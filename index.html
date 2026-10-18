@@ -261,7 +261,9 @@
 #homePage #homeZoneSwitch [data-home-root="asia"],
 #homePage #homeZoneSwitch [data-home-root="america"]{grid-row:1!important}
 #homePage.combined-home-mode .home-layout{grid-template-columns:minmax(0,1fr)!important}
-#homePage.combined-home-mode .home-sidebar{display:none!important}
+#homePage.combined-home-mode .home-layout > .home-sidebar{display:none!important}
+#homePage.combined-home-mode .home-layout > .home-main-panel{grid-column:1/-1!important;min-width:0!important}
+#homePage:not(.combined-home-mode) #combinedCompetitionHub{display:none!important}
 #homePage.combined-home-mode .home-main-panel{width:100%;min-width:0}
 #homePage.combined-home-mode #homeZoneSwitch{width:100%}
 #homePage.combined-home-mode #homeProCountrySwitch{display:none!important}
