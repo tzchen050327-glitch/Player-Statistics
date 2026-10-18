@@ -213,7 +213,7 @@
     const intlSchedulePending = new Set();
     const intlScheduleRetryAfter = new Map();
     function requestIntlSchedule(competition,year){
-      if(competition!=='WBC'||!year)return;
+      if(!['WBC','WBCQ','世界12強','亞洲運動會','U18亞青','亞錦賽'].includes(competition)||!year)return;
       const key=competition+':'+year;
       if(intlScheduleCache.has(key)||intlSchedulePending.has(key)||Date.now()<(intlScheduleRetryAfter.get(key)||0))return;
       intlSchedulePending.add(key);
