@@ -157,8 +157,20 @@
     // Verified official tournament snapshots only. No synthesized schedules or standings.
     const dsIntlOfficial = {
       'WBC:2026':{
-        source:'https://www.mlb.com/news/world-baseball-classic-2026-schedule-dates-times-rosters',
-        venues:['東京巨蛋（日本東京）','Hiram Bithorn Stadium（波多黎各聖胡安）','Daikin Park（美國休士頓）','loanDepot park（美國邁阿密）']
+        source:'https://www.2026wbc.jp/schedule/',
+        venues:['東京巨蛋（日本東京）','Hiram Bithorn Stadium（波多黎各聖胡安）','Daikin Park（美國休士頓）','loanDepot park（美國邁阿密）'],
+        games:[
+          ['03/05','澳洲','中華台北',3,0,'東京巨蛋'],
+          ['03/05','韓國','捷克',11,4,'東京巨蛋'],
+          ['03/06','捷克','澳洲',1,5,'東京巨蛋'],
+          ['03/06','中華台北','日本',0,13,'東京巨蛋'],
+          ['03/07','捷克','中華台北',0,14,'東京巨蛋'],
+          ['03/07','日本','韓國',8,6,'東京巨蛋'],
+          ['03/08','韓國','中華台北',4,5,'東京巨蛋'],
+          ['03/08','日本','澳洲',4,3,'東京巨蛋'],
+          ['03/09','澳洲','韓國',2,7,'東京巨蛋'],
+          ['03/10','日本','捷克',9,0,'東京巨蛋']
+        ]
       },
       'WBCQ:2025':{
         source:'https://www.mlb.com/world-baseball-classic/qualifiers',
@@ -269,7 +281,7 @@
       const source = snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
       let body = '';
       if(dsIntlTab==='schedule' && snapshot?.games?.length) {
-        body = '<p class="ds-intl-source">已核對場次（部分紀錄，非完整賽程）</p>'+
+        body = '<p class="ds-intl-source">已核對場次（部分紀錄，持續補齊其他分組）</p>'+
           snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(g[5])+'</small><strong>'+escapeHtml(g[1])+
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
