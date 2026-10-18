@@ -273,9 +273,734 @@
     };
 
 
+    const dsIntlAsianRankings = {
+  "亞洲運動會:2026": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2026/asiangames/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "泰國"
+      ],
+      [
+        7,
+        "巴勒斯坦"
+      ],
+      [
+        8,
+        "香港"
+      ]
+    ]
+  },
+  "亞洲運動會:2023": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2023/asiangames/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "日本"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "香港"
+      ],
+      [
+        7,
+        "泰國"
+      ],
+      [
+        8,
+        "寮國"
+      ],
+      [
+        9,
+        "新加坡"
+      ]
+    ]
+  },
+  "亞洲運動會:2018": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2018/asiangames/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "巴基斯坦"
+      ],
+      [
+        6,
+        "香港"
+      ],
+      [
+        7,
+        "印尼"
+      ],
+      [
+        8,
+        "泰國"
+      ],
+      [
+        9,
+        "斯里蘭卡"
+      ],
+      [
+        10,
+        "寮國"
+      ]
+    ]
+  },
+  "亞洲運動會:2014": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/news/special/20141001_1.html",
+    "verifiedSource": true,
+    "complete": false,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "日本"
+      ],
+      [
+        4,
+        "中國"
+      ]
+    ]
+  },
+  "亞洲運動會:2010": {
+    "kind": "placements",
+    "source": "https://en.wikipedia.org/wiki/Baseball_at_the_2010_Asian_Games",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "日本"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "巴基斯坦"
+      ],
+      [
+        5,
+        "泰國"
+      ],
+      [
+        7,
+        "香港"
+      ],
+      [
+        7,
+        "蒙古"
+      ]
+    ]
+  },
+  "亞洲運動會:2006": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2006_Asian_Games",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "中華台北"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "泰國"
+      ],
+      [
+        6,
+        "菲律賓"
+      ]
+    ]
+  },
+  "亞洲運動會:2002": {
+    "kind": "placements",
+    "source": "https://en.wikipedia.org/wiki/Baseball_at_the_2002_Asian_Games",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "日本"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ]
+    ]
+  },
+  "亞洲運動會:1998": {
+    "kind": "placements",
+    "source": "https://en.wikipedia.org/wiki/Baseball_at_the_1998_Asian_Games",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "泰國"
+      ]
+    ]
+  },
+  "亞洲運動會:1994": {
+    "kind": "placements",
+    "source": "https://en.wikipedia.org/wiki/Baseball_at_the_1994_Asian_Games",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "韓國"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "泰國"
+      ],
+      [
+        6,
+        "蒙古"
+      ]
+    ]
+  },
+  "U18亞青:2026": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/18u/2026/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "菲律賓"
+      ],
+      [
+        5,
+        "香港"
+      ],
+      [
+        6,
+        "泰國"
+      ],
+      [
+        7,
+        "斯里蘭卡"
+      ],
+      [
+        8,
+        "新加坡"
+      ]
+    ]
+  },
+  "亞錦賽:2025": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2025/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "巴勒斯坦"
+      ],
+      [
+        6,
+        "菲律賓"
+      ],
+      [
+        7,
+        "香港"
+      ],
+      [
+        8,
+        "巴基斯坦"
+      ]
+    ]
+  },
+  "亞錦賽:2023": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2023/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "菲律賓"
+      ],
+      [
+        5,
+        "巴基斯坦"
+      ],
+      [
+        6,
+        "香港"
+      ],
+      [
+        7,
+        "巴勒斯坦"
+      ],
+      [
+        8,
+        "泰國"
+      ]
+    ]
+  },
+  "亞錦賽:2019": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2019/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "中華台北"
+      ],
+      [
+        2,
+        "日本"
+      ],
+      [
+        3,
+        "中國"
+      ],
+      [
+        4,
+        "韓國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "香港"
+      ],
+      [
+        7,
+        "斯里蘭卡"
+      ],
+      [
+        8,
+        "巴基斯坦"
+      ]
+    ]
+  },
+  "亞錦賽:2017": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2017/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": false,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "菲律賓"
+      ],
+      [
+        5,
+        "香港"
+      ],
+      [
+        6,
+        "巴基斯坦"
+      ],
+      [
+        7,
+        "斯里蘭卡"
+      ]
+    ]
+  },
+  "亞錦賽:2015": {
+    "kind": "placements",
+    "source": "https://www.japan-baseball.jp/en/team/amateur/2015/asianchampionship/overview.html",
+    "verifiedSource": true,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "韓國"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "日本"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "巴基斯坦"
+      ],
+      [
+        6,
+        "印尼"
+      ]
+    ]
+  },
+  "亞錦賽:2012": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2012_Asian_Championship",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "巴基斯坦"
+      ]
+    ]
+  },
+  "亞錦賽:2009": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2009_Asian_Championship",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "中國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "泰國"
+      ],
+      [
+        7,
+        "印尼"
+      ]
+    ]
+  },
+  "亞錦賽:2007": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2007_Asian_Championship",
+    "verifiedSource": false,
+    "complete": false,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "韓國"
+      ],
+      [
+        3,
+        "中華台北"
+      ],
+      [
+        4,
+        "菲律賓"
+      ]
+    ]
+  },
+  "亞錦賽:2005": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2005_Asian_Championship",
+    "verifiedSource": false,
+    "complete": true,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "中國"
+      ],
+      [
+        4,
+        "韓國"
+      ],
+      [
+        5,
+        "菲律賓"
+      ],
+      [
+        6,
+        "泰國"
+      ]
+    ]
+  },
+  "亞錦賽:2003": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2003_Asian_Championship",
+    "verifiedSource": false,
+    "complete": false,
+    "rows": [
+      [
+        1,
+        "日本"
+      ],
+      [
+        2,
+        "中華台北"
+      ],
+      [
+        3,
+        "韓國"
+      ],
+      [
+        4,
+        "中國"
+      ]
+    ]
+  },
+  "亞錦賽:2001": {
+    "kind": "placements",
+    "source": "https://www.baseball-reference.com/bullpen/2001_Asian_Championship",
+    "verifiedSource": false,
+    "complete": false,
+    "rows": [
+      [
+        1,
+        "中華台北"
+      ],
+      [
+        2,
+        "韓國"
+      ],
+      [
+        3,
+        "日本"
+      ]
+    ]
+  }
+};
     function renderIntlOfficialRankings(data){
       if(!data)return '';
       const link='<p class="ds-intl-source">官方資料：<a href="'+escapeHtml(data.source)+'" target="_blank" rel="noopener noreferrer">查看賽事排名來源 ↗</a></p>';
+      if(data.kind==='placements'){
+        const desc=data.complete?'賽事最終排名。':'目前可核對的名次（並非完整參賽隊伍排名）。';
+        const qualifier=data.verifiedSource?'官方賽事紀錄':'歷史賽事紀錄';
+        return '<p class="ds-intl-source">'+desc+'　資料來源：'+qualifier+'</p>'+
+          data.rows.map(t=>'<article class="ds-intl-game"><small>第 '+Number(t[0])+' 名</small><strong>'+
+            escapeHtml(intlLocalizeTeam(t[1]))+'</strong></article>').join('')+link;
+      }
       if(data.kind==='final'){
         return '<p class="ds-intl-source">官方賽事最終排名（並列名次依官方原序顯示）。勝敗為整屆戰績，不用勝率重排名次。</p>'+
           data.rows.map(t=>'<article class="ds-intl-game"><small>第 '+Number(t[0])+' 名</small><strong>'+
@@ -447,7 +1172,7 @@
       const scheduleKey = dsIntlCompetition+':'+year;
       const scheduleLoading = intlSchedulePending.has(scheduleKey);
       const scheduleRetryAt = intlScheduleRetryAfter.get(scheduleKey)||0;
-      if(dsIntlTab!=='teams'&&!liveSchedule && !(dsIntlTab==='rankings'&&dsIntlVerifiedRankings[dsIntlCompetition+':'+year]))requestIntlSchedule(dsIntlCompetition,year);
+      if(dsIntlTab!=='teams'&&!liveSchedule && !(dsIntlTab==='rankings'&&(dsIntlVerifiedRankings[dsIntlCompetition+':'+year]||dsIntlAsianRankings[dsIntlCompetition+':'+year])))requestIntlSchedule(dsIntlCompetition,year);
       if(dsIntlTab==='schedule'&&!intlStoredGamesCache.has(dsIntlCompetition+':'+year)){
         intlStoredGamesCache.set(dsIntlCompetition+':'+year,[]);
         void readIntlStoredGames(dsIntlCompetition,year);
@@ -457,7 +1182,7 @@
         venues:'此屆官方球場資料尚未匯入。',
         rankings:'此屆官方球隊戰績或排名尚未匯入。'
       };
-      const verifiedRankings = dsIntlVerifiedRankings[dsIntlCompetition+':'+year];
+      const verifiedRankings = dsIntlVerifiedRankings[dsIntlCompetition+':'+year] || dsIntlAsianRankings[dsIntlCompetition+':'+year];
       const source = dsIntlTab==='rankings' && verifiedRankings ? '' : snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
       let body = '';
       const officialGames = liveSchedule?.games||[];
