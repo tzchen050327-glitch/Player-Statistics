@@ -42,15 +42,15 @@
 
     const internationalTeamAliasKey = value => String(value || '')
       .normalize('NFKC').toLowerCase().replace(/&amp;/gi, '&')
-      .replace(/[.,_()\\/-]+/g,' ').replace(/\\s+/g,' ').trim();
+      .replace(/[.,_()\/-]+/g,' ').replace(/\s+/g,' ').trim();
     const internationalTeamAliasIndex = new Map(
       Object.entries(INTERNATIONAL_TEAM_NAME_MAP)
         .map(([name,zh]) => [internationalTeamAliasKey(name), zh])
     );
     function normalizeInternationalTeamName(value = '') {
-      const raw = String(value || '').normalize('NFKC').replace(/\\s+/g,' ').trim();
+      const raw = String(value || '').normalize('NFKC').replace(/\s+/g,' ').trim();
       if (!raw) return '';
-      const variants=[raw,raw.replace(/^team\\s+/i,''),raw.replace(/\\s+national\\s+team$/i,'')];
+      const variants=[raw,raw.replace(/^team\s+/i,''),raw.replace(/\s+national\s+team$/i,'')];
       for (const candidate of variants) {
         const zh=INTERNATIONAL_TEAM_NAME_MAP[candidate] ||
           internationalTeamAliasIndex.get(internationalTeamAliasKey(candidate));
