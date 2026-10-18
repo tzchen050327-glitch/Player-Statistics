@@ -158,6 +158,12 @@
       homeRootSection = section === 'international' ? 'international' : 'pro';
       if (section === 'international') {
         homeZone = 'international';
+        const competition = String(item.dataset.competition || '');
+        if (INTERNATIONAL_COMPETITIONS.includes(competition)) {
+          homeSpecialFilter = competition;
+          homeInternationalEditionFilter = String((INTERNATIONAL_TOURNAMENT_YEARS[competition] || [])[0] || '');
+          homeInternationalTeamFilter = '';
+        }
       } else {
         homeProContinent = 'ASIA';
         homeProCountry = 'AWB';
