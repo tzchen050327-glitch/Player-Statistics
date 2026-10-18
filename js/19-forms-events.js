@@ -385,6 +385,26 @@
           ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
       } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
         body = snapshot.venues.map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
+      } else if(dsIntlTab==='rankings' && liveSchedule?.games?.length && !snapshot?.standings?.length) {
+        const rows=new Map();
+        for(const g of liveSchedule.games){
+          const a=Number(g.awayScore),h=Number(g.homeScore);
+          if(g.awayScore==null||g.homeScore==null||!Number.isFinite(a)||!Number.isFinite(h)||a===h)continue;
+          const away=intlLocalizeTeam(g.away),home=intlLocalizeTeam(g.home);
+          if(!away||!home||away===home)continue;
+          for(const team of [away,home])if(!rows.has(team))rows.set(team,{team,w:0,l:0,rf:0,ra:0});
+          const A=rows.get(away),H=rows.get(home);
+          A.w+=a>h?1:0;A.l+=a<h?1:0;A.rf+=a;A.ra+=h;
+          H.w+=h>a?1:0;H.l+=h<a?1:0;H.rf+=h;H.ra+=a;
+        }
+        const ranked=[...rows.values()].sort((a,b)=>
+          b.w/(b.w+b.l)-a.w/(a.w+a.l)||b.w-a.w||(b.rf-b.ra)-(a.rf-a.ra)||a.team.localeCompare(b.team,'zh-Hant'));
+        if(ranked.length){
+          body='<p class="ds-intl-source">依已取得的完整比分計算之勝敗統計；不等同官方分組排名、晉級資格或最終名次。</p>'+
+            ranked.map(t=>'<article class="ds-intl-game"><strong>'+escapeHtml(t.team)+
+            '　'+t.w+'勝 '+t.l+'敗 · 勝率 '+(t.w/(t.w+t.l)).toFixed(3)+
+            '</strong><small>得分 '+t.rf+' · 失分 '+t.ra+'</small></article>').join('');
+        }else body='<div class="ds-intl-empty">目前沒有足夠的完整比分可以計算戰績。</div>';
       } else if(dsIntlTab==='rankings' && snapshot?.standings?.length) {
         body = '<p class="ds-intl-source">已核對分組戰績，非賽事最終排名。</p>'+
           snapshot.standings.map(t=>'<article class="ds-intl-game"><small>'+escapeHtml(t[0])+'</small><strong>'+
