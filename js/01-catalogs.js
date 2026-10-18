@@ -15,15 +15,32 @@
       'U18亞青': [2026],
       '亞錦賽': [2025,2023,2019,2017,2015,2012,2009,2007,2005,2003,2001]
     };
+    // One canonical naming table for player records, team lists and tournament schedules.
     const INTERNATIONAL_TEAM_NAME_MAP = {
-      'Chinese Taipei':'中華台北','Chinese-Taipei':'中華台北','Taiwan':'中華台北','中華隊':'中華台北','TPE':'中華台北',
-      'Japan':'日本','JPN':'日本','Korea':'韓國','South Korea':'韓國','KOR':'韓國',
-      'United States':'美國','USA':'美國','Spain':'西班牙','ESP':'西班牙',
-      'China':'中國','CHN':'中國','Hong Kong':'香港','HKG':'香港',
-      'Philippines':'菲律賓','PHI':'菲律賓','Sri Lanka':'斯里蘭卡','SRI':'斯里蘭卡',
+      'Chinese Taipei':'中華台北','Chinese-Taipei':'中華台北','Chinese Taipei Baseball':'中華台北','Taiwan':'中華台北','Chinese Taiwan':'中華台北','中華隊':'中華台北','TPE':'中華台北','TWN':'中華台北',
+      'Japan':'日本','JPN':'日本',
+      'Korea':'韓國','South Korea':'韓國','Republic of Korea':'韓國','Korea Republic':'韓國','Korea, Republic of':'韓國','KOR':'韓國','ROK':'韓國',
+      'United States':'美國','United States of America':'美國','United States of America (USA)':'美國','U.S.A.':'美國','U.S.':'美國','USA':'美國','US':'美國',
+      'Australia':'澳洲','AUS':'澳洲','Cuba':'古巴','CUB':'古巴','Dominican Republic':'多明尼加','Dominican Rep.':'多明尼加','DOM':'多明尼加',
+      'Puerto Rico':'波多黎各','PUR':'波多黎各','Venezuela':'委內瑞拉','VEN':'委內瑞拉','Mexico':'墨西哥','MEX':'墨西哥',
+      'Canada':'加拿大','CAN':'加拿大','Netherlands':'荷蘭','The Netherlands':'荷蘭','NED':'荷蘭','NLD':'荷蘭',
+      'Italy':'義大利','ITA':'義大利','Panama':'巴拿馬','PAN':'巴拿馬','Colombia':'哥倫比亞','COL':'哥倫比亞',
+      'Nicaragua':'尼加拉瓜','NCA':'尼加拉瓜','NIC':'尼加拉瓜','Brazil':'巴西','BRA':'巴西',
+      'Czech Republic':'捷克','Czechia':'捷克','CZE':'捷克','Israel':'以色列','ISR':'以色列',
+      'Spain':'西班牙','ESP':'西班牙','Germany':'德國','GER':'德國','Great Britain':'英國','United Kingdom':'英國','GBR':'英國',
+      'Argentina':'阿根廷','ARG':'阿根廷','New Zealand':'紐西蘭','NZL':'紐西蘭',
+      'France':'法國','FRA':'法國','South Africa':'南非','RSA':'南非','ZAF':'南非',
+      'China':'中國','People\'s Republic of China':'中國','China PR':'中國','CHN':'中國',
+      'Hong Kong':'香港','Hong Kong China':'香港','Hong Kong, China':'香港','Hong Kong SAR':'香港','HKG':'香港',
+      'Philippines':'菲律賓','PHI':'菲律賓','PHL':'菲律賓','Sri Lanka':'斯里蘭卡','SRI':'斯里蘭卡','LKA':'斯里蘭卡',
       'Singapore':'新加坡','SGP':'新加坡','Thailand':'泰國','THA':'泰國',
-      'Pakistan':'巴基斯坦','PAK':'巴基斯坦','Palestine':'巴勒斯坦','PLE':'巴勒斯坦',
-      'Laos':'寮國','LAO':'寮國','Indonesia':'印尼','INA':'印尼','Mongolia':'蒙古','MGL':'蒙古'
+      'Pakistan':'巴基斯坦','PAK':'巴基斯坦','Palestine':'巴勒斯坦','PLE':'巴勒斯坦','PSE':'巴勒斯坦',
+      'Laos':'寮國','Lao PDR':'寮國','LAO':'寮國','Indonesia':'印尼','INA':'印尼','IDN':'印尼',
+      'Mongolia':'蒙古','MGL':'蒙古','India':'印度','IND':'印度','Peru':'秘魯','PER':'秘魯',
+      'Guam':'關島','GUM':'關島','Macau':'澳門','Macao':'澳門','MAC':'澳門',
+      'Vietnam':'越南','VIE':'越南','VNM':'越南','Malaysia':'馬來西亞','MAS':'馬來西亞','MYS':'馬來西亞',
+      'Nepal':'尼泊爾','NEP':'尼泊爾','Cambodia':'柬埔寨','CAM':'柬埔寨','KHM':'柬埔寨',
+      'Myanmar':'緬甸','MYA':'緬甸','MMR':'緬甸','Bangladesh':'孟加拉','BAN':'孟加拉','BGD':'孟加拉'
     };
     const INTERNATIONAL_TEAM_CATALOG = {
       'WBC:2026': ['中華台北','日本','韓國','澳洲','捷克','美國','墨西哥','義大利','英國','巴西','加拿大','哥倫比亞','古巴','巴拿馬','波多黎各','多明尼加','以色列','荷蘭','尼加拉瓜','委內瑞拉'],
