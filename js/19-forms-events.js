@@ -153,7 +153,50 @@
     let dsIntlTab = 'schedule';
     let dsIntlTeam = '';
     let dsIntlOpenToken = 0;
-    const dsIntlLabels = {schedule:'賽程',teams:'球隊',bracket:'籤表',venues:'場地',rankings:'球隊排名'};
+    const dsIntlLabels = {schedule:'賽程',teams:'球隊',venues:'場地',rankings:'球隊排名'};
+    // Verified official tournament snapshots only. No synthesized schedules or standings.
+    const dsIntlOfficial = {
+      'WBC:2026':{
+        source:'https://www.mlb.com/news/world-baseball-classic-2026-schedule-dates-times-rosters',
+        venues:['東京巨蛋（日本東京）','Hiram Bithorn Stadium（波多黎各聖胡安）','Daikin Park（美國休士頓）','loanDepot park（美國邁阿密）']
+      },
+      'WBCQ:2025':{
+        source:'https://www.mlb.com/world-baseball-classic/qualifiers',
+        venues:['臺北大巨蛋（臺灣臺北）','Kino Veterans Memorial Stadium（美國圖森）'],
+        games:[
+          ['02/21','西班牙','中華台北',12,5,'臺北大巨蛋'],
+          ['02/22','中華台北','南非',9,1,'臺北大巨蛋'],
+          ['02/23','尼加拉瓜','中華台北',6,0,'臺北大巨蛋'],
+          ['02/25','中華台北','西班牙',6,3,'臺北大巨蛋'],
+          ['03/02','德國','中國',12,2,'圖森'],
+          ['03/02','哥倫比亞','巴西',5,0,'圖森'],
+          ['03/06','巴西','德國',6,4,'圖森']
+        ],
+        standings:[
+          ['臺北組','尼加拉瓜',3,0],['臺北組','中華台北',2,2],['臺北組','西班牙',2,2],['臺北組','南非',0,3],
+          ['圖森組','哥倫比亞',3,0],['圖森組','巴西',3,1],['圖森組','德國',1,3],['圖森組','中國',0,3]
+        ]
+      },
+      '世界12強:2024':{
+        source:'https://www.koreabaseball.com/Schedule/International/Etc/Premier2024.aspx',
+        venues:['東京巨蛋（日本東京，複賽與決賽）']
+      },
+      '亞錦賽:2025':{
+        source:'https://www.japan-baseball.jp/en/team/amateur/2025/asianchampionship/overview.html',
+        venues:['Pingtan Park（中國平潭）','Baseball Park（中國平潭）'],
+        games:[
+          ['09/22','菲律賓','日本',1,18,'Baseball Park'],
+          ['09/22','中國','巴基斯坦',10,0,'Pingtan Park'],
+          ['09/22','巴勒斯坦','中華台北',0,14,'Pingtan Park'],
+          ['09/22','韓國','香港',16,1,'Baseball Park'],
+          ['09/23','中國','菲律賓',4,2,'Pingtan Park'],
+          ['09/23','中華台北','韓國',10,0,'Pingtan Park'],
+          ['09/24','日本','中國',13,0,'Pingtan Park'],
+          ['09/24','中華台北','香港',11,0,'Baseball Park']
+        ],
+        standings:[['A組','日本',3,0],['A組','中國',2,1],['A組','菲律賓',1,2],['A組','巴基斯坦',0,3]]
+      }
+    };
     function closeStandaloneIntl() {
       ++dsIntlOpenToken;
       dsIntlPage?.classList.add('hidden');
@@ -180,7 +223,7 @@
       const year = String(dsIntlYear.value || '');
       const title = INTERNATIONAL_TOURNAMENT_META[dsIntlCompetition]?.name || dsIntlCompetition;
       dsIntlTitle.textContent = title;
-      dsIntlHero.innerHTML = '<h2>'+escapeHtml(title)+'</h2><p>'+escapeHtml(year)+' 年度賽事｜賽程・球隊・籤表・場地・球隊排名</p>';
+      dsIntlHero.innerHTML = '<h2>'+escapeHtml(title)+'</h2><p>'+escapeHtml(year)+' 年度賽事｜賽程・球隊・場地・球隊排名</p>';
       dsIntlTabs.innerHTML = Object.entries(dsIntlLabels).map(([id,label]) =>
         '<button type="button" data-intl-tab="'+id+'" class="'+(dsIntlTab===id?'active':'')+'">'+label+'</button>').join('');
       if (dsIntlTab === 'teams') {
@@ -217,13 +260,28 @@
         else { draw(); void loadInternationalTeams(dsIntlCompetition,year).then(draw); }
         return;
       }
+      const snapshot = dsIntlOfficial[dsIntlCompetition+':'+year];
       const messages = {
-        schedule:'本屆完整賽程尚未匯入。取得官方對戰日期、比分與場次後會在此顯示。',
-        bracket:'本屆籤表尚未匯入；不會以預測結果代替官方賽制。',
-        venues:'本屆場地清單尚未匯入，待取得官方球場資訊後顯示。',
-        rankings:'本屆球隊排名尚未匯入，待取得官方名次後顯示。'
+        schedule:'此屆逐場比賽資料尚未匯入，資料不足時不產生虛構比分。',
+        venues:'此屆官方球場資料尚未匯入。',
+        rankings:'此屆官方球隊戰績或排名尚未匯入。'
       };
-      dsIntlBody.innerHTML='<h3>'+dsIntlLabels[dsIntlTab]+'</h3><div class="ds-intl-empty">'+messages[dsIntlTab]+'</div>';
+      const source = snapshot?.source ? '<p class="ds-intl-source">資料來源：<a href="'+escapeHtml(snapshot.source)+'" target="_blank" rel="noopener">官方賽事紀錄 ↗</a></p>' : '';
+      let body = '';
+      if(dsIntlTab==='schedule' && snapshot?.games?.length) {
+        body = '<p class="ds-intl-source">已核對場次（部分紀錄，非完整賽程）</p>'+
+          snapshot.games.map(g=>'<article class="ds-intl-game"><small>'+year+'/'+g[0]+' · '+escapeHtml(g[5])+'</small><strong>'+escapeHtml(g[1])+
+          ' <span class="score">'+g[3]+'</span> — <span class="score">'+g[4]+'</span> '+escapeHtml(g[2])+'</strong></article>').join('');
+      } else if(dsIntlTab==='venues' && snapshot?.venues?.length) {
+        body = snapshot.venues.map(v=>'<article class="ds-intl-game"><strong>'+escapeHtml(v)+'</strong></article>').join('');
+      } else if(dsIntlTab==='rankings' && snapshot?.standings?.length) {
+        body = '<p class="ds-intl-source">已核對分組戰績，非賽事最終排名。</p>'+
+          snapshot.standings.map(t=>'<article class="ds-intl-game"><small>'+escapeHtml(t[0])+'</small><strong>'+
+          escapeHtml(t[1])+'　'+t[2]+'勝 '+t[3]+'敗</strong></article>').join('');
+      } else {
+        body='<div class="ds-intl-empty">'+messages[dsIntlTab]+'</div>';
+      }
+      dsIntlBody.innerHTML='<h3>'+dsIntlLabels[dsIntlTab]+'</h3>'+body+source;
     }
     dsIntlYear?.addEventListener('change',()=> {
       homeInternationalEditionFilter=dsIntlYear.value;
