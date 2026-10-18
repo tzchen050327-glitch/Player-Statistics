@@ -164,8 +164,23 @@
   document.querySelectorAll('[data-pro-country],[data-home-root],[data-us-league]').forEach(button => {
     button.addEventListener('click', () => {
       refreshSoon();
-      if (homeRootSection === 'pro' && homeProCountry === 'US') void selectUsGameDate();
-      else usDateSelectionToken++;
+      if (homeRootSection === 'pro' && homeProCountry === 'US') {
+        void selectUsGameDate();
+      } else {
+        // Switching back from the US must restore today's date for the
+        // selected Asian league, rather than retaining yesterday's MLB date.
+        usDateSelectionToken++;
+        if (homeRootSection === 'pro') {
+          const zone = homeProCountry === 'JP' ? 'Asia/Tokyo'
+            : homeProCountry === 'KR' ? 'Asia/Seoul' : 'Asia/Taipei';
+          const today = parts(zone).iso;
+          if (els.gameDate && els.gameDate.value !== today) {
+            els.gameDate.value = today;
+            if (typeof syncAppPickerLabels === 'function') syncAppPickerLabels();
+            renderRecentPlayers();
+          }
+        }
+      }
     });
   });
   document.addEventListener('visibilitychange', () => {
