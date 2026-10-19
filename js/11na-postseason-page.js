@@ -502,7 +502,6 @@
     async function refreshPostseasonCpblResults(force = false) {
       if (postseasonCpblResultsPromise) return postseasonCpblResultsPromise;
       if (!force && Date.now() - postseasonCpblResultsAt < POSTSEASON_CPBL_RESULT_TTL) return postseasonCpblResults;
-      if (String(CURRENT_YEAR) !== '2026') return postseasonCpblResults;
       // Read finalized playoff games from one shared backend database query.
       // Do not fetch each day's schedule or request game details per viewer.
       postseasonCpblResultsPromise = (async () => {
