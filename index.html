@@ -1103,7 +1103,8 @@
   picker?.addEventListener('change',()=>setSeason(picker.value));
 
   function render(){
-    if(year!==2025&&year!==2026&&year!==2027){
+    if(year===2027){body.innerHTML=pending();return;}
+    if(year!==2025&&year!==2026){
       const record=historicalSeasons[year];
       const champion=esc(record.champion), count=record.teams.length;
       const link=official('https://awb.cpbl.com.tw/teamhistory','查看官方歷年資料');
