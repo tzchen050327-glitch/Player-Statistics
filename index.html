@@ -549,7 +549,7 @@
               </div>
             </section>
           <section id="awbCompact" class="awb-compact hidden" aria-label="亞洲冬季棒球聯盟專區">
-            <div class="awb-compact-heading"><div class="awb-heading-copy"><span class="awb-eyebrow"><span class="awb-status-dot"></span> ASIA WINTER LEAGUE</span><strong>冬季棒球聯盟</strong><span class="awb-heading-caption">亞洲冬盟 <span class="awb-caption-divider">/</span> <span id="awbSeasonLabel">2025</span> SEASON</span></div><div class="awb-year-control"><label for="awbSeasonSelect">SEASON</label><select id="awbSeasonSelect" class="awb-season-select" aria-label="選擇冬盟賽季"><option value="2026">2026 · 新賽季</option><option value="2025" selected>2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2013">2013</option><option value="2012">2012</option></select></div></div>
+            <div class="awb-compact-heading"><div class="awb-heading-copy"><span class="awb-eyebrow"><span class="awb-status-dot"></span> ASIA WINTER LEAGUE</span><strong>冬季棒球聯盟</strong><span class="awb-heading-caption">亞洲冬盟 <span class="awb-caption-divider">/</span> <span id="awbSeasonLabel">2025</span> SEASON</span></div><div class="awb-year-control"><label for="awbSeasonSelect">SEASON</label><select id="awbSeasonSelect" class="awb-season-select" aria-label="選擇冬盟賽季"><option value="2027">2027 · 待公布</option><option value="2026">2026 · 新賽季</option><option value="2025" selected>2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2013">2013</option><option value="2012">2012</option></select></div></div>
             <div class="awb-compact-tabs" role="tablist" aria-label="冬盟資料分類">
               <button type="button" role="tab" id="awbTabStandings" data-awb-tab="standings" aria-selected="true" aria-controls="awbCompactBody">戰績</button>
               <button type="button" role="tab" data-awb-tab="stats" aria-selected="false" aria-controls="awbCompactBody">數據</button>
@@ -786,7 +786,7 @@
   <div class="ds-intl-page-scroll"><div id="dsIntlHero" class="ds-intl-hero"></div><nav id="dsIntlTabs" class="ds-intl-page-tabs" aria-label="賽事分類"></nav><div id="dsIntlPageBody"></div></div>
 </section>
 <section id="dsYouthPage" class="hidden" aria-label="黑豹旗獨立賽事頁">
-  <div id="dsYouthPageHead"><button id="dsYouthBack" type="button">← 返回首頁</button><strong>2026 中信盃黑豹旗</strong></div>
+  <div id="dsYouthPageHead"><button id="dsYouthBack" type="button">← 返回首頁</button><strong>中信盃黑豹旗</strong><select id="dsYouthYear" aria-label="選擇黑豹旗年份" style="margin-left:auto;background:#21344f;color:#fff;border:1px solid #60718a;border-radius:8px;padding:6px 8px"><option value="2026" selected>2026</option></select></div>
   <iframe id="dsYouthFullFrame" title="2026 中信盃黑豹旗"></iframe>
 </section>
 
@@ -1069,14 +1069,15 @@
   const archive={standings,teams,categories,knownPlayers};
   const picker=document.getElementById('awbSeasonSelect'),schedule=document.getElementById('awbSchedule'),oldSchedule=schedule?.innerHTML||'';
   let year=2025,ready=true,error='';
-  const pending=()=>'<div class="awb-compact-empty"><strong>2026 冬盟資料待公布</strong><span>等待官方賽程、戰績、排行榜及完整登錄名單。不會套用 2025 資料。</span></div>'+(error?'<p class="awb-muted">'+esc(error)+'</p>':'');
-  const seasons=[2026,2025,2024,2023,2019,2018,2017,2016,2015,2013,2012];
+  const pending=()=>'<div class="awb-compact-empty"><strong>'+year+' 冬盟資料待公布</strong><span>等待官方賽程、戰績、排行榜及完整登錄名單。不會套用 2025 資料。</span></div>'+(error?'<p class="awb-muted">'+esc(error)+'</p>':'');
+  const seasons=[2027,2026,2025,2024,2023,2019,2018,2017,2016,2015,2013,2012];
   async function setSeason(next){
     year=seasons.includes(Number(next))?Number(next):2025;detail=null;error='';ready=year===2025;
     standings=archive.standings;teams=archive.teams;categories=archive.categories;knownPlayers=archive.knownPlayers;
     document.getElementById('awbSeasonLabel').textContent=String(year);current='standings';updateAwbTabLabels();buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===current)));
     if(year===2025){if(schedule)schedule.innerHTML=oldSchedule;render();return;}
-    if(year!==2025&&year!==2026){
+    if(year===2027){if(schedule)schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>當日賽事</strong><span>亞洲冬盟 · 2027</span></div></div><div class="home-games-state">2027 賽程尚未公布</div>';render();return;}
+    if(year!==2025&&year!==2026&&year!==2027){
       const record=historicalSeasons[year];
       if(schedule)schedule.innerHTML='<div class="home-daily-games-head"><div class="home-daily-games-title"><strong>歷屆賽事</strong><span>亞洲冬盟 · '+year+'</span></div></div><div class="home-games-state">逐場歷史比分尚未匯入</div>';
       render();
@@ -1102,7 +1103,7 @@
   picker?.addEventListener('change',()=>setSeason(picker.value));
 
   function render(){
-    if(year!==2025&&year!==2026){
+    if(year!==2025&&year!==2026&&year!==2027){
       const record=historicalSeasons[year];
       const champion=esc(record.champion), count=record.teams.length;
       const link=official('https://awb.cpbl.com.tw/teamhistory','查看官方歷年資料');
@@ -1133,7 +1134,7 @@
       body.innerHTML='<button class="awb-back" type="button" data-awb-back>← 所有球隊</button><h3 class="awb-detail-title">'+esc(team[0])+'</h3><p class="awb-muted">'+esc(team[1])+'</p>'+partial.map(([position,names])=>'<div class="awb-roster-group"><b>'+esc(position)+'</b><div>'+names.split('、').map(n=>'<span>'+esc(n)+'</span>').join('')+'</div></div>').join('')+'<p class="awb-muted">以上為已核對的部分球員，並非完整登錄名單。</p>'+official('https://awb.cpbl.com.tw/team?TeamNo='+team[2],'查看官方完整球員名單');
     } else body.innerHTML='<div class="awb-categories">'+teams.map(t=>'<button class="awb-category" type="button" data-awb-team="'+esc(t[0])+'"><span>'+esc(t[0])+'</span><strong>'+esc(t[1])+'</strong><span class="awb-chevron">›</span></button>').join('')+'</div>';
   }
-  function updateAwbTabLabels(){const history=year!==2025&&year!==2026;const labels=history?['概覽','隊伍','資料狀態']:['戰績','數據','球隊'];buttons.forEach((b,i)=>{b.textContent=labels[i]||'';});}
+  function updateAwbTabLabels(){const history=year!==2025&&year!==2026&&year!==2027;const labels=history?['概覽','隊伍','資料狀態']:['戰績','數據','球隊'];buttons.forEach((b,i)=>{b.textContent=labels[i]||'';});}
   function select(tab){if(!['standings','stats','teams'].includes(tab))return;current=tab;detail=null;buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.awbTab===tab)));body.setAttribute('aria-labelledby',buttons.find(b=>b.dataset.awbTab===tab).id);render();}
   buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.awbTab)));
   body.addEventListener('click',event=>{const cat=event.target.closest('[data-awb-category]'),team=event.target.closest('[data-awb-team]'),back=event.target.closest('[data-awb-back]');if(cat)detail=cat.dataset.awbCategory;else if(team)detail=team.dataset.awbTeam;else if(back)detail=null;else return;render();body.scrollTop=0;});
@@ -1390,7 +1391,7 @@ function install(){
  explorer.innerHTML='<button class="ds-cup-entry" type="button" id="dsCupEntry"><div><strong>2026 中信盃黑豹旗</strong><span>賽程・球隊・籤表・比賽球場</span></div><strong aria-hidden="true">›</strong></button>';
  const page=document.getElementById('dsYouthPage');
  const frame=document.getElementById('dsYouthFullFrame');
- function openCup(){frame.src='./black-panther-2026.html?v=c1.87';page.classList.remove('hidden');document.body.style.overflow='hidden';history.pushState({dsYouth:true},'',location.href);}
+ function openCup(){document.getElementById('dsYouthYear').value='2026';frame.src='./black-panther-2026.html?v=c1.87';page.classList.remove('hidden');document.body.style.overflow='hidden';history.pushState({dsYouth:true},'',location.href);}
  function closeCup(fromHistory){page.classList.add('hidden');document.body.style.overflow='';if(!fromHistory&&history.state?.dsYouth)history.back();}
  document.getElementById('dsCupEntry')?.addEventListener('click',openCup);
  document.getElementById('dsYouthBack')?.addEventListener('click',()=>closeCup(false));
