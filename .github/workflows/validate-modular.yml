@@ -43,6 +43,8 @@ jobs:
             node --check "js/$f"
           done < js/module-order.txt
           node --check service-worker.js
+      - name: Verify postseason winner badges
+        run: node scripts/check-postseason-winners.mjs
       - name: Validate version wiring and core guards
         shell: python
         run: |
