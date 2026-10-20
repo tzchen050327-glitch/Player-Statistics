@@ -685,10 +685,7 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
       const secondRows = predictionRows(standing?.second);
       const annualRows = predictionRows(standing?.annual);
       const teams = annualRows.map(row => String(row?.team || '')).filter(Boolean);
-      const counts = new Map(teams.map(team => [team, { half:0, postseason:0, direct:0 }]));
-      const secondStarted = secondRows.some(row => Number(row?.games || 0) > 0);
-      const activeHalf = secondStarted ? 'second' : 'first';
-      const activeLabel = secondStarted ? '下半季冠軍' : '上半季冠軍';
+      const counts = new Map(teams.map(team => [team, { firstHalf:0, secondHalf:0, postseason:0, direct:0 }]));
       const rng = predictionRng(predictionHash(`CPBL|${date}|${JSON.stringify(standing)}`));
 
       for (let sim = 0; sim < iterations; sim += 1) {
@@ -728,8 +725,8 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         const annualRank = predictionRankRows(annualFinal);
         const firstChampion = firstRank[0]?.team || '';
         const secondChampion = secondRank[0]?.team || '';
-        const activeChampion = activeHalf === 'second' ? secondChampion : firstChampion;
-        if (activeChampion && counts.has(activeChampion)) counts.get(activeChampion).half += 1;
+        if (firstChampion && counts.has(firstChampion)) counts.get(firstChampion).firstHalf += 1;
+        if (secondChampion && counts.has(secondChampion)) counts.get(secondChampion).secondHalf += 1;
 
         const qualified = new Set();
         let direct = '';
@@ -762,11 +759,11 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
         mode:'postseason',
         date,
         iterations,
-        activeHalf,
         stageMetrics:[
-          { key:'halfTitleProbability', label:activeLabel },
+          { key:'firstHalfTitleProbability', label:'上半季冠軍' },
+          { key:'secondHalfTitleProbability', label:'下半季冠軍' },
           { key:'postseasonProbability', label:'進季後賽' },
-          { key:'directFinalProbability', label:'直進台灣大賽' }
+          { key:'directFinalProbability', label:'進台灣大賽' }
         ],
         teams:annualRows.map(row => {
           const team = String(row?.team || '');
@@ -776,14 +773,15 @@ const PREDICTION_API_URL = `${SUPABASE_B_FUNCTIONS_BASE}/league-predictions`;
             group:'annual',
             record:predictionCurrentRecord(row),
             rank:Number(row?.rank || 99),
-            halfTitleProbability:predictionPercent(count.half, iterations),
+            firstHalfTitleProbability:predictionPercent(count.firstHalf, iterations),
+            secondHalfTitleProbability:predictionPercent(count.secondHalf, iterations),
             postseasonProbability:predictionPercent(count.postseason, iterations),
             directFinalProbability:predictionPercent(count.direct, iterations)
           };
         }).sort((a,b) => b.postseasonProbability - a.postseasonProbability || b.directFinalProbability - a.directFinalProbability || a.rank - b.rank),
         model:{
-          name:'DiamondScope CPBL Postseason Model v2',
-          note:`同時模擬上、下半季與全年戰績；「${activeLabel}」會直接納入季後賽與台灣大賽資格判定。`
+          name:'DiamondScope CPBL Postseason Model v2.1',
+          note:'同時模擬上、下半季與全年戰績；上、下半季冠軍機率分開顯示，並納入季後賽與台灣大賽資格判定。'
         }
       };
     }
