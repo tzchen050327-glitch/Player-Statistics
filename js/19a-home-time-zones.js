@@ -7,15 +7,15 @@
   ];
   let minuteTimer = 0;
 
-  // MLB always follows the calendar date in New York. A manual date-picker
-  // selection is kept until the user explicitly switches leagues again.
+  // A user's date choice is global across direct league/category navigation.
+  // Only clicking a timezone clock resets this choice to that region's today.
   let lastAutomaticUsDate = '';
-  let usDateManuallySelected = false;
+  let dateManuallySelected = false;
 
   function setUsGameDate(date) {
     if (homeRootSection !== 'pro' || homeProCountry !== 'US' || !els.gameDate) return;
     lastAutomaticUsDate = date;
-    usDateManuallySelected = false;
+    dateManuallySelected = false;
     if (els.gameDate.value === date) return;
     els.gameDate.value = date;
     if (typeof syncAppPickerLabels === 'function') syncAppPickerLabels();
@@ -28,13 +28,13 @@
 
   function rolloverUsGameDate() {
     if (homeRootSection !== 'pro' || homeProCountry !== 'US' || !els.gameDate) return;
-    if (!lastAutomaticUsDate || usDateManuallySelected || els.gameDate.value !== lastAutomaticUsDate) return;
+    if (!lastAutomaticUsDate || dateManuallySelected || els.gameDate.value !== lastAutomaticUsDate) return;
     const today = parts('America/New_York').iso;
     if (today !== lastAutomaticUsDate) setUsGameDate(today);
   }
 
   els.gameDate?.addEventListener('change', () => {
-    if (homeRootSection === 'pro' && homeProCountry === 'US') usDateManuallySelected = true;
+    dateManuallySelected = true;
   });
 
   function parts(zone) {
@@ -93,6 +93,8 @@
     homeTeamFilter = '';
     if (clock.country === 'US') homeUsLeague = 'MLB';
 
+    // Clock shortcuts explicitly return to "today", unlike league buttons.
+    dateManuallySelected = false;
     const targetDate = parts(clock.zone).iso;
     if (els.gameDate && targetDate) {
       els.gameDate.value = targetDate;
@@ -101,6 +103,7 @@
     applyHomeProSelection();
     renderRecentPlayers();
     if (clock.country === 'US') selectUsGameDate();
+    else lastAutomaticUsDate = '';
     renderClocks();
   }
 
@@ -110,6 +113,8 @@
   document.querySelectorAll('[data-pro-country],[data-home-root],[data-us-league]').forEach(button => {
     button.addEventListener('click', () => {
       refreshSoon();
+      // A directly selected league must never discard a manually chosen date.
+      if (dateManuallySelected) return;
       if (homeRootSection === 'pro' && homeProCountry === 'US') {
         selectUsGameDate();
       } else {
