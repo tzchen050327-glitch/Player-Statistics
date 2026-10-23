@@ -492,10 +492,10 @@
               return { ...game, status:'cancelled', postponementReason:'颱風延賽', awayScore:null, homeScore:null, inningLabel:'' };
             }
             if (date === '2026-10-25' && (id === '5' || id === '6')) {
-              return { ...game, id:'5', gameId:'2026-C-5', date, time:'17:05', status:'scheduled', postponementReason:'' };
+              return { ...game, id:'5', gameId:'2026-C-5', date, time:'17:05', status:id === '6' ? 'scheduled' : game.status, postponementReason:'' };
             }
             if (date === '2026-10-26' && (id === '6' || id === '7')) {
-              return { ...game, id:'6', gameId:'2026-C-6', date, time:'15:05', status:'scheduled', postponementReason:'' };
+              return { ...game, id:'6', gameId:'2026-C-6', date, time:'15:05', status:id === '7' ? 'scheduled' : game.status, postponementReason:'' };
             }
             return game;
           });
