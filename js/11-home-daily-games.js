@@ -556,7 +556,13 @@
               && String(els.gameDate?.value || '') === date) renderHomeDailyGames({skipLoad:true});
         });
       }
-      const displayRows = homeDailyGamesDisplayRows(games);
+      // CPBL official feed may retain displaced Taiwan Series fixtures after a postponement.
+      // Keep only the real game identity for each revised 2026 date, including cached snapshots.
+      const fixedSeriesId = ({'2026-10-24':'5','2026-10-25':'6','2026-10-26':'7'})[date];
+      const visibleGames = league === 'CPBL' && fixedSeriesId
+        ? games.filter(g => String(g?.kindCode || '').toUpperCase() !== 'C' || String(g?.id || '') === fixedSeriesId)
+        : games;
+      const displayRows = homeDailyGamesDisplayRows(visibleGames);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);
       const dateLabel = date.replaceAll('-', '/');
