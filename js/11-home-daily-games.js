@@ -482,6 +482,28 @@
           games = (Array.isArray(games) ? games : []).filter(game => String(game?.kindCode || 'A').toUpperCase() !== 'D');
         }
 
+        // 2026 Taiwan Series: the second typhoon postponement moved G5 to Oct 25
+        // and G6 to Oct 26. Normalize older upstream snapshots by game identity.
+        if (league === 'CPBL' && ['2026-10-24','2026-10-25','2026-10-26'].includes(date)) {
+          games = games.map(game => {
+            if (String(game?.kindCode || '').toUpperCase() !== 'C') return game;
+            const id = String(game?.id || '');
+            if (date === '2026-10-24' && id === '5') {
+              return { ...game, status:'cancelled', postponementReason:'颱風延賽', awayScore:null, homeScore:null, inningLabel:'' };
+            }
+            if (date === '2026-10-25' && (id === '5' || id === '6')) {
+              return { ...game, id:'5', gameId:'2026-C-5', date, time:'17:05', status:'scheduled', postponementReason:'' };
+            }
+            if (date === '2026-10-26' && (id === '6' || id === '7')) {
+              return { ...game, id:'6', gameId:'2026-C-6', date, time:'15:05', status:'scheduled', postponementReason:'' };
+            }
+            return game;
+          });
+          games = games.filter((game, index, items) => items.findIndex(other =>
+            String(other?.gameId || '') === String(game?.gameId || '') &&
+            String(other?.kindCode || '') === String(game?.kindCode || '')) === index);
+        }
+
         // Keep the more precise half-inning from an already opened live game.
         // The daily feed can report "3局" while the published detail says "3局下".
         if (league === 'CPBL') {
@@ -558,7 +580,7 @@
       }
       // CPBL official feed may retain displaced Taiwan Series fixtures after a postponement.
       // Keep only the real game identity for each revised 2026 date, including cached snapshots.
-      const fixedSeriesId = ({'2026-10-24':'5','2026-10-25':'6','2026-10-26':'7'})[date];
+      const fixedSeriesId = ({'2026-10-24':'5','2026-10-25':'5','2026-10-26':'6'})[date];
       const visibleGames = league === 'CPBL' && fixedSeriesId
         ? games.filter(g => String(g?.kindCode || '').toUpperCase() !== 'C' || String(g?.id || '') === fixedSeriesId)
         : games;
