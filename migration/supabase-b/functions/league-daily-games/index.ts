@@ -49,7 +49,45 @@ async function scheduleSession(){const page=await fetchRetry(CPBL+'/schedule',{h
 async function month(calendar:string,m:any,h:any){const out=await fetchRetry(CPBL+'/schedule/getgamedatas',{method:'POST',headers:h,body:new URLSearchParams({calendar,location:'',kindCode:m.code})}),j=JSON.parse(out.text||'{}'),rs=typeof j.GameDatas==='string'?JSON.parse(j.GameDatas||'[]'):(j.GameDatas||[]);return Array.isArray(rs)?rs:[];}
 async function statsScheduleDate(date:string){const out=await fetchRetry(CPBL_STATS+'/games/schedule/'+encodeURIComponent(date),{headers:{'user-agent':UA,'accept':'application/json','accept-language':'zh-TW,zh;q=.9'}}),j=JSON.parse(out.text||'{}'),rs=j?.Data?.Games??j?.data?.Games??[];return Array.isArray(rs)?rs:[];}
 async function statsScheduleMonth(year:number,monthNo:number,kindCode:string){const u=new URL(CPBL_STATS+'/games/schedule');u.searchParams.set('kindCode',kindCode);u.searchParams.set('year',String(year));u.searchParams.set('month',String(monthNo));const out=await fetchRetry(u.toString(),{headers:{'user-agent':UA,'accept':'application/json','accept-language':'zh-TW,zh;q=.9'}}),j=JSON.parse(out.text||'{}'),rs=j?.Data?.Games??j?.data?.Games??[];return Array.isArray(rs)?rs:[];}
-async function cpblGames(date:string,kinds:string[]){await metric('cpbl_official_schedule_requests');const wanted=new Set(kinds.map(x=>String(x).toUpperCase()));const rs=await statsScheduleDate(date);const games:any[]=[];for(const r of rs){const c=String(r?.KindCode||'A').toUpperCase();if(!wanted.has(c))continue;games.push(game(r,meta(c),date));}return games.sort((a,b)=>String(a.time).localeCompare(String(b.time))||a.kindCode.localeCompare(b.kindCode));}
+const CPBL_2026_TS_SHIFT:any={
+  '2026-10-24':{id:'5',gameId:'2026-C-5',time:'17:05'},
+  '2026-10-25':{id:'6',gameId:'2026-C-6',time:'17:05'},
+  '2026-10-26':{id:'7',gameId:'2026-C-7',time:'15:05'}
+};
+async function cpblTaiwanSeriesDecidedBefore(date:string){
+  try{
+    const rs=await rows('cpbl_live_game_cache?kind_code=eq.C&game_date=lt.'+encodeURIComponent(date)+'&published_status=eq.final&select=game_id,game_date,published_payload&order=game_date.asc');
+    const wins=new Map<string,number>(),seen=new Set<string>();
+    for(const row of rs){
+      const g=row?.published_payload?.game||{},id=String(row?.game_id||'')||String(row?.game_date||'');
+      if(!id||seen.has(id))continue;
+      seen.add(id);
+      const a=String(g?.away||''),h=String(g?.home||''),as=score(g?.awayScore),hs=score(g?.homeScore);
+      if(!a||!h||as===null||hs===null||as===hs)continue;
+      const winner=as>hs?a:h;
+      wins.set(winner,(wins.get(winner)||0)+1);
+      if((wins.get(winner)||0)>=4)return true;
+    }
+  }catch(e){console.warn('CPBL Taiwan Series clinch check skipped',String(e));}
+  return false;
+}
+async function correctCpbl2026TaiwanSeries(date:string,kinds:string[],games:any[]){
+  const patch=CPBL_2026_TS_SHIFT[date];
+  if(!patch||!kinds.map(x=>String(x).toUpperCase()).includes('C'))return games;
+  const nonC=(Array.isArray(games)?games:[]).filter((g:any)=>String(g?.kindCode||'A').toUpperCase()!=='C');
+  if(await cpblTaiwanSeriesDecidedBefore(date))return nonC;
+  const cGames=(Array.isArray(games)?games:[]).filter((g:any)=>String(g?.kindCode||'').toUpperCase()==='C');
+  const official=cGames.find((g:any)=>String(g?.id||'')===patch.id||String(g?.gameId||'')===patch.gameId);
+  const corrected=official?{...official,date,time:patch.time}:{
+    id:patch.id,gameId:patch.gameId,away:'中信兄弟',home:'味全龍',
+    awayCode:'ACN',homeCode:'AAA',awayScore:null,homeScore:null,status:'scheduled',
+    postponementReason:'',time:patch.time,venue:'大巨蛋',kindCode:'C',
+    competition:'taiwan_series',competitionLabel:'總冠軍賽',statsScope:'competition',
+    date,inningLabel:''
+  };
+  return [...nonC,corrected].sort((a,b)=>String(a.time).localeCompare(String(b.time))||String(a.kindCode).localeCompare(String(b.kindCode)));
+}
+async function cpblGames(date:string,kinds:string[]){await metric('cpbl_official_schedule_requests');const wanted=new Set(kinds.map(x=>String(x).toUpperCase()));const rs=await statsScheduleDate(date);const games:any[]=[];for(const r of rs){const c=String(r?.KindCode||'A').toUpperCase();if(!wanted.has(c))continue;games.push(game(r,meta(c),date));}return await correctCpbl2026TaiwanSeries(date,kinds,games);}
 function npbCompetitionLabel(v:any){const k=String(v||'regular');if(k==='climax_first')return'CS 第一階段';if(k==='climax_final')return'CS 決勝階段';if(k==='climax_special')return'CS';if(k==='nippon_series')return'日本大賽';return'例行賽';}
 function npbCompetitionForDate(date:string){if(/^2026-10-(?:10|11|12|13)$/.test(date))return'climax_first';if(/^2026-10-(?:14|15|16|17|18|19|20|21)$/.test(date))return'climax_final';if(/^2026-(?:10-(?:24|25|27|28|29|31)|11-01)$/.test(date))return'nippon_series';return'regular';}
 function normalizeNpbGames(date:string,games:any[]){const fallback=date.startsWith('2026-')?npbCompetitionForDate(date):'regular';return (Array.isArray(games)?games:[]).map((g:any)=>{const raw=String(g?.competition||'regular'),competition=fallback!=='regular'?fallback:raw,competitionLabel=competition===raw&&clean(g?.competitionLabel)?clean(g.competitionLabel):npbCompetitionLabel(competition);return{...g,competition,competitionLabel,statsScope:competition==='regular'?'season':'competition'};});}
