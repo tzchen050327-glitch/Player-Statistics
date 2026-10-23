@@ -103,15 +103,27 @@
     }
   }
 
-  function loadClassicScript(path) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = versioned(path);
-      script.async = false;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`載入失敗：${path}`));
-      document.body.appendChild(script);
-    });
+  async function loadClassicScript(path) {
+    // GitHub Pages can briefly serve a new HTML shell before all modules have
+    // propagated. Retry the exact module, bypassing stale intermediate caches.
+    const attempts = 4;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const loaded = await new Promise(resolve => {
+        const script = document.createElement('script');
+        const base = versioned(path);
+        script.src = attempt ? `${base}&boot_retry=${attempt}` : base;
+        script.async = false;
+        script.onload = () => resolve(true);
+        script.onerror = () => { script.remove(); resolve(false); };
+        document.body.appendChild(script);
+      });
+      if (loaded) return;
+      if (attempt < attempts - 1) {
+        setStartupStatus(`重試載入模組：${path.split('/').pop()}（${attempt + 1}/${attempts - 1}）…`);
+        await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+      }
+    }
+    throw new Error(`載入失敗：${path}（已重試）`);
   }
 
   async function loadModuleOrder() {
