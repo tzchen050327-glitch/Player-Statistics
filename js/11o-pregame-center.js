@@ -47,6 +47,36 @@
       return data;
     }
 
+    async function mergeLatestCpblPregameStarters(data, date, game) {
+      if (!game) return data;
+      const latest = await pregameCenterPost(CPBL_PREGAME_STARTERS_API_URL, {
+        action:'pregame-starters',
+        league:'CPBL',
+        date:String(date || ''),
+        gameId:String(game?.id || ''),
+        kindCode:String(game?.kindCode || 'A').toUpperCase(),
+        away:String(game?.away || ''),
+        home:String(game?.home || ''),
+        awayCode:String(game?.awayCode || ''),
+        homeCode:String(game?.homeCode || '')
+      });
+      const away = latest?.awayStarter || null;
+      const home = latest?.homeStarter || null;
+      if (!away && !home) return data;
+      return {
+        ...data,
+        starters:{
+          ...(data?.starters || {}),
+          away:away || data?.starters?.away || null,
+          home:home || data?.starters?.home || null,
+          published:Boolean(
+            away || home || data?.starters?.published || latest?.published
+          ),
+          source:latest?.source || data?.starters?.source || ''
+        }
+      };
+    }
+
     function pregameRecordText(row) {
       if (!row) return '—';
       const wins = Number(row?.wins || 0);
@@ -348,7 +378,7 @@
       }
       renderPregameCenter({ loading:true });
       try {
-        const data = await pregameCenterPost(LEAGUE_PREGAME_CENTER_API_URL, {
+        let data = await pregameCenterPost(LEAGUE_PREGAME_CENTER_API_URL, {
           league,date,
           gameId:String(game?.id || ''),
           away:String(game?.away || ''),
@@ -358,6 +388,16 @@
           status:String(game?.status || 'scheduled'),
           force:Boolean(force)
         });
+        // The aggregate pregame-center cache can lag behind a late starter
+        // replacement. For CPBL, overlay the dedicated starter endpoint so a
+        // newly confirmed pitcher replaces an older cached starter immediately.
+        if (league === 'CPBL') {
+          try {
+            data = await mergeLatestCpblPregameStarters(data, date, game);
+          } catch (starterError) {
+            console.warn('CPBL latest starter overlay unavailable', starterError);
+          }
+        }
         pregameCenterCache.set(key,{ at:Date.now(), data });
         if (data?.bullpen) {
           pregameBullpenCache.set(key,{
