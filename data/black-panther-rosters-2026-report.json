@@ -1,7 +1,7 @@
 {
   "year": 2026,
   "target_teams": 211,
-  "official_team_pages": 0,
+  "official_team_pages": 14,
   "matched_teams": 0,
   "players": 0,
   "regions_failed": [
@@ -26,5 +26,428 @@
       "reason": "region_page_fetch_failed"
     }
   ],
-  "issues": []
+  "fetch_failures": [
+    {
+      "url": "https://blackpanthercup.tw/teams_north2026/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_north2026/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/teams_central2026/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_central2026/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/teams_south2026/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_south2026/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/teams_east2026/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_east2026/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/teams_girl2026/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_girl2026/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立士林高級商業職業學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A3%AB%E6%9E%97%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立大安高級工業職業學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A4%A7%E5%AE%89%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市大直高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E5%A4%A7%E7%9B%B4%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立中正高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%AD%E6%AD%A3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立大學附屬大理高級中等學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E5%A4%A7%E7%90%86%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立中崙高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%AD%E5%B4%99%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級工業職業學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%85%A7%E6%B9%96%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%85%A7%E6%B9%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立木柵高級工業職業學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9C%A8%E6%9F%B5%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立永春高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%B0%B8%E6%98%A5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立成淵高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%88%90%E6%B7%B5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立百齡高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E7%99%BE%E9%BD%A1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026臺北市立明倫高級中學/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%98%8E%E5%80%AB%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "url": "https://blackpanthercup.tw/2026台北市立松山高級工農職業學校/",
+      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/2026%E5%8F%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9D%BE%E5%B1%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E8%BE%B2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    }
+  ],
+  "issues": [
+    {
+      "team": "臺北市立士林高級商業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立士林高級商業職業學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "士林高商",
+          0.571
+        ],
+        [
+          "竹林高中",
+          0.4
+        ],
+        [
+          "樹林高中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立士林高級商業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立士林高級商業職業學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立大安高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立大安高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "大安高工",
+          0.571
+        ],
+        [
+          "臺北商大",
+          0.4
+        ],
+        [
+          "私立大同",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立大安高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立大安高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市大直高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市大直高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立中正高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立中正高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "中正高中",
+          0.8
+        ],
+        [
+          "中正高工",
+          0.571
+        ],
+        [
+          "中正預校",
+          0.571
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立中正高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立中正高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立大學附屬大理高級中等學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立大學附屬大理高級中等學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "大理高中",
+          0.444
+        ],
+        [
+          "興大附農",
+          0.364
+        ],
+        [
+          "政大附中",
+          0.364
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立大學附屬大理高級中等學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立大學附屬大理高級中等學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立中崙高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立中崙高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "中崙高中",
+          0.8
+        ],
+        [
+          "花蓮體中",
+          0.4
+        ],
+        [
+          "臺東體中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立中崙高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立中崙高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立內湖高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "內湖高中",
+          0.8
+        ],
+        [
+          "內湖高工",
+          0.571
+        ],
+        [
+          "溪湖高中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立內湖高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立內湖高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "內湖高中",
+          0.8
+        ],
+        [
+          "內湖高工",
+          0.571
+        ],
+        [
+          "溪湖高中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立內湖高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立內湖高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立木柵高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立木柵高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "木柵高工",
+          0.571
+        ],
+        [
+          "龍潭高中",
+          0.0
+        ],
+        [
+          "龍津高中",
+          0.0
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立木柵高級工業職業學校",
+      "url": "https://blackpanthercup.tw/2026臺北市立木柵高級工業職業學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立永春高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立永春高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "永春高中",
+          0.8
+        ],
+        [
+          "永豐高中",
+          0.4
+        ],
+        [
+          "永平高中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立永春高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立永春高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立成淵高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立成淵高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "成淵高中",
+          0.8
+        ],
+        [
+          "育成高中",
+          0.4
+        ],
+        [
+          "成德高中",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立成淵高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立成淵高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立百齡高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立百齡高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "百齡高中",
+          0.8
+        ],
+        [
+          "龍潭高中",
+          0.0
+        ],
+        [
+          "龍津高中",
+          0.0
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立百齡高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立百齡高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "臺北市立明倫高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立明倫高級中學/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "明倫高中",
+          0.8
+        ],
+        [
+          "黎明中學",
+          0.4
+        ],
+        [
+          "道明中學",
+          0.4
+        ]
+      ]
+    },
+    {
+      "team": "臺北市立明倫高級中學",
+      "url": "https://blackpanthercup.tw/2026臺北市立明倫高級中學/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    },
+    {
+      "team": "台北市立松山高級工農職業學校",
+      "url": "https://blackpanthercup.tw/2026台北市立松山高級工農職業學校/",
+      "region": "known_rosters",
+      "reason": "schedule_alias_needs_review",
+      "suggested": [
+        [
+          "松山工農",
+          0.615
+        ],
+        [
+          "松山高中",
+          0.364
+        ],
+        [
+          "鳳山商工",
+          0.308
+        ]
+      ]
+    },
+    {
+      "team": "台北市立松山高級工農職業學校",
+      "url": "https://blackpanthercup.tw/2026台北市立松山高級工農職業學校/",
+      "region": "known_rosters",
+      "reason": "team_page_fetch_failed"
+    }
+  ]
 }
