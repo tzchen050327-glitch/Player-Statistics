@@ -48,86 +48,8 @@ for region in REGIONS:
   # The official page convention is /2026<full school name>/.
   clean_name=re.sub(r'\s+','',name)
   if region=='teams_girl2026':
-   school_name=re.sub(r'女子組print('Official team pages:',len(links))
-result={}
-issues=[]
-existing_path=root/'data'/'black-panther-rosters-2026.json'
-try:
- existing=json.loads(existing_path.read_text(encoding='utf8'))
-except (OSError,ValueError):
- existing={}
+   school_name=re.sub(r'女子組$','',clean_name)
 
-for n,(url,(full_name,region)) in enumerate(links.items(),1):
- normalized=norm(full_name)
- exact=[t for t in teams if norm(t)==normalized]
- ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
- if not exact and ranked and ranked[0][0]>=0.84 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.15):
-  exact=[ranked[0][1]]
- # Always fetch the official roster; a missing schedule alias must never skip players.
- key=full_name+('::女子組' if region=='teams_girl2026' else '')
- if key in result:
-  issues.append({'team':full_name,'url':url,'reason':'duplicate_official_name'})
-  continue
- if len(exact)!=1:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'schedule_alias_needs_review','suggested':[(t,round(v,3)) for v,t in ranked[:3]]})
- p=soup(url)
- if p and not re.match(r'^2026', p.title.get_text(' ',strip=True) if p.title else ''):
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'not_2026_team_page'})
-  continue
- if not p:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'team_page_fetch_failed'})
-  continue
- roster=[]
- for table in p.select('table'):
-  trs=table.select('tr')
-  if not trs:continue
-  heads=[x.get_text(' ',strip=True) for x in trs[0].find_all(['th','td'],recursive=False)]
-  titles=[h.replace('／','/').replace(' ','') for h in heads]
-  if not all(any(word in title for title in titles) for word in ('背號','球員','守位','投/打')):continue
-  col={}
-  for i,title in enumerate(titles):
-   for field,word in [('number','背號'),('name','球員'),('position','守位'),('height','身高'),('weight','體重'),('hand','投/打')]:
-    if word in title:col[field]=i
-  if len(col)<6:continue
-  for tr in trs[1:]:
-   cells=[x.get_text(' ',strip=True) for x in tr.find_all(['td','th'],recursive=False)]
-   if len(cells)<=max(col.values()):continue
-   number=cells[col['number']].strip()
-   name=cells[col['name']].strip()
-   if not re.fullmatch(r'\d{1,3}',number) or not name:continue
-   height=re.search(r'\d+',cells[col['height']])
-   weight=re.search(r'\d+',cells[col['weight']])
-   roster.append({'number':number,'name':name,'position':cells[col['position']],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[col['hand']]})
-  if roster:break
- if roster:
-  result[key]={'source':url,'officialName':full_name,'scheduleName':exact[0] if len(exact)==1 else None,'players':roster}
- else:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
- if n%20==0:print('Scanned',n,'/',len(links),'matched rosters',len(result),flush=True)
- time.sleep(0.12)
-out=root/'data'/'black-panther-rosters-2026.json'
-out.parent.mkdir(exist_ok=True)
-report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'issues':issues}
-report_path=root/'data'/'black-panther-rosters-2026-report.json'
-report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
-if not result:
- print('ABORT: no official rosters parsed; failure report written')
- raise RuntimeError('No verified rosters; inspect import diagnostics')
-for key,entry in existing.items():
- if key not in result and entry.get('players'):
-  result[key]=entry
-  issues.append({'team':key,'reason':'retained_previous_verified_roster'})
-out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
-report['matched_teams']=len(result)
-report['players']=sum(len(x['players']) for x in result.values())
-report['complete']=len(result)>=211 and not region_issues
-report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
-if not report['complete']:
- print('INCOMPLETE: verified %s/211 teams; retry is required'%len(result),flush=True)
- raise RuntimeError('Incomplete official roster coverage: %s/211'%len(result))
-print('Issues:',len(issues))
-print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
-,'',clean_name)
    # Women's team pages have a distinct official slug and must not
    # collide with the school's open-division roster.
    fixed_url=urljoin(BASE,'/2026'+school_name+'女子組/')
@@ -159,7 +81,7 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  if len(exact)!=1:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'schedule_alias_needs_review','suggested':[(t,round(v,3)) for v,t in ranked[:3]]})
  p=soup(url)
- if p and not re.match(r'^2026', p.title.get_text(' ',strip=True) if p.title else ''):
+ if p and not re.search(r'2026', p.title.get_text(' ',strip=True) if p.title else ''):
   issues.append({'team':full_name,'url':url,'region':region,'reason':'not_2026_team_page'})
   continue
  if not p:
@@ -208,7 +130,14 @@ for key,entry in existing.items():
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
 report['matched_teams']=len(result)
 report['players']=sum(len(x['players']) for x in result.values())
-report['complete']=len(result)>=211 and not region_issues
+# Validate against the complete official URL inventory, not just a raw count.
+missing=[{'team':name,'region':region,'url':url,'reason':'no_verified_roster'}
+ for url,(name,region) in links.items()
+ if (name+('::女子組' if region=='teams_girl2026' else '')) not in result]
+report['missing_teams']=missing
+report['missing_count']=len(missing)
+report['expected_official_teams']=len(links)
+report['complete']=(len(links)==211 and not missing and not region_issues and len(result)>=211)
 report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 if not report['complete']:
  print('INCOMPLETE: verified %s/211 teams; retry is required'%len(result),flush=True)
