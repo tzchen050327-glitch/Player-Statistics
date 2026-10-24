@@ -41,9 +41,16 @@ for region in REGIONS:
   continue
  for a in p.select('a[href]'):
   href=urljoin(BASE,a['href']);path=unquote(urlparse(href).path)
-  if not path.startswith('/2026') or '/teams_' in path: continue
+  if not re.match(r'^/20(?:25|26)',path) or '/teams_' in path: continue
   name=a.get_text(' ',strip=True)
-  if name and len(name)>=3:links[href]=(name,region)
+  if not name or len(name)<3:continue
+  # Some 2026 region entries link to 2025 pages; always try their 2026 slug.
+  # The official page convention is /2026<full school name>/.
+  year_path=re.sub(r'^/2025','/2026',path)
+  fixed_url=urljoin(BASE,year_path)
+  links[fixed_url]=(re.sub(r'\\s+','',name),region)
+  if path.startswith('/2026'):
+   links[href]=(re.sub(r'\\s+','',name),region)
 print('Official team pages:',len(links))
 result={}
 issues=[]
