@@ -1251,9 +1251,9 @@
       if (!panel || !head || boxes[mode]) continue;
       const box = document.createElement('div');
       box.className = 'data-center-toolbar';
-      box.innerHTML = '<nav class="data-center-tabs" role="tablist" aria-label="數據中心功能">'
-        + Object.keys(pages).map(key => '<button class="data-center-tab" type="button" role="tab" data-center-mode="'+key+'">'+labels[key]+'</button>').join('')
-        + '</nav><div class="data-center-search-position"><label class="data-center-search"><span aria-hidden="true">⌕</span><input type="search" autocomplete="off" aria-label="數據中心共用球員搜尋" placeholder="搜尋球員" /></label><div class="data-center-results" hidden role="listbox"></div></div>';
+      box.innerHTML = '<div class="data-center-search-position"><label class="data-center-search"><span aria-hidden="true">⌕</span><input type="search" autocomplete="off" aria-label="數據中心共用球員搜尋" placeholder="搜尋球員" /></label><div class="data-center-results" hidden role="listbox"></div></div>'
+        + '<nav class="data-center-tabs" role="tablist" aria-label="數據中心功能">'
+        + Object.keys(pages).map(key => '<button class="data-center-tab" type="button" role="tab" data-center-mode="'+key+'">'+labels[key]+'</button>').join('') + '</nav>';
       head.after(box);
       boxes[mode] = box;
       box.querySelectorAll('[data-center-mode]').forEach(btn => btn.addEventListener('click',() => {
