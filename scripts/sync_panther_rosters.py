@@ -24,13 +24,17 @@ def norm(s):
  return s
 session=requests.Session()
 fetch_failures=[]
-session.headers['User-Agent']='Mozilla/5.0 (compatible; DiamondScope-roster-sync/1.0)'
+session.headers.update({
+ 'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+ 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+ 'Accept-Language':'zh-TW,zh;q=0.9,en;q=0.7'
+})
 def soup(url):
  for attempt in range(3):
   try:
    r=session.get(url,timeout=25);r.raise_for_status();return BeautifulSoup(r.text,'html.parser')
   except requests.RequestException as exc:
-   if attempt==2:
+   if attempt==2 or getattr(getattr(exc,'response',None),'status_code',None)==403:
     fetch_failures.append({'url':url,'error':str(exc)[:400],'status_code':getattr(getattr(exc,'response',None),'status_code',None)})
     print('FETCH ERROR:',url,str(exc)[:200],flush=True)
     return None
@@ -144,7 +148,7 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  else:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
  if n%20==0:print('Scanned',n,'/',len(links),'matched rosters',len(result),flush=True)
- time.sleep(0.12)
+ time.sleep(0.7)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
 report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'fetch_failures':fetch_failures,'issues':issues}
