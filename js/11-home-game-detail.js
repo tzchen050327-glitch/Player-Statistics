@@ -1567,7 +1567,10 @@
     }
 
     function homePregameLineupEntries(detail, side) {
-      const raw = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+      const preserved = detail?.startingLineup?.[side];
+      const raw = Array.isArray(preserved) && preserved.length === 9
+        ? preserved
+        : (Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []);
       return raw.map((player, index) => ({
         order:Number(player?.order || index + 1),
         number:String(player?.number || player?.uniformNumber || player?.jersey || '').trim(),
