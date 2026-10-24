@@ -99,7 +99,7 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
   result[key]={'source':url,'officialName':full_name,'scheduleName':exact[0] if len(exact)==1 else None,'players':roster}
  else:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
- if n%30==0:print('Scanned',n,'/',len(links),'matched rosters',len(result))
+ if n%20==0:print('Scanned',n,'/',len(links),'matched rosters',len(result),flush=True)
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
