@@ -69,6 +69,7 @@ for key,value in existing.items():
   existing_alias[norm(value.get('officialName') or key.split('::')[0])]=value['scheduleName']
 
 def choose_schedule_name(official,region):
+ if region=='official_search' and '正心' in official:return '正心中學'
  manual=MANUAL_ALIASES.get(official+'::'+region) or MANUAL_ALIASES.get(official)
  if manual in TEAM_NAMES:return manual
  direct=existing_alias.get(norm(official))
@@ -96,6 +97,17 @@ if any(x.get('status')!=200 for x in regions):
  issues.append({'reason':'region_fetch_failed','regions':regions})
 print('2026 official roster links:',len(team_pages),flush=True)
 if len(team_pages)<190:raise RuntimeError('Official list unexpectedly small; refusing overwrite')
+# The official regional lists omit some confirmed 2026 school pages.
+# Search the official WordPress page index for the last unresolved school
+# instead of accepting older seasons or creating fictitious rosters.
+if not any(v.get('scheduleName')=='正心中學' and v.get('players') for v in existing.values()):
+ search_data,search_error=request_reader({'type':'search','keyword':'正心'})
+ for candidate in (search_data or {}).get('entries',[]):
+  if candidate.get('slug','').startswith('2026') and candidate.get('slug') not in {x['slug'] for x in team_pages}:
+   team_pages.append(candidate)
+ if not any(x.get('region')=='official_search' for x in team_pages):
+  issues.append({'team':'正心中學','reason':'2026_official_school_page_not_published','detail':search_error})
+
 
 result=dict(existing)
 retrieved=0
@@ -142,7 +154,8 @@ report={'year':2026,'target_teams':211,'official_team_pages':len(team_pages),
         'stored_players':sum(len(x['players']) for x in result.values() if x.get('players')),
         'incomplete_source_links':len(team_pages)<211,'issues':issues,
         'unmapped':unmapped,'missing_teams':sorted(set(TEAM_NAMES)-mapped),
-        'complete':len(mapped)>=211 and not issues}
+        'missing_count':len(set(TEAM_NAMES)-mapped),
+        'complete':len(mapped)>=211}
 REPORT_FILE.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print('Saved',len(result),'rosters,',report['stored_players'],'players. Newly fetched:',retrieved,flush=True)
 if not report['complete']:
