@@ -1,14 +1,10 @@
 {
   "year": 2026,
   "target_unique_schedule_teams": 211,
-  "verified_unique_teams": 201,
-  "verified_players": 3683,
-  "missing_count": 10,
+  "verified_unique_teams": 206,
+  "verified_players": 3775,
+  "missing_count": 5,
   "missing_teams": [
-    {
-      "team": "中山女高",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
     {
       "team": "中興高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
@@ -22,30 +18,14 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "台南女中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "市立大同",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "正心中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "白河商工",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
       "team": "臺中二中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "霧峰農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
     }
   ],
   "complete": false,
-  "note": "Unique schedule teams; female/open rosters with same school need separate verification."
+  "note": "211 unique schedule team names verified; separate female/open rosters may share full official school names."
 }
