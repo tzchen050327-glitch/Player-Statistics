@@ -229,14 +229,14 @@
       width:min(100%,780px);max-width:780px;margin-inline:auto
     }
     body.tpm-team-mode #pitcherBatterPage .data-center-tab{
-      font-size:clamp(12px,1.9vw,24px);padding:clamp(10px,1.2vw,21px) 5px
+      font-size:13px;padding:11px 4px
     }
     body.tpm-team-mode #pitcherBatterPage .player-tools-page-head h2{
-      font-size:clamp(20px,2.6vw,38px)
+      font-size:22px
     }
     .tpm-root{width:min(100%,780px);margin-inline:auto;container-type:inline-size;min-width:0}
     .tpm-root *{box-sizing:border-box}
-    .tpm-root>.tpm-panel,.tpm-root>.tpm-tabs{--tpm-u:clamp(1px,.26cqi,2px)}
+    .tpm-root>.tpm-panel,.tpm-root>.tpm-tabs{--tpm-u:1px}
     .tpm-root>.tpm-tabs{
       display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--tpm-u)*5);
       border-radius:calc(var(--tpm-u)*12);padding:calc(var(--tpm-u)*4);
