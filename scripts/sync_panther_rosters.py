@@ -22,13 +22,17 @@ def norm(s):
   s=s.replace(x,'')
  return s
 session=requests.Session()
+fetch_failures=[]
 session.headers['User-Agent']='Mozilla/5.0 (compatible; DiamondScope-roster-sync/1.0)'
 def soup(url):
  for attempt in range(3):
   try:
    r=session.get(url,timeout=25);r.raise_for_status();return BeautifulSoup(r.text,'html.parser')
-  except requests.RequestException:
-   if attempt==2: return None
+  except requests.RequestException as exc:
+   if attempt==2:
+    fetch_failures.append({'url':url,'error':str(exc)[:400]})
+    print('FETCH ERROR:',url,str(exc)[:200],flush=True)
+    return None
    time.sleep(2*(attempt+1))
  return None
 links={}
@@ -58,6 +62,18 @@ for region in REGIONS:
    year_path=re.sub(r'^/2025','/2026',path)
    fixed_url=urljoin(BASE,year_path)
    links[fixed_url]=(clean_name,region)
+# Independently attempt known official 2026 school URLs even if every region page fails.
+existing_path=root/'data'/'black-panther-rosters-2026.json'
+try:
+ known_rosters=json.loads(existing_path.read_text(encoding='utf8'))
+except (OSError,ValueError):
+ known_rosters={}
+for key,entry in known_rosters.items():
+ official=entry.get('officialName') or key.split('::')[0]
+ if not official:continue
+ group='teams_girl2026' if key.endswith('::女子組') else 'known_rosters'
+ url=urljoin(BASE,'/2026'+official+('女子組' if group=='teams_girl2026' else '')+'/')
+ links.setdefault(url,(official,group))
 print('Official team pages:',len(links))
 result={}
 issues=[]
@@ -117,7 +133,7 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
-report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'issues':issues}
+report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'fetch_failures':fetch_failures,'issues':issues}
 report_path=root/'data'/'black-panther-rosters-2026-report.json'
 report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 if not result:
@@ -134,6 +150,7 @@ report['players']=sum(len(x['players']) for x in result.values())
 missing=[{'team':name,'region':region,'url':url,'reason':'no_verified_roster'}
  for url,(name,region) in links.items()
  if (name+('::女子組' if region=='teams_girl2026' else '')) not in result]
+report['fetch_failures']=fetch_failures
 report['missing_teams']=missing
 report['missing_count']=len(missing)
 report['expected_official_teams']=len(links)
