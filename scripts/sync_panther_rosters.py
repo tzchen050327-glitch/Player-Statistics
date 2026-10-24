@@ -116,6 +116,10 @@ for key,entry in existing.items():
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
 report['matched_teams']=len(result)
 report['players']=sum(len(x['players']) for x in result.values())
+report['complete']=len(result)>=211 and not region_issues
 report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+if not report['complete']:
+ print('INCOMPLETE: verified %s/211 teams; retry is required'%len(result),flush=True)
+ raise RuntimeError('Incomplete official roster coverage: %s/211'%len(result))
 print('Issues:',len(issues))
 print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
