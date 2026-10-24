@@ -32,9 +32,13 @@ def soup(url):
    time.sleep(2*(attempt+1))
  return None
 links={}
+region_issues=[]
 for region in REGIONS:
  p=soup(BASE+'/'+region+'/')
- if not p: print('Region inaccessible:',region);continue
+ if not p:
+  print('Region inaccessible:',region)
+  region_issues.append({'region':region,'reason':'region_page_fetch_failed'})
+  continue
  for a in p.select('a[href]'):
   href=urljoin(BASE,a['href']);path=urlparse(href).path
   if not path.startswith('/2026') or '/teams_' in path: continue
@@ -96,15 +100,19 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
+report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'issues':issues}
+report_path=root/'data'/'black-panther-rosters-2026-report.json'
+report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 if not result:
- print('ABORT: zero parsed rosters; refusing to replace verified data')
- raise RuntimeError('Zero verified rosters')
+ print('ABORT: no official rosters parsed; failure report written')
+ raise RuntimeError('No verified rosters; inspect import diagnostics')
 for key,entry in existing.items():
  if key not in result and entry.get('players'):
   result[key]=entry
   issues.append({'team':key,'reason':'retained_previous_verified_roster'})
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
-report={'year':2026,'official_team_pages':len(links),'target_teams':211,'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'issues':issues}
-(root/'data'/'black-panther-rosters-2026-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+report['matched_teams']=len(result)
+report['players']=sum(len(x['players']) for x in result.values())
+report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 print('Issues:',len(issues))
 print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
