@@ -40,10 +40,10 @@ for region in REGIONS:
   href=urljoin(BASE,a['href']);path=urlparse(href).path
   if not path.startswith('/2026') or '/teams_' in path: continue
   name=a.get_text(' ',strip=True)
-  if name and len(name)>=3:links[href]=name
+  if name and len(name)>=3:links[href]=(name,region)
 print('Official team pages:',len(links))
 result={}
-for n,(url,full_name) in enumerate(links.items(),1):
+for n,(url,(full_name,region)) in enumerate(links.items(),1):
  normalized=norm(full_name)
  exact=[t for t in teams if norm(t)==normalized]
  if not exact:
@@ -51,7 +51,8 @@ for n,(url,full_name) in enumerate(links.items(),1):
   if ranked and ranked[0][0]>=0.79 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.14):exact=[ranked[0][1]]
  if len(exact)!=1:continue
  short=exact[0]
- if short in result:continue
+ key=short+('::女子組' if region=='teams_girl2026' else '')
+ if key in result:continue
  p=soup(url)
  if not p:continue
  roster=[]
@@ -65,7 +66,7 @@ for n,(url,full_name) in enumerate(links.items(),1):
    roster.append({'number':cells[0],'name':cells[1],'position':cells[2],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[5]})
   if roster:break
  if roster:
-  result[short]={'source':url,'players':roster}
+  result[key]={'source':url,'players':roster}
  if n%30==0:print('Scanned',n,'/',len(links),'matched rosters',len(result))
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
