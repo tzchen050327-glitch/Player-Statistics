@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/sync_panther_rosters.py'
+      - 'scripts/audit_panther_rosters.py'
       - '.github/workflows/sync-panther-rosters.yml'
   schedule:
     - cron: '22 * * * *'
@@ -20,7 +21,11 @@ jobs:
       - run: pip install requests beautifulsoup4
       - name: Import 2026 official school rosters
         id: import
+        continue-on-error: true
         run: python -u scripts/sync_panther_rosters.py
+      - name: Audit all 211 scheduled team names
+        if: always()
+        run: python -u scripts/audit_panther_rosters.py
       - name: Upload import diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -29,11 +34,24 @@ jobs:
           if-no-files-found: warn
           path: |
             data/black-panther-rosters-2026-report.json
+            data/black-panther-rosters-2026-audit.json
             data/black-panther-rosters-2026.json
       - name: Commit verified roster data
         if: always()
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f data/black-panther-rosters-2026.json data/black-panther-rosters-2026-report.json 2>/dev/null || true
+          git add -f data/black-panther-rosters-2026.json data/black-panther-rosters-2026-report.json data/black-panther-rosters-2026-audit.json 2>/dev/null || true
           if ! git diff --cached --quiet; then git commit -m "Update verified 2026 Panther Cup rosters"; git push; fi
+
+      - name: Require 211-team verification
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('data/black-panther-rosters-2026-audit.json').read_text(encoding='utf-8'))
+          print('Confirmed:', report['verified_unique_teams'], '/', report['target_unique_schedule_teams'])
+          print('Missing:', report['missing_count'])
+          if not report['complete']:
+              raise SystemExit('211-team verification incomplete')
+          PY
