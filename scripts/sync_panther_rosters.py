@@ -48,18 +48,16 @@ seen_links=set()
 for n,(url,(full_name,region)) in enumerate(links.items(),1):
  normalized=norm(full_name)
  exact=[t for t in teams if norm(t)==normalized]
- ranked=[]
- if not exact:
-  ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
-  if ranked and ranked[0][0]>=0.79 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.14):exact=[ranked[0][1]]
- if len(exact)!=1:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'cannot_match_schedule_team','suggested':[(t,round(v,3)) for v,t in (ranked[:3] if 'ranked' in locals() else [])]})
-  continue
- short=exact[0]
- key=short+('::女子組' if region=='teams_girl2026' else '')
+ ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
+ if not exact and ranked and ranked[0][0]>=0.84 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.15):
+  exact=[ranked[0][1]]
+ # Always fetch the official roster; a missing schedule alias must never skip players.
+ key=full_name+('::女子組' if region=='teams_girl2026' else '')
  if key in result:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'duplicate_matched_team','key':key})
+  issues.append({'team':full_name,'url':url,'reason':'duplicate_official_name'})
   continue
+ if len(exact)!=1:
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'schedule_alias_needs_review','suggested':[(t,round(v,3)) for v,t in ranked[:3]]})
  p=soup(url)
  if not p:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'team_page_fetch_failed'})
@@ -76,7 +74,7 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
    roster.append({'number':cells[0],'name':cells[1],'position':cells[2],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[5]})
   if roster:break
  if roster:
-  result[key]={'source':url,'players':roster}
+  result[key]={'source':url,'officialName':full_name,'scheduleName':exact[0] if len(exact)==1 else None,'players':roster}
  else:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
  if n%30==0:print('Scanned',n,'/',len(links),'matched rosters',len(result))
