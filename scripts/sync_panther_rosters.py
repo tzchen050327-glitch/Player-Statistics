@@ -43,18 +43,27 @@ for region in REGIONS:
   if name and len(name)>=3:links[href]=(name,region)
 print('Official team pages:',len(links))
 result={}
+issues=[]
+seen_links=set()
+
 for n,(url,(full_name,region)) in enumerate(links.items(),1):
  normalized=norm(full_name)
  exact=[t for t in teams if norm(t)==normalized]
  if not exact:
   ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
   if ranked and ranked[0][0]>=0.79 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.14):exact=[ranked[0][1]]
- if len(exact)!=1:continue
+ if len(exact)!=1:
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'cannot_match_schedule_team','suggested':[(t,round(v,3)) for v,t in (ranked[:3] if 'ranked' in locals() else [])]})
+  continue
  short=exact[0]
  key=short+('::女子組' if region=='teams_girl2026' else '')
- if key in result:continue
+ if key in result:
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'duplicate_matched_team','key':key})
+  continue
  p=soup(url)
- if not p:continue
+ if not p:
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'team_page_fetch_failed'})
+  continue
  roster=[]
  for table in p.select('table'):
   heads=[th.get_text(' ',strip=True) for th in table.select('tr:first-child th, tr:first-child td')]
@@ -68,9 +77,17 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
   if roster:break
  if roster:
   result[key]={'source':url,'players':roster}
+ else:
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
  if n%30==0:print('Scanned',n,'/',len(links),'matched rosters',len(result))
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
+if len(result)<10:
+ print('ABORT: only',len(result),'valid team rosters; refusing to publish incomplete sync')
+ raise RuntimeError('Not enough verified rosters: '+str(len(result)))
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
+report={'year':2026,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'issues':issues}
+(root/'data'/'black-panther-rosters-2026-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+print('Issues:',len(issues))
 print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
