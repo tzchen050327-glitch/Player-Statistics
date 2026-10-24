@@ -67,6 +67,9 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  if len(exact)!=1:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'schedule_alias_needs_review','suggested':[(t,round(v,3)) for v,t in ranked[:3]]})
  p=soup(url)
+ if p and not re.match(r'^2026', p.title.get_text(' ',strip=True) if p.title else ''):
+  issues.append({'team':full_name,'url':url,'region':region,'reason':'not_2026_team_page'})
+  continue
  if not p:
   issues.append({'team':full_name,'url':url,'region':region,'reason':'team_page_fetch_failed'})
   continue
