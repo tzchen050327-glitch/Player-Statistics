@@ -1,9 +1,9 @@
 {
   "year": 2026,
   "target_unique_schedule_teams": 211,
-  "verified_unique_teams": 183,
-  "verified_players": 3353,
-  "missing_count": 28,
+  "verified_unique_teams": 201,
+  "verified_players": 3683,
+  "missing_count": 10,
   "missing_teams": [
     {
       "team": "中山女高",
@@ -18,10 +18,6 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "南投高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "南港高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
@@ -30,59 +26,11 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "台東高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "嘉義高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "嘉義高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "宜蘭高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "屏東高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "市立大同",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "彰化高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新北高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新北高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新竹高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新竹高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "桃園高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "正心中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "澎湖海事",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -94,122 +42,10 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "臺南海事",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "花蓮高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "苗栗農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "金門農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "霧峰農工",
       "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "高雄高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    }
-  ],
-  "unmatched_imported_teams": [
-    {
-      "officialName": "新北市立新北高級工業職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "新北市立新北高級中學",
-      "scheduleName": null,
-      "player_count": 12
-    },
-    {
-      "officialName": "桃園市市立桃園高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立宜蘭高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立新竹高級工業職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立新竹高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立南投高級中學",
-      "scheduleName": null,
-      "player_count": 15
-    },
-    {
-      "officialName": "國立苗栗高級農工職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立彰化高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立臺南高級海事水產職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立屏東高級工業職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立嘉義高級工業職業學校",
-      "scheduleName": null,
-      "player_count": 18
-    },
-    {
-      "officialName": "國立嘉義高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "高雄市立高級工業職業學校",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立花蓮高級中學",
-      "scheduleName": null,
-      "player_count": 17
-    },
-    {
-      "officialName": "國立臺東高級中學",
-      "scheduleName": null,
-      "player_count": 20
-    },
-    {
-      "officialName": "國立澎湖高級海事水產職業學校",
-      "scheduleName": null,
-      "player_count": 15
-    },
-    {
-      "officialName": "金門縣金門農工",
-      "scheduleName": null,
-      "player_count": 13
     }
   ],
   "complete": false,
-  "note": "Unique schedule team names are counted here. Women/open rosters with the same school name require separate verification."
+  "note": "Unique schedule teams; female/open rosters with same school need separate verification."
 }
