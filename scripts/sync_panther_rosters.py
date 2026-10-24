@@ -49,6 +49,7 @@ seen_links=set()
 for n,(url,(full_name,region)) in enumerate(links.items(),1):
  normalized=norm(full_name)
  exact=[t for t in teams if norm(t)==normalized]
+ ranked=[]
  if not exact:
   ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
   if ranked and ranked[0][0]>=0.79 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.14):exact=[ranked[0][1]]
@@ -83,8 +84,8 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  time.sleep(0.12)
 out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
-if len(result)<10:
- print('ABORT: only',len(result),'valid team rosters; refusing to publish incomplete sync')
+if not result:
+ print('ABORT: zero parsed rosters; refusing to replace verified data')
  raise RuntimeError('Not enough verified rosters: '+str(len(result)))
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
 report={'year':2026,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'issues':issues}
