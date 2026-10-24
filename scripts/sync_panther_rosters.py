@@ -19,7 +19,8 @@ def norm(s):
  s=unicodedata.normalize('NFKC',s).replace('臺','台').replace('髙','高')
  for x in ('國立','私立','財團法人','學校財團法人','高級中等學校','高級職業學校','高級中學','高級工業職業學校','高級商業職業學校','高級家事商業職業學校','高級工商職業學校','高級中等','高級','中等學校','市立','縣立','市','縣','區',' '):
   s=s.replace(x,'')
- s=re.sub(r'^(?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|苗栗|彰化|雲林|嘉義|屏東|宜蘭|花蓮|台東|南投|澎湖|金門|連江)(?:市|縣)?','',s)\n s=s.replace('高工','工商').replace('高中','').replace('家商','').replace('中學','')
+ s=re.sub(r'^(?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|苗栗|彰化|雲林|嘉義|屏東|宜蘭|花蓮|台東|南投|澎湖|金門|連江)(?:市|縣)?','',s)
+ s=s.replace('高工','工商').replace('高中','').replace('家商','').replace('中學','')
  return s
 session=requests.Session()
 session.headers['User-Agent']='Mozilla/5.0 (compatible; DiamondScope-roster-sync/1.0)'
