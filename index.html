@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="app-version" content="c1.98" />
+  <meta name="app-version" content="c1.99" />
   <title>DiamondScope｜棒球視界</title>
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DiamondScope" />
-  <link rel="manifest" href="./manifest.webmanifest?v=c1.98" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=c1.98" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=c1.98" />
-  <link rel="apple-touch-icon" href="./icon-192.png?v=c1.98" />
+  <link rel="manifest" href="./manifest.webmanifest?v=c1.99" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=c1.99" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=c1.99" />
+  <link rel="apple-touch-icon" href="./icon-192.png?v=c1.99" />
   <script>
     (() => {
       try {
@@ -30,14 +30,14 @@
       } catch {}
     })();
   </script>
-    <script src="./diagnostic-runtime.js?v=c1.98"></script>
-  <link rel="stylesheet" href="./styles.css?v=c1.98" />
-  <link rel="stylesheet" href="./game-detail-enhancement.css?v=c1.98" />
-  <link rel="stylesheet" href="./report-layout.css?v=c1.98" />
-  <link rel="stylesheet" href="./landscape-state.css?v=c1.98" />
-  <link rel="stylesheet" href="./postseason-history.css?v=c1.98" />
-  <link rel="stylesheet" href="./dark-theme-overrides.css?v=c1.98" />
-  <link rel="stylesheet" href="./umpire-live.css?v=c1.98" />
+    <script src="./diagnostic-runtime.js?v=c1.99"></script>
+  <link rel="stylesheet" href="./styles.css?v=c1.99" />
+  <link rel="stylesheet" href="./game-detail-enhancement.css?v=c1.99" />
+  <link rel="stylesheet" href="./report-layout.css?v=c1.99" />
+  <link rel="stylesheet" href="./landscape-state.css?v=c1.99" />
+  <link rel="stylesheet" href="./postseason-history.css?v=c1.99" />
+  <link rel="stylesheet" href="./dark-theme-overrides.css?v=c1.99" />
+  <link rel="stylesheet" href="./umpire-live.css?v=c1.99" />
 <style id="routineStartupStyles">
   html.routine-start-no-splash #appUpdateOverlay { display: none !important; }
 </style>
@@ -355,7 +355,7 @@
   <div id="appUpdateOverlay" class="sync-progress-overlay app-update-overlay" role="status" aria-live="polite" aria-busy="true">
     <div id="appUpdateCard" class="sync-progress-card app-splash">
       <div class="app-splash-mark" aria-hidden="true">
-        <img class="app-splash-logo" src="./icon-192.png?v=c1.98" alt="" />
+        <img class="app-splash-logo" src="./icon-192.png?v=c1.99" alt="" />
       </div>
       <div class="app-splash-kicker">BASEBALL INTELLIGENCE</div>
       <h1 class="app-splash-title">DiamondScope｜棒球視界</h1>
@@ -794,7 +794,7 @@
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px"><strong style="font-size:19px">設定</strong><button id="dsSettingsClose" type="button" style="background:#2e405c;border:0;border-radius:8px;color:white;padding:8px 12px;cursor:pointer">關閉</button></div>
   <div style="font-weight:700;margin-bottom:9px">Reels</div><div id="dsSettingsReels"></div>
 </dialog>
-  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">c1.98</button>
+  <button id="appVersionBadge" class="app-version-badge" type="button" aria-label="檢查應用程式更新" title="點一下檢查更新">c1.99</button>
 
   <dialog id="outputDialog">
     <div class="output-dialog-body">
@@ -1150,7 +1150,9 @@
 .data-center-toolbar{display:flex;flex-direction:column;gap:12px;margin:0 0 15px}
 .data-center-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:13px;background:var(--panel-muted,rgba(120,135,155,.12))}
 .data-center-tab{min-width:0;padding:11px 4px;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:clamp(12px,3vw,15px);font-weight:650;cursor:pointer}
-.data-center-tab.active{background:var(--panel-bg,#fff);box-shadow:0 1px 6px rgba(0,0,0,.12)}
+.data-center-tab.active{background:#d9a634;color:#15181d;box-shadow:0 1px 6px rgba(0,0,0,.16)}
+.data-center-tab[data-center-mode="matchup"]{font-size:clamp(11px,2.6vw,13px)}
+#pitcherBatterPage .player-tools-page-head h2{font-size:clamp(20px,4.2vw,24px);line-height:1.3}
 .data-center-search{display:flex;align-items:center;gap:8px;border:1px solid rgba(128,140,155,.35);border-radius:12px;padding:8px 12px}
 .data-center-search input{min-width:0;flex:1;background:transparent;color:inherit;border:0;outline:0;font-size:16px}
 .data-center-search-note{font-size:12px;opacity:.7}
@@ -1359,8 +1361,8 @@
 #musicCenterPage .music-playlist-section a{display:inline-flex;align-self:flex-start;color:var(--accent,#438eda);font-size:14px;font-weight:700;text-decoration:underline}
 
 </style>
-<script src="./js/music-center.js?v=c1.98" defer></script>
-  <script src="./js/module-loader.js?v=c1.98"></script>
+<script src="./js/music-center.js?v=c1.99" defer></script>
+  <script src="./js/module-loader.js?v=c1.99"></script>
 <style id="leagueHubReelsStyles">
 #homeZoneSwitch{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 #homeZoneSwitch .home-zone-btn{min-width:0;padding-inline:2px;font-size:clamp(10px,2.8vw,14px);white-space:nowrap}
@@ -1392,7 +1394,7 @@ function install(){
  explorer.innerHTML='<button class="ds-cup-entry" type="button" id="dsCupEntry"><div><strong>2026 中信盃黑豹旗</strong><span>賽程・球隊・籤表・比賽球場</span></div><strong aria-hidden="true">›</strong></button>';
  const page=document.getElementById('dsYouthPage');
  const frame=document.getElementById('dsYouthFullFrame');
- function openCup(){document.getElementById('dsYouthYear').value='2026';frame.src='./black-panther-2026.html?v=c1.98';page.classList.remove('hidden');document.body.style.overflow='hidden';history.pushState({dsYouth:true},'',location.href);}
+ function openCup(){document.getElementById('dsYouthYear').value='2026';frame.src='./black-panther-2026.html?v=c1.99';page.classList.remove('hidden');document.body.style.overflow='hidden';history.pushState({dsYouth:true},'',location.href);}
  function closeCup(fromHistory){page.classList.add('hidden');document.body.style.overflow='';if(!fromHistory&&history.state?.dsYouth)history.back();}
  document.getElementById('dsCupEntry')?.addEventListener('click',openCup);
  document.getElementById('dsYouthBack')?.addEventListener('click',()=>closeCup(false));
