@@ -209,13 +209,13 @@
     originalRender();
     const el=document.getElementById('pitcherBatterPageContent');
     if(!el)return;
-    el.insertAdjacentHTML('afterbegin',tabs());
+    el.insertAdjacentHTML('afterbegin','<div class="tpm-root tpm-player-mode-tabs">'+tabs()+'</div>');
     el.querySelectorAll('[data-tpm-mode]').forEach(btn=>btn.addEventListener('click',()=>setMode(btn.dataset.tpmMode)));
   };
   if(!document.getElementById('tpmStyles')){
     const style=document.createElement('style');style.id='tpmStyles';
     style.textContent=`
-    /* Same mobile composition at every width; desktop enlarges it up to 2x. */
+    /* Consistent mobile-sized typography across both matchup modes. */
     .tpm-category{display:grid;grid-template-columns:1fr 1fr;gap:.35em;padding:.28em;border-radius:.72em;background:var(--panel-muted,rgba(120,135,155,.12))}
     .tpm-category button{border:0;border-radius:.55em;min-height:2.9em;padding:.4em .6em;background:transparent;color:var(--text,inherit);font:inherit;font-weight:850;cursor:pointer}
     .tpm-category button.active{background:var(--panel,#fff);box-shadow:0 1px 6px rgba(0,0,0,.13)}
