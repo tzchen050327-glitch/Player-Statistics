@@ -6,7 +6,7 @@ on:
       - 'scripts/sync_panther_rosters.py'
       - '.github/workflows/sync-panther-rosters.yml'
   schedule:
-    - cron: '22 3 * * *'
+    - cron: '22 * * * *'
 permissions:
   contents: write
 jobs:
@@ -20,7 +20,6 @@ jobs:
       - run: pip install requests beautifulsoup4
       - name: Import 2026 official school rosters
         id: import
-        continue-on-error: true
         run: python -u scripts/sync_panther_rosters.py
       - name: Upload import diagnostics
         if: always()
