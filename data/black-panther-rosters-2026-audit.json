@@ -1,31 +1,15 @@
 {
   "year": 2026,
   "target_unique_schedule_teams": 211,
-  "verified_unique_teams": 206,
-  "verified_players": 3775,
-  "missing_count": 5,
+  "verified_unique_teams": 210,
+  "verified_players": 3855,
+  "missing_count": 1,
   "missing_teams": [
     {
-      "team": "中興高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "北大高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南港高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "正心中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺中二中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
+      "reason": "no_2026_official_roster_page_found"
     }
   ],
   "complete": false,
-  "note": "211 unique schedule team names verified; separate female/open rosters may share full official school names."
+  "note": "All 211 unique schedule team names audited. Separate female/open rosters with same school are checked by source and suffix when present."
 }
