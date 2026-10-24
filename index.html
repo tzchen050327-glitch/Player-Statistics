@@ -1148,8 +1148,11 @@
 <style id="dataCenterIntegrationStyles">
 .data-center-legacy-entry{display:none!important}
 .data-center-toolbar{display:flex;flex-direction:column;gap:10px;margin:0 0 15px}
-.data-center-search-position{display:flex;justify-content:flex-end;margin:-2px 0 0;position:relative;z-index:12}
-.data-center-search{width:min(100%,250px);box-sizing:border-box;position:relative;background:var(--panel)}
+.data-center-search-position{display:flex;justify-content:flex-end;flex:0 1 230px;min-width:0;margin-left:auto;position:relative;z-index:12}
+#playerRankingPage .player-tools-page-head,#advancedStatsPage .player-tools-page-head,#pitcherBatterPage .player-tools-page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap}
+#playerRankingPage .player-tools-page-head>div:first-child,#advancedStatsPage .player-tools-page-head>div:first-child,#pitcherBatterPage .player-tools-page-head>div:first-child{flex:0 0 auto;min-width:0}
+@media(max-width:420px){.data-center-search-position{flex-basis:155px}.data-center-search input{font-size:13px!important}}
+.data-center-search{width:100%;box-sizing:border-box;position:relative;background:var(--panel)}
 .data-center-results{position:absolute;top:calc(100% + 5px);right:0;width:min(340px,calc(100vw - 45px));max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 12px 28px #0005;z-index:30}
 .data-center-results[hidden]{display:none!important}
 .data-center-result{width:100%;display:flex;justify-content:space-between;gap:8px;padding:11px 12px;color:var(--text);background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;font:inherit;font-size:13px;cursor:pointer}
@@ -1255,6 +1258,8 @@
         + '<nav class="data-center-tabs" role="tablist" aria-label="數據中心功能">'
         + Object.keys(pages).map(key => '<button class="data-center-tab" type="button" role="tab" data-center-mode="'+key+'">'+labels[key]+'</button>').join('') + '</nav>';
       head.after(box);
+      const searchPosition = box.querySelector('.data-center-search-position');
+      if (searchPosition) head.appendChild(searchPosition);
       boxes[mode] = box;
       box.querySelectorAll('[data-center-mode]').forEach(btn => btn.addEventListener('click',() => {
         if (btn.dataset.centerMode === active) return;
