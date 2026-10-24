@@ -48,9 +48,7 @@ for region in REGIONS:
   # The official page convention is /2026<full school name>/.
   year_path=re.sub(r'^/2025','/2026',path)
   fixed_url=urljoin(BASE,year_path)
-  links[fixed_url]=(re.sub(r'\\s+','',name),region)
-  if path.startswith('/2026'):
-   links[href]=(re.sub(r'\\s+','',name),region)
+  links[fixed_url]=(re.sub(r'\s+','',name),region)
 print('Official team pages:',len(links))
 result={}
 issues=[]
