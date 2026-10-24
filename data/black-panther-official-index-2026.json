@@ -1,0 +1,1282 @@
+{
+  "year": 2026,
+  "count": 209,
+  "regions": [
+    {
+      "region": "teams_north2026",
+      "status": 200
+    },
+    {
+      "region": "teams_central2026",
+      "status": 200
+    },
+    {
+      "region": "teams_south2026",
+      "status": 200
+    },
+    {
+      "region": "teams_east2026",
+      "status": 200
+    },
+    {
+      "region": "teams_girl2026",
+      "status": 200
+    }
+  ],
+  "entries": [
+    {
+      "officialName": "臺北市立士林高級商業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立士林高級商業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A3%AB%E6%9E%97%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立大安高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立大安高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A4%A7%E5%AE%89%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市大直高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市大直高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E5%A4%A7%E7%9B%B4%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市大理高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市大理高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E5%A4%A7%E7%90%86%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立大學附屬大理高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立大學附屬大理高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E5%A4%A7%E7%90%86%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立中正高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立中正高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%AD%E6%AD%A3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立中崙高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立中崙高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%AD%E5%B4%99%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立內湖高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立內湖高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%85%A7%E6%B9%96%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立內湖高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立內湖高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%85%A7%E6%B9%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立木柵高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立木柵高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9C%A8%E6%9F%B5%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立永春高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立永春高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%B0%B8%E6%98%A5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立成功高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立成功高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%88%90%E5%8A%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立成淵高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立成淵高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%88%90%E6%B7%B5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立百齡高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立百齡高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E7%99%BE%E9%BD%A1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立西松高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立西松高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E8%A5%BF%E6%9D%BE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立和平高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立和平高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%92%8C%E5%B9%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立明倫高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立明倫高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%98%8E%E5%80%AB%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "台北市立松山高級工農職業學校",
+      "region": "teams_north2026",
+      "slug": "2026台北市立松山高級工農職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%8F%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9D%BE%E5%B1%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E8%BE%B2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立松山高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立松山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9D%BE%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立育成高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立育成高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E8%82%B2%E6%88%90%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立南港高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立南港高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%8D%97%E6%B8%AF%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市立南港高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立南港高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%8D%97%E6%B8%AF%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立南湖高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立南湖高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%8D%97%E6%B9%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立建國高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立建國高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%BB%BA%E5%9C%8B%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立復興高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立復興高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%BE%A9%E8%88%88%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "台北市立華江高級中學",
+      "region": "teams_north2026",
+      "slug": "2026台北市立華江高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%8F%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E8%8F%AF%E6%B1%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立陽明高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立陽明高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E9%99%BD%E6%98%8E%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立萬芳高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立萬芳高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E8%90%AC%E8%8A%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立麗山高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立麗山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E9%BA%97%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市私立大同高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立大同高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%A4%A7%E5%90%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市中華商業海事職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市中華商業海事職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E4%B8%AD%E8%8F%AF%E5%95%86%E6%A5%AD%E6%B5%B7%E4%BA%8B%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市立樹林高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立樹林高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%A8%B9%E6%9E%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立三重高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立三重高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%89%E9%87%8D%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立三重高級商工職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市立三重高級商工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%89%E9%87%8D%E9%AB%98%E7%B4%9A%E5%95%86%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市立中和高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立中和高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%AD%E5%92%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立永平高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立永平高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%B0%B8%E5%B9%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立光復高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立光復高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E5%85%89%E5%BE%A9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立秀峰高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立秀峰高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E7%A7%80%E5%B3%B0%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立板橋高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立板橋高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9D%BF%E6%A9%8B%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立林口高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立林口高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%9E%97%E5%8F%A3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立淡水高級商工職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市立淡水高級商工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%B7%A1%E6%B0%B4%E9%AB%98%E7%B4%9A%E5%95%86%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市立新北高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市立新北高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E5%8C%97%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市立新北高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立新北高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E5%8C%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立新店高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立新店高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E5%BA%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立新莊高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市立新莊高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E8%8E%8A%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市立鶯歌高級工商職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市立鶯歌高級工商職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E9%B6%AF%E6%AD%8C%E9%AB%98%E7%B4%9A%E5%B7%A5%E5%95%86%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市馬偕醫護管理專科學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市馬偕醫護管理專科學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E9%A6%AC%E5%81%95%E9%86%AB%E8%AD%B7%E7%AE%A1%E7%90%86%E5%B0%88%E7%A7%91%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立華僑高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026國立華僑高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%8F%AF%E5%83%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "台北市私立延平高級中學",
+      "region": "teams_north2026",
+      "slug": "2026台北市私立延平高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%8F%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%BB%B6%E5%B9%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市私立東山高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立東山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E6%9D%B1%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市私立復興實驗高級中學-cloned",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立復興實驗高級中學-cloned",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%BE%A9%E8%88%88%E5%AF%A6%E9%A9%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8-cloned/"
+    },
+    {
+      "officialName": "臺北市私立華興高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立華興高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E8%8F%AF%E8%88%88%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市私立新民高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立新民高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E6%96%B0%E6%B0%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺北市私立稻江高級商業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026臺北市私立稻江高級商業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E7%A8%BB%E6%B1%9F%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市私立崇義高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立崇義高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%B4%87%E7%BE%A9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市私立竹林高中",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立竹林高中",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E7%AB%B9%E6%9E%97%E9%AB%98%E4%B8%AD/"
+    },
+    {
+      "officialName": "新北市私立南山高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立南山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%8D%97%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市私立格致高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立格致高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E6%A0%BC%E8%87%B4%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市私立淡江高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立淡江高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E6%B7%A1%E6%B1%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市私立莊敬高級工業家事職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立莊敬高級工業家事職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E8%8E%8A%E6%95%AC%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E5%AE%B6%E4%BA%8B%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "裕德學校財團法人新北市裕德高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026裕德學校財團法人新北市裕德高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%A3%95%E5%BE%B7%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E6%96%B0%E5%8C%97%E5%B8%82%E8%A3%95%E5%BE%B7%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市穀保高級家事商業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市穀保高級家事商業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A9%80%E4%BF%9D%E9%AB%98%E7%B4%9A%E5%AE%B6%E4%BA%8B%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市私立辭修高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新北市私立辭修高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%A7%81%E7%AB%8B%E8%BE%AD%E4%BF%AE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "康橋國際學校",
+      "region": "teams_north2026",
+      "slug": "2026康橋國際學校",
+      "source": "https://blackpanthercup.tw/2026%E5%BA%B7%E6%A9%8B%E5%9C%8B%E9%9A%9B%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新北市康橋高中",
+      "region": "teams_north2026",
+      "slug": "2026新北市康橋高中",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E5%BA%B7%E6%A9%8B%E9%AB%98%E4%B8%AD/"
+    },
+    {
+      "officialName": "基隆市私立二信高級中學",
+      "region": "teams_north2026",
+      "slug": "2026基隆市私立二信高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9F%BA%E9%9A%86%E5%B8%82%E7%A7%81%E7%AB%8B%E4%BA%8C%E4%BF%A1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市私立六和高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市私立六和高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%A7%81%E7%AB%8B%E5%85%AD%E5%92%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立大園國際高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立大園國際高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%A4%A7%E5%9C%92%E5%9C%8B%E9%9A%9B%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "桃園市立大溪高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立大溪高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%A4%A7%E6%BA%AA%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立內壢高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立內壢高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%85%A7%E5%A3%A2%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "桃園市立平鎮高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立平鎮高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%B9%B3%E9%8E%AE%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "桃園市立永豐高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立永豐高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E6%B0%B8%E8%B1%90%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立武陵高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立武陵高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E6%AD%A6%E9%99%B5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市市立桃園高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市市立桃園高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E5%B8%82%E7%AB%8B%E6%A1%83%E5%9C%92%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立陽明高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立陽明高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E9%99%BD%E6%98%8E%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "桃園市立楊梅高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立楊梅高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E6%A5%8A%E6%A2%85%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "桃園市立壽山高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立壽山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%A3%BD%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立龍潭高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立龍潭高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E9%BE%8D%E6%BD%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市立觀音高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市立觀音高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E8%A7%80%E9%9F%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市私立治平高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市私立治平高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%A7%81%E7%AB%8B%E6%B2%BB%E5%B9%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市私立育達高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市私立育達高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%A7%81%E7%AB%8B%E8%82%B2%E9%81%94%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "桃園市私立復旦高級中學",
+      "region": "teams_north2026",
+      "slug": "2026桃園市私立復旦高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%A7%81%E7%AB%8B%E5%BE%A9%E6%97%A6%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新竹市立建功高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新竹市立建功高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E7%AB%B9%E5%B8%82%E7%AB%8B%E5%BB%BA%E5%8A%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新竹市立成德高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新竹市立成德高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E7%AB%B9%E5%B8%82%E7%AB%8B%E6%88%90%E5%BE%B7%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新竹市私立光復高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新竹市私立光復高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E7%AB%B9%E5%B8%82%E7%A7%81%E7%AB%8B%E5%85%89%E5%BE%A9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新竹市私立磐石高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新竹市私立磐石高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E7%AB%B9%E5%B8%82%E7%A7%81%E7%AB%8B%E7%A3%90%E7%9F%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "內思學校財團法人新竹縣內思工業高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026內思學校財團法人新竹縣內思工業高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%85%A7%E6%80%9D%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E6%96%B0%E7%AB%B9%E7%B8%A3%E5%85%A7%E6%80%9D%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "新竹縣立六家高級中學",
+      "region": "teams_north2026",
+      "slug": "2026新竹縣立六家高級中學",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E7%AB%B9%E7%B8%A3%E7%AB%8B%E5%85%AD%E5%AE%B6%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "宜蘭縣立慈心華德福教育實驗高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026宜蘭縣立慈心華德福教育實驗高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%AE%9C%E8%98%AD%E7%B8%A3%E7%AB%8B%E6%85%88%E5%BF%83%E8%8F%AF%E5%BE%B7%E7%A6%8F%E6%95%99%E8%82%B2%E5%AF%A6%E9%A9%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立中央大學附屬中壢高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立中央大學附屬中壢高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E4%B8%AD%E5%A4%AE%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E4%B8%AD%E5%A3%A2%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立竹東高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立竹東高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%AB%B9%E6%9D%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立宜蘭高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立宜蘭高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%AE%9C%E8%98%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立政治大學附屬高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立政治大學附屬高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%94%BF%E6%B2%BB%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "新北市國立華僑高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市國立華僑高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E5%9C%8B%E7%AB%8B%E8%8F%AF%E5%83%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立陽明交大附中",
+      "region": "teams_north2026",
+      "slug": "2026國立陽明交大附中",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%99%BD%E6%98%8E%E4%BA%A4%E5%A4%A7%E9%99%84%E4%B8%AD/"
+    },
+    {
+      "officialName": "國立新竹科學園區實驗高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026國立新竹科學園區實驗高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E7%A7%91%E5%AD%B8%E5%9C%92%E5%8D%80%E5%AF%A6%E9%A9%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立新竹高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026國立新竹高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立新竹高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立新竹高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立關西高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立關西高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%97%9C%E8%A5%BF%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立新竹高級商業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026國立新竹高級商業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立臺北科技大學附屬桃園農工高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026國立臺北科技大學附屬桃園農工高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8C%97%E7%A7%91%E6%8A%80%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E6%A1%83%E5%9C%92%E8%BE%B2%E5%B7%A5%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立臺北商業大學",
+      "region": "teams_north2026",
+      "slug": "2026國立臺北商業大學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8C%97%E5%95%86%E6%A5%AD%E5%A4%A7%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立臺灣師範大學附屬高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立臺灣師範大學附屬高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E7%81%A3%E5%B8%AB%E7%AF%84%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立羅東高級工業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026國立羅東高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%BE%85%E6%9D%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立羅東高級中學",
+      "region": "teams_north2026",
+      "slug": "2026國立羅東高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%BE%85%E6%9D%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立羅東高級商業職業學校",
+      "region": "teams_north2026",
+      "slug": "2026國立羅東高級商業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%BE%85%E6%9D%B1%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立中興大學附屬高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立中興大學附屬高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E4%B8%AD%E8%88%88%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立中興大學附屬臺中高級農業職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立中興大學附屬臺中高級農業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E4%B8%AD%E8%88%88%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E8%87%BA%E4%B8%AD%E9%AB%98%E7%B4%9A%E8%BE%B2%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立斗六高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立斗六高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%97%E5%85%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立永靖高級工業職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立永靖高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%B0%B8%E9%9D%96%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立竹南高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立竹南高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%AB%B9%E5%8D%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立卓蘭高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立卓蘭高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%8D%93%E8%98%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立虎尾高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立虎尾高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%99%8E%E5%B0%BE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立南投高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立南投高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%8D%97%E6%8A%95%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立苗栗高級農工職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立苗栗高級農工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%8B%97%E6%A0%97%E9%AB%98%E7%B4%9A%E8%BE%B2%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立員林高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立員林高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%93%A1%E6%9E%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立溪湖高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立溪湖高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%BA%AA%E6%B9%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立彰化師範大學附屬高級工業職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立彰化師範大學附屬高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%BD%B0%E5%8C%96%E5%B8%AB%E7%AF%84%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立彰化高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立彰化高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%BD%B0%E5%8C%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "苗栗縣私立中興高級商工職業學校",
+      "region": "teams_central2026",
+      "slug": "2026苗栗縣私立中興高級商工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%8B%97%E6%A0%97%E7%B8%A3%E7%A7%81%E7%AB%8B%E4%B8%AD%E8%88%88%E9%AB%98%E7%B4%9A%E5%95%86%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立大甲高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立大甲高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E5%A4%A7%E7%94%B2%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立大里高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立大里高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E5%A4%A7%E9%87%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市立文華高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立文華高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E6%96%87%E8%8F%AF%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立西苑高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立西苑高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%A5%BF%E8%8B%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市立東山高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立東山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E6%9D%B1%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市立新社高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立新社高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E6%96%B0%E7%A4%BE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市立臺中工業高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立臺中工業高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%87%BA%E4%B8%AD%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立臺中第一高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立臺中第一高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%87%BA%E4%B8%AD%E7%AC%AC%E4%B8%80%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市立豐原高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立豐原高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%B1%90%E5%8E%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立臺中家事商業高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立臺中家事商業高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%87%BA%E4%B8%AD%E5%AE%B6%E4%BA%8B%E5%95%86%E6%A5%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺中市立龍津高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市立龍津高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E9%BE%8D%E6%B4%A5%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市私立弘文高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市私立弘文高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%A7%81%E7%AB%8B%E5%BC%98%E6%96%87%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市私立明道高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市私立明道高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%A7%81%E7%AB%8B%E6%98%8E%E9%81%93%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市私立新民高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市私立新民高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%A7%81%E7%AB%8B%E6%96%B0%E6%B0%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市僑泰高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市僑泰高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E5%83%91%E6%B3%B0%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市私立衛道高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市私立衛道高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%A7%81%E7%AB%8B%E8%A1%9B%E9%81%93%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺中市私立嶺東高級中學",
+      "region": "teams_central2026",
+      "slug": "2026臺中市私立嶺東高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%A7%81%E7%AB%8B%E5%B6%BA%E6%9D%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立秀水高級工業職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立秀水高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%A7%80%E6%B0%B4%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "彰化縣立彰化藝術高級中學",
+      "region": "teams_central2026",
+      "slug": "2026彰化縣立彰化藝術高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%BD%B0%E5%8C%96%E7%B8%A3%E7%AB%8B%E5%BD%B0%E5%8C%96%E8%97%9D%E8%A1%93%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立員林高級農工職業學校",
+      "region": "teams_central2026",
+      "slug": "2026國立員林高級農工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%93%A1%E6%9E%97%E9%AB%98%E7%B4%9A%E8%BE%B2%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "雲林縣立麥寮高級中學",
+      "region": "teams_central2026",
+      "slug": "2026雲林縣立麥寮高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%9B%B2%E6%9E%97%E7%B8%A3%E7%AB%8B%E9%BA%A5%E5%AF%AE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "揚子學校財團法人雲林縣揚子高級中等學校",
+      "region": "teams_central2026",
+      "slug": "2026揚子學校財團法人雲林縣揚子高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E6%8F%9A%E5%AD%90%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E9%9B%B2%E6%9E%97%E7%B8%A3%E6%8F%9A%E5%AD%90%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "義峰學校財團法人雲林縣義峰高級中學",
+      "region": "teams_central2026",
+      "slug": "2026義峰學校財團法人雲林縣義峰高級中學",
+      "source": "https://blackpanthercup.tw/2026%E7%BE%A9%E5%B3%B0%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E9%9B%B2%E6%9E%97%E7%B8%A3%E7%BE%A9%E5%B3%B0%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "雲林縣立古坑華德福實驗高級中學",
+      "region": "teams_central2026",
+      "slug": "2026雲林縣立古坑華德福實驗高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%9B%B2%E6%9E%97%E7%B8%A3%E7%AB%8B%E5%8F%A4%E5%9D%91%E8%8F%AF%E5%BE%B7%E7%A6%8F%E5%AF%A6%E9%A9%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立北門高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立北門高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%8C%97%E9%96%80%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立北門高級農工職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立北門高級農工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%8C%97%E9%96%80%E9%AB%98%E7%B4%9A%E8%BE%B2%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立臺南高級海事水產職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立臺南高級海事水產職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8D%97%E9%AB%98%E7%B4%9A%E6%B5%B7%E4%BA%8B%E6%B0%B4%E7%94%A2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立民雄高級農工職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立民雄高級農工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%B0%91%E9%9B%84%E9%AB%98%E7%B4%9A%E8%BE%B2%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立成功大學附屬臺南工業高級中等學校",
+      "region": "teams_south2026",
+      "slug": "2026國立成功大學附屬臺南工業高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%88%90%E5%8A%9F%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E8%87%BA%E5%8D%97%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立成功商業水產職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立成功商業水產職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%88%90%E5%8A%9F%E5%95%86%E6%A5%AD%E6%B0%B4%E7%94%A2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立岡山高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立岡山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%B2%A1%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立岡山高級農業職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立岡山高級農業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%B2%A1%E5%B1%B1%E9%AB%98%E7%B4%9A%E8%BE%B2%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立屏北高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立屏北高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%B1%8F%E5%8C%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立屏東高級工業職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立屏東高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%B1%8F%E6%9D%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立善化高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立善化高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%96%84%E5%8C%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立新營高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立新營高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%87%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立嘉科實驗高級中等學校",
+      "region": "teams_south2026",
+      "slug": "2026國立嘉科實驗高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%98%89%E7%A7%91%E5%AF%A6%E9%A9%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立嘉義高級工業職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立嘉義高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%98%89%E7%BE%A9%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立嘉義高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立嘉義高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%98%89%E7%BE%A9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立臺南第一高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立臺南第一高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8D%97%E7%AC%AC%E4%B8%80%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立臺南第二高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立臺南第二高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8D%97%E7%AC%AC%E4%BA%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立鳳山高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立鳳山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%B3%B3%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立鳳新高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立鳳新高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%B3%B3%E6%96%B0%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立鳳山高級商工職業學校",
+      "region": "teams_south2026",
+      "slug": "2026國立鳳山高級商工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%B3%B3%E5%B1%B1%E9%AB%98%E7%B4%9A%E5%95%86%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "國立潮州高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立潮州高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%BD%AE%E5%B7%9E%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立東石高級中學",
+      "region": "teams_south2026",
+      "slug": "2026國立東石高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%9D%B1%E7%9F%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "嘉義縣私立協同高級中學",
+      "region": "teams_south2026",
+      "slug": "2026嘉義縣私立協同高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%98%89%E7%BE%A9%E7%B8%A3%E7%A7%81%E7%AB%8B%E5%8D%94%E5%90%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "嘉義市私立嘉華高級中學",
+      "region": "teams_south2026",
+      "slug": "2026嘉義市私立嘉華高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%98%89%E7%BE%A9%E5%B8%82%E7%A7%81%E7%AB%8B%E5%98%89%E8%8F%AF%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺南市私立黎明高級中學",
+      "region": "teams_south2026",
+      "slug": "2026臺南市私立黎明高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8D%97%E5%B8%82%E7%A7%81%E7%AB%8B%E9%BB%8E%E6%98%8E%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺南市私立瀛海高級中學",
+      "region": "teams_south2026",
+      "slug": "2026臺南市私立瀛海高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8D%97%E5%B8%82%E7%A7%81%E7%AB%8B%E7%80%9B%E6%B5%B7%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "陽明學校財團法人臺南市陽明高級工商職業學校",
+      "region": "teams_south2026",
+      "slug": "2026陽明學校財團法人臺南市陽明高級工商職業學校",
+      "source": "https://blackpanthercup.tw/2026%E9%99%BD%E6%98%8E%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E8%87%BA%E5%8D%97%E5%B8%82%E9%99%BD%E6%98%8E%E9%AB%98%E7%B4%9A%E5%B7%A5%E5%95%86%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "臺南市南光高級中學",
+      "region": "teams_south2026",
+      "slug": "2026臺南市南光高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8D%97%E5%B8%82%E5%8D%97%E5%85%89%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺南市私立南英高級商工職業學校",
+      "region": "teams_south2026",
+      "slug": "2026臺南市私立南英高級商工職業學校",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8D%97%E5%B8%82%E7%A7%81%E7%AB%8B%E5%8D%97%E8%8B%B1%E9%AB%98%E7%B4%9A%E5%95%86%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "中正國防幹部預備學校",
+      "region": "teams_south2026",
+      "slug": "2026中正國防幹部預備學校",
+      "source": "https://blackpanthercup.tw/2026%E4%B8%AD%E6%AD%A3%E5%9C%8B%E9%98%B2%E5%B9%B9%E9%83%A8%E9%A0%90%E5%82%99%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "高雄市小港高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市小港高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E5%B0%8F%E6%B8%AF%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立三民高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立三民高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E4%B8%89%E6%B0%91%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立中山高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立中山高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E4%B8%AD%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立中正高級工業職業學校",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立中正高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E4%B8%AD%E6%AD%A3%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "高雄市立左營高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立左營高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E5%B7%A6%E7%87%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立高級工業職業學校",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立高級工業職業學校",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "高雄市立高雄高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立高雄高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E9%AB%98%E9%9B%84%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立新莊高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立新莊高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E6%96%B0%E8%8E%8A%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市立海青高級工商職業學校",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立海青高級工商職業學校",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E6%B5%B7%E9%9D%92%E9%AB%98%E7%B4%9A%E5%B7%A5%E5%95%86%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "中山學校財團法人高雄市中山高級工商職業學校",
+      "region": "teams_south2026",
+      "slug": "2026中山學校財團法人高雄市中山高級工商職業學校",
+      "source": "https://blackpanthercup.tw/2026%E4%B8%AD%E5%B1%B1%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E9%AB%98%E9%9B%84%E5%B8%82%E4%B8%AD%E5%B1%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E5%95%86%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "高雄市普門高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市普門高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E6%99%AE%E9%96%80%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市私立道明高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市私立道明高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%A7%81%E7%AB%8B%E9%81%93%E6%98%8E%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "高雄市高苑工商職業學校",
+      "region": "teams_south2026",
+      "slug": "2026高雄市高苑工商職業學校",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E9%AB%98%E8%8B%91%E5%B7%A5%E5%95%86%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "高雄市立楠梓高級中學",
+      "region": "teams_south2026",
+      "slug": "2026高雄市立楠梓高級中學",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E6%A5%A0%E6%A2%93%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "屏東縣立大同高級中學",
+      "region": "teams_south2026",
+      "slug": "2026屏東縣立大同高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%B1%8F%E6%9D%B1%E7%B8%A3%E7%AB%8B%E5%A4%A7%E5%90%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "屏東縣私立美和高中",
+      "region": "teams_south2026",
+      "slug": "2026屏東縣私立美和高中",
+      "source": "https://blackpanthercup.tw/2026%E5%B1%8F%E6%9D%B1%E7%B8%A3%E7%A7%81%E7%AB%8B%E7%BE%8E%E5%92%8C%E9%AB%98%E4%B8%AD/"
+    },
+    {
+      "officialName": "國立玉里高級中學",
+      "region": "teams_east2026",
+      "slug": "2026國立玉里高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E7%8E%89%E9%87%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立花蓮高級中學",
+      "region": "teams_east2026",
+      "slug": "2026國立花蓮高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%8A%B1%E8%93%AE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立馬祖高級中學",
+      "region": "teams_east2026",
+      "slug": "2026國立馬祖高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E9%A6%AC%E7%A5%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立臺東大學附屬體育高級中學",
+      "region": "teams_east2026",
+      "slug": "2026國立臺東大學附屬體育高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E6%9D%B1%E5%A4%A7%E5%AD%B8%E9%99%84%E5%B1%AC%E9%AB%94%E8%82%B2%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立臺東高級中學",
+      "region": "teams_east2026",
+      "slug": "2026國立臺東高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E6%9D%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "國立澎湖高級海事水產職業學校",
+      "region": "teams_east2026",
+      "slug": "2026國立澎湖高級海事水產職業學校",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%BE%8E%E6%B9%96%E9%AB%98%E7%B4%9A%E6%B5%B7%E4%BA%8B%E6%B0%B4%E7%94%A2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "澎湖縣馬公高中",
+      "region": "teams_east2026",
+      "slug": "2026澎湖縣馬公高中",
+      "source": "https://blackpanthercup.tw/2026%E6%BE%8E%E6%B9%96%E7%B8%A3%E9%A6%AC%E5%85%AC%E9%AB%98%E4%B8%AD/"
+    },
+    {
+      "officialName": "金門縣金門農工",
+      "region": "teams_east2026",
+      "slug": "2026金門縣金門農工",
+      "source": "https://blackpanthercup.tw/2026%E9%87%91%E9%96%80%E7%B8%A3%E9%87%91%E9%96%80%E8%BE%B2%E5%B7%A5/"
+    },
+    {
+      "officialName": "四維學校財團法人花蓮縣四維高級中學",
+      "region": "teams_east2026",
+      "slug": "2026四維學校財團法人花蓮縣四維高級中學",
+      "source": "https://blackpanthercup.tw/2026%E5%9B%9B%E7%B6%AD%E5%AD%B8%E6%A0%A1%E8%B2%A1%E5%9C%98%E6%B3%95%E4%BA%BA%E8%8A%B1%E8%93%AE%E7%B8%A3%E5%9B%9B%E7%B6%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "花蓮縣立體育高級中等學校",
+      "region": "teams_east2026",
+      "slug": "2026花蓮縣立體育高級中等學校",
+      "source": "https://blackpanthercup.tw/2026%E8%8A%B1%E8%93%AE%E7%B8%A3%E7%AB%8B%E9%AB%94%E8%82%B2%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "officialName": "花蓮縣私立海星高級中學",
+      "region": "teams_east2026",
+      "slug": "2026花蓮縣私立海星高級中學",
+      "source": "https://blackpanthercup.tw/2026%E8%8A%B1%E8%93%AE%E7%B8%A3%E7%A7%81%E7%AB%8B%E6%B5%B7%E6%98%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "officialName": "臺北市立士林高級商業職業學校",
+      "region": "teams_girl2026",
+      "slug": "2026臺北市立士林高級商業職業學校女子組",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E5%A3%AB%E6%9E%97%E9%AB%98%E7%B4%9A%E5%95%86%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "臺北市立華江高級中學",
+      "region": "teams_girl2026",
+      "slug": "2026臺北市立華江高級中學女子組",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8C%97%E5%B8%82%E7%AB%8B%E8%8F%AF%E6%B1%9F%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "新北市立丹鳳高級中學",
+      "region": "teams_girl2026",
+      "slug": "2026新北市立丹鳳高級中學女子組",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E4%B8%B9%E9%B3%B3%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "新北市立秀峰高級中學",
+      "region": "teams_girl2026",
+      "slug": "2026新北市立秀峰高級中學女子組",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E7%A7%80%E5%B3%B0%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "桃園市立南崁高級中等學校",
+      "region": "teams_girl2026",
+      "slug": "2026桃園市立南崁高級中等學校女子組",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E7%AB%8B%E5%8D%97%E5%B4%81%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "臺中市立東山高級中學",
+      "region": "teams_girl2026",
+      "slug": "2026臺中市立東山高級中學女子組",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E6%9D%B1%E5%B1%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "臺南市立土城高級中學",
+      "region": "teams_girl2026",
+      "slug": "2026臺南市立土城高級中學女子組",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E5%8D%97%E5%B8%82%E7%AB%8B%E5%9C%9F%E5%9F%8E%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    },
+    {
+      "officialName": "高雄市立三民高中",
+      "region": "teams_girl2026",
+      "slug": "2026高雄市立三民高中女子組",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E4%B8%89%E6%B0%91%E9%AB%98%E4%B8%AD%E5%A5%B3%E5%AD%90%E7%B5%84/"
+    }
+  ]
+}
