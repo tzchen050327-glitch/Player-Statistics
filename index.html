@@ -1147,7 +1147,15 @@
 
 <style id="dataCenterIntegrationStyles">
 .data-center-legacy-entry{display:none!important}
-.data-center-toolbar{display:flex;flex-direction:column;gap:12px;margin:0 0 15px}
+.data-center-toolbar{display:flex;flex-direction:column;gap:10px;margin:0 0 15px}
+.data-center-search-position{display:flex;justify-content:flex-end;margin:-2px 0 0;position:relative;z-index:12}
+.data-center-search{width:min(100%,250px);box-sizing:border-box;position:relative;background:var(--panel)}
+.data-center-results{position:absolute;top:calc(100% + 5px);right:0;width:min(340px,calc(100vw - 45px));max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 12px 28px #0005;z-index:30}
+.data-center-results[hidden]{display:none!important}
+.data-center-result{width:100%;display:flex;justify-content:space-between;gap:8px;padding:11px 12px;color:var(--text);background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;font:inherit;font-size:13px;cursor:pointer}
+.data-center-result:hover,.data-center-result:focus-visible{background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.data-center-result small{opacity:.65}
+#advancedStatsPageContent>.advanced-stats-search-card{display:none!important}
 .data-center-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:13px;background:var(--panel-muted,rgba(120,135,155,.12))}
 .data-center-tab{min-width:0;padding:11px 4px;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:clamp(12px,3vw,15px);font-weight:650;cursor:pointer}
 .data-center-tab.active{background:#d9a634;color:#15181d;box-shadow:0 1px 6px rgba(0,0,0,.16)}
@@ -1178,15 +1186,45 @@
     const needle = query.trim().toLocaleLowerCase('zh-Hant');
     rows.forEach(row => { row.hidden = Boolean(needle && !row.textContent.toLocaleLowerCase('zh-Hant').includes(needle)); });
   }
-  function relaySearch() {
-    if (active === 'ranking') { filterRanking(); return; }
-    const target = document.getElementById(active === 'advanced' ? 'advancedStatsSearchInput' : 'pitcherBatterPlayerSearch');
-    if (!target || target.disabled) return;
-    target.removeAttribute('readonly');
-    if (target.value !== query) {
-      target.value = query;
-      target.dispatchEvent(new Event('input',{bubbles:true}));
+  let searchTimer = 0, searchSeq = 0, suggestions = [];
+  function escapeShared(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function displayResults(message = '') {
+    Object.values(boxes).forEach(box => {
+      const list = box.querySelector('.data-center-results');
+      if (!list) return;
+      list.hidden = !query.trim();
+      if (list.hidden) { list.innerHTML=''; return; }
+      list.innerHTML = message ? '<div class="data-center-result">'+escapeShared(message)+'</div>'
+        : suggestions.map(item => '<button type="button" class="data-center-result" data-shared-player="'+escapeShared(item.acnt)+'"><strong>'+escapeShared(item.name)+'</strong><small>中職球員</small></button>').join('') || '<div class="data-center-result">找不到符合的球員</div>';
+    });
+  }
+  async function requestResults() {
+    const term=query.trim(), seq=++searchSeq;
+    if (!term) { suggestions=[];displayResults();return; }
+    displayResults('搜尋中職球員…');
+    try {
+      const payload=await cpblRequest('suggest-players',{query:term,limit:12});
+      if(seq!==searchSeq)return;
+      suggestions=(Array.isArray(payload?.players)?payload.players:[]).map(p=>({acnt:String(p.acnt||''),name:String(p.name||'').trim()})).filter(p=>p.acnt&&p.name);
+      displayResults();
+    } catch {
+      if(seq===searchSeq)displayResults('搜尋暫時無法使用');
     }
+  }
+  function choosePlayer(item) {
+    if(!item)return;
+    query=item.name;
+    searchSeq++;suggestions=[];
+    Object.values(boxes).forEach(box=>{const input=box.querySelector('input');if(input)input.value=query});
+    displayResults();
+    document.getElementById(triggers.advanced)?.click();
+    sync();
+    document.dispatchEvent(new CustomEvent('ds-shared-player-selected',{detail:item}));
+  }
+  function relaySearch() {
+    if (active === 'ranking') filterRanking();
   }
   function sync() {
     const mode = currentMode();
@@ -1202,12 +1240,6 @@
       });
       const input = box.querySelector('input');
       if (input && input.value !== query) input.value = query;
-      const note = box.querySelector('.data-center-search-note');
-      if(note) note.textContent = mode === 'ranking'
-        ? '依球員姓名或球隊篩選目前排行榜'
-        : mode === 'advanced'
-          ? '搜尋結果與選取球員顯示於下方的官方搜尋區'
-          : '請先選擇球隊，搜尋結果與選取球員顯示於下方';
     });
     filterRanking();
   }
@@ -1221,7 +1253,7 @@
       box.className = 'data-center-toolbar';
       box.innerHTML = '<nav class="data-center-tabs" role="tablist" aria-label="數據中心功能">'
         + Object.keys(pages).map(key => '<button class="data-center-tab" type="button" role="tab" data-center-mode="'+key+'">'+labels[key]+'</button>').join('')
-        + '</nav><label class="data-center-search"><span aria-hidden="true">⌕</span><input type="search" autocomplete="off" aria-label="數據中心共用球員搜尋" placeholder="搜尋球員名稱" /></label><span class="data-center-search-note"></span>';
+        + '</nav><div class="data-center-search-position"><label class="data-center-search"><span aria-hidden="true">⌕</span><input type="search" autocomplete="off" aria-label="數據中心共用球員搜尋" placeholder="搜尋球員" /></label><div class="data-center-results" hidden role="listbox"></div></div>';
       head.after(box);
       boxes[mode] = box;
       box.querySelectorAll('[data-center-mode]').forEach(btn => btn.addEventListener('click',() => {
@@ -1230,6 +1262,10 @@
         sync();
         relaySearch();
       }));
+      box.querySelector('.data-center-results').addEventListener('click', event => {
+        const button=event.target.closest('[data-shared-player]');
+        if(button)choosePlayer(suggestions.find(item=>item.acnt===button.dataset.sharedPlayer));
+      });
       box.querySelector('input').addEventListener('input',event => {
         query = event.target.value;
         Object.values(boxes).forEach(other => {
@@ -1237,6 +1273,10 @@
           if(input !== event.target) input.value = query;
         });
         relaySearch();
+        clearTimeout(searchTimer);searchSeq++;
+        suggestions=[];
+        displayResults(query.trim()?'搜尋中職球員…':'');
+        if(query.trim())searchTimer=setTimeout(requestResults,300);
       });
     }
     sync();
