@@ -307,6 +307,11 @@
       `;
     }
 
+    document.addEventListener('ds-shared-player-selected', event => {
+      const item = event.detail;
+      if (item?.acnt && item?.name) void advancedStatsSelectPlayer(item);
+    });
+
     function advancedStatsBindSearch() {
       const input = document.getElementById('advancedStatsSearchInput');
       if (!input) return;
