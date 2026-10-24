@@ -413,8 +413,6 @@
       const league = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase();
       if (league !== 'CPBL') return labels;
 
-      const isNpbBox = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase() === 'NPB';
-      const officialBoxBatters = isNpbBox && Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
       const normalizeName = value => String(value || '')
         .replace(/^(?:代打|代跑)[・·\\s]*/,'')
         .replace(/[・·.\\s]/g,'')
@@ -1159,6 +1157,8 @@
     }
 
     function homeGameBatterPanel(detail, gameInfo = {}) {
+      const isNpbBox = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase() === 'NPB';
+      const officialBoxBatters = isNpbBox && Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
       const plays = (Array.isArray(detail?.plays) ? detail.plays : []).filter(homeGameDetailDisplayPlay);
       const rawBatters = [
         ...(Array.isArray(detail?.gameBatters) ? detail.gameBatters : []),
