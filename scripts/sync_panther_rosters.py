@@ -43,7 +43,11 @@ for region in REGIONS:
 print('Official team pages:',len(links))
 result={}
 issues=[]
-seen_links=set()
+existing_path=root/'data'/'black-panther-rosters-2026.json'
+try:
+ existing=json.loads(existing_path.read_text(encoding='utf8'))
+except (OSError,ValueError):
+ existing={}
 
 for n,(url,(full_name,region)) in enumerate(links.items(),1):
  normalized=norm(full_name)
@@ -64,14 +68,25 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
   continue
  roster=[]
  for table in p.select('table'):
-  heads=[th.get_text(' ',strip=True) for th in table.select('tr:first-child th, tr:first-child td')]
-  title=''.join(heads).replace('／','/').replace(' ','')
-  if not ('背號' in title and '球員' in title and '守位' in title and '投/打' in title):continue
-  for tr in table.select('tr')[1:]:
+  trs=table.select('tr')
+  if not trs:continue
+  heads=[x.get_text(' ',strip=True) for x in trs[0].find_all(['th','td'],recursive=False)]
+  titles=[h.replace('／','/').replace(' ','') for h in heads]
+  if not all(any(word in title for title in titles) for word in ('背號','球員','守位','投/打')):continue
+  col={}
+  for i,title in enumerate(titles):
+   for field,word in [('number','背號'),('name','球員'),('position','守位'),('height','身高'),('weight','體重'),('hand','投/打')]:
+    if word in title:col[field]=i
+  if len(col)<6:continue
+  for tr in trs[1:]:
    cells=[x.get_text(' ',strip=True) for x in tr.find_all(['td','th'],recursive=False)]
-   if len(cells)<6 or not re.fullmatch(r'\d{1,3}',cells[0]):continue
-   height=re.search(r'\d+',cells[3]);weight=re.search(r'\d+',cells[4])
-   roster.append({'number':cells[0],'name':cells[1],'position':cells[2],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[5]})
+   if len(cells)<=max(col.values()):continue
+   number=cells[col['number']].strip()
+   name=cells[col['name']].strip()
+   if not re.fullmatch(r'\d{1,3}',number) or not name:continue
+   height=re.search(r'\d+',cells[col['height']])
+   weight=re.search(r'\d+',cells[col['weight']])
+   roster.append({'number':number,'name':name,'position':cells[col['position']],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[col['hand']]})
   if roster:break
  if roster:
   result[key]={'source':url,'officialName':full_name,'scheduleName':exact[0] if len(exact)==1 else None,'players':roster}
@@ -83,9 +98,13 @@ out=root/'data'/'black-panther-rosters-2026.json'
 out.parent.mkdir(exist_ok=True)
 if not result:
  print('ABORT: zero parsed rosters; refusing to replace verified data')
- raise RuntimeError('Not enough verified rosters: '+str(len(result)))
+ raise RuntimeError('Zero verified rosters')
+for key,entry in existing.items():
+ if key not in result and entry.get('players'):
+  result[key]=entry
+  issues.append({'team':key,'reason':'retained_previous_verified_roster'})
 out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
-report={'year':2026,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'issues':issues}
+report={'year':2026,'official_team_pages':len(links),'target_teams':211,'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'issues':issues}
 (root/'data'/'black-panther-rosters-2026-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 print('Issues:',len(issues))
 print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
