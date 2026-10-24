@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fetch verified 2026 Panther Cup roster rows from the tournament's region/team pages."""
 import json,re,time,unicodedata
+from collections import Counter
 from pathlib import Path
 from urllib.parse import urljoin,urlparse,unquote
 import requests
@@ -30,7 +31,7 @@ def soup(url):
    r=session.get(url,timeout=25);r.raise_for_status();return BeautifulSoup(r.text,'html.parser')
   except requests.RequestException as exc:
    if attempt==2:
-    fetch_failures.append({'url':url,'error':str(exc)[:400]})
+    fetch_failures.append({'url':url,'error':str(exc)[:400],'status_code':getattr(getattr(exc,'response',None),'status_code',None)})
     print('FETCH ERROR:',url,str(exc)[:200],flush=True)
     return None
    time.sleep(2*(attempt+1))
@@ -75,6 +76,19 @@ for key,entry in known_rosters.items():
  url=urljoin(BASE,'/2026'+official+('女子組' if group=='teams_girl2026' else '')+'/')
  links.setdefault(url,(official,group))
 print('Official team pages:',len(links))
+# A 403 on all five official index pages indicates source-side access denial.
+# Do not retry every team's page when this execution environment is blocked.
+if len(region_issues)==len(REGIONS) and all(x.get('status_code')==403 for x in fetch_failures):
+ report={'year':2026,'target_teams':211,'complete':False,
+         'blocked':True,'reason':'official_site_http_403',
+         'official_team_pages':len(links),
+         'existing_verified_teams':len(known_rosters),
+         'regions_failed':region_issues,'fetch_failures':fetch_failures,
+         'missing_teams':[],
+         'missing_teams_unavailable_reason':'Cannot enumerate 211 official team pages while source returns 403'}
+ report_path=root/'data'/'black-panther-rosters-2026-report.json'
+ report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+ raise RuntimeError('Official site returns HTTP 403 to GitHub runner; preserving previous roster data. No per-team retries.')
 result={}
 issues=[]
 existing_path=root/'data'/'black-panther-rosters-2026.json'
