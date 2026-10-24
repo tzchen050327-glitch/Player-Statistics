@@ -413,6 +413,8 @@
       const league = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase();
       if (league !== 'CPBL') return labels;
 
+      const isNpbBox = String(activeHomeGameDetail?.league || detail?.league || '').toUpperCase() === 'NPB';
+      const officialBoxBatters = isNpbBox && Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
       const normalizeName = value => String(value || '')
         .replace(/^(?:代打|代跑)[・·\\s]*/,'')
         .replace(/[・·.\\s]/g,'')
@@ -1214,6 +1216,26 @@
         }
         return totals;
       };
+      // NPB box score preserves the batting-order sequence, including every
+      // relief pitcher or pinch hitter listed below the original slot.
+      // Its rows are split at each team's leadoff starter.
+      const firstStarter = side => detail?.startingLineup?.[side]?.[0]
+        || detail?.lineups?.[side]?.batters?.[0] || null;
+      const sameBoxPlayer = (a, b) => {
+        if (!a || !b) return false;
+        const aId = String(a?.id || a?.acnt || '');
+        const bId = String(b?.id || b?.acnt || '');
+        if (aId && bId) return aId === bId;
+        return Boolean(normalizeName(a?.name || a?.fullName)
+          && normalizeName(a?.name || a?.fullName) === normalizeName(b?.name || b?.fullName));
+      };
+      const awayBoxStart = officialBoxBatters.findIndex(row => sameBoxPlayer(row, firstStarter('away')));
+      const homeBoxStart = officialBoxBatters.findIndex(row => sameBoxPlayer(row, firstStarter('home')));
+      const officialBoxBySide = { away:[], home:[] };
+      if (awayBoxStart >= 0 && homeBoxStart > awayBoxStart) {
+        officialBoxBySide.away = officialBoxBatters.slice(awayBoxStart,homeBoxStart);
+        officialBoxBySide.home = officialBoxBatters.slice(homeBoxStart);
+      }
       const rawByName = new Map();
       for (const row of rawBatters) {
         const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
@@ -1305,6 +1327,25 @@
         const substitutionOrder = new Map();
         const substitutionSequence = new Map();
         let substitutionIndex = 0;
+        // The official box batting table lists every replacement directly
+        // beneath the starter in that batting slot. A "latest lineup" lists
+        // only the final occupant and loses intermediate pitchers/pinch hitters.
+        if (lockedStarters.length === 9 && officialBoxBySide[side].length >= 9) {
+          let slot = 0;
+          for (const player of officialBoxBySide[side]) {
+            const key = normalizeName(player?.name || player?.fullName);
+            if (!key) continue;
+            const starter = starterLineup.find(row => sameBoxPlayer(row,player));
+            if (starter) {
+              slot = Number(starter?.order) || starterLineup.indexOf(starter) + 1;
+              continue;
+            }
+            if (slot < 1 || slot > 9) continue;
+            orderByName.set(key,slot);
+            substitutionOrder.set(key,slot);
+            if (!substitutionSequence.has(key)) substitutionSequence.set(key,substitutionIndex++);
+          }
+        }
         for (const play of plays) {
           const description = String(play?.description || '');
           const re = /更換(?:代打|代跑|選手|守備)：([^。]+?)=>([^。]+)/g;
@@ -1340,14 +1381,24 @@
         });
 
         const rawByKey = new Map();
+        const rawById = new Map();
         for (const row of rawBatters) {
-          const name = String(row?.fullName || row?.name || row?.playerName || '').trim();
-          const key = normalizeName(name);
-          if (!key) continue;
-          const existing = rawByKey.get(key);
-          const score = ['gameAb','gameRuns','gameHits','gameRbi','gameWalks','gameBb','gameStrikeouts','gameSo','gameHomeRuns','gameHr']
+          const shortName = String(row?.name || row?.fullName || row?.playerName || '').trim();
+          const fullName = String(row?.fullName || row?.name || row?.playerName || '').trim();
+          const keys = [...new Set([normalizeName(shortName),normalizeName(fullName)])].filter(Boolean);
+          if (!keys.length) continue;
+          const id = String(row?.id || row?.acnt || '').trim();
+          // Always prefer a real single-game box-score row to mutable
+          // current-lineup numbers or a frozen pregame starter snapshot.
+          const officialBonus = isNpbBox && officialBoxBatters.includes(row) ? 100 : 0;
+          const score = officialBonus + ['gameAb','gameRuns','gameHits','gameRbi','gameWalks','gameBb','gameStrikeouts','gameSo','gameHomeRuns','gameHr']
             .reduce((sum,k) => sum + (pickNumber(row,[k]) !== null ? 1 : 0), 0);
-          if (!existing || score > existing.score) rawByKey.set(key, { row, score });
+          for (const key of keys) {
+            const existing = rawByKey.get(key);
+            if (!existing || score > existing.score) rawByKey.set(key,{row,score});
+          }
+          if (id && (!rawById.has(id) || score > rawById.get(id).score))
+            rawById.set(id,{row,score});
         }
 
         const candidates = [];
@@ -1355,7 +1406,12 @@
         const addByName = (name, order, isSubstitute = false, sourceIndex = 999, sourceRow = null) => {
           const key = normalizeName(name);
           if (!key || seen.has(key) || !(order >= 1 && order <= 9)) return;
-          const raw = rawByKey.get(key)?.row || sourceRow || {};
+          const sourceId = String(sourceRow?.id || sourceRow?.acnt || '').trim();
+          const shortKey = normalizeName(sourceRow?.name || '');
+          const raw = (sourceId ? rawById.get(sourceId)?.row : null)
+            || rawByKey.get(shortKey)?.row
+            || rawByKey.get(key)?.row
+            || sourceRow || {};
           const fallback = playStatsFor(name);
           const stat = keyName => {
             const official = pickNumber(raw, statAliases[keyName]);
