@@ -1,0 +1,30 @@
+{
+  "year": 2026,
+  "target_teams": 211,
+  "official_team_pages": 0,
+  "matched_teams": 0,
+  "players": 0,
+  "regions_failed": [
+    {
+      "region": "teams_north2026",
+      "reason": "region_page_fetch_failed"
+    },
+    {
+      "region": "teams_central2026",
+      "reason": "region_page_fetch_failed"
+    },
+    {
+      "region": "teams_south2026",
+      "reason": "region_page_fetch_failed"
+    },
+    {
+      "region": "teams_east2026",
+      "reason": "region_page_fetch_failed"
+    },
+    {
+      "region": "teams_girl2026",
+      "reason": "region_page_fetch_failed"
+    }
+  ],
+  "issues": []
+}
