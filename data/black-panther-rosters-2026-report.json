@@ -1,60 +1,198 @@
 {
   "year": 2026,
   "target_teams": 211,
-  "complete": false,
-  "blocked": true,
-  "reason": "official_site_http_403",
-  "official_team_pages": 14,
-  "existing_verified_teams": 14,
-  "regions_failed": [
+  "official_team_pages": 209,
+  "index_regions": [
     {
       "region": "teams_north2026",
-      "reason": "region_page_fetch_failed"
+      "status": 200
     },
     {
       "region": "teams_central2026",
-      "reason": "region_page_fetch_failed"
+      "status": 200
     },
     {
       "region": "teams_south2026",
-      "reason": "region_page_fetch_failed"
+      "status": 200
     },
     {
       "region": "teams_east2026",
-      "reason": "region_page_fetch_failed"
+      "status": 200
     },
     {
       "region": "teams_girl2026",
-      "reason": "region_page_fetch_failed"
+      "status": 200
     }
   ],
-  "fetch_failures": [
+  "newly_fetched_teams": 191,
+  "reused_verified_teams": 14,
+  "stored_rosters": 205,
+  "mapped_schedule_names": 183,
+  "stored_players": 3741,
+  "incomplete_source_links": true,
+  "issues": [
     {
-      "url": "https://blackpanthercup.tw/teams_north2026/",
-      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_north2026/",
-      "status_code": 403
+      "team": "臺北市大理高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市大理高級中學",
+      "reason": "page_not_parsed",
+      "detail": {
+        "http_status": 502,
+        "error": "Official page HTTP 404"
+      }
     },
     {
-      "url": "https://blackpanthercup.tw/teams_central2026/",
-      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_central2026/",
-      "status_code": 403
+      "team": "臺北市立南港高級中學",
+      "region": "teams_north2026",
+      "slug": "2026臺北市立南港高級中學",
+      "reason": "page_not_parsed",
+      "detail": {
+        "http_status": 422,
+        "error": "Not a 2026 team page"
+      }
     },
     {
-      "url": "https://blackpanthercup.tw/teams_south2026/",
-      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_south2026/",
-      "status_code": 403
+      "team": "新北市國立華僑高級中等學校",
+      "region": "teams_north2026",
+      "slug": "2026新北市國立華僑高級中等學校",
+      "reason": "page_not_parsed",
+      "detail": {
+        "http_status": 502,
+        "error": "Official page HTTP 404"
+      }
     },
     {
-      "url": "https://blackpanthercup.tw/teams_east2026/",
-      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_east2026/",
-      "status_code": 403
-    },
-    {
-      "url": "https://blackpanthercup.tw/teams_girl2026/",
-      "error": "403 Client Error: Forbidden for url: https://blackpanthercup.tw/teams_girl2026/",
-      "status_code": 403
+      "team": "國立中興大學附屬高級中學",
+      "region": "teams_central2026",
+      "slug": "2026國立中興大學附屬高級中學",
+      "reason": "page_not_parsed",
+      "detail": {
+        "http_status": 502,
+        "error": "Official page HTTP 404"
+      }
     }
   ],
-  "missing_teams": [],
-  "missing_teams_unavailable_reason": "Cannot enumerate 211 official team pages while source returns 403"
+  "unmapped": [
+    {
+      "team": "新北市立新北高級工業職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E5%8C%97%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "新北市立新北高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E6%96%B0%E5%8C%97%E5%B8%82%E7%AB%8B%E6%96%B0%E5%8C%97%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "桃園市市立桃園高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E6%A1%83%E5%9C%92%E5%B8%82%E5%B8%82%E7%AB%8B%E6%A1%83%E5%9C%92%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立宜蘭高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%AE%9C%E8%98%AD%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立新竹高級工業職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立新竹高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%96%B0%E7%AB%B9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立南投高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%8D%97%E6%8A%95%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立苗栗高級農工職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%8B%97%E6%A0%97%E9%AB%98%E7%B4%9A%E8%BE%B2%E5%B7%A5%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立彰化高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%BD%B0%E5%8C%96%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立臺南高級海事水產職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E5%8D%97%E9%AB%98%E7%B4%9A%E6%B5%B7%E4%BA%8B%E6%B0%B4%E7%94%A2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立屏東高級工業職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%B1%8F%E6%9D%B1%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立嘉義高級工業職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%98%89%E7%BE%A9%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立嘉義高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E5%98%89%E7%BE%A9%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "高雄市立高級工業職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E9%AB%98%E9%9B%84%E5%B8%82%E7%AB%8B%E9%AB%98%E7%B4%9A%E5%B7%A5%E6%A5%AD%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "國立花蓮高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%8A%B1%E8%93%AE%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立臺東高級中學",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E8%87%BA%E6%9D%B1%E9%AB%98%E7%B4%9A%E4%B8%AD%E5%AD%B8/"
+    },
+    {
+      "team": "國立澎湖高級海事水產職業學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E5%9C%8B%E7%AB%8B%E6%BE%8E%E6%B9%96%E9%AB%98%E7%B4%9A%E6%B5%B7%E4%BA%8B%E6%B0%B4%E7%94%A2%E8%81%B7%E6%A5%AD%E5%AD%B8%E6%A0%A1/"
+    },
+    {
+      "team": "金門縣金門農工",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E9%87%91%E9%96%80%E7%B8%A3%E9%87%91%E9%96%80%E8%BE%B2%E5%B7%A5/"
+    }
+  ],
+  "missing_teams": [
+    "中山女高",
+    "中興高中",
+    "北大高中",
+    "南投高中",
+    "南港高中",
+    "台南女中",
+    "台東高中",
+    "嘉義高中",
+    "嘉義高工",
+    "宜蘭高中",
+    "屏東高工",
+    "市立大同",
+    "彰化高中",
+    "新北高中",
+    "新北高工",
+    "新竹高中",
+    "新竹高工",
+    "桃園高中",
+    "正心中學",
+    "澎湖海事",
+    "白河商工",
+    "臺中二中",
+    "臺南海事",
+    "花蓮高中",
+    "苗栗農工",
+    "金門農工",
+    "霧峰農工",
+    "高雄高工"
+  ],
+  "complete": false
 }

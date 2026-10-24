@@ -1,52 +1,12 @@
 {
   "year": 2026,
   "target_unique_schedule_teams": 211,
-  "verified_unique_teams": 17,
-  "verified_players": 318,
-  "missing_count": 194,
+  "verified_unique_teams": 183,
+  "verified_players": 3353,
+  "missing_count": 28,
   "missing_teams": [
     {
-      "team": "三民高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "三重商工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "三重高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中和高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中大壢中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "中山女高",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中山工商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中正預校",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中正高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "中興商工",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -54,71 +14,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "中華商海",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "丹鳳高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "二信高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "僑泰高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "內壢高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "內思高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "六和高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "六家高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "北大高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "北科附工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "北門農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "北門高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "卓蘭高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "協通高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南光高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南崁高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -130,51 +26,11 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "南港高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南湖高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "南英商工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "古坑華德福",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "台中家商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "台南女中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
       "team": "台東高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "和平高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "員林農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "員林高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "善化高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "嘉科實中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -186,51 +42,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "嘉華中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "四維高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "土城高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "壽山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "大園高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "大溪高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "大甲高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "大里高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "宜蘭高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "小港高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "屏北高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "屏東大同",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -238,123 +50,11 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "岡山農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "岡山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "崇義高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "嶺東高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "左營高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "市立大同",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "師大附中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "康橋國際",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "康橋高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "延平高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "建功高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "建國中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "弘文高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "彰化高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "彰師附工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "彰藝高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "復旦高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "復興實中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "復興高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "慈心華德福",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "成功商水",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "成功高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "成大南工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "成德高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "揚子高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "政大附中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "文華高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "斗六高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新北光復",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新北新莊",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -366,27 +66,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "新店高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新營高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新社高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新竹光復",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "新竹高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "新竹高商",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -394,55 +74,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "明道中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "普門高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "東山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "東石高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "松山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "板橋高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "林口高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "格致中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "桃園陽明",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "桃園高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "楊梅高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "楠梓高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "樹林高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -450,63 +82,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "武陵高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "民雄農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "永平高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "永豐高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "永靖高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "治平高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "海星高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "海青工商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "淡水商工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "淡水高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "溪湖高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "潮州高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "澎湖海事",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "瀛海中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "玉里高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -514,127 +90,11 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "磐石高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "秀水高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "私立大同",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "稻江商職",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "穀保家商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "竹南高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "竹東高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "竹林高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "竹科實中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "羅東高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "羅東高商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "羅東高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "美和高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "義峰高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "育成高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "育達高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺中一中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "臺中二中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "臺中新民",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺中東山",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺中高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺北商大",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺北新民",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺北東山",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺北陽明",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺南一中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺南二中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "臺南海事",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "臺東體中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "興大附農",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "花蓮體中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -646,75 +106,7 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "莊敬高職",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "華僑高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "華江高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "華興中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "萬芳高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "虎尾高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "衛道中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "裕德高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "西松高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "西苑高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "觀音高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "豐原高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "辭修中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "道明中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "金門農工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "關西高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "陽交附中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "陽明工商",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
@@ -722,67 +114,102 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     },
     {
-      "team": "馬偕護專",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "馬公高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "馬祖高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "高苑工商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "高雄中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "高雄新莊",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
       "team": "高雄高工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "鳳山商工",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "鳳山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "鳳新高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "鶯歌工商",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "麗山高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "麥寮高中",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "黎明中學",
-      "reason": "no_nonempty_roster_mapped_to_schedule"
-    },
-    {
-      "team": "龍潭高中",
       "reason": "no_nonempty_roster_mapped_to_schedule"
     }
   ],
-  "unmatched_imported_teams": [],
+  "unmatched_imported_teams": [
+    {
+      "officialName": "新北市立新北高級工業職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "新北市立新北高級中學",
+      "scheduleName": null,
+      "player_count": 12
+    },
+    {
+      "officialName": "桃園市市立桃園高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立宜蘭高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立新竹高級工業職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立新竹高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立南投高級中學",
+      "scheduleName": null,
+      "player_count": 15
+    },
+    {
+      "officialName": "國立苗栗高級農工職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立彰化高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立臺南高級海事水產職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立屏東高級工業職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立嘉義高級工業職業學校",
+      "scheduleName": null,
+      "player_count": 18
+    },
+    {
+      "officialName": "國立嘉義高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "高雄市立高級工業職業學校",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立花蓮高級中學",
+      "scheduleName": null,
+      "player_count": 17
+    },
+    {
+      "officialName": "國立臺東高級中學",
+      "scheduleName": null,
+      "player_count": 20
+    },
+    {
+      "officialName": "國立澎湖高級海事水產職業學校",
+      "scheduleName": null,
+      "player_count": 15
+    },
+    {
+      "officialName": "金門縣金門農工",
+      "scheduleName": null,
+      "player_count": 13
+    }
+  ],
   "complete": false,
   "note": "Unique schedule team names are counted here. Women/open rosters with the same school name require separate verification."
 }
