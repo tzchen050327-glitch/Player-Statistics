@@ -7,9 +7,10 @@
   "missing_teams": [
     {
       "team": "正心中學",
-      "reason": "no_2026_official_roster_page_found"
+      "reason": "no_nonempty_roster_mapped_to_schedule"
     }
   ],
+  "unmatched_imported_teams": [],
   "complete": false,
-  "note": "All 211 unique schedule team names audited. Separate female/open rosters with same school are checked by source and suffix when present."
+  "note": "Unique schedule team names are counted here. Women/open rosters with the same school name require separate verification."
 }
