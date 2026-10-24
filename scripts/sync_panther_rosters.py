@@ -58,7 +58,8 @@ for n,(url,(full_name,region)) in enumerate(links.items(),1):
  roster=[]
  for table in p.select('table'):
   heads=[th.get_text(' ',strip=True) for th in table.select('tr:first-child th, tr:first-child td')]
-  if not ('背號' in ''.join(heads) and '守位' in ''.join(heads) and '投/打' in ''.join(heads)):continue
+  title=''.join(heads).replace('／','/').replace(' ','')
+  if not ('背號' in title and '球員' in title and '守位' in title and '投/打' in title):continue
   for tr in table.select('tr')[1:]:
    cells=[x.get_text(' ',strip=True) for x in tr.find_all(['td','th'],recursive=False)]
    if len(cells)<6 or not re.fullmatch(r'\d{1,3}',cells[0]):continue
