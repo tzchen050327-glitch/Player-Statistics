@@ -1,181 +1,142 @@
 #!/usr/bin/env python3
-"""Fetch verified 2026 Panther Cup roster rows from the tournament's region/team pages."""
-import json,re,time,unicodedata
-from collections import Counter
-from pathlib import Path
-from urllib.parse import urljoin,urlparse,unquote
-import requests
-from bs4 import BeautifulSoup
+"""Sync 2026 Panther Cup public rosters via the verified Supabase Edge reader.
+
+The tournament returns HTTP 403 to GitHub-hosted Python runners. The
+read-only reader is fixed to the official domain, accepts only 2026 slugs,
+and returns parsed player rows; GitHub never downloads raw HTML.
+"""
+import json
+import re
+import time
+import unicodedata
 from difflib import SequenceMatcher
+from pathlib import Path
+import requests
 
-BASE='https://blackpanthercup.tw'
-REGIONS=['teams_north2026','teams_central2026','teams_south2026','teams_east2026','teams_girl2026']
-root=Path(__file__).resolve().parents[1]
-html=(root/'black-panther-2026.html').read_text(encoding='utf8')
-raw=re.search(r'const DATA=(\[.*?\]);const VENUES=',html,re.S)
-if not raw: raise RuntimeError('Unable to locate existing schedule teams')
-matches=json.loads(raw.group(1))
-teams=sorted({x[k] for x in matches for k in ('home','away') if '勝' not in x[k] and '晉級' not in x[k]})
-def norm(s):
- s=unicodedata.normalize('NFKC',str(s)).replace('臺','台').replace('髙','高')
- s=re.sub(r'^(?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|苗栗|彰化|雲林|嘉義|屏東|宜蘭|花蓮|台東|南投|澎湖|金門|連江)(?:市|縣)?','',s)
- for x in ('學校財團法人','財團法人','國立','私立','市立','縣立','高級工業職業學校','高級商業職業學校','高級家事商業職業學校','高級工商職業學校','高級職業學校','高級中等學校','高級中等','高級中學','中等學校','高級','高中','中學','市','縣','區',' '):
-  s=s.replace(x,'')
- return s
-session=requests.Session()
-fetch_failures=[]
-session.headers.update({
- 'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
- 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
- 'Accept-Language':'zh-TW,zh;q=0.9,en;q=0.7'
-})
-def soup(url):
- for attempt in range(3):
-  try:
-   r=session.get(url,timeout=25);r.raise_for_status();return BeautifulSoup(r.text,'html.parser')
-  except requests.RequestException as exc:
-   if attempt==2 or getattr(getattr(exc,'response',None),'status_code',None)==403:
-    fetch_failures.append({'url':url,'error':str(exc)[:400],'status_code':getattr(getattr(exc,'response',None),'status_code',None)})
-    print('FETCH ERROR:',url,str(exc)[:200],flush=True)
-    return None
-   time.sleep(2*(attempt+1))
- return None
-links={}
-region_issues=[]
-for region in REGIONS:
- p=soup(BASE+'/'+region+'/')
- if not p:
-  print('Region inaccessible:',region)
-  region_issues.append({'region':region,'reason':'region_page_fetch_failed'})
-  continue
- for a in p.select('a[href]'):
-  href=urljoin(BASE,a['href']);path=unquote(urlparse(href).path)
-  if not re.match(r'^/20(?:25|26)',path) or '/teams_' in path: continue
-  name=a.get_text(' ',strip=True)
-  if not name or len(name)<3:continue
-  # Some 2026 region entries link to 2025 pages; always try their 2026 slug.
-  # The official page convention is /2026<full school name>/.
-  clean_name=re.sub(r'\s+','',name)
-  if region=='teams_girl2026':
-   school_name=re.sub(r'女子組$','',clean_name)
-
-   # Women's team pages have a distinct official slug and must not
-   # collide with the school's open-division roster.
-   fixed_url=urljoin(BASE,'/2026'+school_name+'女子組/')
-   links[fixed_url]=(school_name,region)
-  else:
-   year_path=re.sub(r'^/2025','/2026',path)
-   fixed_url=urljoin(BASE,year_path)
-   links[fixed_url]=(clean_name,region)
-# Independently attempt known official 2026 school URLs even if every region page fails.
-existing_path=root/'data'/'black-panther-rosters-2026.json'
+ROOT=Path(__file__).resolve().parents[1]
+SOURCE='https://blackpanthercup.tw'
+READER='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/panther-roster-source-probe'
+DATA_FILE=ROOT/'data/black-panther-rosters-2026.json'
+REPORT_FILE=ROOT/'data/black-panther-rosters-2026-report.json'
+SCHEDULE=(ROOT/'black-panther-2026.html').read_text(encoding='utf-8')
+match=re.search(r'const DATA=(\[.*?\]);const VENUES=',SCHEDULE,re.S)
+if not match:raise RuntimeError('Cannot find 2026 tournament schedule')
+games=json.loads(match.group(1))
+TEAM_NAMES=sorted({x[k] for x in games for k in ('home','away')
+                   if not re.search(r'勝|晉級|敗|待定|空白',x[k])})
+if len(TEAM_NAMES)!=211:raise RuntimeError('Schedule changed: expected 211 distinct teams')
 try:
- known_rosters=json.loads(existing_path.read_text(encoding='utf8'))
-except (OSError,ValueError):
- known_rosters={}
-for key,entry in known_rosters.items():
- official=entry.get('officialName') or key.split('::')[0]
- if not official:continue
- group='teams_girl2026' if key.endswith('::女子組') else 'known_rosters'
- url=urljoin(BASE,'/2026'+official+('女子組' if group=='teams_girl2026' else '')+'/')
- links.setdefault(url,(official,group))
-print('Official team pages:',len(links))
-# A 403 on all five official index pages indicates source-side access denial.
-# Do not retry every team's page when this execution environment is blocked.
-if len(region_issues)==len(REGIONS) and all(x.get('status_code')==403 for x in fetch_failures):
- report={'year':2026,'target_teams':211,'complete':False,
-         'blocked':True,'reason':'official_site_http_403',
-         'official_team_pages':len(links),
-         'existing_verified_teams':len(known_rosters),
-         'regions_failed':region_issues,'fetch_failures':fetch_failures,
-         'missing_teams':[],
-         'missing_teams_unavailable_reason':'Cannot enumerate 211 official team pages while source returns 403'}
- report_path=root/'data'/'black-panther-rosters-2026-report.json'
- report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
- raise RuntimeError('Official site returns HTTP 403 to GitHub runner; preserving previous roster data. No per-team retries.')
-result={}
-issues=[]
-existing_path=root/'data'/'black-panther-rosters-2026.json'
-try:
- existing=json.loads(existing_path.read_text(encoding='utf8'))
+ existing=json.loads(DATA_FILE.read_text(encoding='utf-8'))
 except (OSError,ValueError):
  existing={}
+session=requests.Session()
+session.headers['User-Agent']='DiamondScope-2026-roster-sync/2.0'
+def request_reader(params):
+ for attempt in range(2):
+  try:
+   response=session.get(READER,params=params,timeout=38)
+   data=response.json()
+   if response.status_code==200:return data,None
+   return None,{'http_status':response.status_code,'error':str(data.get('error','unknown'))[:250]}
+  except (requests.RequestException,ValueError) as exc:
+   if attempt==1:return None,{'error':str(exc)[:250]}
+   time.sleep(2)
+ return None,{'error':'Unknown reader failure'}
 
-for n,(url,(full_name,region)) in enumerate(links.items(),1):
- normalized=norm(full_name)
- exact=[t for t in teams if norm(t)==normalized]
- ranked=sorted(((SequenceMatcher(None,norm(t),normalized).ratio(),t) for t in teams),reverse=True)
- if not exact and ranked and ranked[0][0]>=0.84 and (len(ranked)==1 or ranked[0][0]-ranked[1][0]>=0.15):
-  exact=[ranked[0][1]]
- # Always fetch the official roster; a missing schedule alias must never skip players.
- key=full_name+('::女子組' if region=='teams_girl2026' else '')
- if key in result:
-  issues.append({'team':full_name,'url':url,'reason':'duplicate_official_name'})
+def norm(s):
+ s=unicodedata.normalize('NFKC',str(s)).replace('臺','台').replace('髙','高')
+ replacements=[
+  ('高級家事商業職業學校','家商'),('高級工業職業學校','高工'),
+  ('高級農工職業學校','農工'),('高級商業職業學校','高商'),
+  ('高級商工職業學校','商工'),('高級海事水產職業學校','海事'),
+  ('高級中等學校','高中'),('高級中學','高中'),
+  ('高級工業家事職業學校','高職'),('高級中等','高中'),
+  ('國立',''),('私立',''),('市立',''),('縣立',''),
+  ('學校財團法人',''),('財團法人',''),('學校',''),(' ',''),
+ ]
+ for a,b in replacements:s=s.replace(a,b)
+ s=re.sub(r'^(?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|苗栗|彰化|雲林|嘉義|屏東|宜蘭|花蓮|台東|南投|澎湖|金門|連江)(?:市|縣)?','',s)
+ return s
+
+existing_alias={}
+for key,value in existing.items():
+ if value.get('scheduleName') and value.get('players'):
+  existing_alias[norm(value.get('officialName') or key.split('::')[0])]=value['scheduleName']
+
+def choose_schedule_name(official,region):
+ direct=existing_alias.get(norm(official))
+ if direct in TEAM_NAMES:return direct
+ name=norm(official)
+ scored=sorted(((SequenceMatcher(None,name,norm(t)).ratio(),t) for t in TEAM_NAMES),reverse=True)
+ perfect=[t for t in TEAM_NAMES if norm(t)==name]
+ if len(perfect)==1:return perfect[0]
+ if not scored:return None
+ top=scored[0]
+ if top[0]>=0.82 and (len(scored)==1 or top[0]-scored[1][0]>=0.09):return top[1]
+ return None
+
+entries,index_error=request_reader({'type':'index'})
+issues=[]
+if not entries or not isinstance(entries.get('entries'),list):
+ report={'year':2026,'target_teams':211,'complete':False,'blocked':True,
+         'reason':'edge_reader_index_unavailable','error':index_error,
+         'existing_verified_teams':len(existing),'issues':[]}
+ REPORT_FILE.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+ raise RuntimeError('Official 2026 roster index unavailable from Edge reader')
+regions=entries.get('regions',[])
+team_pages=entries['entries']
+if any(x.get('status')!=200 for x in regions):
+ issues.append({'reason':'region_fetch_failed','regions':regions})
+print('2026 official roster links:',len(team_pages),flush=True)
+if len(team_pages)<190:raise RuntimeError('Official list unexpectedly small; refusing overwrite')
+
+result=dict(existing)
+retrieved=0
+skipped=0
+for i,entry in enumerate(team_pages,1):
+ official=entry['officialName']
+ region=entry['region']
+ slug=entry['slug']
+ key=official+('::女子組' if region=='teams_girl2026' else '')
+ if key in result and isinstance(result[key].get('players'),list) and result[key]['players']:
+  if result[key].get('scheduleName') is None:
+   result[key]['scheduleName']=choose_schedule_name(official,region)
+  skipped+=1
   continue
- if len(exact)!=1:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'schedule_alias_needs_review','suggested':[(t,round(v,3)) for v,t in ranked[:3]]})
- p=soup(url)
- if p and not re.search(r'2026', p.title.get_text(' ',strip=True) if p.title else ''):
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'not_2026_team_page'})
-  continue
- if not p:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'team_page_fetch_failed'})
-  continue
- roster=[]
- for table in p.select('table'):
-  trs=table.select('tr')
-  if not trs:continue
-  heads=[x.get_text(' ',strip=True) for x in trs[0].find_all(['th','td'],recursive=False)]
-  titles=[h.replace('／','/').replace(' ','') for h in heads]
-  if not all(any(word in title for title in titles) for word in ('背號','球員','守位','投/打')):continue
-  col={}
-  for i,title in enumerate(titles):
-   for field,word in [('number','背號'),('name','球員'),('position','守位'),('height','身高'),('weight','體重'),('hand','投/打')]:
-    if word in title:col[field]=i
-  if len(col)<6:continue
-  for tr in trs[1:]:
-   cells=[x.get_text(' ',strip=True) for x in tr.find_all(['td','th'],recursive=False)]
-   if len(cells)<=max(col.values()):continue
-   number=cells[col['number']].strip()
-   name=cells[col['name']].strip()
-   if not re.fullmatch(r'\d{1,3}',number) or not name:continue
-   height=re.search(r'\d+',cells[col['height']])
-   weight=re.search(r'\d+',cells[col['weight']])
-   roster.append({'number':number,'name':name,'position':cells[col['position']],'height':int(height.group()) if height else None,'weight':int(weight.group()) if weight else None,'hand':cells[col['hand']]})
-  if roster:break
- if roster:
-  result[key]={'source':url,'officialName':full_name,'scheduleName':exact[0] if len(exact)==1 else None,'players':roster}
+ roster,error=request_reader({'type':'roster','slug':slug})
+ if roster and isinstance(roster.get('players'),list) and roster['players']:
+  players=[]
+  for p in roster['players']:
+   if not re.fullmatch(r'\d{1,3}',str(p.get('number',''))) or not p.get('name'):continue
+   players.append({'number':str(p['number']),'name':str(p['name']),
+                   'position':str(p.get('position','')),
+                   'height':p.get('height'),'weight':p.get('weight'),
+                   'hand':str(p.get('hand',''))})
+  if players:
+   result[key]={'source':roster.get('source') or entry['source'],
+                'officialName':official,
+                'scheduleName':choose_schedule_name(official,region),
+                'players':players}
+   retrieved+=1
+  else:
+   issues.append({'team':official,'region':region,'slug':slug,'reason':'parsed_empty'})
  else:
-  issues.append({'team':full_name,'url':url,'region':region,'reason':'roster_table_not_parsed'})
- if n%20==0:print('Scanned',n,'/',len(links),'matched rosters',len(result),flush=True)
- time.sleep(0.7)
-out=root/'data'/'black-panther-rosters-2026.json'
-out.parent.mkdir(exist_ok=True)
-report={'year':2026,'target_teams':211,'official_team_pages':len(links),'matched_teams':len(result),'players':sum(len(x['players']) for x in result.values()),'regions_failed':region_issues,'fetch_failures':fetch_failures,'issues':issues}
-report_path=root/'data'/'black-panther-rosters-2026-report.json'
-report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
-if not result:
- print('ABORT: no official rosters parsed; failure report written')
- raise RuntimeError('No verified rosters; inspect import diagnostics')
-for key,entry in existing.items():
- if key not in result and entry.get('players'):
-  result[key]=entry
-  issues.append({'team':key,'reason':'retained_previous_verified_roster'})
-out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf8')
-report['matched_teams']=len(result)
-report['players']=sum(len(x['players']) for x in result.values())
-# Validate against the complete official URL inventory, not just a raw count.
-missing=[{'team':name,'region':region,'url':url,'reason':'no_verified_roster'}
- for url,(name,region) in links.items()
- if (name+('::女子組' if region=='teams_girl2026' else '')) not in result]
-report['fetch_failures']=fetch_failures
-report['missing_teams']=missing
-report['missing_count']=len(missing)
-report['expected_official_teams']=len(links)
-report['complete']=(len(links)==211 and not missing and not region_issues and len(result)>=211)
-report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+  issues.append({'team':official,'region':region,'slug':slug,'reason':'page_not_parsed','detail':error})
+ if i%20==0:print('Checked',i,'/',len(team_pages),'new',retrieved,'preserved',skipped,flush=True)
+ time.sleep(0.4)
+
+DATA_FILE.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+mapped={v.get('scheduleName') for v in result.values() if isinstance(v.get('players'),list) and v['players'] and v.get('scheduleName')}
+unmapped=[{'team':key,'reason':'schedule_alias_not_found','source':v.get('source')}
+          for key,v in result.items() if v.get('players') and not v.get('scheduleName')]
+report={'year':2026,'target_teams':211,'official_team_pages':len(team_pages),
+        'index_regions':regions,'newly_fetched_teams':retrieved,'reused_verified_teams':skipped,
+        'stored_rosters':len(result),'mapped_schedule_names':len(mapped),
+        'stored_players':sum(len(x['players']) for x in result.values() if x.get('players')),
+        'incomplete_source_links':len(team_pages)<211,'issues':issues,
+        'unmapped':unmapped,'missing_teams':sorted(set(TEAM_NAMES)-mapped),
+        'complete':len(mapped)>=211 and not issues}
+REPORT_FILE.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print('Saved',len(result),'rosters,',report['stored_players'],'players. Newly fetched:',retrieved,flush=True)
 if not report['complete']:
- print('INCOMPLETE: verified %s/211 teams; retry is required'%len(result),flush=True)
- raise RuntimeError('Incomplete official roster coverage: %s/211'%len(result))
-print('Issues:',len(issues))
-print('Saved',len(result),'teams,',sum(len(x['players']) for x in result.values()),'players')
+ raise RuntimeError('Panther Cup roster import incomplete; inspect audit and failure reports')
