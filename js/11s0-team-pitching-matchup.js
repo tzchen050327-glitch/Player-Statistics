@@ -221,8 +221,7 @@
     .tpm-category button.active{background:var(--panel,#fff);box-shadow:0 1px 6px rgba(0,0,0,.13)}
     .tpm-filter[hidden]{display:none!important}
 
-    body.tpm-team-mode #pitcherBatterPage .data-center-search,
-    body.tpm-team-mode #pitcherBatterPage .data-center-search-note{display:none!important}
+    /* Shared data-center search remains visible in both matchup modes. */
     body.tpm-team-mode #pitcherBatterPage .data-center-toolbar,
     body.tpm-team-mode #pitcherBatterPage .player-tools-page-top,
     body.tpm-team-mode #pitcherBatterPage .player-tools-page-head{
