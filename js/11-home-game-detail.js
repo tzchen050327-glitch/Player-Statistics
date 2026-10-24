@@ -292,6 +292,7 @@
 
     async function refreshHomePostseasonConfirmedStarters(league, date, game, key) {
       if (league !== 'CPBL' || !['E','C'].includes(String(game?.kindCode || '').toUpperCase())) return;
+      if (String(date) === '2026-10-26' && String(game?.kindCode || '').toUpperCase() === 'C' && String(game?.id || '') === '6') return;
       if (!key || homePostseasonStarterLoading.has(key)) return;
       if (homePostseasonStarterCache.has(key)) {
         if (activeHomeGameDetail?.key === key) {
@@ -865,7 +866,20 @@
       return `${Number(record.wins || 0)}勝 ${Number(record.losses || 0)}敗${Number(record.ties || 0) ? ` ${Number(record.ties)}和` : ''}`;
     }
 
+    function homeCpblRevisedG6StarterPending() {
+      // 10/26 is the rescheduled G6 (2026-C-6), not the original G7.
+      // Old matchup/pregame caches belong to G7 and must not supply its pitchers.
+      const active = activeHomeGameDetail;
+      const game = active?.game || {};
+      return active?.league === 'CPBL'
+        && String(active?.date || '') === '2026-10-26'
+        && String(game?.kindCode || '').toUpperCase() === 'C'
+        && String(game?.id || '') === '6'
+        && !['live','final'].includes(String(game?.status || '').toLowerCase());
+    }
+
     function homeMatchCenterStarters(center = null) {
+      if (homeCpblRevisedG6StarterPending()) return { away:null, home:null, source:'rescheduled-pending' };
       const cachedDetail = activeHomeGameDetail
         ? (homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null)
         : null;
