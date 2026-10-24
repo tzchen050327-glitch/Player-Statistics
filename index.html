@@ -1190,12 +1190,13 @@
     rows.forEach(row => { row.hidden = Boolean(needle && !row.textContent.toLocaleLowerCase('zh-Hant').includes(needle)); });
   }
   let searchTimer = 0, searchSeq = 0, suggestions = [];
+  const searchEl = (box, selector) => box?.parentElement?.querySelector('.player-tools-page-head ' + selector);
   function escapeShared(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
   function displayResults(message = '') {
     Object.values(boxes).forEach(box => {
-      const list = box.querySelector('.data-center-results');
+      const list = searchEl(box,'.data-center-results');
       if (!list) return;
       list.hidden = !query.trim();
       if (list.hidden) { list.innerHTML=''; return; }
@@ -1220,7 +1221,7 @@
     if(!item)return;
     query=item.name;
     searchSeq++;suggestions=[];
-    Object.values(boxes).forEach(box=>{const input=box.querySelector('input');if(input)input.value=query});
+    Object.values(boxes).forEach(box=>{const input=searchEl(box,'input');if(input)input.value=query});
     displayResults();
     document.getElementById(triggers.advanced)?.click();
     sync();
@@ -1241,7 +1242,7 @@
         btn.classList.toggle('active',selected);
         btn.setAttribute('aria-selected',String(selected));
       });
-      const input = box.querySelector('input');
+      const input = searchEl(box,'input');
       if (input && input.value !== query) input.value = query;
     });
     filterRanking();
@@ -1267,14 +1268,14 @@
         sync();
         relaySearch();
       }));
-      box.querySelector('.data-center-results').addEventListener('click', event => {
+      searchEl(box,'.data-center-results').addEventListener('click', event => {
         const button=event.target.closest('[data-shared-player]');
         if(button)choosePlayer(suggestions.find(item=>item.acnt===button.dataset.sharedPlayer));
       });
-      box.querySelector('input').addEventListener('input',event => {
+      searchEl(box,'input').addEventListener('input',event => {
         query = event.target.value;
         Object.values(boxes).forEach(other => {
-          const input = other.querySelector('input');
+          const input = searchEl(other,'input');
           if(input !== event.target) input.value = query;
         });
         relaySearch();
