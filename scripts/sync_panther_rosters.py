@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
 
 BASE='https://blackpanthercup.tw'
-REGIONS=['teams_north2026','teams_central2026','teams_south2026','teams_east2026','teams_female2026']
+REGIONS=['teams_north2026','teams_central2026','teams_south2026','teams_east2026','teams_girl2026']
 root=Path(__file__).resolve().parents[1]
 html=(root/'black-panther-2026.html').read_text(encoding='utf8')
 raw=re.search(r'const DATA=(\[.*?\]);const VENUES=',html,re.S)
