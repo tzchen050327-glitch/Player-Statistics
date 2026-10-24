@@ -2,7 +2,7 @@
 """Fetch verified 2026 Panther Cup roster rows from the tournament's region/team pages."""
 import json,re,time,unicodedata
 from pathlib import Path
-from urllib.parse import urljoin,urlparse
+from urllib.parse import urljoin,urlparse,unquote
 import requests
 from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
@@ -40,7 +40,7 @@ for region in REGIONS:
   region_issues.append({'region':region,'reason':'region_page_fetch_failed'})
   continue
  for a in p.select('a[href]'):
-  href=urljoin(BASE,a['href']);path=urlparse(href).path
+  href=urljoin(BASE,a['href']);path=unquote(urlparse(href).path)
   if not path.startswith('/2026') or '/teams_' in path: continue
   name=a.get_text(' ',strip=True)
   if name and len(name)>=3:links[href]=(name,region)
