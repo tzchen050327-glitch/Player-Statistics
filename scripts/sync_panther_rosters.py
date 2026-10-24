@@ -58,12 +58,19 @@ def norm(s):
  s=re.sub(r'^(?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|苗栗|彰化|雲林|嘉義|屏東|宜蘭|花蓮|台東|南投|澎湖|金門|連江)(?:市|縣)?','',s)
  return s
 
+ALIAS_FILE=ROOT/'data/black-panther-aliases-2026.json'
+try:
+ MANUAL_ALIASES=json.loads(ALIAS_FILE.read_text(encoding='utf-8'))
+except (OSError,ValueError):
+ MANUAL_ALIASES={}
 existing_alias={}
 for key,value in existing.items():
  if value.get('scheduleName') and value.get('players'):
   existing_alias[norm(value.get('officialName') or key.split('::')[0])]=value['scheduleName']
 
 def choose_schedule_name(official,region):
+ manual=MANUAL_ALIASES.get(official+'::'+region) or MANUAL_ALIASES.get(official)
+ if manual in TEAM_NAMES:return manual
  direct=existing_alias.get(norm(official))
  if direct in TEAM_NAMES:return direct
  name=norm(official)
