@@ -1,0 +1,57 @@
+{
+  "year": 2026,
+  "note": "只保存有公開可靠來源且人工交叉確認的賽事資料；非官方逐打席或逐球紀錄。",
+  "games": {
+    "A1": {
+      "date": "2026/10/25",
+      "time": "14:30",
+      "home": "平鎮高中",
+      "away": "龍津高中",
+      "homeScore": 27,
+      "awayScore": 0,
+      "innings": 3,
+      "status": "final",
+      "sourceType": "media_verified",
+      "sources": [
+        "https://www.cna.com.tw/news/aspt/202610250132.aspx",
+        "https://udn.com/news/story/7001/9836323"
+      ],
+      "highlights": [
+        {
+          "team": "平鎮高中",
+          "kind": "home_run",
+          "player": "蘇子進",
+          "description": "首打席全壘打",
+          "source": "https://www.juksy.com/article/153564"
+        },
+        {
+          "team": "平鎮高中",
+          "kind": "home_run",
+          "player": "劉桓宇",
+          "description": "第二局全壘打",
+          "source": "https://www.juksy.com/article/153564"
+        },
+        {
+          "team": "龍津高中",
+          "kind": "strikeout",
+          "player": "簡亦翔",
+          "description": "登板後奪三振",
+          "source": "https://udn.com/news/story/7001/9836536"
+        },
+        {
+          "team": "龍津高中",
+          "kind": "defense",
+          "player": "陳廷宇",
+          "description": "完成接殺",
+          "source": "https://udn.com/news/story/7001/9836536"
+        },
+        {
+          "team": "龍津高中",
+          "kind": "stolen_base",
+          "description": "完成盜壘成功",
+          "source": "https://www.cna.com.tw/news/aspt/202610250132.aspx"
+        }
+      ]
+    }
+  }
+}
