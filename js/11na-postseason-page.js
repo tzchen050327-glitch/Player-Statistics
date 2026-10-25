@@ -87,8 +87,28 @@
       return false;
     }
 
+    function postseasonHasCompleteBracketSeeds() {
+      const cache = standingsOfficialCache;
+      if (!cache) return false;
+      if (leagueHubLeague === 'cpbl') {
+        return postseasonSectionRows(cache?.cpbl?.first, 1).length >= 1
+          && postseasonSectionRows(cache?.cpbl?.second, 1).length >= 1
+          && postseasonSectionRows(cache?.cpbl?.annual, 3).length >= 3;
+      }
+      if (leagueHubLeague === 'npb') {
+        return postseasonSectionRows(cache?.npb?.central, 3).length >= 3
+          && postseasonSectionRows(cache?.npb?.pacific, 3).length >= 3;
+      }
+      if (leagueHubLeague === 'kbo') {
+        return postseasonSectionRows(cache?.kbo?.regular, 5).length >= 5;
+      }
+      return leagueHubLeague === 'mlb';
+    }
+
     function ensurePostseasonData() {
-      if (postseasonHasSelectedLeagueData()) return Promise.resolve(standingsOfficialCache);
+      const bracketNeedsCompleteSeeds = leagueHubLeague !== 'mlb' && postseasonSeasonActive();
+      const ready = bracketNeedsCompleteSeeds ? postseasonHasCompleteBracketSeeds() : postseasonHasSelectedLeagueData();
+      if (ready) return Promise.resolve(standingsOfficialCache);
       if (postseasonLoadPromise) return postseasonLoadPromise;
 
       if (standingsOfficialLoading) {
@@ -116,7 +136,7 @@
 
       // Reuse the standings payload first. Only fetch once when the selected
       // league is missing from memory. No independent postseason polling.
-      const force = Boolean(standingsOfficialCache && !postseasonHasSelectedLeagueData());
+      const force = Boolean(standingsOfficialCache && !ready);
       postseasonLoadPromise = Promise.resolve(loadOfficialStandings({ force }))
         .catch(() => null)
         .finally(() => {
@@ -255,6 +275,10 @@
       if (/西武|ライオンズ|埼玉/.test(name)) return 'lions';
       return name;
     }
+    function postseasonNpbStageKey(value) {
+      const stage = String(value || '').trim().toLowerCase();
+      return stage === 'nippon_series' ? 'japan_series' : stage;
+    }
     function postseasonNpbWins(team, stage, rival) {
       const key = postseasonNpbTeamKey(team);
       const opponent = rival ? postseasonNpbTeamKey(rival) : null;
@@ -262,7 +286,7 @@
       const seen = new Set();
       let wins = 0;
       for (const g of postseasonNpbGames) {
-        if (String(g.competition) !== stage || String(g.status).toLowerCase() !== 'final') continue;
+        if (postseasonNpbStageKey(g.competition) !== postseasonNpbStageKey(stage) || String(g.status).toLowerCase() !== 'final') continue;
         const away = postseasonNpbTeamKey(g.away), home = postseasonNpbTeamKey(g.home);
         if (!away || !home || away === home) continue;
         if (opponent && ![away,home].includes(opponent)) continue;
@@ -872,6 +896,19 @@
           '<div class="postseason-intro"><div><span>POSTSEASON</span><strong>美國大聯盟｜季後賽對戰圖</strong></div><p>實際系列賽結果 · 進行中自動更新</p></div>' +
           postseasonMlbContent() + '</div>';
         if (!postseasonMlbBracketPromise) void loadPostseasonMlbBracket();
+        return;
+      }
+
+      if (active && leagueHubLeague !== 'mlb' && !postseasonHasCompleteBracketSeeds()) {
+        els.postseasonPageContent.innerHTML = `
+          <div class="postseason-overview">
+            <div class="postseason-intro">
+              <div><span>POSTSEASON</span><strong>${postseasonEscape(postseasonLeagueLabel())}｜季後賽對戰表</strong></div>
+              <p>已進入季後賽階段</p>
+            </div>
+            <div class="postseason-loading">正在同步季後賽種子與系列賽資料…</div>
+          </div>`;
+        if (!postseasonLoadPromise) void ensurePostseasonData();
         return;
       }
 
