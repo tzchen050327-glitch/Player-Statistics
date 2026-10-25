@@ -485,20 +485,34 @@
         // 2026 Taiwan Series: the second typhoon postponement moved G5 to Oct 25
         // and G6 to Oct 26. Normalize older upstream snapshots by game identity.
         if (league === 'CPBL' && ['2026-10-24','2026-10-25','2026-10-26'].includes(date)) {
+          const seriesGames = games.filter(game => String(game?.kindCode || '').toUpperCase() === 'C');
+          const hasSeriesId = id => seriesGames.some(game => String(game?.id || '') === String(id));
           games = games.map(game => {
             if (String(game?.kindCode || '').toUpperCase() !== 'C') return game;
             const id = String(game?.id || '');
             if (date === '2026-10-24' && id === '5') {
               return { ...game, status:'cancelled', postponementReason:'颱風延賽', awayScore:null, homeScore:null, inningLabel:'' };
             }
-            if (date === '2026-10-25' && (id === '5' || id === '6')) {
-              return { ...game, id:'5', gameId:'2026-C-5', date, time:'17:05', status:id === '6' ? 'scheduled' : game.status, postponementReason:'' };
+            if (date === '2026-10-25') {
+              if (id === '5') {
+                return { ...game, date, time:'17:05', postponementReason:'' };
+              }
+              if (id === '6') {
+                if (hasSeriesId('5')) return null;
+                return { ...game, id:'5', gameId:'2026-C-5', date, time:'17:05', postponementReason:'' };
+              }
             }
-            if (date === '2026-10-26' && (id === '6' || id === '7')) {
-              return { ...game, id:'6', gameId:'2026-C-6', date, time:'15:05', status:id === '7' ? 'scheduled' : game.status, postponementReason:'' };
+            if (date === '2026-10-26') {
+              if (id === '6') {
+                return { ...game, date, time:'15:05', postponementReason:'' };
+              }
+              if (id === '7') {
+                if (hasSeriesId('6')) return null;
+                return { ...game, id:'6', gameId:'2026-C-6', date, time:'15:05', postponementReason:'' };
+              }
             }
             return game;
-          });
+          }).filter(Boolean);
           games = games.filter((game, index, items) => items.findIndex(other =>
             String(other?.gameId || '') === String(game?.gameId || '') &&
             String(other?.kindCode || '') === String(game?.kindCode || '')) === index);
