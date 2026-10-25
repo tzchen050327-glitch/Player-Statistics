@@ -404,7 +404,19 @@
           }
         }
 
-        standingsOfficialCache = data;
+        const previous = standingsOfficialCache && typeof standingsOfficialCache === 'object'
+          ? standingsOfficialCache
+          : {};
+        const mergedYears = { ...(previous?.years || {}), ...(data?.years || {}) };
+        const responseYear = Number(data?.year);
+        if (Number.isInteger(responseYear) && responseYear >= 1900) mergedYears[selectedKey] = responseYear;
+        standingsOfficialCache = {
+          ...previous,
+          ...data,
+          years: mergedYears,
+          meta: { ...(previous?.meta || {}), ...(data?.meta || {}) },
+          fetchedAt: data?.fetchedAt || previous?.fetchedAt || null
+        };
         standingsOfficialCacheAt = Date.now();
         standingsOfficialError = '';
         return data;
