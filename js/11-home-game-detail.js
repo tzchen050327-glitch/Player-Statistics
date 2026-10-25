@@ -1232,7 +1232,11 @@
       const awayBoxStart = officialBoxBatters.findIndex(row => sameBoxPlayer(row, firstStarter('away')));
       const homeBoxStart = officialBoxBatters.findIndex(row => sameBoxPlayer(row, firstStarter('home')));
       const officialBoxBySide = { away:[], home:[] };
-      if (awayBoxStart >= 0 && homeBoxStart > awayBoxStart) {
+      const sideTaggedBox = officialBoxBatters.some(row => row?.boxSide === 'away' || row?.boxSide === 'home');
+      if (sideTaggedBox) {
+        officialBoxBySide.away = officialBoxBatters.filter(row => row?.boxSide === 'away');
+        officialBoxBySide.home = officialBoxBatters.filter(row => row?.boxSide === 'home');
+      } else if (awayBoxStart >= 0 && homeBoxStart > awayBoxStart) {
         officialBoxBySide.away = officialBoxBatters.slice(awayBoxStart,homeBoxStart);
         officialBoxBySide.home = officialBoxBatters.slice(homeBoxStart);
       }
@@ -1291,11 +1295,17 @@
           if (firstNine.length === 9) break;
         }
 
-        const starterLineup = lockedStarters.length === 9
-          ? lockedStarters
-          : firstNine.length === 9
-            ? firstNine
-            : lineup.filter(player => player?.isSubstitute !== true);
+        const officialBoxStarters = officialBoxBySide[side]
+          .filter(row => row?.boxStarter === true && Number(row?.boxOrder) >= 1 && Number(row?.boxOrder) <= 9)
+          .map(row => ({ ...row, order:Number(row.boxOrder), isStarter:true }));
+        const hasNineBoxStarters = new Set(officialBoxStarters.map(row => row.order)).size === 9;
+        const starterLineup = hasNineBoxStarters
+          ? officialBoxStarters
+          : lockedStarters.length === 9
+            ? lockedStarters
+            : firstNine.length === 9
+              ? firstNine
+              : lineup.filter(player => player?.isSubstitute !== true);
 
         const orderByName = new Map();
         const starterByOrder = new Map();
@@ -1330,11 +1340,12 @@
         // The official box batting table lists every replacement directly
         // beneath the starter in that batting slot. A "latest lineup" lists
         // only the final occupant and loses intermediate pitchers/pinch hitters.
-        if (lockedStarters.length === 9 && officialBoxBySide[side].length >= 9) {
+        if (officialBoxBySide[side].length >= 9) {
           let slot = 0;
           for (const player of officialBoxBySide[side]) {
             const key = normalizeName(player?.name || player?.fullName);
             if (!key) continue;
+            if (Number(player?.boxOrder) >= 1 && Number(player?.boxOrder) <= 9) slot = Number(player.boxOrder);
             const starter = starterLineup.find(row => sameBoxPlayer(row,player));
             if (starter) {
               slot = Number(starter?.order) || starterLineup.indexOf(starter) + 1;
