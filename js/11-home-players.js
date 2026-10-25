@@ -1,3 +1,41 @@
+    // Display-only team localization. Keep original provider names for lookups and sync.
+    const HOME_ASIA_TEAM_TRANSLATIONS = new Map([
+      ['fukuoka softbank hawks','福岡軟銀鷹'],['softbank hawks','福岡軟銀鷹'],['福岡ソフトバンクホークス','福岡軟銀鷹'],
+      ['yokohama dena baystars','橫濱DeNA灣星'],['yokohama dena','橫濱DeNA灣星'],['横浜denaベイスターズ','橫濱DeNA灣星'],
+      ['saitama seibu lions','埼玉西武獅'],['seibu lions','埼玉西武獅'],['埼玉西武ライオンズ','埼玉西武獅'],
+      ['hanshin tigers','阪神虎'],['阪神タイガース','阪神虎'],
+      ['yomiuri giants','讀賣巨人'],['読売ジャイアンツ','讀賣巨人'],
+      ['chunichi dragons','中日龍'],['中日ドラゴンズ','中日龍'],
+      ['hiroshima toyo carp','廣島東洋鯉魚'],['広島東洋カープ','廣島東洋鯉魚'],
+      ['tokyo yakult swallows','東京養樂多燕子'],['東京ヤクルトスワローズ','東京養樂多燕子'],
+      ['hokkaido nippon-ham fighters','北海道日本火腿鬥士'],['hokkaido nippon ham fighters','北海道日本火腿鬥士'],['北海道日本ハムファイターズ','北海道日本火腿鬥士'],
+      ['orix buffaloes','歐力士猛牛'],['オリックス・バファローズ','歐力士猛牛'],
+      ['chiba lotte marines','千葉羅德海洋'],['千葉ロッテマリーンズ','千葉羅德海洋'],
+      ['tohoku rakuten golden eagles','東北樂天金鷲'],['東北楽天ゴールデンイーグルス','東北樂天金鷲'],
+      ['lg twins','LG雙子'],['lg 트윈스','LG雙子'],['엘지 트윈스','LG雙子'],
+      ['hanwha eagles','韓華鷹'],['한화 이글스','韓華鷹'],
+      ['samsung lions','三星獅'],['삼성 라이온즈','三星獅'],
+      ['ssg landers','SSG登陸者'],['ssg 랜더스','SSG登陸者'],
+      ['kt wiz','KT巫師'],['kt 위즈','KT巫師'],
+      ['lotte giants','樂天巨人'],['롯데 자이언츠','樂天巨人'],
+      ['nc dinos','NC恐龍'],['nc 다이노스','NC恐龍'],
+      ['kia tigers','KIA虎'],['kia 타이거즈','KIA虎'],
+      ['doosan bears','斗山熊'],['두산 베어스','斗山熊'],
+      ['kiwoom heroes','培證英雄'],['키움 히어로즈','培證英雄']
+    ]);
+    function homeLocalizedAsiaTeamName(team) {
+      const raw = String(team || '').trim();
+      return HOME_ASIA_TEAM_TRANSLATIONS.get(raw.toLowerCase().replace(/\\s+/g, ' ')) || raw;
+    }
+    function homeLocalizedAsiaMeta(meta, player) {
+      const provider = String(player?.externalProvider || '').toUpperCase();
+      if (!['NPB','KBO'].includes(provider)) return meta;
+      const rawTeam = String(player?.externalTeam || '').trim();
+      const translated = homeLocalizedAsiaTeamName(rawTeam);
+      if (!rawTeam || translated === rawTeam) return meta;
+      return String(meta || '').replace(rawTeam, translated);
+    }
+
     function renderHomePlayerFilters() {
       const international = homeRootSection === 'international';
       const special = homeRootSection === 'special';
@@ -104,7 +142,7 @@
       }
 
       els.recent.innerHTML = list.length ? list.map(p => {
-        const meta = playerSourceMeta(p);
+        const meta = homeLocalizedAsiaMeta(playerSourceMeta(p), p);
         return `
           <button class="player-btn home-player-card ${p.id === selectedPlayerId ? 'active' : ''}" data-player-id="${p.id}">
             <span class="home-player-number">#${escapeHtml(p.number)}</span>
@@ -150,7 +188,7 @@
               ? normalizeTeamName(p.cpblTeam || '')
               : (isUsPlayer(p)
                   ? mlbTeamZh(String(p.externalCurrentOrganization || p.externalCurrentTeam || p.externalTeam || '').trim())
-                  : String(p.externalTeam || '').trim()));
+                  : homeLocalizedAsiaTeamName(p.externalTeam || '')));
         const crossRole = (p.externalTwoWay || p.hasCrossRoleStats || p.cpblDualRole) ? '投打皆有紀錄' : '';
         const year = scope === 'cpbl' ? '' : (Number(p.externalYear) || '');
         const cpblLevel = scope === 'cpbl'
