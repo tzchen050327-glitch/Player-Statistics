@@ -4,6 +4,21 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
     const CUSTOM_NOTIFICATION_VAPID_PUBLIC_KEY = 'BFJ_q3JS2DSEFzm2JgBwtVPxRhsCzoYtJxGNxS9PKvZmhrNBA9kfR0Z_prWfLpoUb438dslhvA33KVf1OjcWDfw';
     let customNotificationFlash = null;
     let customNotificationLastAutoSyncAt = 0;
+    const CUSTOM_NOTIFICATION_OPT_OUT_KEY = 'ballscope-custom-push-opted-out-v1';
+    const CUSTOM_NOTIFICATION_HEARTBEAT_KEY = 'ballscope-custom-push-heartbeat-v1';
+    let customNotificationRepairInFlight = null;
+
+    function customNotificationHasIntent() {
+      return localStorage.getItem('ballscope-umpire-report-push-v1') === '1'
+        || Object.keys(customNotificationReadState()).length > 0;
+    }
+
+    function customNotificationCanAutoRepair() {
+      return customNotificationPushSupported()
+        && Notification.permission === 'granted'
+        && localStorage.getItem(CUSTOM_NOTIFICATION_OPT_OUT_KEY) !== '1'
+        && customNotificationHasIntent();
+    }
 
     function customNotificationReadState() {
       try {
@@ -165,7 +180,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
 
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
-      if (!subscription && requestPermission) {
+      if (!subscription && (requestPermission || customNotificationCanAutoRepair())) {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly:true,
           applicationServerKey:customNotificationApplicationServerKey(CUSTOM_NOTIFICATION_VAPID_PUBLIC_KEY)
@@ -182,7 +197,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
       const subscription = await customNotificationSubscription({ requestPermission:ensure });
       if (!subscription) return { skipped:true };
       const json = subscription.toJSON();
-      return await customNotificationPost({
+      const result = await customNotificationPost({
         action:'sync',
         deviceToken:customNotificationDeviceToken(),
         subscription:json,
@@ -190,9 +205,38 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
         umpireReportEnabled:localStorage.getItem('ballscope-umpire-report-push-v1')==='1',
         watches:customNotificationWatchPayload()
       });
+      if (ensure) localStorage.removeItem(CUSTOM_NOTIFICATION_OPT_OUT_KEY);
+      if (result?.ok) localStorage.setItem(CUSTOM_NOTIFICATION_HEARTBEAT_KEY, String(Date.now()));
+      return result;
     }
 
+    async function customNotificationAutoRepair() {
+      if (!customNotificationCanAutoRepair()) return { skipped:true };
+      if (Object.keys(customNotificationReadState()).length && !customNotificationPlayers().length) {
+        return { skipped:true, reason:'roster-not-loaded' };
+      }
+      if (customNotificationRepairInFlight) return customNotificationRepairInFlight;
+      customNotificationRepairInFlight = (async () => {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        const last = Number(localStorage.getItem(CUSTOM_NOTIFICATION_HEARTBEAT_KEY)) || 0;
+        if (subscription && Date.now() - last < 6 * 60 * 60 * 1000) return { skipped:true };
+        return customNotificationSyncPush();
+      })().catch(error => {
+        console.warn('push subscription auto-repair failed', error);
+        return { ok:false, error:String(error?.message || error) };
+      }).finally(() => { customNotificationRepairInFlight = null; });
+      return customNotificationRepairInFlight;
+    }
+
+    window.addEventListener('focus', () => { void customNotificationAutoRepair(); });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) void customNotificationAutoRepair();
+    });
+
     async function customNotificationDisablePush() {
+      localStorage.setItem(CUSTOM_NOTIFICATION_OPT_OUT_KEY, '1');
+      localStorage.removeItem(CUSTOM_NOTIFICATION_HEARTBEAT_KEY);
       if (!customNotificationPushSupported()) return;
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -442,7 +486,7 @@ const CUSTOM_NOTIFICATION_STORAGE_KEY = 'custom-player-notification-watch-v1';
 
       bindCustomNotificationEvents();
 
-      if (permission === 'granted' && Date.now() - customNotificationLastAutoSyncAt > 30000) {
+      if (permission === 'granted' && customNotificationCanAutoRepair() && Date.now() - customNotificationLastAutoSyncAt > 30000) {
         customNotificationLastAutoSyncAt = Date.now();
         void customNotificationSyncPush().catch(error => {
           console.warn('custom notification auto sync failed', error);

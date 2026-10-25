@@ -606,6 +606,8 @@
       }
 
       try { if (db) localStorage.setItem('ballscope-last-ready-version-v1', APP_VERSION); } catch {}
+      // Repair a missing push subscription after the player roster has loaded.
+      if (typeof customNotificationAutoRepair === 'function') void customNotificationAutoRepair();
 
       // Use the most recently cached CPBL level immediately, then refresh it in background.
       void refreshCurrentRosterStatus()
