@@ -230,7 +230,7 @@
   function acceptDaySignal(signal) {
     if (!dayWatch || !signal || String(signal.game_date || '') !== dayWatch || watch) return;
     const kindCode = String(signal.kind_code || 'A').toUpperCase();
-    if (kindCode !== 'A') return;
+    if (!['A','C','E'].includes(kindCode)) return;
     const gameId = String(signal.game_id || '');
     if (!gameId) return;
     const revisionKey = `${kindCode}|${gameId}`;

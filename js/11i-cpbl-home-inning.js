@@ -8,8 +8,8 @@
     try {
       const query = new URLSearchParams({
         game_date:`eq.${date}`,
-        kind_code:'eq.A',
-        select:'game_id,status,away_score,home_score,inning_label,published_revision'
+        kind_code:'in.(A,C,E)',
+        select:'game_id,kind_code,status,away_score,home_score,inning_label,published_revision'
       });
       const response = await fetch(`${SUPABASE_URL}/rest/v1/${SIGNAL_TABLE}?${query}`, {
         headers:{ apikey:CPBL_ANON_KEY, authorization:`Bearer ${CPBL_ANON_KEY}` },
@@ -17,7 +17,7 @@
       });
       if (!response.ok) return new Map();
       const rows = await response.json().catch(() => []);
-      return new Map((Array.isArray(rows) ? rows : []).map(row => [String(row?.game_id || ''), row]));
+      return new Map((Array.isArray(rows) ? rows : []).map(row => [`${String(row?.kind_code || 'A').toUpperCase()}|${String(row?.game_id || '')}`, row]));
     } catch {
       return new Map();
     }
@@ -30,9 +30,20 @@
     const labels = await liveLabels(date);
     if (!labels.size) return games;
     return games.map(game => {
-      const row = labels.get(String(game?.id || ''));
+      const kind = String(game?.kindCode || 'A').toUpperCase();
+      const id = String(game?.id || '');
+      // Postponed Taiwan Series: schedule can still expose the displaced G6/G7 slot.
+      // Match the actual played identity before applying the authoritative signal.
+      const alias = kind === 'C' && date === '2026-10-25' && id === '6' ? '5'
+        : kind === 'C' && date === '2026-10-26' && id === '7' ? '6' : id;
+      const row = labels.get(`${kind}|${alias}`);
       if (!row) return game;
       const next = { ...game };
+      if (alias !== id && !games.some(other =>
+        String(other?.kindCode || 'A').toUpperCase() === kind && String(other?.id || '') === alias)) {
+        next.id = alias;
+        next.gameId = `${date.slice(0,4)}-${kind}-${alias}`;
+      }
       if (row.status) next.status = String(row.status).toLowerCase();
       if (String(row.inning_label || '').trim()) next.inningLabel = String(row.inning_label).trim();
       if (String(row.away_score ?? '').trim() !== '') next.awayScore = Number(row.away_score);
@@ -49,7 +60,8 @@
     if (!date || !gameId) return;
     const cached = homeDailyGamesCache.get(`CPBL|${date}`);
     const games = Array.isArray(cached?.games) ? cached.games : [];
-    const game = games.find(item => String(item?.id || '') === gameId);
+    const kindCode = String(row?.kind_code || detail?.kindCode || 'A').toUpperCase();
+    const game = games.find(item => String(item?.id || '') === gameId && String(item?.kindCode || 'A').toUpperCase() === kindCode);
     if (!game) return;
     const label = String(row?.inning_label || detail?.game?.inningLabel || '').trim();
     if (label) game.inningLabel = label;
