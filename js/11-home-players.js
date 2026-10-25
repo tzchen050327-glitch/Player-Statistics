@@ -25,15 +25,16 @@
     ]);
     function homeLocalizedAsiaTeamName(team) {
       const raw = String(team || '').trim();
-      return HOME_ASIA_TEAM_TRANSLATIONS.get(raw.toLowerCase().replace(/\\s+/g, ' ')) || raw;
+      return HOME_ASIA_TEAM_TRANSLATIONS.get(raw.toLowerCase().replace(/\s+/g, ' ')) || raw;
     }
     function homeLocalizedAsiaMeta(meta, player) {
       const provider = String(player?.externalProvider || '').toUpperCase();
       if (!['NPB','KBO'].includes(provider)) return meta;
-      const rawTeam = String(player?.externalTeam || '').trim();
-      const translated = homeLocalizedAsiaTeamName(rawTeam);
-      if (!rawTeam || translated === rawTeam) return meta;
-      return String(meta || '').replace(rawTeam, translated);
+      return String(meta || '').split('|').map(part => {
+        const trimmed = part.trim();
+        const translated = homeLocalizedAsiaTeamName(trimmed);
+        return translated === trimmed ? part : part.replace(trimmed, translated);
+      }).join('|');
     }
 
     function renderHomePlayerFilters() {
