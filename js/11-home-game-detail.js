@@ -1635,9 +1635,28 @@
 
     function homePregameLineupEntries(detail, side) {
       const preserved = detail?.startingLineup?.[side];
-      const raw = Array.isArray(preserved) && preserved.length === 9
-        ? preserved
-        : (Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : []);
+      const box = Array.isArray(detail?.gameBatters) ? detail.gameBatters : [];
+      const boxStarters = box.filter(row => row?.boxSide === side && row?.boxStarter === true
+        && Number(row?.boxOrder) >= 1 && Number(row?.boxOrder) <= 9);
+      const officialBoxReady = new Set(boxStarters.map(row => Number(row.boxOrder))).size === 9;
+      const current = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
+      const numberFor = row => {
+        const id = String(row?.id || row?.acnt || '');
+        const name = String(row?.name || '').replace(/\\s+/g,'');
+        const all = [...current,...(Array.isArray(preserved) ? preserved : [])];
+        return all.find(p => (id && String(p?.id || p?.acnt || '') === id)
+          || String(p?.name || p?.fullName || '').replace(/\\s+/g,'') === name);
+      };
+      const raw = officialBoxReady
+        ? boxStarters.map(row => ({
+            ...row,
+            order:Number(row.boxOrder),
+            number:numberFor(row)?.number || numberFor(row)?.uniformNumber || '',
+            position:row.position || numberFor(row)?.position || ''
+          }))
+        : Array.isArray(preserved) && preserved.length === 9
+          ? preserved
+          : current;
       return raw.map((player, index) => ({
         order:Number(player?.order || index + 1),
         number:String(player?.number || player?.uniformNumber || player?.jersey || '').trim(),
