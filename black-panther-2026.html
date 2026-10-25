@@ -141,8 +141,9 @@ function rebasDateForView(){
 function loadRebasScheduleRelevant(){
  void loadRebasDay(rebasDateForView());
  if(selectedTeam){
-  const dates=[...new Set(all.filter(x=>x.home===selectedTeam.name||x.away===selectedTeam.name).map(x=>scoreDate(x.date)))];
-  for(const date of dates.slice(0,5))void loadRebasDay(date);
+  const today=taiwanToday();
+  const dates=[...new Set(all.filter(x=>(x.home===selectedTeam.name||x.away===selectedTeam.name)&&scoreDate(x.date)<=today).map(x=>scoreDate(x.date)))];
+  for(const date of dates.slice(-4))void loadRebasDay(date);
  }
 }
 function rebasFeedScore(x){
