@@ -28,9 +28,10 @@
       return HOME_ASIA_TEAM_TRANSLATIONS.get(raw.toLowerCase().replace(/\s+/g, ' ')) || raw;
     }
     function homeLocalizedAsiaMeta(meta, player) {
-      const provider = String(player?.externalProvider || '').toUpperCase();
-      if (!['NPB','KBO'].includes(provider)) return meta;
-      return String(meta || '').split('|').map(part => {
+      const text = String(meta || '');
+      const provider = String(player?.externalProvider || player?.externalLeague || '').toUpperCase();
+      if (!['NPB','KBO'].includes(provider) && !/(?:^|\\|)\\s*(?:NPB|KBO)\\s*(?:\\||$)/i.test(text)) return meta;
+      return text.split('|').map(part => {
         const trimmed = part.trim();
         const translated = homeLocalizedAsiaTeamName(trimmed);
         return translated === trimmed ? part : part.replace(trimmed, translated);
