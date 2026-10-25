@@ -1,5 +1,5 @@
-const CACHE_NAME = 'baseball-player-card-pwa-c217-auto';
-const CACHE_VERSION = 'c2.17';
+const CACHE_NAME = 'baseball-player-card-pwa-c218-auto';
+const CACHE_VERSION = 'c2.18';
 // Runtime and app-shell versions are kept in lockstep by auto-version-bump.yml.
 const MODULE_ORDER_URL = './js/module-order.txt';
 const VERSIONED_MODULE_ORDER_URL = `${MODULE_ORDER_URL}?v=${encodeURIComponent(CACHE_VERSION)}`;
@@ -58,33 +58,33 @@ const APP_SHELL = [
   './index.html',
   './diagnostics.html',
   './black-panther-2026.html',
-  './styles.css?v=c2.17',
-  './dark-theme-overrides.css?v=c2.17',
-  './diagnostic-runtime.js?v=c2.17',
-  './live-static-update.js?v=c2.17',
-  './cpbl-realtime.js?v=c2.17',
-  './npb-realtime.js?v=c2.17',
-  './postseason-history.css?v=c2.17',
-  './js/module-loader.js?v=c2.17',
-  './js/music-center.js?v=c2.17',
-  './data/music-roster-2026.json?v=c2.17',
+  './styles.css?v=c2.18',
+  './dark-theme-overrides.css?v=c2.18',
+  './diagnostic-runtime.js?v=c2.18',
+  './live-static-update.js?v=c2.18',
+  './cpbl-realtime.js?v=c2.18',
+  './npb-realtime.js?v=c2.18',
+  './postseason-history.css?v=c2.18',
+  './js/module-loader.js?v=c2.18',
+  './js/music-center.js?v=c2.18',
+  './data/music-roster-2026.json?v=c2.18',
   MODULE_ORDER_URL,
   VERSIONED_MODULE_ORDER_URL,
-  './postseason-history.js?v=c2.17',
-  './cpbl-cache-router.js?v=c2.17',
-  './game-detail-enhancement.css?v=c2.17',
-  './report-layout.css?v=c2.17',
-  './landscape-state.css?v=c2.17',
-  './game-detail-enhancement.js?v=c2.17',
-  './umpire-live.js?v=c2.17',
-  './umpire-live.css?v=c2.17',
-  './report-layout.js?v=c2.17',
-  './manifest.webmanifest?v=c2.17',
-  './icon-192.png?v=c2.17',
-  './icon-512.png?v=c2.17',
-  './favicon-32.png?v=c2.17',
-  './favicon-16.png?v=c2.17',
-  './notification-badge.png?v=c2.17'
+  './postseason-history.js?v=c2.18',
+  './cpbl-cache-router.js?v=c2.18',
+  './game-detail-enhancement.css?v=c2.18',
+  './report-layout.css?v=c2.18',
+  './landscape-state.css?v=c2.18',
+  './game-detail-enhancement.js?v=c2.18',
+  './umpire-live.js?v=c2.18',
+  './umpire-live.css?v=c2.18',
+  './report-layout.js?v=c2.18',
+  './manifest.webmanifest?v=c2.18',
+  './icon-192.png?v=c2.18',
+  './icon-512.png?v=c2.18',
+  './favicon-32.png?v=c2.18',
+  './favicon-16.png?v=c2.18',
+  './notification-badge.png?v=c2.18'
 ];
 
 async function getModuleShell() {
