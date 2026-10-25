@@ -64,7 +64,7 @@ function officialScoreFor(x){
  if(!dayScore?.games)return null;
  return dayScore.games.find(g=>g.time===x.time&&normalized(g.home)===normalized(x.home)&&normalized(g.away)===normalized(x.away))||null;
 }
-function scoreResult(x){const officialBox=verifiedRebas(x);if(officialBox)return officialBox;
+function scoreResult(x){const officialBox=verifiedRebas(x);if(officialBox)return officialBox;const liveFeed=rebasFeedScore(x);if(liveFeed)return liveFeed;
  const confirmed=confirmedGameResults.get(x.id);
  if(confirmed&&scoreDate(confirmed.date)===scoreDate(x.date)&&normalized(confirmed.home)===normalized(x.home)&&normalized(confirmed.away)===normalized(x.away))return confirmed;
  const s=officialScoreFor(x);
@@ -73,8 +73,8 @@ function scoreResult(x){const officialBox=verifiedRebas(x);if(officialBox)return
 function scoreShort(x){const s=scoreResult(x);return s?s.homeScore+' : '+s.awayScore:'VS';}
 function scoreFull(x){
  const s=scoreResult(x);
- if(s?.status==='final')return '<span>'+s.homeScore+'：'+s.awayScore+'</span><span class="muted" style="font-size:11px">終場'+(s.innings?' · '+s.innings+'局提前結束':'')+' · '+(verifiedRebas(x)?'電子紀錄單':'媒體交叉確認')+'</span>';
- if(s)return '<span>'+s.homeScore+'：'+s.awayScore+'</span><span class="muted" style="font-size:11px">官網已登載，非即時保證</span>';
+ if(s?.status==='final')return '<span>'+s.homeScore+'：'+s.awayScore+'</span><span class="muted" style="font-size:11px">終場'+(s.innings?' · '+s.innings+'局提前結束':'')+' · '+(verifiedRebas(x)||rebasFeedScore(x)?'電子紀錄單':'媒體交叉確認')+'</span>';
+ if(s)return '<span>'+s.homeScore+'：'+s.awayScore+'</span><span class="muted" style="font-size:11px">'+(s.sourceType==='rebas'&&s.status==='live'?'數據手冊進行中（可能延遲）':'官網已登載，非即時保證')+'</span>';
  return '<span>—</span><span class="muted" style="font-size:11px">官網尚無可核實比分</span>';
 }
 function scoreHighlights(x){
@@ -107,6 +107,56 @@ async function loadOfficialScore(date,force=false){
 const REBAS_ORIGIN='https://blackpanthercup.rebas.tw';
 const REBAS_API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/panther-rebas-stats';
 const rebasGames=new Map(),rebasRecords=new Map(),rebasLoading=new Set(),rebasRetry=new Map(),rebasPlayerUrls=new Map();
+
+const REBAS_SCHEDULE_API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/panther-rebas-games';
+const rebasScheduleResults=new Map(),rebasDayRefreshing=new Set(),rebasDayNextRefresh=new Map();
+function rebasName(s){return normalized(s).replace(/\((?:女|女子|女子組)\)$/,'').replace(/女子組$/,'')}
+function rebasMatchForFeed(d,date){
+ return all.find(x=>scoreDate(x.date)===date&&x.time===d.time&&rebasName(x.home)===rebasName(d.home?.team)&&rebasName(x.away)===rebasName(d.away?.team))||null;
+}
+async function loadRebasDay(date,force=false){
+ if(!/^2026-(?:10-(?:2[5-9]|3[01])|11-(?:0[1-9]|[12][0-9]))$/.test(date)||rebasDayRefreshing.has(date)||(!force&&(rebasDayNextRefresh.get(date)||0)>Date.now()))return;
+ rebasDayRefreshing.add(date);
+ // Retry suppression applies to failures too, avoiding repeated requests on every render.
+ rebasDayNextRefresh.set(date,Date.now()+120000);
+ try{
+  const response=await fetch(REBAS_SCHEDULE_API+'?date='+encodeURIComponent(date),{cache:'no-store'});
+  if(!response.ok)throw Error('schedule not yet accessible');
+  const data=await response.json();
+  if(!data?.available||!Array.isArray(data.games))throw Error('missing games');
+  let changed=false;
+  for(const result of data.games){
+   const x=rebasMatchForFeed(result,date);
+   if(!x||!result?.id||!(/^[a-zA-Z0-9_-]{3,14}$/.test(result.id)))continue;
+   if(rebasGames.get(x.id)!==result.id){rebasGames.set(x.id,result.id);changed=true}
+   if(JSON.stringify(rebasScheduleResults.get(x.id))!==JSON.stringify(result)){rebasScheduleResults.set(x.id,result);changed=true}
+  }
+  if(changed){render()}
+ }catch(_err){rebasDayNextRefresh.set(date,Date.now()+300000)}finally{rebasDayRefreshing.delete(date)}
+}
+function rebasDateForView(){
+ if(selected)return scoreDate(selected.date);
+ return scoreDate(day!=='all'?day:taiwanToday());
+}
+function loadRebasScheduleRelevant(){
+ void loadRebasDay(rebasDateForView());
+ if(selectedTeam){
+  const dates=[...new Set(all.filter(x=>x.home===selectedTeam.name||x.away===selectedTeam.name).map(x=>scoreDate(x.date)))];
+  for(const date of dates.slice(0,5))void loadRebasDay(date);
+ }
+}
+function rebasFeedScore(x){
+ const s=rebasScheduleResults.get(x.id);
+ if(!s||!['final','live'].includes(s.status)||!Number.isInteger(s.home?.score)||!Number.isInteger(s.away?.score))return null;
+ return {homeScore:s.home.score,awayScore:s.away.score,status:s.status,sourceType:'rebas',source:s.source};
+}
+function rebasRheNote(x){
+ const s=rebasScheduleResults.get(x.id);
+ if(!s||!['final','live'].includes(s.status))return '';
+ return '<div class="info"><span>R／H／E</span><strong>'+safe(s.home?.team)+'：'+safe(s.home?.score)+'／'+safe(s.home?.hits)+'／'+safe(s.home?.errors)+
+ '</strong><span class="muted">'+safe(s.away?.team)+'：'+safe(s.away?.score)+'／'+safe(s.away?.hits)+'／'+safe(s.away?.errors)+'</span></div>';
+}
+
 fetch('./data/black-panther-rebas-games-2026.json?v=c2.26',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('no games');return r.json()}).then(data=>{
  for(const [key,item] of Object.entries(data?.games||{}))if(/^[A-IK]\d+$/.test(key)&&/^[a-zA-Z0-9_-]{3,14}$/.test(item?.rebasId||''))rebasGames.set(key,item.rebasId);
  render();
@@ -132,7 +182,7 @@ async function loadRebas(x){
 }
 function loadRebasRelevant(){
  if(selected){void loadRebas(selected);return}
- if(selectedTeam&&teamTab==='stats'){for(const x of all.filter(g=>(g.home===selectedTeam.name||g.away===selectedTeam.name)&&rebasGames.has(g.id)).slice(0,5))void loadRebas(x);return}
+ if(selectedTeam){for(const x of all.filter(g=>(g.home===selectedTeam.name||g.away===selectedTeam.name)&&rebasGames.has(g.id)).slice(0,5))void loadRebas(x);return}
  const date=day!=='all'?day:taiwanToday().replaceAll('-','/');
  for(const x of all.filter(g=>g.date===date&&rebasGames.has(g.id)).slice(0,4))void loadRebas(x);
 }
@@ -211,4 +261,4 @@ content='<p class="muted">以下晉級場次須持續獲勝才會出賽。</p><d
 return '<button class="back" onclick="selectedTeam=null;render()">← 返回球隊列表</button><h2>'+safe(t.name)+' <span class="muted">'+(t.isFemale?'女子組':'混合組')+'</span></h2>'+nav+content;
 }
 function routeCard(x,hypothetical,name){let opponent=x.home===name?x.away:x.away===name?x.home:(x.home.includes('勝')&&x.away.includes('勝')?'由前場勝方決定':`${x.home}／${x.away}`);return `<article class="match" onclick="openMatch('${x.id}')"><div class="meta"><span><b class="gold">${fmt(x.date)} ${x.time}</b>　${safe(venueFull(x.venue))}</span><span>${safe(x.id)} · ${safe(round(x))}</span></div><div class="teams"><div class="team">${hypothetical?'晉級後可能出賽':safe(name)}</div><div class="vs">→</div><div class="team right">${hypothetical?'待晉級確認':safe(opponent)}</div></div><div class="chips"><span class="chip">${hypothetical?'可能出賽':'首戰'}</span><span class="chip">${safe(x.home)} vs ${safe(x.away)}</span></div></article>`;}
-function render(){void loadOfficialScore(relevantScoreDate());loadRebasRelevant();document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));let root=$('#content');if(selectedTeam){root.innerHTML=renderTeamRoute();return;}if(selected){let x=selected;root.innerHTML=`<button class="back" onclick="selected=null;render()">← 返回${tab==='schedule'?'賽程':'列表'}</button><h2>場次 ${x.id}</h2><div class="detail"><div class="meta"><span>${x.date}　${x.time}</span><span>${round(x)}</span></div><div class="teams"><div class="team">${teamClickable(x.home,x.female)}</div><div class="vs">VS</div><div class="team right">${teamClickable(x.away,x.female)}</div></div><div class="info"><span>比賽球場</span><strong>${venueFull(x.venue)}</strong></div><div class="info"><span>地點</span><strong>${venueCity(x.venue)}</strong></div><a class="mapLink" href="${venueLink(x.venue)}" target="_blank" rel="noopener">查看球場地圖 ↗</a><div class="info"><span>轉播</span><strong>${x.tv?'有轉播':'未標示'}</strong></div><div class="info"><span>組別</span><strong>${x.female?'女子組':'混合組'}</strong></div><div class="info"><span>比分</span><strong>${scoreFull(x)}</strong></div><div class="info"><span>來源</span><a href="${officialGameUrl(x)}" target="_blank" rel="noopener">黑豹旗官網 ↗</a></div>${scoreHighlights(x)}</div>${rebasMatchSection(x)}`;return;}if(tab==='schedule'){let set=filteredMatches();root.innerHTML=`<h2>全部賽程 <span class="muted"><span id="resultCount">${set.length} 場</span></span></h2>${searchField("搜尋球隊、場次、球場")}<div class="toolbar"><select onchange="day=this.value;render()"><option value="all">全部日期</option>${dates.map(d=>`<option value="${d}" ${day===d?'selected':''}>${fmt(d)}</option>`).join('')}</select><select onchange="phase=this.value;render()"><option value="all">全部階段</option>${['預賽','女子組','六十四強','三十二強','十六強','八強','四強','冠軍戰'].map(v=>`<option ${phase===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="toolbar"><select onchange="venue=this.value;render()"><option value="all">全部球場</option>${Object.keys(VENUES).map(v=>`<option value="${v}" ${venue===v?'selected':''}>${venueFull(v)}</option>`).join('')}</select></div><div id="searchResults">${set.length?groupByDate(set):'<div class="empty">找不到符合條件的場次</div>'}</div>`;}else if(tab==='venues'){root.innerHTML=`<h2>比賽球場 <span class="muted">${Object.keys(VENUES).length} 座</span></h2>${Object.keys(VENUES).map(v=>`<div class="venueCard"><div class="venueName">${venueFull(v)}</div><div class="muted">${venueCity(v)} · ${all.filter(x=>x.venue===v).length} 場已排定</div><div class="venueActions"><button onclick="venue='${v}';day='all';phase='all';filter='';setTab('schedule')">查看賽程</button><a href="${venueLink(v)}" target="_blank" rel="noopener">地圖 ↗</a></div></div>`).join('')}<p class="muted">地圖以球場名稱搜尋；出發前請確認入口。</p>`;}else if(tab==='teams'){root.innerHTML=`<h2>球隊 <span class="muted">${physicalTeams.length} 所</span></h2>${searchField('搜尋學校')}<div id="searchResults">${teamOptions()}</div>`;}else if(tab==='bracket'){root.innerHTML=`<h2>淘汰賽對戰路線</h2><div class="toolbar"><button class="pill ${phase==='all'?'on':''}" onclick="phase='all';render()">所有輪次</button></div>${['六十四強','三十二強','十六強','八強','四強','冠軍戰'].map(p=>`<div class="groupTitle">${p}</div>${all.filter(x=>round(x)===p).map(match).join('')}`).join('')}`;}else{root.innerHTML=`<h2>2026 黑豹旗數據中心</h2><a class="rebas-link" href="https://blackpanthercup.rebas.tw/leaderboard" target="_blank" rel="noopener noreferrer">2026 打者／投手數據排行榜 ↗</a><div class="empty">球隊名次以大會公告為準；逐場與個人成績請查看賽程及球隊數據。</div>`;}}function groupByDate(items){return dates.filter(d=>items.some(x=>x.date===d)).map(d=>`<div class="groupTitle">${fmt(d)}　${items.filter(x=>x.date===d).length} 場</div>${items.filter(x=>x.date===d).map(match).join('')}`).join('')}function renderKeepFocus(){let pos=$('#search')?.selectionStart;render();let el=$('#search');if(el){el.focus();el.setSelectionRange(pos,pos)}}render();setInterval(()=>{if(document.visibilityState==='visible'&&supportedScoreDays.has(taiwanToday()))void loadOfficialScore(taiwanToday(),true)},120000);</script></body></html>
+function render(){void loadOfficialScore(relevantScoreDate());loadRebasScheduleRelevant();loadRebasRelevant();document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));let root=$('#content');if(selectedTeam){root.innerHTML=renderTeamRoute();return;}if(selected){let x=selected;root.innerHTML=`<button class="back" onclick="selected=null;render()">← 返回${tab==='schedule'?'賽程':'列表'}</button><h2>場次 ${x.id}</h2><div class="detail"><div class="meta"><span>${x.date}　${x.time}</span><span>${round(x)}</span></div><div class="teams"><div class="team">${teamClickable(x.home,x.female)}</div><div class="vs">VS</div><div class="team right">${teamClickable(x.away,x.female)}</div></div><div class="info"><span>比賽球場</span><strong>${venueFull(x.venue)}</strong></div><div class="info"><span>地點</span><strong>${venueCity(x.venue)}</strong></div><a class="mapLink" href="${venueLink(x.venue)}" target="_blank" rel="noopener">查看球場地圖 ↗</a><div class="info"><span>轉播</span><strong>${x.tv?'有轉播':'未標示'}</strong></div><div class="info"><span>組別</span><strong>${x.female?'女子組':'混合組'}</strong></div><div class="info"><span>比分</span><strong>${scoreFull(x)}</strong></div><div class="info"><span>來源</span><a href="${officialGameUrl(x)}" target="_blank" rel="noopener">黑豹旗官網 ↗</a></div>${rebasRheNote(x)}${scoreHighlights(x)}</div>${rebasMatchSection(x)}`;return;}if(tab==='schedule'){let set=filteredMatches();root.innerHTML=`<h2>全部賽程 <span class="muted"><span id="resultCount">${set.length} 場</span></span></h2>${searchField("搜尋球隊、場次、球場")}<div class="toolbar"><select onchange="day=this.value;render()"><option value="all">全部日期</option>${dates.map(d=>`<option value="${d}" ${day===d?'selected':''}>${fmt(d)}</option>`).join('')}</select><select onchange="phase=this.value;render()"><option value="all">全部階段</option>${['預賽','女子組','六十四強','三十二強','十六強','八強','四強','冠軍戰'].map(v=>`<option ${phase===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="toolbar"><select onchange="venue=this.value;render()"><option value="all">全部球場</option>${Object.keys(VENUES).map(v=>`<option value="${v}" ${venue===v?'selected':''}>${venueFull(v)}</option>`).join('')}</select></div><div id="searchResults">${set.length?groupByDate(set):'<div class="empty">找不到符合條件的場次</div>'}</div>`;}else if(tab==='venues'){root.innerHTML=`<h2>比賽球場 <span class="muted">${Object.keys(VENUES).length} 座</span></h2>${Object.keys(VENUES).map(v=>`<div class="venueCard"><div class="venueName">${venueFull(v)}</div><div class="muted">${venueCity(v)} · ${all.filter(x=>x.venue===v).length} 場已排定</div><div class="venueActions"><button onclick="venue='${v}';day='all';phase='all';filter='';setTab('schedule')">查看賽程</button><a href="${venueLink(v)}" target="_blank" rel="noopener">地圖 ↗</a></div></div>`).join('')}<p class="muted">地圖以球場名稱搜尋；出發前請確認入口。</p>`;}else if(tab==='teams'){root.innerHTML=`<h2>球隊 <span class="muted">${physicalTeams.length} 所</span></h2>${searchField('搜尋學校')}<div id="searchResults">${teamOptions()}</div>`;}else if(tab==='bracket'){root.innerHTML=`<h2>淘汰賽對戰路線</h2><div class="toolbar"><button class="pill ${phase==='all'?'on':''}" onclick="phase='all';render()">所有輪次</button></div>${['六十四強','三十二強','十六強','八強','四強','冠軍戰'].map(p=>`<div class="groupTitle">${p}</div>${all.filter(x=>round(x)===p).map(match).join('')}`).join('')}`;}else{root.innerHTML=`<h2>2026 黑豹旗數據中心</h2><a class="rebas-link" href="https://blackpanthercup.rebas.tw/leaderboard" target="_blank" rel="noopener noreferrer">2026 打者／投手數據排行榜 ↗</a><div class="empty">球隊名次以大會公告為準；逐場與個人成績請查看賽程及球隊數據。</div>`;}}function groupByDate(items){return dates.filter(d=>items.some(x=>x.date===d)).map(d=>`<div class="groupTitle">${fmt(d)}　${items.filter(x=>x.date===d).length} 場</div>${items.filter(x=>x.date===d).map(match).join('')}`).join('')}function renderKeepFocus(){let pos=$('#search')?.selectionStart;render();let el=$('#search');if(el){el.focus();el.setSelectionRange(pos,pos)}}render();setInterval(()=>{if(document.visibilityState==='visible'){void loadRebasDay(taiwanToday(),true);if(supportedScoreDays.has(taiwanToday()))void loadOfficialScore(taiwanToday(),true)}},120000);</script></body></html>
