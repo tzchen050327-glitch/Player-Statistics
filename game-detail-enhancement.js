@@ -1727,6 +1727,19 @@
     }
 
     const scoreCard=body.querySelector('.game-detail-score-card'); if (!scoreCard) return;
+    // Always recover the canonical portrait ordering, even when this
+    // detail stamp has not changed after a core-render / tab redraw.
+    if (!landscapeMode) {
+      const panel=scoreCard.closest('[data-match-center-panel="play"]');
+      if (panel && panel.firstElementChild!==scoreCard) panel.insertBefore(scoreCard,panel.firstChild);
+      const ordered=['live','scoreboard','decisions','last-play']
+        .map(key=>body.querySelector('[data-gdx="'+key+'"]')).filter(Boolean);
+      let anchor=scoreCard;
+      for(const node of ordered) {
+        if (anchor.nextElementSibling!==node) anchor.after(node);
+        anchor=node;
+      }
+    }
     const board=normalizedBoard(detail); patchMainScore(scoreCard,board);
     const stamp=`${detailStamp(detail)}|${landscapeMode?'landscape':'portrait'}`;
     if (body.dataset.gdxStamp===stamp && (landscapeMode || body.querySelector('[data-gdx="decisions"]') || String(detail?.status||'').toLowerCase()!=='final')) return;
