@@ -52,7 +52,7 @@ function taiwanToday(){
  return [get('year'),get('month'),get('day')].join('-');
 }
 function scoreDate(x){return String(x).replaceAll('/','-');}
-function officialGameUrl(x){return 'https://blackpanthercup.tw/game_pre2026_'+x.date.slice(5).replaceAll('/','')+'/';}
+function officialGameUrl(x){return supportedScoreDays.has(scoreDate(x.date))?'https://blackpanthercup.tw/game_pre2026_'+x.date.slice(5).replaceAll('/','')+'/':'https://blackpanthercup.tw/';}
 function officialScoreFor(x){
  const dayScore=officialScoreByDay.get(scoreDate(x.date));
  if(!dayScore?.games)return null;
