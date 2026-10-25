@@ -259,10 +259,9 @@
     if (!date || watch) return;
     const sb = await getClient();
     if (dayWatch !== date || watch) return;
-    const key = `${date}|A`;
     dayChannel = sb.channel(`cpbl-day-signal-${date}-${Math.random().toString(36).slice(2,8)}`)
       .on('postgres_changes', {
-        event:'*', schema:'public', table:SIGNAL_TABLE, filter:`day_kind_key=eq.${key}`
+        event:'*', schema:'public', table:SIGNAL_TABLE, filter:`game_date=eq.${date}`
       }, payload => refreshDayFromRealtimeSignal(payload?.new))
       .subscribe(status => {
         if (status === 'SUBSCRIBED') emitDayStatus(true, 'subscribed');
