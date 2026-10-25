@@ -30,7 +30,7 @@
     function homeLocalizedAsiaMeta(meta, player) {
       const text = String(meta || '');
       const provider = String(player?.externalProvider || player?.externalLeague || '').toUpperCase();
-      if (!['NPB','KBO'].includes(provider) && !/(?:^|\\|)\\s*(?:NPB|KBO)\\s*(?:\\||$)/i.test(text)) return meta;
+      if (!['NPB','KBO'].includes(provider) && !/(?:^|\|)\s*(?:NPB|KBO)\s*(?:\||$)/i.test(text)) return meta;
       return text.split('|').map(part => {
         const trimmed = part.trim();
         const translated = homeLocalizedAsiaTeamName(trimmed);
