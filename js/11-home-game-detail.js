@@ -1170,7 +1170,7 @@
       ];
       const normalizeName = value => String(value || '')
         .replace(/^(?:代打|代跑)[・·\\s]*/,'')
-        .replace(/\\s+/g,'')
+        .replace(/\s+/g,'')
         .trim();
       const pickNumber = (row, keys) => {
         for (const key of keys) {
@@ -1642,10 +1642,10 @@
       const current = Array.isArray(detail?.lineups?.[side]?.batters) ? detail.lineups[side].batters : [];
       const numberFor = row => {
         const id = String(row?.id || row?.acnt || '');
-        const name = String(row?.name || '').replace(/\\s+/g,'');
+        const name = String(row?.name || '').replace(/\s+/g,'');
         const all = [...current,...(Array.isArray(preserved) ? preserved : [])];
         return all.find(p => (id && String(p?.id || p?.acnt || '') === id)
-          || String(p?.name || p?.fullName || '').replace(/\\s+/g,'') === name);
+          || String(p?.name || p?.fullName || '').replace(/\s+/g,'') === name);
       };
       const raw = officialBoxReady
         ? boxStarters.map(row => ({
