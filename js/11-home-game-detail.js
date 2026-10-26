@@ -865,20 +865,7 @@
       return `${Number(record.wins || 0)}勝 ${Number(record.losses || 0)}敗${Number(record.ties || 0) ? ` ${Number(record.ties)}和` : ''}`;
     }
 
-    function homeCpblRevisedG6StarterPending() {
-      // 10/26 is the rescheduled G6 (2026-C-6), not the original G7.
-      // Old matchup/pregame caches belong to G7 and must not supply its pitchers.
-      const active = activeHomeGameDetail;
-      const game = active?.game || {};
-      return active?.league === 'CPBL'
-        && String(active?.date || '') === '2026-10-26'
-        && String(game?.kindCode || '').toUpperCase() === 'C'
-        && String(game?.id || '') === '6'
-        && !['live','final'].includes(String(game?.status || '').toLowerCase());
-    }
-
     function homeMatchCenterStarters(center = null) {
-      if (homeCpblRevisedG6StarterPending()) return { away:null, home:null, source:'rescheduled-pending' };
       const cachedDetail = activeHomeGameDetail
         ? (homeGameDetailCache.get(activeHomeGameDetail.key)?.detail || null)
         : null;
@@ -888,6 +875,18 @@
       const confirmedPostseason = activeHomeGameDetail
         ? homePostseasonStarterCache.get(activeHomeGameDetail.key) || null
         : null;
+
+      // The G7 preview must not inherit the G6 press-announced starters.
+      // Only show G7 names once an independently confirmed game-specific
+      // starter record or an actual official lineup is available.
+      const selected = activeHomeGameDetail;
+      const unconfirmedG7 = selected?.league === 'CPBL'
+        && String(selected?.date || '') === '2026-10-27'
+        && String(selected?.game?.kindCode || '').toUpperCase() === 'C'
+        && String(selected?.game?.id || '') === '7'
+        && !['live','final'].includes(String(selected?.game?.status || '').toLowerCase())
+        && !Boolean(pregame?.confirmedOverride);
+      if (unconfirmedG7) return { away:null, home:null, source:'awaiting-G7-confirmation' };
 
       const lineupPitcher = side => {
         const raw = lineups?.[side]?.pitcher || null;
