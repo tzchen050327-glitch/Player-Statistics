@@ -629,14 +629,22 @@
           const status = String(game?.status || 'scheduled').toLowerCase();
           const statusLabel = homeDailyGameStatusLabel(game);
           const lineupReady = status === 'scheduled' && (league === 'CPBL' || league === 'NPB') && Boolean(game?.lineupReady);
-          const directStarterPresent=Boolean(
+          // Postponed Taiwan Series G6 news was previously attributed to G7.
+          // Until game-specific G7 confirmation, do not trust generic matchup
+          // overview names or stale client-side starter-presence snapshots.
+          const unconfirmedG7 = league === 'CPBL'
+            && String(date) === '2026-10-27'
+            && String(game?.kindCode || '').toUpperCase() === 'C'
+            && String(game?.id || '') === '7';
+          const directStarterPresent=!unconfirmedG7 && Boolean(
             game?.overview?.starters?.away
             || game?.overview?.starters?.home
           );
-          if (!directStarterPresent) ensureHomeDailyStarterPresence(league,date,game);
+          if (!directStarterPresent && !unconfirmedG7) ensureHomeDailyStarterPresence(league,date,game);
           const starterConfirmed = (league === 'CPBL' || league === 'NPB')
             && status === 'scheduled'
             && !lineupReady
+            && !unconfirmedG7
             && (directStarterPresent || homeDailyStarterPresence(league,date,game)===true);
           const starterConfirmedLabel = league === 'NPB' ? '先発投手確定' : '先發投手確定';
           const showScore = status === 'live' || status === 'final';
