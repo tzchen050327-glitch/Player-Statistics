@@ -45,7 +45,7 @@ const venueLink=k=>'https://www.google.com/maps/search/?api=1&query='+encodeURIC
 const all=DATA;const $=s=>document.querySelector(s);let tab='schedule',filter='',day='all',phase='all',venue='all',selected=null,selectedTeam=null,composing=false;const dates=[...new Set(all.map(x=>x.date))].sort();const physicalTeams=[...new Set(all.flatMap(x=>[x.home,x.away]).filter(x=>!/^([A-IK]\d+勝|女子組晉級球隊)$/.test(x)))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));function round(x){if(x.id[0]==='I')return '女子組';if(x.id[0]==='K')return ({K1:'八強',K2:'八強',K3:'八強',K4:'八強',K5:'四強',K6:'四強',K7:'冠軍戰'})[x.id];let n=+x.id.slice(1);return n>=25?'十六強':n>=23?'三十二強':n>=19?'六十四強':'預賽';}function fmt(d){return d.slice(5).replace('/','/');}function teamClickable(name,isFemale){if(!physicalTeams.includes(name))return `<span>${safe(name)}</span>`;return `<button type="button" class="teamLink" onclick="event.stopPropagation();openTeam(decodeURIComponent('${encodeURIComponent(name)}'),${!!isFemale})" title="查看 ${safe(name)} 的完整晉級路線">${safe(name)}</button>`;}
 const OFFICIAL_SCORE_API='https://kjndnsztbcpmkhictjkr.supabase.co/functions/v1/panther-game-scores';
 const officialScoreByDay=new Map(),scoreLoading=new Set(),confirmedGameResults=new Map();
-fetch('./data/black-panther-game-results-2026.json?v=c2.26',{cache:'no-cache'})
+fetch('./data/black-panther-game-results-2026.json?v=c2.27',{cache:'no-cache'})
  .then(r=>{if(!r.ok)throw Error('verified results unavailable');return r.json()})
  .then(data=>{for(const [id,result] of Object.entries(data?.games||{})){
    if(result?.status==='final'&&Number.isInteger(result.homeScore)&&Number.isInteger(result.awayScore))confirmedGameResults.set(id,result);
@@ -158,7 +158,7 @@ function rebasRheNote(x){
  '</strong><span class="muted">'+safe(s.away?.team)+'：'+safe(s.away?.score)+'／'+safe(s.away?.hits)+'／'+safe(s.away?.errors)+'</span></div>';
 }
 
-fetch('./data/black-panther-rebas-games-2026.json?v=c2.26',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('no games');return r.json()}).then(data=>{
+fetch('./data/black-panther-rebas-games-2026.json?v=c2.27',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('no games');return r.json()}).then(data=>{
  for(const [key,item] of Object.entries(data?.games||{}))if(/^[A-IK]\d+$/.test(key)&&/^[a-zA-Z0-9_-]{3,14}$/.test(item?.rebasId||''))rebasGames.set(key,item.rebasId);
  render();
 }).catch(()=>{});

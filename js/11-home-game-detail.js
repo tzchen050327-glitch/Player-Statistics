@@ -292,7 +292,6 @@
 
     async function refreshHomePostseasonConfirmedStarters(league, date, game, key) {
       if (league !== 'CPBL' || !['E','C'].includes(String(game?.kindCode || '').toUpperCase())) return;
-      if (String(date) === '2026-10-26' && String(game?.kindCode || '').toUpperCase() === 'C' && String(game?.id || '') === '6') return;
       if (!key || homePostseasonStarterLoading.has(key)) return;
       if (homePostseasonStarterCache.has(key)) {
         if (activeHomeGameDetail?.key === key) {
