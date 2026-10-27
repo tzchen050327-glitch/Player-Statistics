@@ -52,6 +52,33 @@
           "source": "https://www.cna.com.tw/news/aspt/202610250132.aspx"
         }
       ]
+    },
+    "I1": {
+      "date": "2026/10/26",
+      "time": "09:00",
+      "home": "東山高中",
+      "away": "秀峰高中",
+      "homeScore": 4,
+      "awayScore": 1,
+      "innings": 5,
+      "status": "final",
+      "sourceType": "media_verified",
+      "sources": [
+        "https://www.ptt.cc/bbs/Baseball/M.1793029713.A.3A3.html"
+      ]
+    },
+    "C5": {
+      "date": "2026/10/26",
+      "time": "11:00",
+      "home": "中正高中",
+      "away": "磐石高中",
+      "homeScore": 1,
+      "awayScore": 11,
+      "status": "final",
+      "sourceType": "media_verified",
+      "sources": [
+        "https://www.ptt.cc/bbs/Baseball/M.1793029713.A.3A3.html"
+      ]
     }
   }
 }
