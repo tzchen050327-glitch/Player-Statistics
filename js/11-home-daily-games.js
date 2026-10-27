@@ -50,13 +50,101 @@
         });
     }
 
+    // Standard team identity colors for all four top-level leagues.
+    // Keys are the Traditional-Chinese display names already used by the app.
+    const HOME_CHAMPION_TEAM_COLORS = {
+      CPBL:{
+        '中信兄弟':'#F2C500','統一獅':'#F58220',
+        '樂天桃猿':'#8B1E3F','味全龍':'#D71920',
+        '富邦悍將':'#005BAC','台鋼雄鷹':'#008C4A'
+      },
+      NPB:{
+        '阪神虎':'#F5C400','橫濱DeNA灣星':'#005BAC','讀賣巨人':'#F16822',
+        '中日龍':'#00469B','廣島東洋鯉魚':'#C9062F','東京養樂多燕子':'#108E50',
+        '福岡軟銀鷹':'#F5C400','北海道日本火腿鬥士':'#00A0E9',
+        '歐力士猛牛':'#1C256B','東北樂天金鷲':'#A3001D',
+        '埼玉西武獅':'#00A2A8','千葉羅德海洋':'#111111'
+      },
+      KBO:{
+        'KT巫師':'#303030','三星獅':'#074CA1','LG雙子':'#C30452',
+        'KIA虎':'#EA0029','斗山熊':'#101F50','NC恐龍':'#315288',
+        'SSG登陸者':'#CE0E2D','樂天巨人':'#1B294F',
+        '韓華鷹':'#FF6600','培證英雄':'#570514'
+      },
+      MLB:{
+        '響尾蛇':'#A71930','勇士':'#CE1141','金鶯':'#DF4601',
+        '紅襪':'#BD3039','小熊':'#0E3386','白襪':'#27251F',
+        '紅人':'#C6011F','守護者':'#E31937','洛磯':'#333366',
+        '老虎':'#0C2340','太空人':'#EB6E1F','皇家':'#004687',
+        '天使':'#BA0021','道奇':'#005A9C','馬林魚':'#00A3E0',
+        '釀酒人':'#12284B','雙城':'#002B5C','大都會':'#002D72',
+        '洋基':'#0C2340','運動家':'#006141','費城人':'#E81828',
+        '海盜':'#FDB827','教士':'#2F241D','巨人':'#FD5A1E',
+        '水手':'#005C5C','紅雀':'#C41E3A','光芒':'#092C5C',
+        '遊騎兵':'#003278','藍鳥':'#134A8E','國民':'#AB0003'
+      }
+    };
+
+    function homeSeasonChampionTeamColor(league,team) {
+      const leagueCode=String(league||'').toUpperCase();
+      const name=String(team||'').trim();
+      const normalized=value=>String(value||'').replace(/[\s　・･·._-]+/g,'').toLowerCase();
+      // Reuse the existing CPBL team palette, including the official long Lions name.
+      if(leagueCode==='CPBL') {
+        const opponent=OPPONENTS.find(row=>normalized(normalizeTeamName(row.name))===normalized(normalizeTeamName(name)));
+        if(opponent?.color)return opponent.color;
+      }
+      const aliases={
+        NPB:{
+          '軟銀鷹':'福岡軟銀鷹','軟銀':'福岡軟銀鷹',
+          '橫濱DeNA':'橫濱DeNA灣星','DeNA灣星':'橫濱DeNA灣星',
+          '巨人':'讀賣巨人','養樂多燕子':'東京養樂多燕子',
+          '廣島鯉魚':'廣島東洋鯉魚','日本火腿':'北海道日本火腿鬥士',
+          '火腿鬥士':'北海道日本火腿鬥士','歐力士':'歐力士猛牛',
+          '樂天金鷲':'東北樂天金鷲','西武獅':'埼玉西武獅',
+          '羅德海洋':'千葉羅德海洋'
+        },
+        KBO:{'Kiwoom英雄':'培證英雄','培證':'培證英雄','起亞虎':'KIA虎','KT Wiz':'KT巫師'},
+        CPBL:{'統一7-ELEVEn獅':'統一獅','統一7-11獅':'統一獅'}
+      };
+      const canonical=aliases[leagueCode]?.[name]||name;
+      const palette=HOME_CHAMPION_TEAM_COLORS[leagueCode]||{};
+      const exact=palette[canonical]||palette[name];
+      if(exact)return exact;
+      const normalizedName=normalized(canonical);
+      const match=Object.keys(palette).find(key=>normalized(key)===normalizedName);
+      return match?palette[match]:'#C8A14D';
+    }
+
+    function homeSeasonChampionTeamDarkColor(color) {
+      // Keep the exact primary team color when it has sufficient contrast;
+      // lighten only navy/black/dark burgundy for the night theme.
+      const hex=String(color||'').match(/^#([0-9a-f]{6})$/i)?.[1];
+      if(!hex)return '#E2C77F';
+      const channels=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));
+      const luminance=rgb=>rgb.map(v=>{
+        const c=v/255;
+        return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);
+      }).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+      const background=luminance([18,26,36]);
+      for(let factor=0;factor<=.9;factor+=.05) {
+        const current=channels.map(v=>Math.round(v+(255-v)*factor));
+        if((luminance(current)+.05)/(background+.05)>=3.3)
+          return '#'+current.map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+      }
+      return '#E8E8E8';
+    }
+
     function homeSeasonChampionCard(champion,league) {
       const title=({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
       const team=league==='MLB'?mlbTeamZh(champion.team):String(champion.team);
+      const teamColor=homeSeasonChampionTeamColor(league,team);
+      const darkColor=homeSeasonChampionTeamDarkColor(teamColor);
       const end=String(champion.expiresOn).replaceAll('-','/');
-      return '<div class="home-season-champion" role="status">'
+      return '<div class="home-season-champion" role="status" style="--champion-team-color:'+escapeAttr(teamColor)+';--champion-team-color-dark:'+escapeAttr(darkColor)+'">'
         +'<span class="home-season-champion-kicker">SEASON CHAMPION · '+escapeHtml(champion.year)+'</span>'
-        +'<strong>'+escapeHtml(String(champion.year))+'年'+escapeHtml(title)+'總冠軍：'+escapeHtml(team)+'</strong>'
+        +'<span class="home-season-champion-title">'+escapeHtml(String(champion.year))+'年'+escapeHtml(title)+'總冠軍</span>'
+        +'<strong class="home-season-champion-team">'+escapeHtml(team)+'</strong>'
         +'<span class="home-season-champion-meta">本季賽事已結束 · 展示至 '+escapeHtml(end)+'</span>'
         +'</div>';
     }

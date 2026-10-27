@@ -17158,6 +17158,16 @@ html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
   display:block;color:inherit;font-size:clamp(16px,2.3vw,22px);
   font-weight:850;line-height:1.4;overflow-wrap:anywhere;
 }
+.home-season-champion-title{
+  display:block;color:inherit;font-size:clamp(14px,2.2vw,18px);
+  font-weight:850;line-height:1.4;overflow-wrap:anywhere;
+}
+.home-season-champion .home-season-champion-team{
+  display:block;align-self:flex-start;max-width:100%;
+  color:var(--champion-team-color,#C8A14D);
+  font-size:clamp(23px,3.4vw,32px);font-weight:900;line-height:1.2;
+  letter-spacing:.025em;overflow-wrap:anywhere;
+}
 .home-season-champion-meta{font-size:11px;font-weight:650;opacity:.75;line-height:1.5}
 .home-games-scroller + .home-season-champion{margin-top:11px}
 html[data-theme="dark"] .home-season-champion{
@@ -17165,7 +17175,11 @@ html[data-theme="dark"] .home-season-champion{
   background:linear-gradient(110deg,rgba(208,150,39,.17),rgba(255,255,255,.022) 75%);
 }
 html[data-theme="dark"] .home-season-champion-kicker{color:#e5b759}
+html[data-theme="dark"] .home-season-champion .home-season-champion-team{
+  color:var(--champion-team-color-dark,var(--champion-team-color,#C8A14D));
+}
 @media(max-width:640px){
   .home-season-champion{min-height:94px;padding:14px 13px;gap:5px}
-  .home-season-champion strong{font-size:16px}
+  .home-season-champion-title{font-size:14px}
+  .home-season-champion .home-season-champion-team{font-size:24px}
 }
