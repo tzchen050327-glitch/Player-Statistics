@@ -294,6 +294,72 @@ async function scheduleCached(league:string,date:string,kinds:string[],force=fal
     throw e;
   }
 }
+
+// Championship announcements share archived official result caches. They never
+// trigger a fresh league website fetch when visitors open an offseason page.
+async function seasonChampion(league:string,year:number){
+  const key=league+'|CHAMPION|'+year;
+  const cached=(await rows('league_schedule_cache?cache_key=eq.'+encodeURIComponent(key)+'&select=payload,refresh_after'))[0]||null;
+  const due=Date.parse(String(cached?.refresh_after||''));
+  if(cached?.payload&&(cached.refresh_after==='infinity'||(Number.isFinite(due)&&due>Date.now())))
+    return cached.payload.champion||null;
+
+  const first=year+'-01-01',last=year+'-12-31';
+  const finished:{date:string,id:string,away:string,home:string,awayScore:number,homeScore:number}[]=[];
+  if(league==='CPBL'||league==='NPB'){
+    const isCpbl=league==='CPBL';
+    const table=isCpbl?'cpbl_live_game_cache':'npb_live_game_cache';
+    const stage=isCpbl?'kind_code=eq.C':'competition=eq.nippon_series';
+    const st=isCpbl?'published_status=eq.final':'status=eq.final';
+    const records=await rows(table+'?'+stage+'&game_date=gte.'+first+'&game_date=lte.'+last+'&'+st+'&select=game_id,game_date,published_payload&order=game_date.asc&limit=40');
+    for(const row of records){
+      const g=row?.published_payload?.game||{};
+      finished.push({date:String(row.game_date||''),id:String(row.game_id||g.id||''),
+        away:clean(g.away),home:clean(g.home),awayScore:score(g.awayScore) as number,homeScore:score(g.homeScore) as number});
+    }
+  }else{
+    // Fixed updater already archives one shared daily snapshot per league.
+    const records=await rows('league_schedule_cache?league=eq.'+league+'&scope=eq.ALL&game_date=gte.'+
+      year+'-09-01&game_date=lte.'+year+'-12-15&select=game_date,payload&order=game_date.asc&limit=110');
+    for(const row of records){
+      for(const g of Array.isArray(row?.payload?.games)?row.payload.games:[]){
+        const final=String(g?.status||'').toLowerCase()==='final';
+        const series=league==='KBO'
+          ? (String(g?.competition||'')==='korean_series'||String(g?.seriesId||'')==='7')
+          : (String(g?.gameType||'').toUpperCase()==='W'
+            ||/world series|世界大賽/i.test(String(g?.seriesDescription||g?.competitionLabel||'')));
+        if(!final||!series)continue;
+        finished.push({date:String(row.game_date||''),id:String(g.id||g.gameId||''),
+          away:clean(g.away),home:clean(g.home),awayScore:score(g.awayScore) as number,homeScore:score(g.homeScore) as number});
+      }
+    }
+  }
+
+  finished.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+  const wins=new Map<string,number>(),seen=new Set<string>();
+  let champion:null|{league:string,year:number,team:string,decidedOn:string,expiresOn:string}=null;
+  for(const g of finished){
+    if(!g.date||!g.away||!g.home||g.away===g.home||
+       g.awayScore===null||g.homeScore===null||
+       !Number.isFinite(g.awayScore)||!Number.isFinite(g.homeScore)||g.awayScore===g.homeScore)continue;
+    const identity=g.id?g.id:g.date+'|'+g.away+'|'+g.home;
+    if(seen.has(identity))continue;
+    seen.add(identity);
+    const winner=g.awayScore>g.homeScore?g.away:g.home;
+    const n=(wins.get(winner)||0)+1;
+    wins.set(winner,n);
+    if(n>=4){
+      const febLast=String(new Date(Date.UTC(year+1,2,0)).getUTCDate()).padStart(2,'0');
+      champion={league,year,team:winner,decidedOn:g.date,expiresOn:(year+1)+'-02-'+febLast};
+      break;
+    }
+  }
+  const now=Date.now(),ttl=champion?'infinity':new Date(now+4*60*1000).toISOString();
+  await upsert('league_schedule_cache',{cache_key:key,league,game_date:last,scope:'CHAMPION',
+    payload:{champion},fetched_at:new Date(now).toISOString(),refresh_after:ttl,
+    source:'official-postseason-cache',last_error:null,updated_at:new Date(now).toISOString()});
+  return champion;
+}
 function normalizeTeam(v:any){return clean(v).normalize('NFKC').replace(/[・･·.\s]/g,'').toLowerCase().replace('統一7-eleven獅','統一獅');}
 function sameTeam(a:any,b:any){const x=normalizeTeam(a),y=normalizeTeam(b);return !!x&&!!y&&(x===y||x.includes(y)||y.includes(x));}
 function addMonths(y:number,m:number,o:number){const d=new Date(Date.UTC(y,m-1+o,1));return{year:d.getUTCFullYear(),month:d.getUTCMonth()+1};}
@@ -344,7 +410,12 @@ async function nextCached(league:string,team:string,kinds:string[],force=false){
   await upsert('league_next_game_cache',{cache_key:key,league,team_key:tk,scope,payload:{nextGame},fetched_at:new Date(now).toISOString(),refresh_after:new Date(now+ms).toISOString(),last_error:null,updated_at:new Date(now).toISOString()});
   return{nextGame,cache:{hit:false,persistent:true,ttlMs:ms}};
 }
-Deno.serve(async(req:Request)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});if(req.method!=='POST')return reply({ok:false,error:'POST only'},405);try{const body=await req.json();if(body?.appKey!==APP_KEY)return reply({ok:false,error:'Forbidden'},403);const action=String(body?.action||'daily-games'),league=String(body?.league||'').toUpperCase(),internal=req.headers.get('authorization')===`Bearer ${SERVICE_ROLE}`,force=body?.force===true&&internal;const defaultKinds=internal?['A','E','C']:['A','D','E','C'],kinds=normKinds(body?.kindCodes,defaultKinds);if(action==='cpbl-playoff-series'){
+Deno.serve(async(req:Request)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});if(req.method!=='POST')return reply({ok:false,error:'POST only'},405);try{const body=await req.json();if(body?.appKey!==APP_KEY)return reply({ok:false,error:'Forbidden'},403);const action=String(body?.action||'daily-games'),league=String(body?.league||'').toUpperCase(),internal=req.headers.get('authorization')===`Bearer ${SERVICE_ROLE}`,force=body?.force===true&&internal;const defaultKinds=internal?['A','E','C']:['A','D','E','C'],kinds=normKinds(body?.kindCodes,defaultKinds);if(action==='season-champion'){
+  const year=Number(body?.year);
+  if(!['CPBL','NPB','KBO','MLB'].includes(league)||!Number.isInteger(year)||year<2020||year>2100)
+    return reply({ok:false,error:'league/year invalid'},400);
+  return reply({ok:true,league,year,champion:await seasonChampion(league,year)});
+}if(action==='cpbl-playoff-series'){
   const year=String(body?.year||twDate().slice(0,4));
   if(!/^\\d{4}$/.test(year))return reply({ok:false,error:'invalid year'},400);
   const records=await rows('cpbl_live_game_cache?kind_code=eq.E&game_date=gte.'+year+'-01-01&game_date=lte.'+year+'-12-31&published_status=eq.final&select=game_id,game_date,published_payload');

@@ -1,3 +1,66 @@
+    const homeSeasonChampionCache = new Map();
+    const homeSeasonChampionLoading = new Set();
+    const HOME_SEASON_CHAMPION_RECHECK_MS = 4 * 60 * 1000;
+
+    function homeSeasonChampionYear(date) {
+      const match=String(date||'').match(/^(\d{4})-(\d{2})-\d{2}$/);
+      if (!match) return null;
+      const year=Number(match[1]),month=Number(match[2]);
+      return month>=10&&month<=12 ? year : month>=1&&month<=2 ? year-1 : null;
+    }
+
+    function homeSeasonChampionInfo(league,date) {
+      const year=homeSeasonChampionYear(date);
+      if(year===null)return null;
+      const item=homeSeasonChampionCache.get(league+'|'+year)?.champion||null;
+      return item&&item.team&&item.decidedOn&&item.expiresOn
+        &&String(date)>=String(item.decidedOn)&&String(date)<=String(item.expiresOn)
+        ? item : null;
+    }
+
+    function ensureHomeSeasonChampion(league,date) {
+      const year=homeSeasonChampionYear(date);
+      if(year===null||!['CPBL','NPB','KBO','MLB'].includes(league))return;
+      const key=league+'|'+year,cache=homeSeasonChampionCache.get(key);
+      if(homeSeasonChampionLoading.has(key)||cache?.champion
+        ||(cache&&Date.now()-Number(cache.at||0)<HOME_SEASON_CHAMPION_RECHECK_MS))return;
+      homeSeasonChampionLoading.add(key);
+      void fetch(LEAGUE_GAMES_A_API_URL,{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({appKey:CPBL_APP_KEY,action:'season-champion',league,year})
+      }).then(async response=>{
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||data?.ok!==true)throw new Error(data?.error||'Champion data unavailable');
+        const champion=data?.champion;
+        homeSeasonChampionCache.set(key,{
+          at:Date.now(),
+          champion:champion?.league===league&&Number(champion?.year)===year
+            &&typeof champion?.team==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(String(champion?.decidedOn||''))
+            &&/^\d{4}-02-\d{2}$/.test(String(champion?.expiresOn||''))
+            ? champion : null
+        });
+      }).catch(()=>homeSeasonChampionCache.set(key,{at:Date.now(),champion:null}))
+        .finally(()=>{
+          homeSeasonChampionLoading.delete(key);
+          if(currentPage==='home'&&homeDailyGamesLeague()===league
+             &&homeSeasonChampionYear(String(els.gameDate?.value||localISODate()))===year){
+            renderHomeDailyGames({skipLoad:true});
+          }
+        });
+    }
+
+    function homeSeasonChampionCard(champion,league) {
+      const title=({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
+      const team=league==='MLB'?mlbTeamZh(champion.team):String(champion.team);
+      const end=String(champion.expiresOn).replaceAll('-','/');
+      return '<div class="home-season-champion" role="status">'
+        +'<span class="home-season-champion-kicker">SEASON CHAMPION · '+escapeHtml(champion.year)+'</span>'
+        +'<strong>'+escapeHtml(String(champion.year))+'年'+escapeHtml(title)+'總冠軍：'+escapeHtml(team)+'</strong>'
+        +'<span class="home-season-champion-meta">本季賽事已結束 · 展示至 '+escapeHtml(end)+'</span>'
+        +'</div>';
+    }
+
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
     const homeDailyGamesScrollState = new Map();
@@ -604,20 +667,28 @@
         : (seriesAlreadyDecided
           ? games.filter(g => String(g?.kindCode || '').toUpperCase() !== 'C')
           : games);
-      const displayRows = homeDailyGamesDisplayRows(visibleGames);
+      // A confirmed four-win championship overrides leftover conditional final fixtures.
+      ensureHomeSeasonChampion(league,date);
+      const champion=homeSeasonChampionInfo(league,date);
+      const finishedSeason=Boolean(champion&&date>champion.decidedOn);
+      const displayRows = homeDailyGamesDisplayRows(finishedSeason?[]:visibleGames);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);
       const dateLabel = date.replaceAll('-', '/');
 
       let bodyHtml = '';
-      if (!cached && !loading) {
+      if (finishedSeason) {
+        bodyHtml = homeSeasonChampionCard(champion,league);
+      } else if (!cached && !loading) {
         bodyHtml = '<div class="home-games-state">正在讀取官方賽程…</div>';
-      } else if (loading && !games.length) {
+      } else if (loading && !displayRows.length) {
         bodyHtml = '<div class="home-games-state"><span class="home-games-loading-dot"></span>正在讀取官方賽程…</div>';
-      } else if (error && !games.length) {
+      } else if (error && !displayRows.length) {
         bodyHtml = `<div class="home-games-state error"><span>${escapeHtml(error)}</span><button class="press-btn home-games-retry" type="button">重新整理</button></div>`;
-      } else if (!games.length) {
-        bodyHtml = `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
+      } else if (!displayRows.length) {
+        bodyHtml = champion
+          ? homeSeasonChampionCard(champion,league)
+          : `<div class="home-games-state">這個日期沒有找到 ${escapeHtml(leagueLabel)} 比賽。</div>`;
       } else {
         bodyHtml = `<div class="home-games-scroller ${league === 'MLB' ? 'is-mlb' : ''}" data-home-games-key="${escapeAttr(key)}">${displayRows.map(({ game:rawGame, sourceIndex }) => {
           const seriesUnplayed = league === 'NPB' && homeNpbFirstStageUnplayed(rawGame,date);
@@ -691,7 +762,16 @@
         }).join('')}</div>`;
       }
 
-      scheduleHomeDailyGamesAutoRefresh();
+      if(champion&&date===champion.decidedOn&&displayRows.length
+        &&displayRows.every(({game})=>String(game?.status||'').toLowerCase()==='final')) {
+        bodyHtml+=homeSeasonChampionCard(champion,league);
+      }
+      if(finishedSeason) {
+        stopHomeDailyGamesAutoRefresh();
+        window.dispatchEvent(new CustomEvent('cpbl-live-unwatch-day'));
+      } else {
+        scheduleHomeDailyGamesAutoRefresh();
+      }
       host.innerHTML = `
         <section class="home-daily-games-shell">
           <div class="home-daily-games-head">
@@ -699,7 +779,7 @@
               <strong>當日賽事</strong>
               <span class="home-league-live-row">
                 <span>${escapeHtml(leagueLabel)}</span>
-                ${homeDailyGamesHasLive(games) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
+                ${homeDailyGamesHasLive(finishedSeason?[]:visibleGames) && homeDailyGamesAutoRefreshAvailable() ? `<span class="home-live-battery ${loading ? 'is-refreshing' : ''}" title="比賽進行中，自動更新比分" aria-label="比賽進行中，自動更新比分">
                   <svg class="battery-player battery-pitcher battery-pitcher-formal" viewBox="0 0 44 44" aria-hidden="true">
                     <g class="battery-pitcher-figure">
                       <g class="battery-pitcher-core">
@@ -749,8 +829,8 @@
             </div>
             <div class="home-daily-games-meta">
               <span>${escapeHtml(dateLabel)}</span>
-              ${games.length ? `<span>${games.length} 場</span>` : ''}
-              ${loading && games.length ? '<span>更新中…</span>' : ''}
+              ${displayRows.length ? `<span>${displayRows.length} 場</span>` : ''}
+              ${loading && displayRows.length ? '<span>更新中…</span>' : ''}
             </div>
           </div>
           ${bodyHtml}
@@ -785,7 +865,7 @@
         });
       }
 
-      if (!skipLoad && (force || !cached || !fresh) && !loading) {
+      if (!skipLoad && !finishedSeason && (force || !cached || !fresh) && !loading) {
         void loadHomeDailyGames(league, date, { force }).then(() => {});
       }
     }

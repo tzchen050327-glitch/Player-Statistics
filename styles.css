@@ -17142,3 +17142,30 @@ html.skip-startup-splash-frame #appUpdateOverlay.app-update-overlay.hidden{
   .game-detail-content [class*="base-outs"],
   .game-detail-content [class*="bases-outs"] { color: #ffd37d !important; }
 }
+
+/* Confirmed league champion replaces empty offseason daily-game cards. */
+.home-season-champion{
+  box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-start;
+  justify-content:center;gap:8px;min-height:106px;padding:18px 19px;
+  border:1px solid rgba(184,133,43,.42);border-radius:14px;
+  background:linear-gradient(115deg,rgba(209,157,56,.17),rgba(180,126,29,.045) 72%);
+  color:#32312d;text-align:left;
+}
+.home-season-champion-kicker{
+  color:#9c6b1c;font-size:10px;font-weight:850;letter-spacing:.11em;
+}
+.home-season-champion strong{
+  display:block;color:inherit;font-size:clamp(16px,2.3vw,22px);
+  font-weight:850;line-height:1.4;overflow-wrap:anywhere;
+}
+.home-season-champion-meta{font-size:11px;font-weight:650;opacity:.75;line-height:1.5}
+.home-games-scroller + .home-season-champion{margin-top:11px}
+html[data-theme="dark"] .home-season-champion{
+  color:#f0e4c7;border-color:rgba(219,167,64,.38);
+  background:linear-gradient(110deg,rgba(208,150,39,.17),rgba(255,255,255,.022) 75%);
+}
+html[data-theme="dark"] .home-season-champion-kicker{color:#e5b759}
+@media(max-width:640px){
+  .home-season-champion{min-height:94px;padding:14px 13px;gap:5px}
+  .home-season-champion strong{font-size:16px}
+}
