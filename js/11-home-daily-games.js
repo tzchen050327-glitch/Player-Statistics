@@ -595,9 +595,15 @@
       // CPBL official feed may retain displaced Taiwan Series fixtures after a postponement.
       // Keep only the real game identity for each revised 2026 date, including cached snapshots.
       const fixedSeriesId = ({'2026-10-24':'5','2026-10-25':'5','2026-10-26':'6'})[date];
+      // 2026 Taiwan Series ended in G6 on Oct 26 (4-2). The official
+      // schedule may retain the conditional G7 row, so never render it
+      // as an actual Oct 27 game from an older backend/browser cache.
+      const seriesAlreadyDecided = league === 'CPBL' && date === '2026-10-27';
       const visibleGames = league === 'CPBL' && fixedSeriesId
         ? games.filter(g => String(g?.kindCode || '').toUpperCase() !== 'C' || String(g?.id || '') === fixedSeriesId)
-        : games;
+        : (seriesAlreadyDecided
+          ? games.filter(g => String(g?.kindCode || '').toUpperCase() !== 'C')
+          : games);
       const displayRows = homeDailyGamesDisplayRows(visibleGames);
       const error = String(cached?.error || '');
       const leagueLabel = homeDailyGamesLeagueLabel(league);

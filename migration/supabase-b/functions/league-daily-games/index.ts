@@ -51,12 +51,15 @@ async function statsScheduleDate(date:string){const out=await fetchRetry(CPBL_ST
 async function statsScheduleMonth(year:number,monthNo:number,kindCode:string){const u=new URL(CPBL_STATS+'/games/schedule');u.searchParams.set('kindCode',kindCode);u.searchParams.set('year',String(year));u.searchParams.set('month',String(monthNo));const out=await fetchRetry(u.toString(),{headers:{'user-agent':UA,'accept':'application/json','accept-language':'zh-TW,zh;q=.9'}}),j=JSON.parse(out.text||'{}'),rs=j?.Data?.Games??j?.data?.Games??[];return Array.isArray(rs)?rs:[];}
 const CPBL_2026_TS_SHIFT:any={
   '2026-10-24':{id:'5',gameId:'2026-C-5',time:'17:05'},
-  '2026-10-25':{id:'6',gameId:'2026-C-6',time:'17:05'},
-  '2026-10-26':{id:'7',gameId:'2026-C-7',time:'15:05'}
+  '2026-10-25':{id:'5',gameId:'2026-C-5',time:'17:05'},
+  '2026-10-26':{id:'6',gameId:'2026-C-6',time:'15:05'},
+  '2026-10-27':{id:'7',gameId:'2026-C-7',time:'18:35'}
 };
 async function cpblTaiwanSeriesDecidedBefore(date:string){
   try{
-    const rs=await rows('cpbl_live_game_cache?kind_code=eq.C&game_date=lt.'+encodeURIComponent(date)+'&published_status=eq.final&select=game_id,game_date,published_payload&order=game_date.asc');
+    const year=String(date||'').slice(0,4);
+    if(!/^\d{4}$/.test(year))return false;
+    const rs=await rows('cpbl_live_game_cache?kind_code=eq.C&game_date=gte.'+encodeURIComponent(year+'-01-01')+'&game_date=lt.'+encodeURIComponent(date)+'&published_status=eq.final&select=game_id,game_date,published_payload&order=game_date.asc');
     const wins=new Map<string,number>(),seen=new Set<string>();
     for(const row of rs){
       const g=row?.published_payload?.game||{},id=String(row?.game_id||'')||String(row?.game_date||'');
@@ -72,10 +75,14 @@ async function cpblTaiwanSeriesDecidedBefore(date:string){
   return false;
 }
 async function correctCpbl2026TaiwanSeries(date:string,kinds:string[],games:any[]){
-  const patch=CPBL_2026_TS_SHIFT[date];
-  if(!patch||!kinds.map(x=>String(x).toUpperCase()).includes('C'))return games;
+  const wantsSeries=kinds.map(x=>String(x).toUpperCase()).includes('C');
+  if(!wantsSeries)return games;
   const nonC=(Array.isArray(games)?games:[]).filter((g:any)=>String(g?.kindCode||'A').toUpperCase()!=='C');
+  // Best-of-seven ends immediately at four wins. Apply this before
+  // date corrections so conditional G7 rows cannot survive in cache.
   if(await cpblTaiwanSeriesDecidedBefore(date))return nonC;
+  const patch=CPBL_2026_TS_SHIFT[date];
+  if(!patch)return games;
   const cGames=(Array.isArray(games)?games:[]).filter((g:any)=>String(g?.kindCode||'').toUpperCase()==='C');
   const official=cGames.find((g:any)=>String(g?.id||'')===patch.id||String(g?.gameId||'')===patch.gameId);
   const corrected=official?{...official,date,time:patch.time}:{
@@ -255,14 +262,88 @@ async function decorateDailyGames(league:string,date:string,games:any[]){
 }
 
 function ttl(league:string,date:string,games:any[]=[]){const today=league==='NPB'?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()):twDate();if(date<today){if(league==='MLB'){const allTerminal=games.length>0&&games.every(terminalScheduleGame);return allTerminal?Infinity:2*60*1000;}return Infinity;}if(date>today){if(league==='CPBL'&&(!Array.isArray(games)||games.length===0))return 5*60*1000;return 6*60*60*1000;}return league==='CPBL'?5*60*1000:2*60*1000;}
-async function scheduleCached(league:string,date:string,kinds:string[],force=false){const scope=league==='CPBL'?kinds.slice().sort().join(','):'ALL',key=`${league}|SCHEDULE|${date}|${scope}`,stored=(await rows(`league_schedule_cache?cache_key=eq.${encodeURIComponent(key)}&select=*`))[0]||null,storedGames=Array.isArray(stored?.payload?.games)?stored.payload.games:[],rt=Date.parse(String(stored?.refresh_after||'')),frozenMlbStillMutable=league==='MLB'&&stored?.refresh_after==='infinity'&&storedGames.some((g:any)=>!terminalScheduleGame(g)),emptyFutureCpblStale=league==='CPBL'&&date>twDate()&&storedGames.length===0&&Date.now()-Date.parse(String(stored?.fetched_at||0))>5*60*1000,valid=stored?.payload&&!frozenMlbStillMutable&&!emptyFutureCpblStale&&(stored?.refresh_after==='infinity'||rt===Infinity||rt>Date.now());if(valid&&!force){await metric('schedule_cache_hits');return{games:await decorateDailyGames(league,date,storedGames),cache:{hit:true,persistent:true,scope,fetchedAt:stored.fetched_at}};}await metric('schedule_cache_misses');try{let games:any[]=[];if(league==='CPBL')games=await cpblGames(date,kinds);else if(league==='NPB')games=(await npbSharedDaily(date))||await proxyDaily('npb-live-games','NPB',date);else if(league==='KBO')games=await proxyDaily('kbo-live-games','KBO',date);else if(league==='MLB')games=await mlbGames(date);else throw new Error('unsupported league');const ms=ttl(league,date,games),now=Date.now(),refresh=Number.isFinite(ms)?new Date(now+ms).toISOString():'infinity';await upsert('league_schedule_cache',{cache_key:key,league,game_date:date,scope,payload:{games},fetched_at:new Date(now).toISOString(),refresh_after:refresh,source:'official',last_error:null,updated_at:new Date(now).toISOString()});return{games:await decorateDailyGames(league,date,games),cache:{hit:false,persistent:true,scope,ttlMs:Number.isFinite(ms)?ms:null,immutable:!Number.isFinite(ms)}};}catch(e){if(stored?.payload)return{games:await decorateDailyGames(league,date,storedGames),cache:{hit:true,persistent:true,stale:true,scope,error:e instanceof Error?e.message:String(e)}};throw e;}}
+async function scheduleCached(league:string,date:string,kinds:string[],force=false){
+  const scope=league==='CPBL'?kinds.slice().sort().join(','):'ALL',key=`${league}|SCHEDULE|${date}|${scope}`;
+  const stored=(await rows(`league_schedule_cache?cache_key=eq.${encodeURIComponent(key)}&select=*`))[0]||null;
+  const storedGames=Array.isArray(stored?.payload?.games)?stored.payload.games:[];
+  const rt=Date.parse(String(stored?.refresh_after||''));
+  const frozenMlbStillMutable=league==='MLB'&&stored?.refresh_after==='infinity'&&storedGames.some((g:any)=>!terminalScheduleGame(g));
+  const emptyFutureCpblStale=league==='CPBL'&&date>twDate()&&storedGames.length===0&&Date.now()-Date.parse(String(stored?.fetched_at||0))>5*60*1000;
+  const valid=stored?.payload&&!frozenMlbStillMutable&&!emptyFutureCpblStale&&(stored?.refresh_after==='infinity'||rt===Infinity||rt>Date.now());
+  if(valid&&!force){
+    await metric('schedule_cache_hits');
+    const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames):storedGames;
+    return{games:await decorateDailyGames(league,date,guarded),cache:{hit:true,persistent:true,scope,fetchedAt:stored.fetched_at}};
+  }
+  await metric('schedule_cache_misses');
+  try{
+    let games:any[]=[];
+    if(league==='CPBL')games=await cpblGames(date,kinds);
+    else if(league==='NPB')games=(await npbSharedDaily(date))||await proxyDaily('npb-live-games','NPB',date);
+    else if(league==='KBO')games=await proxyDaily('kbo-live-games','KBO',date);
+    else if(league==='MLB')games=await mlbGames(date);
+    else throw new Error('unsupported league');
+    const ms=ttl(league,date,games),now=Date.now(),refresh=Number.isFinite(ms)?new Date(now+ms).toISOString():'infinity';
+    await upsert('league_schedule_cache',{cache_key:key,league,game_date:date,scope,payload:{games},fetched_at:new Date(now).toISOString(),refresh_after:refresh,source:'official',last_error:null,updated_at:new Date(now).toISOString()});
+    return{games:await decorateDailyGames(league,date,games),cache:{hit:false,persistent:true,scope,ttlMs:Number.isFinite(ms)?ms:null,immutable:!Number.isFinite(ms)}};
+  }catch(e){
+    if(stored?.payload){
+      const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames):storedGames;
+      return{games:await decorateDailyGames(league,date,guarded),cache:{hit:true,persistent:true,stale:true,scope,error:e instanceof Error?e.message:String(e)}};
+    }
+    throw e;
+  }
+}
 function normalizeTeam(v:any){return clean(v).normalize('NFKC').replace(/[・･·.\s]/g,'').toLowerCase().replace('統一7-eleven獅','統一獅');}
 function sameTeam(a:any,b:any){const x=normalizeTeam(a),y=normalizeTeam(b);return !!x&&!!y&&(x===y||x.includes(y)||y.includes(x));}
 function addMonths(y:number,m:number,o:number){const d=new Date(Date.UTC(y,m-1+o,1));return{year:d.getUTCFullYear(),month:d.getUTCMonth()+1};}
-async function cpblNext(team:string,kinds:string[]){const today=twDate(),y=Number(today.slice(0,4)),m=Number(today.slice(5,7)),now=Date.now();await metric('cpbl_official_next_game_requests');let best:any=null;for(let off=0;off<3;off++){const ym=addMonths(y,m,off);for(const c of kinds){let rs:any[]=[];try{rs=await statsScheduleMonth(ym.year,ym.month,c);}catch{continue;}for(const r of rs){const date=String(r?.PreExeDate||r?.GameDate||'').slice(0,10);if(!date||date<today)continue;const g=game(r,meta(c),date);if(!sameTeam(g.away,team)&&!sameTeam(g.home,team))continue;if(['final','cancelled','postponed'].includes(String(g.status)))continue;const s=startMs(r,date);if(g.status==='live'||g.status==='suspended')return{...g,nextGameAt:Number.isFinite(s)?new Date(s).toISOString():null};if(Number.isFinite(s)&&s<now)continue;const rank=Number.isFinite(s)?s:Date.parse(`${date}T23:59:59+08:00`);if(!best||rank<best.rank)best={...g,rank,nextGameAt:Number.isFinite(s)?new Date(s).toISOString():null};}}if(best)break;}if(!best)return null;delete best.rank;return best;}
+async function cpblNext(team:string,kinds:string[]){
+  const today=twDate(),y=Number(today.slice(0,4)),m=Number(today.slice(5,7)),now=Date.now();
+  const seriesDecided=kinds.map(x=>String(x).toUpperCase()).includes('C')
+    ? await cpblTaiwanSeriesDecidedBefore(today)
+    : false;
+  await metric('cpbl_official_next_game_requests');
+  let best:any=null;
+  for(let off=0;off<3;off++){
+    const ym=addMonths(y,m,off);
+    for(const c of kinds){
+      if(c==='C'&&seriesDecided)continue;
+      let rs:any[]=[];
+      try{rs=await statsScheduleMonth(ym.year,ym.month,c);}catch{continue;}
+      for(const r of rs){
+        const date=String(r?.PreExeDate||r?.GameDate||'').slice(0,10);
+        if(!date||date<today)continue;
+        const g=game(r,meta(c),date);
+        if(!sameTeam(g.away,team)&&!sameTeam(g.home,team))continue;
+        if(['final','cancelled','postponed'].includes(String(g.status)))continue;
+        const s=startMs(r,date);
+        if(g.status==='live'||g.status==='suspended')return{...g,nextGameAt:Number.isFinite(s)?new Date(s).toISOString():null};
+        if(Number.isFinite(s)&&s<now)continue;
+        const rank=Number.isFinite(s)?s:Date.parse(`${date}T23:59:59+08:00`);
+        if(!best||rank<best.rank)best={...g,rank,nextGameAt:Number.isFinite(s)?new Date(s).toISOString():null};
+      }
+    }
+    if(best)break;
+  }
+  if(!best)return null;
+  delete best.rank;
+  return best;
+}
 async function npbNext(team:string){const r=await fetch(`${SUPABASE_URL}/functions/v1/npb-live-games`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({appKey:APP_KEY,action:'next-game',team})}),j=await r.json().catch(()=>({}));if(!r.ok||!j?.ok)throw new Error(j?.error||`npb-live-games ${r.status}`);return j.nextGame||null;}
 function nextTtl(g:any){if(!g)return 6*60*60*1000;const st=String(g.status||'').toLowerCase();if(['live','suspended'].includes(st))return 2*60*1000;const s=Date.parse(String(g.nextGameAt||''));if(!Number.isFinite(s))return 60*60*1000;const d=s-Date.now();if(d<=60*60*1000)return 5*60*1000;if(d<=24*60*60*1000)return Math.max(10*60*1000,Math.min(60*60*1000,d-60*60*1000));return 6*60*60*1000;}
-async function nextCached(league:string,team:string,kinds:string[],force=false){const tk=normalizeTeam(team),scope=league==='CPBL'?kinds.slice().sort().join(','):'ALL',key=`${league}|NEXT|${tk}|${scope}`,stored=(await rows(`league_next_game_cache?cache_key=eq.${encodeURIComponent(key)}&select=*`))[0]||null,valid=stored&&Date.parse(String(stored.refresh_after||''))>Date.now();if(valid&&!force)return{nextGame:stored.payload?.nextGame||null,cache:{hit:true,persistent:true,fetchedAt:stored.fetched_at}};const nextGame=league==='CPBL'?await cpblNext(team,kinds):await npbNext(team),ms=nextTtl(nextGame),now=Date.now();await upsert('league_next_game_cache',{cache_key:key,league,team_key:tk,scope,payload:{nextGame},fetched_at:new Date(now).toISOString(),refresh_after:new Date(now+ms).toISOString(),last_error:null,updated_at:new Date(now).toISOString()});return{nextGame,cache:{hit:false,persistent:true,ttlMs:ms}};}
+async function nextCached(league:string,team:string,kinds:string[],force=false){
+  const tk=normalizeTeam(team),scope=league==='CPBL'?kinds.slice().sort().join(','):'ALL',key=`${league}|NEXT|${tk}|${scope}`;
+  const stored=(await rows(`league_next_game_cache?cache_key=eq.${encodeURIComponent(key)}&select=*`))[0]||null;
+  const valid=stored&&Date.parse(String(stored.refresh_after||''))>Date.now();
+  if(valid&&!force){
+    let nextGame=stored.payload?.nextGame||null;
+    if(league==='CPBL'&&String(nextGame?.kindCode||'').toUpperCase()==='C'&&await cpblTaiwanSeriesDecidedBefore(twDate()))nextGame=null;
+    return{nextGame,cache:{hit:true,persistent:true,fetchedAt:stored.fetched_at}};
+  }
+  const nextGame=league==='CPBL'?await cpblNext(team,kinds):await npbNext(team),ms=nextTtl(nextGame),now=Date.now();
+  await upsert('league_next_game_cache',{cache_key:key,league,team_key:tk,scope,payload:{nextGame},fetched_at:new Date(now).toISOString(),refresh_after:new Date(now+ms).toISOString(),last_error:null,updated_at:new Date(now).toISOString()});
+  return{nextGame,cache:{hit:false,persistent:true,ttlMs:ms}};
+}
 Deno.serve(async(req:Request)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});if(req.method!=='POST')return reply({ok:false,error:'POST only'},405);try{const body=await req.json();if(body?.appKey!==APP_KEY)return reply({ok:false,error:'Forbidden'},403);const action=String(body?.action||'daily-games'),league=String(body?.league||'').toUpperCase(),internal=req.headers.get('authorization')===`Bearer ${SERVICE_ROLE}`,force=body?.force===true&&internal;const defaultKinds=internal?['A','E','C']:['A','D','E','C'],kinds=normKinds(body?.kindCodes,defaultKinds);if(action==='cpbl-playoff-series'){
   const year=String(body?.year||twDate().slice(0,4));
   if(!/^\\d{4}$/.test(year))return reply({ok:false,error:'invalid year'},400);
