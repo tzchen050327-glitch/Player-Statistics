@@ -1078,8 +1078,25 @@
       // The next PA's official pre-PA state is this PA's authoritative after-state.
       // For the currently completed NPB PA, the live current-batter row provides the same authority.
       const officialAfter=sameHalf ? stateForPlay(nextPlay) : currentNpbAfter;
-      const dest=destination(result,desc);
-      const after=officialAfter || heuristicAfter(before,dest,result,play);
+      // NPB's play-by-play base state is recorded BEFORE each plate appearance.
+      // A grounder with a runner forced from first may retire that lead runner
+      // at second while the batter reaches first (fielder's choice). Do not
+      // leave the retired runner's name on first when the base stays occupied.
+      const beforeOuts=parseOutNumber(play?.outs);
+      const singleRunnerForceGrounder=league==='NPB'
+        && !!before.first && !before.second && !before.third
+        && /ゴロ|滾地|[一二三游遊投捕]滾/i.test(result)
+        && !/併殺|雙殺|ダブルプレー|三殺|三重殺|トリプルプレー/i.test(result)
+        && beforeOuts!==null && beforeOuts<=1
+        && inferredOutsAfterPlay(play,detail)===beforeOuts+1;
+      // The next PA's official pre-state confirms the previous PA's after-state.
+      // When it is not yet available, avoid preserving the forced-out runner.
+      const batterReplacedForcedRunner=singleRunnerForceGrounder
+        && (!officialAfter || (officialAfter.first && !officialAfter.second && !officialAfter.third));
+      const dest=destination(result,desc) || (batterReplacedForcedRunner?'first':'');
+      const after=officialAfter || (batterReplacedForcedRunner
+        ? {first:true,second:false,third:false}
+        : heuristicAfter(before,dest,result,play));
       assignToState(after,batter,dest,!!officialAfter,play);
 
       for(const action of runnerActions){
