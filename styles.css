@@ -17178,12 +17178,14 @@ html[data-theme="dark"] .home-season-champion-kicker{color:#e5b759}
 html[data-theme="dark"] .home-season-champion .home-season-champion-team{
   color:var(--champion-team-color-dark,var(--champion-team-color,#C8A14D));
 }
-/* Milwaukee Brewers: keep the requested exact navy even in dark mode. */
+/* Brewers: navy lettering directly on the existing gold championship card.
+   Warm gold text-shadow maintains readability without a separate badge. */
 html[data-theme="dark"] .home-season-champion .home-season-champion-team.is-brewers-navy{
   color:#12284B;
-  background:#F1F5FC;
-  border-radius:7px;
-  padding:3px 9px;
+  background:transparent;
+  border-radius:0;
+  padding:0;
+  text-shadow:0 1px 1px rgba(255,223,148,.95), 0 0 6px rgba(234,184,77,.85);
 }
 
 @media(max-width:640px){
