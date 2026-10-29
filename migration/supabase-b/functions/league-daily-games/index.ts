@@ -272,7 +272,8 @@ async function scheduleCached(league:string,date:string,kinds:string[],force=fal
   const valid=stored?.payload&&!frozenMlbStillMutable&&!emptyFutureCpblStale&&(stored?.refresh_after==='infinity'||rt===Infinity||rt>Date.now());
   if(valid&&!force){
     await metric('schedule_cache_hits');
-    const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames):storedGames;
+    const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames)
+      :await suppressClinchedFinalFixtures(league,date,storedGames);
     return{games:await decorateDailyGames(league,date,guarded),cache:{hit:true,persistent:true,scope,fetchedAt:stored.fetched_at}};
   }
   await metric('schedule_cache_misses');
@@ -283,12 +284,14 @@ async function scheduleCached(league:string,date:string,kinds:string[],force=fal
     else if(league==='KBO')games=await proxyDaily('kbo-live-games','KBO',date);
     else if(league==='MLB')games=await mlbGames(date);
     else throw new Error('unsupported league');
+    games=await suppressClinchedFinalFixtures(league,date,games);
     const ms=ttl(league,date,games),now=Date.now(),refresh=Number.isFinite(ms)?new Date(now+ms).toISOString():'infinity';
     await upsert('league_schedule_cache',{cache_key:key,league,game_date:date,scope,payload:{games},fetched_at:new Date(now).toISOString(),refresh_after:refresh,source:'official',last_error:null,updated_at:new Date(now).toISOString()});
     return{games:await decorateDailyGames(league,date,games),cache:{hit:false,persistent:true,scope,ttlMs:Number.isFinite(ms)?ms:null,immutable:!Number.isFinite(ms)}};
   }catch(e){
     if(stored?.payload){
-      const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames):storedGames;
+      const guarded=league==='CPBL'?await correctCpbl2026TaiwanSeries(date,kinds,storedGames)
+        :await suppressClinchedFinalFixtures(league,date,storedGames);
       return{games:await decorateDailyGames(league,date,guarded),cache:{hit:true,persistent:true,stale:true,scope,error:e instanceof Error?e.message:String(e)}};
     }
     throw e;
@@ -354,11 +357,31 @@ async function seasonChampion(league:string,year:number){
       break;
     }
   }
-  const now=Date.now(),ttl=champion?'infinity':new Date(now+4*60*1000).toISOString();
+  const now=Date.now(),month=Number(new Intl.DateTimeFormat('en-US',{month:'numeric',timeZone:'Asia/Taipei'}).format(new Date(now)));
+  const activeFinals=year===Number(twDate().slice(0,4))&&(month===10||month===11);
+  const ttl=champion?'infinity':new Date(now+(activeFinals?60*1000:4*60*1000)).toISOString();
   await upsert('league_schedule_cache',{cache_key:key,league,game_date:last,scope:'CHAMPION',
     payload:{champion},fetched_at:new Date(now).toISOString(),refresh_after:ttl,
     source:'official-postseason-cache',last_error:null,updated_at:new Date(now).toISOString()});
   return champion;
+}
+// After a best-of-seven series is clinched, the conditional remaining
+// games stay in MLB/NPB/KBO official feeds. Filter only those unplayed finals.
+async function suppressClinchedFinalFixtures(league:string,date:string,games:any[]){
+  if(!['MLB','NPB','KBO'].includes(league)||!Array.isArray(games)||!games.length)return games;
+  const isFinalGame=(g:any)=>league==='MLB'
+    ? String(g?.gameType||'').toUpperCase()==='W'
+      ||/world series|世界大賽/i.test(String(g?.seriesDescription||g?.competitionLabel||''))
+    : league==='NPB'
+      ? ['nippon_series','japan_series'].includes(String(g?.competition||'').toLowerCase())
+      : (String(g?.competition||'')==='korean_series'||String(g?.seriesId||'')==='7');
+  if(!games.some((g:any)=>String(g?.status||'').toLowerCase()==='scheduled'&&isFinalGame(g)))return games;
+  const year=String(date).slice(0,4);
+  const records=await rows('league_schedule_cache?cache_key=eq.'+
+    encodeURIComponent(league+'|CHAMPION|'+year)+'&select=payload');
+  const champion=records?.[0]?.payload?.champion;
+  if(!champion?.team||!champion?.decidedOn||date<=champion.decidedOn)return games;
+  return games.filter((g:any)=>!isFinalGame(g)||String(g?.status||'').toLowerCase()==='final');
 }
 function normalizeTeam(v:any){return clean(v).normalize('NFKC').replace(/[・･·.\s]/g,'').toLowerCase().replace('統一7-eleven獅','統一獅');}
 function sameTeam(a:any,b:any){const x=normalizeTeam(a),y=normalizeTeam(b);return !!x&&!!y&&(x===y||x.includes(y)||y.includes(x));}

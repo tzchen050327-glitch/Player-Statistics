@@ -1,6 +1,39 @@
     const homeSeasonChampionCache = new Map();
     const homeSeasonChampionLoading = new Set();
-    const HOME_SEASON_CHAMPION_RECHECK_MS = 4 * 60 * 1000;
+    const HOME_SEASON_CHAMPION_RECHECK_MS = 65 * 1000;
+    const homeSeasonChampionRetryTimers = new Map();
+
+    function homeSeasonChampionFinalSignature(league,year) {
+      const finals=[];
+      for(const [key,entry] of homeDailyGamesCache) {
+        if(!key.startsWith(league+'|'+year+'-'))continue;
+        const day=key.slice(league.length+1);
+        if(day.slice(5,7)!=='10'&&day.slice(5,7)!=='11')continue;
+        for(const g of (Array.isArray(entry?.games)?entry.games:[])) {
+          const isFinal=String(g?.status||'').toLowerCase()==='final';
+          const isChampionship=league==='CPBL' ? String(g?.kindCode||'').toUpperCase()==='C'
+            : league==='NPB' ? ['nippon_series','japan_series'].includes(String(g?.competition||'').toLowerCase())
+            : league==='KBO' ? (String(g?.competition||'')==='korean_series'||String(g?.seriesId||'')==='7')
+            : String(g?.gameType||'').toUpperCase()==='W';
+          if(isFinal&&isChampionship) finals.push([day,g?.id,g?.awayScore,g?.homeScore].join(':'));
+        }
+      }
+      return finals.sort().join('|');
+    }
+
+    function homeSeasonChampionScheduleRetry(league,date,signature) {
+      const year=homeSeasonChampionYear(date),key=league+'|'+year;
+      if(!signature||homeSeasonChampionInfo(league,date)||homeSeasonChampionRetryTimers.has(key))return;
+      // Retry only when a final-series result has just entered the browser cache.
+      // Never poll the official schedules or run a background timer for empty dates.
+      const timeout=setTimeout(()=>{
+        homeSeasonChampionRetryTimers.delete(key);
+        if(document.visibilityState!=='visible'||currentPage!=='home'||homeDailyGamesLeague()!==league)return;
+        if(homeSeasonChampionYear(String(els.gameDate?.value||localISODate()))!==year)return;
+        renderHomeDailyGames({skipLoad:true});
+      },80*1000);
+      homeSeasonChampionRetryTimers.set(key,timeout);
+    }
 
     function homeSeasonChampionYear(date) {
       const match=String(date||'').match(/^(\d{4})-(\d{2})-\d{2}$/);
@@ -22,8 +55,10 @@
       const year=homeSeasonChampionYear(date);
       if(year===null||!['CPBL','NPB','KBO','MLB'].includes(league))return;
       const key=league+'|'+year,cache=homeSeasonChampionCache.get(key);
+      const finalSignature=homeSeasonChampionFinalSignature(league,year);
+      const newFinal=Boolean(finalSignature&&finalSignature!==cache?.finalSignature);
       if(homeSeasonChampionLoading.has(key)||cache?.champion
-        ||(cache&&Date.now()-Number(cache.at||0)<HOME_SEASON_CHAMPION_RECHECK_MS))return;
+        ||(cache&&!newFinal&&Date.now()-Number(cache.at||0)<HOME_SEASON_CHAMPION_RECHECK_MS))return;
       homeSeasonChampionLoading.add(key);
       void fetch(LEAGUE_GAMES_A_API_URL,{
         method:'POST',
@@ -35,14 +70,17 @@
         const champion=data?.champion;
         homeSeasonChampionCache.set(key,{
           at:Date.now(),
+          finalSignature,
           champion:champion?.league===league&&Number(champion?.year)===year
             &&typeof champion?.team==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(String(champion?.decidedOn||''))
             &&/^\d{4}-02-\d{2}$/.test(String(champion?.expiresOn||''))
             ? champion : null
         });
-      }).catch(()=>homeSeasonChampionCache.set(key,{at:Date.now(),champion:null}))
+      }).catch(()=>homeSeasonChampionCache.set(key,{at:Date.now(),finalSignature,champion:null}))
         .finally(()=>{
           homeSeasonChampionLoading.delete(key);
+          if(!homeSeasonChampionCache.get(key)?.champion&&finalSignature)
+            homeSeasonChampionScheduleRetry(league,date,finalSignature);
           if(currentPage==='home'&&homeDailyGamesLeague()===league
              &&homeSeasonChampionYear(String(els.gameDate?.value||localISODate()))===year){
             renderHomeDailyGames({skipLoad:true});
