@@ -24,8 +24,8 @@
       "status": 200
     }
   ],
-  "newly_fetched_teams": 1,
-  "reused_verified_teams": 209,
+  "newly_fetched_teams": 0,
+  "reused_verified_teams": 210,
   "stored_rosters": 215,
   "mapped_schedule_names": 210,
   "stored_players": 3933,
