@@ -173,16 +173,57 @@
       return '#E8E8E8';
     }
 
+    // Full regional names for championship announcements only.
+    // Keep regular scoreboard labels short, and do not invent a city for
+    // official region names such as Hanshin or the unaffiliated Athletics.
+    const HOME_CHAMPION_NPB_FULL_NAMES = {
+      '軟銀鷹':'福岡軟銀鷹','軟銀':'福岡軟銀鷹','福岡軟銀鷹':'福岡軟銀鷹',
+      '讀賣巨人':'東京讀賣巨人','巨人':'東京讀賣巨人',
+      '中日龍':'名古屋中日龍','歐力士猛牛':'大阪歐力士猛牛',
+      '橫濱DeNA':'橫濱DeNA灣星','DeNA灣星':'橫濱DeNA灣星',
+      '火腿鬥士':'北海道日本火腿鬥士','日本火腿':'北海道日本火腿鬥士',
+      '樂天金鷲':'東北樂天金鷲','西武獅':'埼玉西武獅',
+      '羅德海洋':'千葉羅德海洋','養樂多燕子':'東京養樂多燕子',
+      '廣島鯉魚':'廣島東洋鯉魚'
+    };
+    const HOME_CHAMPION_MLB_FULL_NAMES = {
+      '響尾蛇':'亞利桑那響尾蛇','勇士':'亞特蘭大勇士',
+      '金鶯':'巴爾的摩金鶯','紅襪':'波士頓紅襪',
+      '小熊':'芝加哥小熊','白襪':'芝加哥白襪',
+      '紅人':'辛辛那提紅人','守護者':'克里夫蘭守護者',
+      '洛磯':'科羅拉多洛磯','老虎':'底特律老虎',
+      '太空人':'休士頓太空人','皇家':'堪薩斯市皇家',
+      '天使':'洛杉磯天使','道奇':'洛杉磯道奇',
+      '馬林魚':'邁阿密馬林魚','釀酒人':'密爾瓦基釀酒人',
+      '雙城':'明尼蘇達雙城','大都會':'紐約大都會',
+      '洋基':'紐約洋基','費城人':'費城人',
+      '海盜':'匹茲堡海盜','教士':'聖地牙哥教士',
+      '巨人':'舊金山巨人','水手':'西雅圖水手',
+      '紅雀':'聖路易紅雀','光芒':'坦帕灣光芒',
+      '遊騎兵':'德州遊騎兵','藍鳥':'多倫多藍鳥',
+      '國民':'華盛頓國民'
+    };
+    function homeSeasonChampionFullName(league,shortName) {
+      const team=String(shortName||'').trim();
+      if(league==='NPB')return HOME_CHAMPION_NPB_FULL_NAMES[team]||team;
+      if(league==='MLB')return HOME_CHAMPION_MLB_FULL_NAMES[team]||team;
+      return team;
+    }
+
     function homeSeasonChampionCard(champion,league) {
       const title=({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
-      const team=league==='MLB'?mlbTeamZh(champion.team):String(champion.team);
-      const teamColor=homeSeasonChampionTeamColor(league,team);
+      const shortTeam=league==='MLB'?mlbTeamZh(champion.team):String(champion.team);
+      const team=homeSeasonChampionFullName(league,shortTeam);
+      // Resolve color from the short canonical identity, not its regional label.
+      const teamColor=league==='MLB' && shortTeam==='釀酒人'
+        ? '#12284B' : homeSeasonChampionTeamColor(league,shortTeam);
       const darkColor=homeSeasonChampionTeamDarkColor(teamColor);
+      const isBrewersNavy=league==='MLB'&&shortTeam==='釀酒人';
       const end=String(champion.expiresOn).replaceAll('-','/');
       return '<div class="home-season-champion" role="status" style="--champion-team-color:'+escapeAttr(teamColor)+';--champion-team-color-dark:'+escapeAttr(darkColor)+'">'
         +'<span class="home-season-champion-kicker">SEASON CHAMPION · '+escapeHtml(champion.year)+'</span>'
         +'<span class="home-season-champion-title">'+escapeHtml(String(champion.year))+'年'+escapeHtml(title)+'總冠軍</span>'
-        +'<strong class="home-season-champion-team">'+escapeHtml(team)+'</strong>'
+        +'<strong class="home-season-champion-team'+(isBrewersNavy?' is-brewers-navy':'')+'">'+escapeHtml(team)+'</strong>'
         +'<span class="home-season-champion-meta">本季賽事已結束 · 展示至 '+escapeHtml(end)+'</span>'
         +'</div>';
     }

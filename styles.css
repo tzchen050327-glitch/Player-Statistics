@@ -17178,6 +17178,14 @@ html[data-theme="dark"] .home-season-champion-kicker{color:#e5b759}
 html[data-theme="dark"] .home-season-champion .home-season-champion-team{
   color:var(--champion-team-color-dark,var(--champion-team-color,#C8A14D));
 }
+/* Milwaukee Brewers: keep the requested exact navy even in dark mode. */
+html[data-theme="dark"] .home-season-champion .home-season-champion-team.is-brewers-navy{
+  color:#12284B;
+  background:#F1F5FC;
+  border-radius:7px;
+  padding:3px 9px;
+}
+
 @media(max-width:640px){
   .home-season-champion{min-height:94px;padding:14px 13px;gap:5px}
   .home-season-champion-title{font-size:14px}
