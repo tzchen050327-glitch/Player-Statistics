@@ -10,7 +10,13 @@
       "reason": "no_nonempty_roster_mapped_to_schedule"
     }
   ],
-  "unmatched_imported_teams": [],
+  "unmatched_imported_teams": [
+    {
+      "officialName": "臺中市立臺中第二高級中等學校",
+      "scheduleName": null,
+      "player_count": 20
+    }
+  ],
   "complete": false,
   "note": "Unique schedule team names are counted here. Women/open rosters with the same school name require separate verification."
 }

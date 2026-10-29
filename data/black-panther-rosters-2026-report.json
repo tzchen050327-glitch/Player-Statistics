@@ -1,7 +1,7 @@
 {
   "year": 2026,
   "target_teams": 211,
-  "official_team_pages": 209,
+  "official_team_pages": 212,
   "index_regions": [
     {
       "region": "teams_north2026",
@@ -24,12 +24,12 @@
       "status": 200
     }
   ],
-  "newly_fetched_teams": 0,
-  "reused_verified_teams": 206,
-  "stored_rosters": 214,
+  "newly_fetched_teams": 1,
+  "reused_verified_teams": 209,
+  "stored_rosters": 215,
   "mapped_schedule_names": 210,
-  "stored_players": 3913,
-  "incomplete_source_links": true,
+  "stored_players": 3933,
+  "incomplete_source_links": false,
   "issues": [
     {
       "team": "正心中學",
@@ -55,19 +55,15 @@
         "http_status": 502,
         "error": "Official page HTTP 404"
       }
-    },
-    {
-      "team": "國立中興大學附屬高級中學",
-      "region": "teams_central2026",
-      "slug": "2026國立中興大學附屬高級中學",
-      "reason": "page_not_parsed",
-      "detail": {
-        "http_status": 502,
-        "error": "Official page HTTP 404"
-      }
     }
   ],
-  "unmapped": [],
+  "unmapped": [
+    {
+      "team": "臺中市立臺中第二高級中等學校",
+      "reason": "schedule_alias_not_found",
+      "source": "https://blackpanthercup.tw/2026%E8%87%BA%E4%B8%AD%E5%B8%82%E7%AB%8B%E8%87%BA%E4%B8%AD%E7%AC%AC%E4%BA%8C%E9%AB%98%E7%B4%9A%E4%B8%AD%E7%AD%89%E5%AD%B8%E6%A0%A1/"
+    }
+  ],
   "missing_teams": [
     "正心中學"
   ],
