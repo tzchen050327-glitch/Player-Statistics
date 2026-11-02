@@ -1406,3 +1406,39 @@ html[data-theme="dark"] .game-detail-enhanced-marker .gdx-outs,
   opacity:1 !important;
   font-weight:900 !important;
 }
+
+
+/* Cloud sync dialog: dark theme contrast and form surfaces (c2.41) */
+html[data-theme="dark"] #cloudSyncDialog .panel {
+  background:#171e28 !important;
+  border:1px solid #344255 !important;
+  color:#edf2f8 !important;
+}
+html[data-theme="dark"] #cloudSyncDialog .panel .field,
+html[data-theme="dark"] #cloudSyncDialog .panel .subtle,
+html[data-theme="dark"] #cloudSyncDialog .panel label,
+html[data-theme="dark"] #cloudSyncDialog .panel strong,
+html[data-theme="dark"] #cloudSyncDialog .panel div {
+  color:#e5edf7;
+}
+html[data-theme="dark"] #cloudSyncDialog input {
+  background:#0d141e !important;
+  border:1px solid #526176 !important;
+  color:#f7fafc !important;
+  -webkit-text-fill-color:#f7fafc;
+  caret-color:#e2b24b;
+}
+html[data-theme="dark"] #cloudSyncDialog input::placeholder {
+  color:#a9b5c6 !important;
+  -webkit-text-fill-color:#a9b5c6;
+  opacity:1;
+}
+html[data-theme="dark"] #cloudSyncDialog input:focus {
+  outline:2px solid #d5a53b;
+  outline-offset:1px;
+  border-color:#d5a53b !important;
+}
+html[data-theme="dark"] #cloudSyncDialog input:-webkit-autofill {
+  -webkit-box-shadow:0 0 0 1000px #0d141e inset;
+  -webkit-text-fill-color:#f7fafc;
+}
