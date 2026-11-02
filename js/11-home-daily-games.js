@@ -115,7 +115,7 @@
         '紅人':'#C6011F','守護者':'#E31937','洛磯':'#333366',
         '老虎':'#0C2340','太空人':'#EB6E1F','皇家':'#004687',
         '天使':'#BA0021','道奇':'#005A9C','馬林魚':'#00A3E0',
-        '釀酒人':'#12284B','雙城':'#002B5C','大都會':'#002D72',
+        '釀酒人':'#FFC52F','雙城':'#002B5C','大都會':'#002D72',
         '洋基':'#0C2340','運動家':'#006141','費城人':'#E81828',
         '海盜':'#FDB827','教士':'#2F241D','巨人':'#FD5A1E',
         '水手':'#005C5C','紅雀':'#C41E3A','光芒':'#092C5C',
@@ -210,23 +210,92 @@
       return team;
     }
 
+    // Small logos next to the champion's name, never a separate badge/card.
+    // Official CPBL advanced-stats logo and Wikimedia/MLB image assets are used
+    // for confirmed 2026 champions. Other teams use their own official site icon.
+    const HOME_CHAMPION_CPBL_LOGOS = {
+      '味全龍':'https://stats.cpbl.com.tw/_next/image?q=75&url=%2Flogo%2Fteam-logo%2FWEICHUAN-logo-small.png&w=256',
+      '中信兄弟':'www.brothers.tw',
+      '統一獅':'www.uni-lions.com.tw',
+      '樂天桃猿':'www.rakutenmonkeys.com',
+      '富邦悍將':'www.fubonguardians.com',
+      '台鋼雄鷹':'www.tsg-hawks.com'
+    };
+    const HOME_CHAMPION_NPB_LOGOS = {
+      '福岡軟銀鷹':'https://commons.wikimedia.org/wiki/Special:FilePath/Fukuoka_SoftBank_Hawks_insignia.svg',
+      '阪神虎':'hanshintigers.jp',
+      '橫濱DeNA灣星':'www.baystars.co.jp',
+      '讀賣巨人':'www.giants.jp',
+      '中日龍':'dragons.jp',
+      '廣島東洋鯉魚':'www.carp.co.jp',
+      '東京養樂多燕子':'www.yakult-swallows.co.jp',
+      '北海道日本火腿鬥士':'www.fighters.co.jp',
+      '歐力士猛牛':'www.buffaloes.co.jp',
+      '東北樂天金鷲':'www.rakuteneagles.jp',
+      '埼玉西武獅':'www.seibulions.jp',
+      '千葉羅德海洋':'www.marines.co.jp'
+    };
+    const HOME_CHAMPION_KBO_LOGOS = {
+      'KT巫師':'www.ktwiz.co.kr',
+      '三星獅':'www.samsunglions.com',
+      'LG雙子':'https://commons.wikimedia.org/wiki/Special:FilePath/LG_Twins_insignia.svg',
+      'KIA虎':'www.tigers.co.kr',
+      '斗山熊':'www.doosanbears.com',
+      'NC恐龍':'www.ncdinos.com',
+      'SSG登陸者':'www.ssglanders.com',
+      '樂天巨人':'www.giantsclub.com',
+      '韓華鷹':'www.hanwhaeagles.co.kr',
+      '培證英雄':'www.heroesbaseball.co.kr'
+    };
+    const HOME_CHAMPION_MLB_LOGO_IDS = {
+      '響尾蛇':109,'勇士':144,'金鶯':110,'紅襪':111,'小熊':112,
+      '白襪':145,'紅人':113,'守護者':114,'洛磯':115,'老虎':116,
+      '太空人':117,'皇家':118,'天使':108,'道奇':119,'馬林魚':146,
+      '釀酒人':158,'雙城':142,'大都會':121,'洋基':147,'運動家':133,
+      '費城人':143,'海盜':134,'教士':135,'巨人':137,'水手':136,
+      '紅雀':138,'光芒':139,'遊騎兵':140,'藍鳥':141,'國民':120
+    };
+    function homeSeasonChampionLogo(league,shortTeam,displayTeam) {
+      const name=String(shortTeam||'').trim();
+      if(league==='MLB') {
+        const id=HOME_CHAMPION_MLB_LOGO_IDS[name];
+        return id?'https://www.mlbstatic.com/team-logos/'+id+'.svg':'';
+      }
+      const lookup=league==='CPBL'?HOME_CHAMPION_CPBL_LOGOS
+        :league==='NPB'?HOME_CHAMPION_NPB_LOGOS
+        :league==='KBO'?HOME_CHAMPION_KBO_LOGOS:null;
+      if(!lookup)return '';
+      const target=lookup[name]||lookup[displayTeam];
+      if(!target)return '';
+      if(target.startsWith('https://'))return target;
+      // A favicon fallback is scoped to the club's official site.
+      return 'https://www.google.com/s2/favicons?domain='+encodeURIComponent(target)+'&sz=128';
+    }
+
     function homeSeasonChampionCard(champion,league) {
       const title=({CPBL:'中職',NPB:'日職',KBO:'韓職',MLB:'美職'})[league]||league;
       const shortTeam=league==='MLB'?mlbTeamZh(champion.team):String(champion.team);
       const team=homeSeasonChampionFullName(league,shortTeam);
-      // Resolve color from the short canonical identity, not its regional label.
-      const teamColor=league==='MLB' && shortTeam==='釀酒人'
-        ? '#12284B' : homeSeasonChampionTeamColor(league,shortTeam);
+      const teamColor=homeSeasonChampionTeamColor(league,shortTeam);
       const darkColor=homeSeasonChampionTeamDarkColor(teamColor);
-      const isBrewersNavy=league==='MLB'&&shortTeam==='釀酒人';
+      const logo=homeSeasonChampionLogo(league,shortTeam,team);
+      const logoHtml=logo?'<img class="home-season-champion-logo" src="'+escapeAttr(logo)+'" alt="" aria-hidden="true" loading="lazy" decoding="async" referrerpolicy="no-referrer">':'';
+      const isBrewersYellow=league==='MLB'&&shortTeam==='釀酒人';
       const end=String(champion.expiresOn).replaceAll('-','/');
       return '<div class="home-season-champion" role="status" style="--champion-team-color:'+escapeAttr(teamColor)+';--champion-team-color-dark:'+escapeAttr(darkColor)+'">'
         +'<span class="home-season-champion-kicker">SEASON CHAMPION · '+escapeHtml(champion.year)+'</span>'
         +'<span class="home-season-champion-title">'+escapeHtml(String(champion.year))+'年'+escapeHtml(title)+'總冠軍</span>'
-        +'<strong class="home-season-champion-team'+(isBrewersNavy?' is-brewers-navy':'')+'">'+escapeHtml(team)+'</strong>'
+        +'<strong class="home-season-champion-team'+(isBrewersYellow?' is-brewers-yellow':'')+'"><span class="home-season-champion-team-name">'+escapeHtml(team)+'</span>'+logoHtml+'</strong>'
         +'<span class="home-season-champion-meta">本季賽事已結束 · 展示至 '+escapeHtml(end)+'</span>'
         +'</div>';
     }
+
+    // Image sources can occasionally be blocked. Avoid broken-image glyphs.
+    document.addEventListener('error',event=>{
+      const target=event.target;
+      if(target instanceof HTMLImageElement && target.classList.contains('home-season-champion-logo'))
+        target.hidden=true;
+    },true);
 
     const homeDailyGamesCache = new Map();
     const homeDailyGamesLoading = new Set();
