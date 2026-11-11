@@ -34,10 +34,7 @@
     {
       "team": "正心中學",
       "reason": "2026_official_school_page_not_published",
-      "detail": {
-        "http_status": 502,
-        "error": "TimeoutError: Signal timed out."
-      }
+      "detail": null
     },
     {
       "team": "臺北市大理高級中學",
